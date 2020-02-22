@@ -1,13 +1,13 @@
 # Client Setup Instructions
 We'll be setting up the client so that it's ready to remotely initiate a job on its own data. **Before doing this setup, ensure that you've already setup the [server](../server)**
-This setup will involve encrypting data on the client, transferring the data to the server, then initiating the XGBoost code. The code run by the server once the client makes the final call is in the `xgb_load_train_predict()` function in `server/remote_attestation_server.py`. In this example, data is decrypted and loaded into a `DMatrix` and a model is trained.
+This setup will involve encrypting data on the client, transferring the data to the server, then initiating the XGBoost code. The code run by the server once the client makes the final call is in the `xgb_load_train_predict()` function in `demo/python/remote-control/server/remote_attestation_server.py`. In this example, data is decrypted and loaded into a `DMatrix` and a model is trained.
 
 `cd` into the `client` directory to begin setup.
 
 ### 1. Set PYTHONPATH
-Set the `$PYTHONPATH` environment variable to the `secure-xgboost/rpc` directory. You can also add in this your bashrc.
+Set the `$PYTHONPATH` environment variable to the `mc2-xgboost/rpc` directory. You can also add in this your bashrc.
 
-`export PYTHONPATH=/path/to/secure-xgboost/rpc/`
+`export PYTHONPATH=/path/to/mc2-xgboost/rpc/`
 
 ### 2. Encrypt data locally.
 

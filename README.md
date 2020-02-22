@@ -30,17 +30,11 @@ sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
 ## Download and build secure XGBoost
 ```
-git clone -b sgx-dev --recursive https://github.com/mc2-project/secure-xgboost.git
+git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
 cd secure-xgboost
 mkdir -p build 
 
 pushd build
-cmake ..
-make -j4
-popd
-
-mkdir enclave/build
-pushd enclave/build
 cmake ..
 make -j4
 popd
@@ -51,48 +45,37 @@ popd
 ```
 
 ## Sanity Check
-This sanity check ensures that setup was done properly. There is a script, `enclave-api-demo.py`, that loads data, trains a model, and serves predictions at `demo/enclave/`. The example uses encrypted versions of the `agaricus.txt.train` and `agaricus.txt.test` data files from `demo/data/`. The encrypted data was generated using `demo/c-api/encrypt.cc`, with a key of all zeros.
+This sanity check ensures that setup was done properly. There is a script, `secure-xgboost-demo.py`, that loads data, trains a model, and serves predictions at `demo/python/basic/`. The example uses encrypted versions of the `agaricus.txt.train` and `agaricus.txt.test` data files from `demo/data/`. 
 
 Note that you may have to change the paths to the built enclave or to the data files in the script. You can run the script with the following:
 ```
-python3 demo/enclave/enclave-api-demo.py
+python3 demo/python/basic/secure-xgboost-demo.py
 ```
 After running the script, you should see something similar to the following printed to the console:
 ```
+Creating enclave
+Loaded all modules
+Remote attestation
+Ecall: enclave_get_remote_report_with_pubkey
+remote attestation succeeded.
+verify_report_and_set_pubkey succeeded.
+Creating training matrix
+Creating test matrix
+Beginning Training
+Ecall: RabitIsDistributed
+[0]	train-error:0.014433	test-error:0.016139
+Ecall: RabitIsDistributed
+[1]	train-error:0.014433	test-error:0.016139
+Ecall: RabitIsDistributed
+[2]	train-error:0.014433	test-error:0.016139
+Ecall: RabitIsDistributed
+[3]	train-error:0.008598	test-error:0.009932
+Ecall: RabitIsDistributed
+[4]	train-error:0.001228	test-error:0
+
+
 Model Predictions:
-[18523750] DEBUG: /home/xgb/secure-xgboost/enclave/ecalls.cpp:52: Ecall: XGBoosterPredict
-[0.02386593 0.9543875  0.02386593 0.02386593 0.04897502 0.10559791
- 0.9543875  0.02876541 0.9543875  0.02423424 0.9543875  0.02876541
- 0.02340852 0.02386593 0.02340852 0.02920706 0.02876541 0.9543875
- 0.04897502 0.02876541]
-
-
-True Labels:
-[18523750] DEBUG: /home/xgb/secure-xgboost/enclave/ecalls.cpp:59: Ecall: XGDMatrixGetFloatInfo
-[0. 1. 0. 0. 0. 0. 1. 0. 1. 0. 1. 0. 0. 0. 0. 0. 0. 1. 0. 0.]
-[18523750] DEBUG: /home/xgb/secure-xgboost/enclave/ecalls.cpp:65: Ecall: XGDMatrixFree
-[18523750] DEBUG: /home/xgb/secure-xgboost/enclave/ecalls.cpp:65: Ecall: XGDMatrixFree
-[18523750] DEBUG: /home/xgb/secure-xgboost/enclave/ecalls.cpp:70: Ecall: XGBoosterFree
-[18523750] ======== Enclave Monitor: Learner ========
-[18523750] EvalOneIter: 0.002s, 10 calls @ 200us
-[18523750] GetGradient: 0.014s, 10 calls @ 1400us
-[18523750] PredictRaw: 0.009s, 10 calls @ 900us
-[18523750] UpdateOneIter: 0.174s, 10 calls @ 17400us
-[18523750] ======== Enclave Monitor: GBTree ========
-[18523750] BoostNewTrees: 0.112s, 10 calls @ 11200us
-[18523750] CommitModel: 0.039s, 10 calls @ 3900us
-[18523750] ======== Enclave Monitor: Quantile::Builder ========
-[18523750] ApplySplit: 0.008s, 59 calls @ 135us
-[18523750] BuildHist: 0.015s, 69 calls @ 217us
-[18523750] BuildLocalHistograms: 0.018s, 40 calls @ 450us
-[18523750] BuildNodeStats: 0.005s, 40 calls @ 125us
-[18523750] EvaluateSplit: 0.006s, 128 calls @ 46us
-[18523750] InitData: 0s, 10 calls @ 0us
-[18523750] InitNewNode: 0.004s, 128 calls @ 31us
-[18523750] SubtractionTrick: 0.002s, 59 calls @ 33us
-[18523750] SyncHistograms: 0.002s, 40 calls @ 50us
-[18523750] Update: 0.04s, 10 calls @ 4000us
-[18523750] ======== Enclave Monitor:  ========
+[0.10455427 0.8036663  0.10455427 ... 0.89609396 0.10285233 0.89609396]
 ```
 
 # Quickstart
@@ -106,8 +89,8 @@ In this example, the enclave server will start an RPC server to listen for clien
 
 This assumes that the client will have told the server what code to run -- the code to run in this example can be found in the `xgb_load_train_predict()` function in `remote_attestation_server.py`. 
 
-First, perform [server setup](server/).
-Next, perform [client setup](client/).
+First, perform [server setup](demo/python/remote-control/server/).
+Next, perform [client setup](demo/python/remote-control/client/).
 
 After server and client setup, the client should have initiated training on the server. 
 
