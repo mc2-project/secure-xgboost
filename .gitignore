@@ -1,0 +1,104 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.page
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.page
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*~
+*.Rcheck
+*.rds
+*.tar.gz
+*conf
+*buffer
+*model
+*pyc
+*.train
+*.test
+*.tar
+*group
+*rar
+*vali
+*sdf
+Release
+*exe
+*exp
+ipch
+*.filters
+*.user
+*log
+Debug
+*suo
+.Rhistory
+*.dll
+*i386
+*x64
+*dump
+*save
+*csv
+.Rproj.user
+*.cpage.col
+*.cpage
+*.Rproj
+./xgboost.mpi
+./xgboost.mock
+#.Rbuildignore
+R-package.Rproj
+*.cache*
+# java
+java/xgboost4j/target
+java/xgboost4j/tmp
+java/xgboost4j-demo/target
+java/xgboost4j-demo/data/
+java/xgboost4j-demo/tmp/
+java/xgboost4j-demo/model/
+nb-configuration*
+# Eclipse
+.project
+.cproject
+.pydevproject
+.settings/
+build
+config.mk
+/xgboost
+*.data
+build_plugin
+.idea
+recommonmark/
+tags
+*.iml
+*.class
+target
+*.swp
+
+# cpp tests and gcov generated files
+*.gcov
+*.gcda
+*.gcno
+build_tests
+/tests/cpp/xgboost_test
+
+.DS_Store
+lib/
+
+# spark
+metastore_db
+
+plugin/updater_gpu/test/cpp/data
+/include/xgboost/build_config.h
+
+# files from R-package source install
+**/config.status
+R-package/src/Makevars
+
+xgboost.egg-info
+
+# data
+demo/c-api/*.encrypted
+demo/enclave/distributed/hosts.config

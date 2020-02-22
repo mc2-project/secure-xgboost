@@ -1,0 +1,153 @@
+enclave {
+    include "xgboost/c_api.h"
+    include "rabit/c_api.h"
+    trusted {
+        public void enclave_init(
+                int log_verbosity);
+
+        public int enclave_XGDMatrixCreateFromFile(
+                [in, string] const char *fname,
+                int silent,
+                [out] DMatrixHandle *out);
+
+        public int enclave_XGDMatrixCreateFromEncryptedFile(
+                [in, string] const char *fname,
+                int silent,
+                [out] DMatrixHandle *out);
+
+        public int enclave_XGBoosterCreate(
+                [in, count=len] const DMatrixHandle* dmats, 
+                bst_ulong len, 
+                [out] BoosterHandle* out);
+
+        public int enclave_XGBoosterSetParam(
+                BoosterHandle handle,
+                [in, string] const char *name,
+                [in, string] const char *value); 
+
+        public int enclave_XGBoosterUpdateOneIter(
+                BoosterHandle handle,
+                int iter,
+                DMatrixHandle dtrain);
+
+        public int enclave_XGBoosterBoostOneIter(
+                BoosterHandle handle,
+                DMatrixHandle dtrain,
+                [in, count=len] bst_float *grad,
+                [in, count=len] bst_float *hess,
+                bst_ulong len);
+
+        public int enclave_XGBoosterEvalOneIter(
+                BoosterHandle handle,
+                int iter,
+                [in, count=len] DMatrixHandle* dmats,
+                [in, count=len] const char** evnames,
+                bst_ulong len,
+                [out] char** out_str);
+
+        public int enclave_XGBoosterPredict(
+                BoosterHandle handle,
+                DMatrixHandle dmat,
+                int option_mask,
+                unsigned ntree_limit,
+                [out] bst_ulong *out_len,
+                [out] uint8_t **out_result);
+        
+        public int enclave_XGDMatrixGetFloatInfo(
+                DMatrixHandle handle,
+                [in, string] const char* field,
+                [out] bst_ulong *out_len,
+                [out] bst_float **out_dptr);
+
+        public int enclave_XGDMatrixGetUintInfo(
+                DMatrixHandle handle,
+                [in, string] const char* field,
+                [out] bst_ulong *out_len,
+                [out] unsigned **out_dptr);
+
+        public int enclave_XGDMatrixSetFloatInfo(
+                DMatrixHandle handle,
+                [in, string] const char* field,
+                [in] const bst_float* info,
+                bst_ulong len);
+
+        public int enclave_XGDMatrixSetUIntInfo(
+                DMatrixHandle handle,
+                [in, string] const char* field,
+                [in] const unsigned* info,
+                bst_ulong len);
+
+        public int enclave_XGDMatrixNumRow(
+                DMatrixHandle handle,
+                [out] bst_ulong *out);
+
+        public int enclave_XGDMatrixNumCol(
+                DMatrixHandle handle,
+                [out] bst_ulong *out);
+
+        public int enclave_XGBoosterGetAttr(
+                BoosterHandle handle,
+                [in, string] const char* key,
+                [out] char** out,
+                [out] int* success);
+
+        public int enclave_XGBoosterGetAttrNames(
+                BoosterHandle handle,
+                [out] bst_ulong* out_len,
+                [out] char*** out);
+
+        public int enclave_XGBoosterLoadModel(
+                BoosterHandle handle,
+                [in, string] const char* fname);
+        
+        public int enclave_XGBoosterSaveModel(
+                BoosterHandle handle,
+                [in, string] const char* fname);
+
+        public int enclave_XGBoosterGetModelRaw(
+                BoosterHandle handle,
+                [out] bst_ulong *out_len,
+                [out] char **out_dptr);
+
+        public int enclave_XGBoosterLoadModelFromBuffer(
+                BoosterHandle handle,
+                [in, size=len] const void* buf,
+                bst_ulong len);
+
+        public int enclave_XGDMatrixFree(
+                DMatrixHandle handle);
+
+        public int enclave_XGBoosterFree(
+                BoosterHandle handle);
+
+        public int enclave_get_remote_report_with_pubkey(
+                [out] uint8_t **pem_key, 
+                [out] size_t *key_size,
+                [out] uint8_t **remote_report,
+                [out] size_t  *remote_report_size);
+
+        public int enclave_verify_remote_report_and_set_pubkey(
+                [in, count=key_size] uint8_t *pem_key, 
+                size_t key_size,
+                [in, count=remote_report_size] uint8_t *remote_report,
+                size_t remote_report_size);
+
+        public int enclave_add_client_key(
+                [in, size=data_len] uint8_t* data, 
+                size_t data_len, 
+                [in, size=sig_len] uint8_t* signature,
+                size_t sig_len);
+
+        public void enclave_RabitInit(
+                int argc,
+                [user_check] char **argv);
+
+        public void enclave_RabitFinalize();
+
+        public int enclave_RabitIsDistributed();
+
+        public void enclave_RabitTrackerPrint(
+                [user_check] const char *msg);
+    };
+};
+
