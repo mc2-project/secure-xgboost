@@ -9,7 +9,7 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 
 1. First install the Open Enclave SDK
 2. Next install the Secure XGBoost dependencies
-3. Then build the shared library from the C++ codes (``libxgboost.so``). 
+3. Then build the shared library from the C++ code (``libxgboost.so``). 
 4. Lastly, install the Python package.
 
 .. note:: Use of Git submodules
@@ -18,7 +18,7 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 
   .. code-block:: bash
 
-   git clone -b hackathon --recursive https://github.com/mc2-project/secure-xgboost.git
+   git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
 
 Please refer to `Trouble Shooting`_ section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
@@ -147,4 +147,4 @@ Trouble Shooting
 
    .. code-block:: bash
       
-      git clone --recursive https://github.com/mc2-project/secure-xgboost.git
+      git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
