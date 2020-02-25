@@ -22,7 +22,7 @@ There are six main steps in the notebook:
 
 3. **Enclave Preparation**
    
-   An enclave is created, authenticated, and given the necessary keys.
+   An enclave is created, authenticated, and given the necessary keys. Be sure that if an enclave is not available on your machine that you create an enclave in simulation mode.
 
 4. **Data Loading**
    
