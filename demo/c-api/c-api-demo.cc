@@ -9,6 +9,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <xgboost/c_api.h>
 
 #ifdef __SGX__
@@ -74,8 +75,12 @@ int main(int argc, char** argv) {
   uint8_t* remote_report = NULL;
   size_t remote_report_size = 0;
 
-  std::string fname1("/home/xgb/secure-xgboost/demo/data/agaricus.txt.train.enc");
-  std::string fname2("/home/xgb/secure-xgboost/demo/data/agaricus.txt.test.enc");
+  size_t size;
+	char *path=NULL;
+	path = getcwd(path,size);
+	std::string cwd(path);
+  std::string fname1(cwd + "/../../demo/data/agaricus.txt.train.enc");
+  std::string fname2(cwd + "/../../demo/data/agaricus.txt.test.enc");
   if (!simulate) {
 
     safe_xgboost(get_remote_report_with_pubkey(&pem_key, &key_size, &remote_report, &remote_report_size));
@@ -151,13 +156,13 @@ int main(int argc, char** argv) {
   }
   
   // save model
-  const char* fname = "/home/xgb/secure-xgboost/demo/c-api/demo_model.model";
-  safe_xgboost(XGBoosterSaveModel(booster, fname));
+  std::string fname(cwd + "/demo_model.model");
+  safe_xgboost(XGBoosterSaveModel(booster, fname.c_str()));
   std::cout << "Saved model to demo_model.model" << std::endl;
   // load model
   booster = NULL;
   safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
-  safe_xgboost(XGBoosterLoadModel(booster, fname));
+  safe_xgboost(XGBoosterLoadModel(booster, fname.c_str()));
   std::cout << "Loaded model from demo_model.model" << std::endl;
 
   // predict
