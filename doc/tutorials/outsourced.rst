@@ -10,7 +10,7 @@ The enclave server will start an RPC server to listen for client requests. The c
 
 1. A request for remote attestation
 
-   The response will contain an attestation report that the client can use to authenticate the enclave and verify that it's running the proper code, and a public key whose corresponding private key is known by the enclave..
+   The response will contain an attestation report that the client can use to authenticate the enclave and verify that it's running the proper code, and a public key whose corresponding private key is known by the enclave.
    
 2. A request to transfer the symmetric key used to encrypt all client data
 
