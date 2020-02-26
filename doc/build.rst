@@ -90,7 +90,7 @@ On Ubuntu, one builds XGBoost by running CMake:
 
 .. code-block:: bash
    
-   git clone --recursive https://github.com/mc2-project/secure-xgboost.git
+   git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
    cd secure-xgboost
    mkdir -p build
 
@@ -120,7 +120,7 @@ The Python package is located at ``python-package/``.
 
 .. code-block:: bash
 
-   export PYTHONPATH=~/secure-xgboost/rpc
+   export PYTHONPATH=/path/to/mc2-xgboost/rpc
 
 
 Trouble Shooting
