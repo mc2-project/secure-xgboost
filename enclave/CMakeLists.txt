@@ -64,6 +64,7 @@ target_compile_options(xgboost_enclave
   PRIVATE
   -D__SGX__
   -D__ENCLAVE__
+  -D__ENCLAVE_ENABLE_LOGGER__
   -U_FORTIFY_SOURCE 
   -fno-stack-protector
   -fno-strict-aliasing
