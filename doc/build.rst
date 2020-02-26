@@ -120,7 +120,7 @@ The Python package is located at ``python-package/``.
 
 .. code-block:: bash
 
-   export PYTHONPATH=~/secure-xgboost/rpc
+   export PYTHONPATH=/path/to/mc2-xgboost/rpc
 
 
 Trouble Shooting
