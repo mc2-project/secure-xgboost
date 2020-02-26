@@ -1061,7 +1061,6 @@ class CryptoUtils(object):
         key_file : str
             path to key used to encrypt file
         """
-
         if not os.path.exists(input_file):
             print("Error: File {} does not exist".format(input_file))
             return
