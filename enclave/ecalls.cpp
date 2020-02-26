@@ -14,36 +14,35 @@ void enclave_init(int log_verbosity) {
   args.emplace_back("verbosity", std::to_string(log_verbosity));
   xgboost::ConsoleLogger::Configure(args.cbegin(), args.cend());
 
-  LOG(DEBUG) << "Ecall: init\n";
+  LOG(INFO) << "Ecall: init";
   oe_result_t result;
   if ((result = oe_load_module_host_resolver()) != OE_OK) {
-      fprintf(stdout, "oe_load_module_host_resolver failed with %s\n", oe_result_str(result));
+    LOG(FATAL) << "oe_load_module_host_resolver failed with " << oe_result_str(result);
   }
   if ((result = oe_load_module_host_socket_interface()) != OE_OK) {
-      fprintf(stdout, "oe_load_module_host_socket_interface failed with %s\n", oe_result_str(result));
+    LOG(FATAL) << "oe_load_module_host_socket_interface failed with " << oe_result_str(result);
   }
   if ((result = oe_load_module_host_file_system()) != OE_OK) {
-      fprintf(stdout, "oe_load_module_host_file_system failed with %s\n", oe_result_str(result));
+    LOG(INFO) << "oe_load_module_host_file_system failed with " << oe_result_str(result);
   }
   /* Mount the host file system on the root directory. */
   if (mount("/", "/", OE_HOST_FILE_SYSTEM, 0, NULL) != 0) {
-      fprintf(stdout, "Unable to mount host file system on the root directory\n");
+    LOG(FATAL) << "Unable to mount host file system on the root directory";
   }
-  fprintf(stdout, "Loaded all modules\n");
 }
 
 int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle *out) {
-  LOG(DEBUG) << "Ecall: XGDMatrixCreateFromFile";
+  LOG(INFO) << "Ecall: XGDMatrixCreateFromFile";
   return XGDMatrixCreateFromFile(fname, silent, out);
 }
 
 int enclave_XGDMatrixCreateFromEncryptedFile(const char *fname, int silent, DMatrixHandle *out) {
-  LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
+  LOG(INFO) << "Ecall: XGDMatrixCreateFromEncryptedFile";
   return XGDMatrixCreateFromEncryptedFile(fname, silent, out);
 }
 
 int enclave_XGBoosterCreate(const DMatrixHandle dmats[], bst_ulong len, BoosterHandle* out) {
-  LOG(DEBUG) << "Ecall: XGBoosterCreate";
+  LOG(INFO) << "Ecall: XGBoosterCreate";
   for (int i = 0; i < len; i++) {
       check_enclave_ptr(dmats[i]);
   }
@@ -51,27 +50,27 @@ int enclave_XGBoosterCreate(const DMatrixHandle dmats[], bst_ulong len, BoosterH
 }
 
 int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char *value) {
-  LOG(DEBUG) << "Ecall: XGBoosterSetParam";
+  LOG(INFO) << "Ecall: XGBoosterSetParam";
   check_enclave_ptr(handle);
   return XGBoosterSetParam(handle, name, value);
 }
 
 int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain) {
-  LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
+  LOG(INFO) << "Ecall: XGBoosterUpdateOneIter";
   check_enclave_ptr(handle);
   check_enclave_ptr(dtrain);
   return XGBoosterUpdateOneIter(handle, iter, dtrain);
 }
 
 int enclave_XGBoosterBoostOneIter(BoosterHandle handle, DMatrixHandle dtrain, bst_float *grad, bst_float *hess, xgboost::bst_ulong len) {
-  LOG(DEBUG) << "Ecall: XGBoosterBoostOneIter";
+  LOG(INFO) << "Ecall: XGBoosterBoostOneIter";
   check_enclave_ptr(handle);
   check_enclave_ptr(dtrain);
   return XGBoosterBoostOneIter(handle, dtrain, grad, hess, len);
 }
 
 int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle dmats[], const char* evnames[], bst_ulong len, char** out_str) {
-  LOG(DEBUG) << "Ecall: XGBoosterEvalOneIter " << strlen(evnames[0]);
+  LOG(INFO) << "Ecall: XGBoosterEvalOneIter " << strlen(evnames[0]);
   check_enclave_ptr(handle);
   char* eval_names[len];
   for (int i = 0; i < len; i++) {
@@ -87,91 +86,91 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
 }
 
 int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname) {
-  LOG(DEBUG) << "Ecall: XGBoosterLoadModel";
+  LOG(INFO) << "Ecall: XGBoosterLoadModel";
   check_enclave_ptr(handle);
   return XGBoosterLoadModel(handle, fname);
 }
 
 int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname) {
-  LOG(DEBUG) << "Ecall: XGBoosterSaveModel";
+  LOG(INFO) << "Ecall: XGBoosterSaveModel";
   check_enclave_ptr(handle);
   return XGBoosterSaveModel(handle, fname);
 }
 
 int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
-  LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
+  LOG(INFO) << "Ecall: XGBoosterSerializeToBuffer";
   check_enclave_ptr(handle);
   return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr);
 }
 
 int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len) {
-  LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
+  LOG(INFO) << "Ecall: XGBoosterLoadModelFromBuffer";
   check_enclave_ptr(handle);
   return XGBoosterLoadModelFromBuffer(handle, buf, len);
 }
 
 int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result) {
-  LOG(DEBUG) << "Ecall: XGBoosterPredict";
+  LOG(INFO) << "Ecall: XGBoosterPredict";
   check_enclave_ptr(handle);
   check_enclave_ptr(dmat);
   return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result);
 }
 
 int enclave_XGDMatrixGetFloatInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, bst_float **out_dptr) {
-  LOG(DEBUG) << "Ecall: XGDMatrixGetFloatInfo";
+  LOG(INFO) << "Ecall: XGDMatrixGetFloatInfo";
   check_enclave_ptr(handle);
   return XGDMatrixGetFloatInfo(handle, field, out_len, (const bst_float**) out_dptr);
 }
 
 int enclave_XGDMatrixGetUintInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, unsigned **out_dptr) {
-  LOG(DEBUG) << "Ecall: XGDMatrixGetFloatInfo";
+  LOG(INFO) << "Ecall: XGDMatrixGetFloatInfo";
   check_enclave_ptr(handle);
   return XGDMatrixGetUIntInfo(handle, field, out_len, (const unsigned**) out_dptr);
 }
 
 int enclave_XGDMatrixSetFloatInfo(DMatrixHandle handle, const char* field, const bst_float* info, bst_ulong len) {
-  fprintf(stdout, "Ecall: XGDMatrixSetFloatInfo\n");
+  LOG(INFO) << "Ecall: XGDMatrixSetFloatInfo";
   check_enclave_ptr(handle);
 ;  return XGDMatrixSetFloatInfo(handle, field, info, len);
 }
 
 int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle, const char* field, const unsigned* info, bst_ulong len) {
-  LOG(DEBUG) << "Ecall: XGDMatrixSetUIntInfo";
+  LOG(INFO) << "Ecall: XGDMatrixSetUIntInfo";
   check_enclave_ptr(handle);
   return XGDMatrixSetUIntInfo(handle, field, info, len);
 }
 
 int enclave_XGDMatrixNumRow(const DMatrixHandle handle, bst_ulong *out) {
-  LOG(DEBUG) << "Ecall: XGDMatrixNumRow";
+  LOG(INFO) << "Ecall: XGDMatrixNumRow";
   check_enclave_ptr(handle);
   return XGDMatrixNumRow(handle, out);
 }
 
 int enclave_XGDMatrixNumCol(const DMatrixHandle handle, bst_ulong *out) {
-  LOG(DEBUG) << "Ecall: XGDMatrixNumCol";
+  LOG(INFO) << "Ecall: XGDMatrixNumCol";
   check_enclave_ptr(handle);
   return XGDMatrixNumCol(handle, out);
 }
 
 int enclave_XGBoosterGetAttr(BoosterHandle handle, const char* key, char** out, int* success) {
-    LOG(DEBUG) << "Ecall: XGBoosterGetAttr";
+    LOG(INFO) << "Ecall: XGBoosterGetAttr";
     check_enclave_ptr(handle);
     return XGBoosterGetAttr(handle, key, (const char** )out, success);
 }
 
 int enclave_XGBoosterGetAttrNames(BoosterHandle handle, bst_ulong* out_len, char*** out) {
-    LOG(DEBUG) << "Ecall: XGBoosterGetAttrNames";
+    LOG(INFO) << "Ecall: XGBoosterGetAttrNames";
     check_enclave_ptr(handle);
     return XGBoosterGetAttrNames(handle, out_len, (const char***) out);
 }
 
 int enclave_XGDMatrixFree(DMatrixHandle handle) {
-  LOG(DEBUG) << "Ecall: XGDMatrixFree";
+  LOG(INFO) << "Ecall: XGDMatrixFree";
   return XGDMatrixFree(handle);
 }
 
 int enclave_XGBoosterFree(BoosterHandle handle) {
-  LOG(DEBUG) << "Ecall: XGBoosterFree";
+  LOG(INFO) << "Ecall: XGBoosterFree";
   return XGBoosterFree(handle);
 }
 
@@ -180,7 +179,7 @@ int enclave_get_remote_report_with_pubkey(
         size_t* key_size,
         uint8_t** remote_report,
         size_t* remote_report_size) {
-  fprintf(stdout, "Ecall: enclave_get_remote_report_with_pubkey\n");
+  LOG(INFO) << "Ecall: enclave_get_remote_report_with_pubkey";
   return get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
@@ -189,7 +188,7 @@ int enclave_verify_remote_report_and_set_pubkey(
         size_t key_size,
         uint8_t* remote_report,
         size_t remote_report_size) {
-  fprintf(stdout, "Ecall: verify_remote_report_and_set_pubkey\n");
+  LOG(INFO) << "Ecall: verify_remote_report_and_set_pubkey";
   return verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
@@ -199,7 +198,7 @@ int enclave_verify_remote_report_and_set_pubkey(
 //    size_t data_len,
 //    uint8_t* signature,
 //    size_t sig_len) {
-//  fprintf(stdout, "Ecall: add_client_key\n");
+//  LOG(INFO) << "Ecall: add_client_key";
 //  return add_client_key(fname, data, data_len, signature, sig_len);
 //}
 
@@ -208,27 +207,27 @@ int enclave_add_client_key(
         size_t data_len,
         uint8_t* signature,
         size_t sig_len) {
-    fprintf(stdout, "Ecall: add_client_key\n");
+    LOG(INFO) << "Ecall: add_client_key";
     return add_client_key(data, data_len, signature, sig_len);
 }
 
 // FIXME: check bounds
 void enclave_RabitInit(int argc, char **argv) {
-  fprintf(stdout, "Ecall: RabitInit\n");
+  LOG(INFO) << "Ecall: RabitInit";
   RabitInit(argc, argv);
 }
 
 void enclave_RabitFinalize() {
-  fprintf(stdout, "Ecall: RabitFinalize\n");
+  LOG(INFO) << "Ecall: RabitFinalize";
   RabitFinalize();
 }
 
 int enclave_RabitIsDistributed() {
-  fprintf(stdout, "Ecall: RabitIsDistributed\n");
+  LOG(INFO) << "Ecall: RabitIsDistributed";
   return RabitIsDistributed();
 }
 
 void enclave_RabitTrackerPrint(const char *msg) {
-  fprintf(stdout, "Ecall: TrackerPrint\n");
+  LOG(INFO) << "Ecall: TrackerPrint";
   RabitTrackerPrint(msg);
 }
