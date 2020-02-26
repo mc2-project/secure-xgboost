@@ -1,6 +1,7 @@
 import securexgboost as xgb
 import os
 
+OE_ENCLAVE_FLAG_RELEASE = 0
 OE_ENCLAVE_FLAG_DEBUG = 1
 OE_ENCLAVE_FLAG_SIMULATE = 2
 
@@ -8,9 +9,15 @@ print("Creating enclave")
 
 HOME_DIR = os.getcwd() + "/../../../"
 
+flags = OE_ENCLAVE_FLAG_RELEASE
+
+# Uncomment below for enclave debug mode
+#  flags |= OE_ENCLAVE_FLAG_DEBUG
+
 # Uncomment below for enclave simulation mode
-#  enclave = xgb.Enclave(HOME_DIR + "enclave/build/xgboost_enclave.signed", flags=(OE_ENCLAVE_FLAG_DEBUG | OE_ENCLAVE_FLAG_SIMULATE))
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", flags=(OE_ENCLAVE_FLAG_DEBUG))
+#  flags |= OE_ENCLAVE_FLAG_SIMULATE
+
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", flags=(flags))
 
 # Remote Attestation
 # print("Remote attestation")
