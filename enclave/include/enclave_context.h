@@ -109,6 +109,12 @@ class EnclaveContext {
       return true;
     }
 
+    bool sync_client_key() {
+      // The master node (rank 0) broadcasts the client key to other nodes
+      rabit::Broadcast(client_key, CIPHER_KEY_SIZE, 0);
+      client_key_is_set = true;
+    }
+
     bool decrypt_and_save_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
       if (!verifySignature(data, data_len, signature, sig_len)) {
         LOG(INFO) << "Signature verification failed";
