@@ -102,3 +102,6 @@ xgboost.egg-info
 # data
 demo/c-api/*.encrypted
 demo/enclave/distributed/hosts.config
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints
