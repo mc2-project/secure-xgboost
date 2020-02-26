@@ -25,9 +25,9 @@
 
 #include <openenclave/host.h>
 #include "xgboost_u.h"
-#include <xgboost/crypto.h>
-#include <xgboost/attestation.h>
-#include "../../../enclave/enclave.h"
+#include <enclave/crypto.h>
+#include <enclave/attestation.h>
+#include <enclave/enclave.h>
 
 #include <iostream>
 #include <fstream>
