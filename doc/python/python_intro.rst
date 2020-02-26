@@ -1,7 +1,7 @@
 ###########################
 Python Package Introduction
 ###########################
-This document gives a basic walkthrough of securexgboost python package. There's also a `sample Jupyter notebook <https://nbviewer.jupyter.org/github/mc2-project/secure-xgboost/blob/hackathon/demo/enclave/jupyter/e2e-demo.ipynb>`_ at ``demo/enclave/jupyter/e2e-demo.ipynb``.
+This document gives a basic walkthrough of securexgboost python package. There's also a `sample Jupyter notebook <https://nbviewer.jupyter.org/github/mc2-project/secure-xgboost/blob/hackathon/demo/enclave/jupyter/e2e-demo.ipynb>`_ at ``demo/python/jupyter/e2e-demo.ipynb``.
 
 **List of other Helpful Links**
 
