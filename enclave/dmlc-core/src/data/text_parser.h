@@ -20,7 +20,7 @@
 
 #ifdef __ENCLAVE__ // encryption
 #include <dmlc/base64.h>
-#include <xgboost/crypto.h>
+#include <enclave/crypto.h>
 #endif
 
 

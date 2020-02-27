@@ -26,7 +26,7 @@
 #ifdef __ENCLAVE__ // includes
 #include "../common/common.h"
 #include "xgboost_t.h"
-#include "xgboost/crypto.h"
+#include <enclave/crypto.h>
 #include "enclave_context.h"
 #endif
 

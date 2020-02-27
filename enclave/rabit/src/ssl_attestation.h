@@ -6,7 +6,7 @@
 #include <mbedtls/sha256.h>
 #include <mbedtls/x509_crt.h>
 #include <openenclave/enclave.h>
-#include <xgboost/attestation.h>
+#include <enclave/attestation.h>
 
 oe_result_t generate_certificate_and_pkey(
         mbedtls_x509_crt* cert,

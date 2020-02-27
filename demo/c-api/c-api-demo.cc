@@ -13,7 +13,7 @@
 #include <xgboost/c_api.h>
 
 #ifdef __SGX__
-#include <xgboost/crypto.h>
+#include <enclave/crypto.h>
 #include <openenclave/host.h>
 
 static char test_key[CIPHER_KEY_SIZE] = {
