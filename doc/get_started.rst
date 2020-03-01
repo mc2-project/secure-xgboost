@@ -67,7 +67,7 @@ Troubleshooting
 
       user@accvm:~$ dpkg --list | grep dcap-client
 
-      ii  az-dcap-client                        1.1                                                    amd64        Intel(R) SGX DCAP plugin for Azure Integration
+      ii  az-dcap-client  1.1  amd64  Intel(R) SGX DCAP plugin for Azure Integration
 
    If the version is not at least 1.1, upgrade by doing the following.
 
