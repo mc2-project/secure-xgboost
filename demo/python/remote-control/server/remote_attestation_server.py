@@ -31,10 +31,10 @@ def xgb_load_train_predict():
     This code will have been agreed upon by all parties before being run.
     """
     print("Creating training matrix")
-    dtrain = xgb.DMatrix(HOME_DIR + "demo/enclave/remote-control/client/train.enc", encrypted=True)
+    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR + "demo/enclave/remote-control/client/test.enc", encrypted=True) 
+    dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/test.enc", encrypted=True) 
 
     print("Creating Booster")
     booster = xgb.Booster(cache=(dtrain, dtest))

@@ -2,7 +2,7 @@
 #define ENCLAVE_CONTEXT_H_
 
 #include "xgboost_t.h"
-#include "xgboost/crypto.h"
+#include <enclave/crypto.h>
 
 class EnclaveContext {
   // FIXME Embed root CA for clients
