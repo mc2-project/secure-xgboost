@@ -7,7 +7,7 @@ OE_ENCLAVE_FLAG_SIMULATE = 2
 
 print("Creating enclave")
 
-HOME_DIR = os.getcwd() + "/../../../"
+HOME_DIR = os.getcwd() + "/../../../../"
 
 flags = OE_ENCLAVE_FLAG_RELEASE
 
@@ -32,13 +32,18 @@ rabit_args = {
 rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
 
 xgb.rabit.init(rargs)
-crypto.sync_client_key()
+#  crypto.sync_client_key()
 
+#  print("Creating training matrix")
+#  dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control-distributed/client/train.enc", encrypted=True)
+#  
+#  print("Creating test matrix")
+#  dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control-distributed/client/test.enc", encrypted=True) 
 print("Creating training matrix")
-dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control-distributed/client/train.enc", encrypted=True)
+dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
 
 print("Creating test matrix")
-dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control-distributed/client/test.enc", encrypted=True) 
+dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
 
 print("Beginning Training")
 
@@ -59,17 +64,5 @@ booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest
 
 if xgb.rabit.get_rank() == 0:
     booster.save_model("demo_model.model")
-
-# Get encrypted predictions
-#  print("\n\nModel Predictions: ")
-#  predictions, num_preds = booster.predict(dtest)
-#  
-#  key_file = open("../key_zeros.txt", 'rb')
-#  sym_key = key_file.read() # The key will be type bytes
-#  key_file.close()
-#  
-#  
-#  # Decrypt predictions
-#  print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
 
 xgb.rabit.finalize()
