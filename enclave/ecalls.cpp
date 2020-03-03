@@ -212,6 +212,11 @@ int enclave_add_client_key(
     return add_client_key(data, data_len, signature, sig_len);
 }
 
+int enclave_sync_client_key() {
+  LOG(INFO) << "Ecall: sync_client_key\n";
+  return sync_client_key();
+}
+
 // FIXME: check bounds
 void enclave_RabitInit(int argc, char **argv) {
   fprintf(stdout, "Ecall: RabitInit\n");

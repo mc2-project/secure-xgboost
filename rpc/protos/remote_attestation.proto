@@ -41,6 +41,11 @@ service RemoteAttestation {
   //
   // Signal to RPC server that the client is ready
   rpc SignalStart(Status) returns (Predictions) {}
+
+  // A simple RPC.
+  //
+  // Signal to RPC server that the client is ready for distributed training
+  rpc SignalStartCluster(ClusterParams) returns (Status) {}
 }
 
 // Current status of the node
@@ -95,4 +100,8 @@ message Predictions {
   uint32 status = 3;
 }
 
-
+// Params for distributed training
+message ClusterParams {
+  // Number of nodes in cluster
+  uint32 num_workers = 1;  
+}

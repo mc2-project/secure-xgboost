@@ -444,6 +444,11 @@ int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len
     EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len);
     return 0;
 }
+
+int sync_client_key() {
+    EnclaveContext::getInstance().sync_client_key();
+    return 0;
+}
 #endif // __ENCLAVE__
 
 /*! \brief entry to to easily hold returning information */
