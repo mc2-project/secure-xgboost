@@ -146,6 +146,8 @@ enclave {
 
         public void enclave_RabitFinalize();
 
+        public int enclave_RabitGetRank();
+
         public int enclave_RabitIsDistributed();
 
         public void enclave_RabitTrackerPrint(
