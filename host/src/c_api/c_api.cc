@@ -56,6 +56,7 @@ if (result != OE_OK) {                                          \
       result,                                                   \
       oe_result_str(result));                                   \
   oe_terminate_enclave(Enclave::getInstance().getEnclave());    \
+  return result;                                                \
 }                                                               \
 return Enclave::getInstance().enclave_ret;                      \
 }
