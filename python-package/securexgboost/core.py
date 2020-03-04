@@ -1672,87 +1672,87 @@ class Booster(object):
 
 # TODO: the commented out functions directly below all rely on get_dump()
 
-    #  def dump_model(self, fout, fmap='', with_stats=False, dump_format="text"):
-        #  """
-        #  Dump model into a text or JSON file.
-#  
-        #  Parameters
-        #  ----------
-        #  fout : string
-            #  Output file name.
-        #  fmap : string, optional
-            #  Name of the file containing feature map names.
-        #  with_stats : bool, optional
-            #  Controls whether the split statistics are output.
-        #  dump_format : string, optional
-            #  Format of model dump file. Can be 'text' or 'json'.
-        #  """
-        #  if isinstance(fout, STRING_TYPES):
-            #  fout = open(fout, 'w')
-            #  need_close = True
-        #  else:
-            #  need_close = False
-        #  ret = self.get_dump(fmap, with_stats, dump_format)
-        #  if dump_format == 'json':
-            #  fout.write('[\n')
-            #  for i, _ in enumerate(ret):
-                #  fout.write(ret[i])
-                #  if i < len(ret) - 1:
-                    #  fout.write(",\n")
-            #  fout.write('\n]')
-        #  else:
-            #  for i, _ in enumerate(ret):
-                #  fout.write('booster[{}]:\n'.format(i))
-                #  fout.write(ret[i])
-        #  if need_close:
-            #  fout.close()
+    def dump_model(self, fout, fmap='', with_stats=False, dump_format="text"):
+        """
+        Dump model into a text or JSON file.
 
-    #  def get_dump(self, fmap='', with_stats=False, dump_format="text"):
-        #  """
-        #  Returns the model dump as a list of strings.
-#  
-        #  Parameters
-        #  ----------
-        #  fmap : string, optional
-            #  Name of the file containing feature map names.
-        #  with_stats : bool, optional
-            #  Controls whether the split statistics are output.
-        #  dump_format : string, optional
-            #  Format of model dump. Can be 'text' or 'json'.
-        #  """
-        #  length = c_bst_ulong()
-        #  sarr = ctypes.POINTER(ctypes.c_char_p)()
-        #  if self.feature_names is not None and fmap == '':
-            #  flen = len(self.feature_names)
-#  
-            #  fname = from_pystr_to_cstr(self.feature_names)
-#  
-            #  if self.feature_types is None:
-                #  # use quantitative as default
-                #  # {'q': quantitative, 'i': indicator}
-                #  ftype = from_pystr_to_cstr(['q'] * flen)
-            #  else:
-                #  ftype = from_pystr_to_cstr(self.feature_types)
-            #  _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
-                #  self.handle,
-                #  ctypes.c_int(flen),
-                #  fname,
-                #  ftype,
-                #  ctypes.c_int(with_stats),
-                #  c_str(dump_format),
-                #  ctypes.byref(length),
-                #  ctypes.byref(sarr)))
-        #  else:
-            #  if fmap != '' and not os.path.exists(fmap):
-                #  raise ValueError("No such file: {0}".format(fmap))
-            #  _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
-                                                  #  c_str(fmap),
-                                                  #  ctypes.c_int(with_stats),
-                                                  #  c_str(dump_format),
-                                                  #  ctypes.byref(length),
-                                                  #  ctypes.byref(sarr)))
-        #  res = from_cstr_to_pystr(sarr, length)
-        #  return res
+        Parameters
+        ----------
+        fout : string
+            Output file name.
+        fmap : string, optional
+            Name of the file containing feature map names.
+        with_stats : bool, optional
+            Controls whether the split statistics are output.
+        dump_format : string, optional
+            Format of model dump file. Can be 'text' or 'json'.
+        """
+        if isinstance(fout, STRING_TYPES):
+            fout = open(fout, 'w')
+            need_close = True
+        else:
+            need_close = False
+        ret = self.get_dump(fmap, with_stats, dump_format)
+        if dump_format == 'json':
+            fout.write('[\n')
+            for i, _ in enumerate(ret):
+                fout.write(ret[i])
+                if i < len(ret) - 1:
+                    fout.write(",\n")
+            fout.write('\n]')
+        else:
+            for i, _ in enumerate(ret):
+                fout.write('booster[{}]:\n'.format(i))
+                fout.write(ret[i])
+        if need_close:
+            fout.close()
+
+    def get_dump(self, fmap='', with_stats=False, dump_format="text"):
+        """
+        Returns the model dump as a list of strings.
+
+        Parameters
+        ----------
+        fmap : string, optional
+            Name of the file containing feature map names.
+        with_stats : bool, optional
+            Controls whether the split statistics are output.
+        dump_format : string, optional
+            Format of model dump. Can be 'text' or 'json'.
+        """
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
+        if self.feature_names is not None and fmap == '':
+            flen = len(self.feature_names)
+
+            fname = from_pystr_to_cstr(self.feature_names)
+
+            if self.feature_types is None:
+                # use quantitative as default
+                # {'q': quantitative, 'i': indicator}
+                ftype = from_pystr_to_cstr(['q'] * flen)
+            else:
+                ftype = from_pystr_to_cstr(self.feature_types)
+            _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+                self.handle,
+                ctypes.c_int(flen),
+                fname,
+                ftype,
+                ctypes.c_int(with_stats),
+                c_str(dump_format),
+                ctypes.byref(length),
+                ctypes.byref(sarr)))
+        else:
+            if fmap != '' and not os.path.exists(fmap):
+                raise ValueError("No such file: {0}".format(fmap))
+            _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
+                                                  c_str(fmap),
+                                                  ctypes.c_int(with_stats),
+                                                  c_str(dump_format),
+                                                  ctypes.byref(length),
+                                                  ctypes.byref(sarr)))
+        res = from_cstr_to_pystr(sarr, length)
+        return res
 #  
     #  def get_fscore(self, fmap=''):
         #  """Get feature importance of each feature.

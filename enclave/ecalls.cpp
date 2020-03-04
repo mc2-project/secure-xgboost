@@ -107,6 +107,17 @@ int enclave_XGBoosterDumpModel(BoosterHandle handle,
   return XGBoosterDumpModel(handle, fmap, with_stats, len, (const char***) out_models);
 }
 
+int enclave_XGBoosterDumpModelEx(BoosterHandle handle,
+                       const char* fmap,
+                       int with_stats,
+                       const char* format,
+                       xgboost::bst_ulong* len,
+                       char*** out_models) {
+  LOG(DEBUG) << "Ecall: XGBoosterDumpModelEx";
+  check_enclave_ptr(handle);
+  return XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models);
+}
+
 int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    unsigned int fnum,
                                    const char** fname,
@@ -118,7 +129,18 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
   check_enclave_ptr(handle);
   return XGBoosterDumpModelWithFeatures(handle, (int) fnum, fname, ftype, with_stats, len, (const char***) out_models);
 }
-
+int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
+                                   unsigned int fnum,
+                                   const char** fname,
+                                   const char** ftype,
+                                   int with_stats,
+                                   const char *format,
+                                   xgboost::bst_ulong* len,
+                                   char*** out_models) {
+  LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
+  check_enclave_ptr(handle);
+  return XGBoosterDumpModelExWithFeatures(handle, (int) fnum, fname, ftype, with_stats, format, len, (const char***) out_models);
+}
 int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
   check_enclave_ptr(handle);

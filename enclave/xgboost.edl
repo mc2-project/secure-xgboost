@@ -111,12 +111,30 @@ enclave {
                 [out] bst_ulong* len,
                 [out] char*** out_models);
 
+        public int enclave_XGBoosterDumpModelEx(
+                BoosterHandle handle,
+                [in, string] const char* fmap,
+                int with_stats,
+                [in, string] const char* format,
+                [out] bst_ulong* len,
+                [out] char*** out_models);
+
         public int enclave_XGBoosterDumpModelWithFeatures(
                 BoosterHandle handle,
                 unsigned int fnum,
                 [in, count=fnum] const char** fname,
                 [in, count=fnum] const char** ftype,
                 int with_stats,
+                [out] bst_ulong* len,
+                [out] char*** out_models);
+
+        public int enclave_XGBoosterDumpModelExWithFeatures(
+                BoosterHandle handle,
+                unsigned int fnum,
+                [in, count=fnum] const char** fname,
+                [in, count=fnum] const char** ftype,
+                int with_stats,
+                [in, string] const char* format,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
 

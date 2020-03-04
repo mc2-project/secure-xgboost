@@ -964,26 +964,14 @@ XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char*** out_models) {
   safe_ecall(enclave_XGBoosterDumpModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, len, (char***) out_models));
 }
-#ifndef __SGX__
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
                        const char *format,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
-  API_BEGIN();
-  CHECK_HANDLE();
-  FeatureMap featmap;
-  if (strlen(fmap) != 0) {
-    std::unique_ptr<dmlc::Stream> fs(
-        dmlc::Stream::Create(fmap, "r"));
-    dmlc::istream is(fs.get());
-    featmap.LoadText(is);
-  }
-  XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
-  API_END();
+  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, len, (char***) out_models));
 }
-#endif
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    int fnum,
@@ -1004,15 +992,8 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    const char *format,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
-  API_BEGIN();
-  CHECK_HANDLE();
-  FeatureMap featmap;
-  for (int i = 0; i < fnum; ++i) {
-    featmap.PushBack(i, fname[i], ftype[i]);
-  }
-  XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
-  API_END();
-}
+  safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, format, len, (char***) out_models));
+} API_END();
 #endif
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,

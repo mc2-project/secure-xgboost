@@ -1430,29 +1430,52 @@ inline void XGBoostDumpModelImpl(
     xgboost::bst_ulong* len,
     const char*** out_models) {
   std::vector<std::string>& str_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_str;
-  std::vector<const char*>& charp_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_charp;
   auto *bst = static_cast<Booster*>(handle);
   bst->LazyInit();
   str_vecs = bst->learner()->DumpModel(fmap, with_stats != 0, format);
+#ifndef __ENCLAVE__
+  std::vector<const char*>& charp_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_charp;
   charp_vecs.resize(str_vecs.size());
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     charp_vecs[i] = str_vecs[i].c_str();
   }
-#ifndef __ENCLAVE__
   *out_models = dmlc::BeginPtr(charp_vecs);
 #else
-  /* write *out_models to user memory instead*/
-  char **usr_addr_model = (char **) oe_host_malloc(charp_vecs.size() * sizeof(char *));
-  size_t strl;
+  /* Write *out_models to user memory instead */
+  unsigned char** usr_addr_model = (unsigned char**) oe_host_malloc(str_vecs.size() * sizeof(char*));
+
+  int buf_len;
+  unsigned char* buf;
+  unsigned char* iv;
+  unsigned char* tag;
+  unsigned char* output;
+  unsigned char key[CIPHER_KEY_SIZE];
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
-    strl = strlen(str_vecs[i].c_str()) + 1; 
-    usr_addr_model[i] = (char *) oe_host_malloc(sizeof(char) * strl);
-    strlcpy(usr_addr_model[i], str_vecs[i].c_str(), strl);
+    buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + str_vecs[i].length();
+    buf = (unsigned char*) malloc(buf_len);
+    iv = buf;
+    tag = buf + CIPHER_IV_SIZE;
+    output = tag + CIPHER_TAG_SIZE;
+
+    encrypt_symm(
+        key,
+        (const unsigned char*)dmlc::BeginPtr(str_vecs[i]),
+        str_vecs[i].length(),
+        NULL,
+        0,
+        output,
+        iv,
+        tag);
+
+    usr_addr_model[i] = (unsigned char*) oe_host_malloc(buf_len);
+    memcpy(usr_addr_model[i], buf, buf_len);
+    free(buf);
   }
-  /* TODO: encrypt (look at getmodelraw for hints) */
+  /* TODO: Encrypt final usr_addr_model to hide its length? */
   *out_models = (const char **) usr_addr_model;
 #endif
-  *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
+  *len = static_cast<xgboost::bst_ulong>(str_vecs.size());
 }
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
