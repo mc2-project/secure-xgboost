@@ -955,13 +955,16 @@ inline void XGBoostDumpModelImpl(
   *out_models = dmlc::BeginPtr(charp_vecs);
   *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
 }
+#endif
+
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
-  return XGBoosterDumpModelEx(handle, fmap, with_stats, "text", len, out_models);
+  safe_ecall(enclave_XGBoosterDumpModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, len, (char***) out_models));
 }
+#ifndef __SGX__
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
@@ -980,6 +983,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
   XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
   API_END();
 }
+#endif
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    int fnum,
@@ -988,9 +992,10 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    int with_stats,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
-  return XGBoosterDumpModelExWithFeatures(handle, fnum, fname, ftype, with_stats,
-                                   "text", len, out_models);
+   safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, len, (char***) out_models));
 }
+
+#ifndef __SGX__
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    int fnum,
                                    const char** fname,

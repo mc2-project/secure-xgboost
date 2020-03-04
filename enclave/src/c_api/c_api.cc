@@ -1422,7 +1422,6 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
 inline void XGBoostDumpModelImpl(
     BoosterHandle handle,
     const FeatureMap& fmap,
@@ -1439,7 +1438,20 @@ inline void XGBoostDumpModelImpl(
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     charp_vecs[i] = str_vecs[i].c_str();
   }
+#ifndef __ENCLAVE__
   *out_models = dmlc::BeginPtr(charp_vecs);
+#else
+  /* write *out_models to user memory instead*/
+  char **usr_addr_model = (char **) oe_host_malloc(charp_vecs.size() * sizeof(char *));
+  size_t strl;
+  for (size_t i = 0; i < str_vecs.size(); ++i) {
+    strl = strlen(str_vecs[i].c_str()) + 1; 
+    usr_addr_model[i] = (char *) oe_host_malloc(sizeof(char) * strl);
+    strlcpy(usr_addr_model[i], str_vecs[i].c_str(), strl);
+  }
+  /* TODO: encrypt (look at getmodelraw for hints) */
+  *out_models = (const char **) usr_addr_model;
+#endif
   *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
 }
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
@@ -1495,7 +1507,6 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
   API_END();
 }
-#endif
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,

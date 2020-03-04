@@ -104,6 +104,22 @@ enclave {
                 BoosterHandle handle,
                 [in, string] const char* fname);
 
+        public int enclave_XGBoosterDumpModel(
+                BoosterHandle handle,
+                [in, string] const char* fmap,
+                int with_stats,
+                [out] bst_ulong* len,
+                [out] char*** out_models);
+
+        public int enclave_XGBoosterDumpModelWithFeatures(
+                BoosterHandle handle,
+                unsigned int fnum,
+                [in, count=fnum] const char** fname,
+                [in, count=fnum] const char** ftype,
+                int with_stats,
+                [out] bst_ulong* len,
+                [out] char*** out_models);
+
         public int enclave_XGBoosterGetModelRaw(
                 BoosterHandle handle,
                 [out] bst_ulong *out_len,

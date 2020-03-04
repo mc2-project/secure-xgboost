@@ -97,6 +97,28 @@ int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname) {
   return XGBoosterSaveModel(handle, fname);
 }
 
+int enclave_XGBoosterDumpModel(BoosterHandle handle,
+                       const char* fmap,
+                       int with_stats,
+                       xgboost::bst_ulong* len,
+                       char*** out_models) {
+  LOG(DEBUG) << "Ecall: XGBoosterDumpModel";
+  check_enclave_ptr(handle);
+  return XGBoosterDumpModel(handle, fmap, with_stats, len, (const char***) out_models);
+}
+
+int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
+                                   unsigned int fnum,
+                                   const char** fname,
+                                   const char** ftype,
+                                   int with_stats,
+                                   xgboost::bst_ulong* len,
+                                   char*** out_models) {
+  LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
+  check_enclave_ptr(handle);
+  return XGBoosterDumpModelWithFeatures(handle, (int) fnum, fname, ftype, with_stats, len, (const char***) out_models);
+}
+
 int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
   check_enclave_ptr(handle);
