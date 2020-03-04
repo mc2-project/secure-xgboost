@@ -168,8 +168,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     output[out_len] = '\0';
     free(ct);
     if (ret != 0) {
-      fprintf(stdout, "Decryption error %d\n", ret);
-      LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
+      LOG(FATAL) << "Decryption failed with error " << -ret;
     }
 
     // Check row indices are correct (to detect duplication/deletion of rows)

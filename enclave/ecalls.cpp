@@ -14,22 +14,21 @@ void enclave_init(int log_verbosity) {
   args.emplace_back("verbosity", std::to_string(log_verbosity));
   xgboost::ConsoleLogger::Configure(args.cbegin(), args.cend());
 
-  LOG(DEBUG) << "Ecall: init\n";
+  LOG(DEBUG) << "Ecall: init";
   oe_result_t result;
   if ((result = oe_load_module_host_resolver()) != OE_OK) {
-      fprintf(stdout, "oe_load_module_host_resolver failed with %s\n", oe_result_str(result));
+    LOG(FATAL) << "oe_load_module_host_resolver failed with " << oe_result_str(result);
   }
   if ((result = oe_load_module_host_socket_interface()) != OE_OK) {
-      fprintf(stdout, "oe_load_module_host_socket_interface failed with %s\n", oe_result_str(result));
+    LOG(FATAL) << "oe_load_module_host_socket_interface failed with " << oe_result_str(result);
   }
   if ((result = oe_load_module_host_file_system()) != OE_OK) {
-      fprintf(stdout, "oe_load_module_host_file_system failed with %s\n", oe_result_str(result));
+    LOG(FATAL) << "oe_load_module_host_file_system failed with " << oe_result_str(result);
   }
   /* Mount the host file system on the root directory. */
   if (mount("/", "/", OE_HOST_FILE_SYSTEM, 0, NULL) != 0) {
-      fprintf(stdout, "Unable to mount host file system on the root directory\n");
+    LOG(FATAL) << "Unable to mount host file system on the root directory";
   }
-  fprintf(stdout, "Loaded all modules\n");
 }
 
 int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle *out) {
@@ -130,9 +129,9 @@ int enclave_XGDMatrixGetUintInfo(const DMatrixHandle handle, const char* field, 
 }
 
 int enclave_XGDMatrixSetFloatInfo(DMatrixHandle handle, const char* field, const bst_float* info, bst_ulong len) {
-  fprintf(stdout, "Ecall: XGDMatrixSetFloatInfo\n");
+  LOG(DEBUG) << "Ecall: XGDMatrixSetFloatInfo";
   check_enclave_ptr(handle);
-;  return XGDMatrixSetFloatInfo(handle, field, info, len);
+  return XGDMatrixSetFloatInfo(handle, field, info, len);
 }
 
 int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle, const char* field, const unsigned* info, bst_ulong len) {
@@ -180,7 +179,7 @@ int enclave_get_remote_report_with_pubkey(
         size_t* key_size,
         uint8_t** remote_report,
         size_t* remote_report_size) {
-  fprintf(stdout, "Ecall: enclave_get_remote_report_with_pubkey\n");
+  LOG(DEBUG) << "Ecall: enclave_get_remote_report_with_pubkey";
   return get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
@@ -189,7 +188,7 @@ int enclave_verify_remote_report_and_set_pubkey(
         size_t key_size,
         uint8_t* remote_report,
         size_t remote_report_size) {
-  fprintf(stdout, "Ecall: verify_remote_report_and_set_pubkey\n");
+  LOG(DEBUG) << "Ecall: verify_remote_report_and_set_pubkey";
   return verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
@@ -199,7 +198,7 @@ int enclave_verify_remote_report_and_set_pubkey(
 //    size_t data_len,
 //    uint8_t* signature,
 //    size_t sig_len) {
-//  fprintf(stdout, "Ecall: add_client_key\n");
+//  LOG(DEBUG) << "Ecall: add_client_key";
 //  return add_client_key(fname, data, data_len, signature, sig_len);
 //}
 
@@ -208,27 +207,27 @@ int enclave_add_client_key(
         size_t data_len,
         uint8_t* signature,
         size_t sig_len) {
-    fprintf(stdout, "Ecall: add_client_key\n");
+    LOG(DEBUG) << "Ecall: add_client_key";
     return add_client_key(data, data_len, signature, sig_len);
 }
 
 // FIXME: check bounds
 void enclave_RabitInit(int argc, char **argv) {
-  fprintf(stdout, "Ecall: RabitInit\n");
+  LOG(DEBUG) << "Ecall: RabitInit";
   RabitInit(argc, argv);
 }
 
 void enclave_RabitFinalize() {
-  fprintf(stdout, "Ecall: RabitFinalize\n");
+  LOG(DEBUG) << "Ecall: RabitFinalize";
   RabitFinalize();
 }
 
 int enclave_RabitIsDistributed() {
-  fprintf(stdout, "Ecall: RabitIsDistributed\n");
+  LOG(DEBUG) << "Ecall: RabitIsDistributed";
   return RabitIsDistributed();
 }
 
 void enclave_RabitTrackerPrint(const char *msg) {
-  fprintf(stdout, "Ecall: TrackerPrint\n");
+  LOG(DEBUG) << "Ecall: TrackerPrint";
   RabitTrackerPrint(msg);
 }
