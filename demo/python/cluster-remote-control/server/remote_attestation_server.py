@@ -22,10 +22,12 @@ import remote_attestation_pb2
 import remote_attestation_pb2_grpc
 from rpc_utils import *
 import os
+import subprocess
 import securexgboost as xgb
 
 HOME_DIR = os.getcwd() + "/../../../../"
 
+# TODO: Make this function configurable by the client
 def xgb_load_train_predict():
     """
     This code will have been agreed upon by all parties before being run.
@@ -105,12 +107,25 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                 # Serialize encrypted predictions
                 enc_preds_proto = pointer_to_proto(enc_preds, num_preds * 8)
 
-                return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=1)
+                return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
             except Exception as e:
                 print(e)
-                return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
+                return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=1)
         else:
-            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
+            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=1)
+
+    def SignalStartCluster(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        num_workers = request.num_workers
+        try:
+            result = subprocess.call(["../../../../host/dmlc-core/tracker/dmlc-submit", "--cluster", "ssh", "--host-file", "hosts.config", "--num-workers", str(num_workers), "--worker-memory", "4g", "python3", "rc-cluster.py"])
+
+            return remote_attestation_pb2.Status(status=result)
+        except Exception as e:
+            print(e)
+            return remote_attestation_pb2.Status(status=1)
 
 
 def serve():

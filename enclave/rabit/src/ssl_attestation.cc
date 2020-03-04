@@ -1,6 +1,6 @@
 #include "ssl_attestation.h"
 #include <stdio.h>
-#include "xgboost/crypto.h"
+#include <enclave/crypto.h>
 
 // input: input_data and input_data_len
 // output: key, key_size

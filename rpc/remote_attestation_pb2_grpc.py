@@ -29,6 +29,11 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.Status.SerializeToString,
         response_deserializer=remote__attestation__pb2.Predictions.FromString,
         )
+    self.SignalStartCluster = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/SignalStartCluster',
+        request_serializer=remote__attestation__pb2.ClusterParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Status.FromString,
+        )
 
 
 class RemoteAttestationServicer(object):
@@ -65,6 +70,15 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def SignalStartCluster(self, request, context):
+    """A simple RPC.
+
+    Signal to RPC server that the client is ready for distributed training
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_RemoteAttestationServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -82,6 +96,11 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           servicer.SignalStart,
           request_deserializer=remote__attestation__pb2.Status.FromString,
           response_serializer=remote__attestation__pb2.Predictions.SerializeToString,
+      ),
+      'SignalStartCluster': grpc.unary_unary_rpc_method_handler(
+          servicer.SignalStartCluster,
+          request_deserializer=remote__attestation__pb2.ClusterParams.FromString,
+          response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

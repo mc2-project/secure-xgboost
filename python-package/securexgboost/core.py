@@ -1061,6 +1061,10 @@ class CryptoUtils(object):
         key_file : str
             path to key used to encrypt file
         """
+        if not os.path.exists(input_file):
+            print("Error: File {} does not exist".format(input_file))
+            return
+
         print("Encrypting file {}".format(input_file))
 
         input_file_bytes = input_file.encode('utf-8')
@@ -1170,6 +1174,13 @@ class CryptoUtils(object):
 
         # Add client key
         _LIB.add_client_key(data, data_len, signature, sig_len)
+
+
+    def sync_client_key(self):
+        """
+        Sync client symmetric key across all nodes in cluster
+        """
+        _LIB.sync_client_key();
 
     def decrypt_predictions(self, key, encrypted_preds, num_preds):
         """

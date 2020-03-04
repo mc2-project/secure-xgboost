@@ -25,9 +25,9 @@
 
 #include <openenclave/host.h>
 #include "xgboost_u.h"
-#include <xgboost/crypto.h>
-#include <xgboost/attestation.h>
-#include "../../../enclave/enclave.h"
+#include <enclave/crypto.h>
+#include <enclave/attestation.h>
+#include <enclave/enclave.h>
 
 #include <iostream>
 #include <fstream>
@@ -41,8 +41,24 @@
 #include <mbedtls/cipher.h>     // MBEDTLS_CIPHER_ID_AES
 #include <mbedtls/gcm.h>        // mbedtls_gcm_context
 
-// TODO(rishabh): Ecall error handling
-// FIXME Check enclave initialized before doing ecalls
+#define safe_ecall(call) {                                      \
+if (!Enclave::getInstance().getEnclave()) {                     \
+  fprintf(                                                      \
+      stderr,                                                   \
+      "Enclave not initialized\n");                             \
+  return 1;                                                     \
+}                                                               \
+oe_result_t result = (call);                                    \
+if (result != OE_OK) {                                          \
+  fprintf(                                                      \
+      stderr,                                                   \
+      "Ecall failed: result=%u (%s)\n",                         \
+      result,                                                   \
+      oe_result_str(result));                                   \
+  oe_terminate_enclave(Enclave::getInstance().getEnclave());    \
+}                                                               \
+return Enclave::getInstance().enclave_ret;                      \
+}
 
 #ifndef __SGX__
 namespace xgboost {
@@ -262,13 +278,13 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
 int XGDMatrixCreateFromFile(const char *fname,
                             int silent,
                             DMatrixHandle *out) {
-    enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out);
+    safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
 }
 
 int XGDMatrixCreateFromEncryptedFile(const char *fname,
         int silent,
         DMatrixHandle *out) {
-    enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out);
+    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
 }
 
 #ifndef __SGX__
@@ -754,7 +770,7 @@ XGB_DLL int XGDMatrixSliceDMatrix(DMatrixHandle handle,
 
 
 XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
-    enclave_XGDMatrixFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle);
+    safe_ecall(enclave_XGDMatrixFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
 }
 
 #ifndef __SGX__
@@ -773,14 +789,14 @@ XGB_DLL int XGDMatrixSetFloatInfo(DMatrixHandle handle,
                           const bst_float* info,
                           xgboost::bst_ulong len) {
 
-  enclave_XGDMatrixSetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len);
+  safe_ecall(enclave_XGDMatrixSetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
 }
 
 XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
                          const char* field,
                          const unsigned* info,
                          xgboost::bst_ulong len) {
-  enclave_XGDMatrixSetUIntInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len);
+  safe_ecall(enclave_XGDMatrixSetUIntInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
 }
 
 #ifndef __SGX__
@@ -804,24 +820,24 @@ XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
                                   const char* field,
                                   xgboost::bst_ulong* out_len,
                                   const bst_float** out_dptr) {
-    enclave_XGDMatrixGetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (bst_float**) out_dptr);
+    safe_ecall(enclave_XGDMatrixGetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (bst_float**) out_dptr));
 }
 
 XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
                                  const char *field,
                                  xgboost::bst_ulong *out_len,
                                  const unsigned **out_dptr) {
-  enclave_XGDMatrixGetUintInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (unsigned**) out_dptr);
+  safe_ecall(enclave_XGDMatrixGetUintInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (unsigned**) out_dptr));
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
-  enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out);
+  safe_ecall(enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
-  enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out);
+  safe_ecall(enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
 }
 
 // xgboost implementation
@@ -843,7 +859,7 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, uint32_t flags, int log_
       oe_terminate_enclave(Enclave::getInstance().getEnclave());
       return Enclave::getInstance().enclave_ret;
     }
-    enclave_init(Enclave::getInstance().getEnclave(), log_verbosity);
+    safe_ecall(enclave_init(Enclave::getInstance().getEnclave(), log_verbosity));
   }
   return 0;
 }
@@ -851,23 +867,23 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, uint32_t flags, int log_
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     xgboost::bst_ulong len,
                     BoosterHandle *out) {
-    enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, dmats, len, out);
+    safe_ecall(enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, dmats, len, out));
 }
 
 XGB_DLL int XGBoosterFree(BoosterHandle handle) {
-    enclave_XGBoosterFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle);
+    safe_ecall(enclave_XGBoosterFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
 }
 
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value) {
-    enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value);
+    safe_ecall(enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value));
 }
 
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain) {
-    enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain);
+    safe_ecall(enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain));
 }
 
 XGB_DLL int XGBoosterBoostOneIter(BoosterHandle handle,
@@ -876,7 +892,7 @@ XGB_DLL int XGBoosterBoostOneIter(BoosterHandle handle,
                                   bst_float *hess,
                                   xgboost::bst_ulong len) {
     //TODO: test this API
-  enclave_XGBoosterBoostOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dtrain, grad, hess, len);
+  safe_ecall(enclave_XGBoosterBoostOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dtrain, grad, hess, len));
 }
 
 XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
@@ -885,7 +901,7 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
                                  const char* evnames[],
                                  xgboost::bst_ulong len,
                                  const char** out_str) {
-    enclave_XGBoosterEvalOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dmats, evnames, len, (char**) out_str);
+    safe_ecall(enclave_XGBoosterEvalOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dmats, evnames, len, (char**) out_str));
 }
 
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
@@ -894,28 +910,28 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              unsigned ntree_limit,
                              xgboost::bst_ulong *len,
                              uint8_t **out_result) {
-    enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result);
+    safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result));
 }
 
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
-    enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname);
+    safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname));
 }
 
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
-    enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname);
+    safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname));
 }
 
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                  const void* buf,
                                  xgboost::bst_ulong len) {
-  enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len);
+  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len));
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                          xgboost::bst_ulong* out_len,
                          const char** out_dptr) {
-  enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr);
+  safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr));
 }
 
 #ifndef __SGX__
@@ -997,7 +1013,7 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
                      const char** out,
                      int* success) {
-  enclave_XGBoosterGetAttr(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, key, (char**)out, success);
+  safe_ecall(enclave_XGBoosterGetAttr(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, key, (char**)out, success));
 }
 
 #ifndef __SGX__
@@ -1019,7 +1035,7 @@ XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
 XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
                      xgboost::bst_ulong* out_len,
                      const char*** out) {
-  enclave_XGBoosterGetAttrNames(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char***)out);
+  safe_ecall(enclave_XGBoosterGetAttrNames(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char***)out));
 }
 
 #ifndef __SGX__
@@ -1078,8 +1094,7 @@ XGB_DLL int get_remote_report_with_pubkey(
     size_t* key_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
-  enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, remote_report, remote_report_size);
-  return Enclave::getInstance().enclave_ret;
+  safe_ecall(enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, remote_report, remote_report_size));
 }
 
 bool verify_mrsigner(
@@ -1269,8 +1284,13 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
 
 XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
     // FIXME return value / error handling
-  enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len);
-  return Enclave::getInstance().enclave_ret;
+  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
+}
+
+
+XGB_DLL int sync_client_key() {
+  // FIXME return value / error handling
+  safe_ecall(enclave_sync_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret));
 }
 
 XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_t key_size, uint8_t* encrypted_data, size_t* encrypted_data_size) {
