@@ -15,7 +15,7 @@ Links to Other Helpful Resources
 Python
 ******
 
-Below is a snippet of the full Python demo located at :code:`secure-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
+Below is a snippet of the full Python demo located at :code:`mc2--xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 
 The snippet assumes that your machine supports hardware enclaves. If your machine doesn't have an enclave available, you can simulate an enclave (for development purposes) by setting the flag ``OE_ENCLAVE_FLAG_SIMULATE`` instead of ``OE_ENCLAVE_FLAG_RELEASE``. Look at lines 11-19 of ``secure-xgboost-demo.py`` for an example.
 
