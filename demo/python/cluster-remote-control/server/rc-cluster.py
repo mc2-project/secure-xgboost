@@ -32,18 +32,19 @@ rabit_args = {
 rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
 
 xgb.rabit.init(rargs)
-#  crypto.sync_client_key()
 
-#  print("Creating training matrix")
-#  dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control-distributed/client/train.enc", encrypted=True)
+crypto.sync_client_key()
+
+print("Creating training matrix")
+dtrain = xgb.DMatrix(HOME_DIR + "demo/python/cluster-remote-control/client/train.enc", encrypted=True)
 #  
 #  print("Creating test matrix")
 #  dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control-distributed/client/test.enc", encrypted=True) 
-print("Creating training matrix")
-dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
-
-print("Creating test matrix")
-dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
+#  print("Creating training matrix")
+#  dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
+#  
+#  print("Creating test matrix")
+#  dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
 
 print("Beginning Training")
 

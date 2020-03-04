@@ -120,7 +120,6 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         num_workers = request.num_workers
         try:
-            enc_preds, num_preds = xgb_load_train_predict()
             result = subprocess.call(["../../../../host/dmlc-core/tracker/dmlc-submit", "--cluster", "ssh", "--host-file", "hosts.config", "--num-workers", str(num_workers), "--worker-memory", "4g", "python3", "rc-cluster.py"])
 
             return remote_attestation_pb2.Status(status=result)
