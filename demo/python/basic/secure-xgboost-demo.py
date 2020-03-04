@@ -6,7 +6,7 @@ OE_ENCLAVE_FLAG_DEBUG = 1
 OE_ENCLAVE_FLAG_SIMULATE = 2
 
 print("Creating enclave")
-HOME_DIR = os.getcwd() + "/../../../"
+HOME_DIR = os.getcwd() + "/"
 
 flags = OE_ENCLAVE_FLAG_RELEASE
 
@@ -51,7 +51,7 @@ booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest
 print("\n\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest)
 
-key_file = open("../key_zeros.txt", 'rb')
+key_file = open(HOME_DIR +  "demo/python/" + "key_zeros.txt", 'rb')
 sym_key = key_file.read() # The key will be type bytes
 key_file.close()
 
