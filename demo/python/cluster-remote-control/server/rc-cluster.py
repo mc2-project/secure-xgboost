@@ -6,8 +6,8 @@ OE_ENCLAVE_FLAG_DEBUG = 1
 OE_ENCLAVE_FLAG_SIMULATE = 2
 
 print("Creating enclave")
-
-HOME_DIR = os.getcwd() + "/../../../../"
+DIR = os.path.dirname(os.path.realpath(__file__))
+HOME_DIR = DIR + "/../../../"
 
 flags = OE_ENCLAVE_FLAG_RELEASE
 
@@ -64,6 +64,6 @@ num_rounds = 5
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
 
 if xgb.rabit.get_rank() == 0:
-    booster.save_model("demo_model.model")
+    booster.save_model(DIR + "/demo_model.model")
 
 xgb.rabit.finalize()
