@@ -1454,7 +1454,13 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
 
     std::string line;
     uint64_t index = 0;
+
+    //TODO: Add total number of lines
     while (std::getline(infile, line)) {
+        // Ignore empty lines
+        if (std::all_of(line.begin(), line.end(), isspace))
+            continue;
+
         index++;
         size_t length = strlen(line.c_str());
 
@@ -1466,13 +1472,8 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
                 &ctr_drbg,
                 (const unsigned char*)line.c_str(),
                 length,
-// #if false // FIXME disabled for testing
                 add_data,
                 sizeof(uint64_t),
-// #else
-                // NULL,
-                // 0,
-// #endif
                 encrypted,
                 iv,
                 tag
