@@ -61,7 +61,9 @@ num_rounds = 5
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
 
 # Get encrypted predictions
-print("\n\nModel Predictions: ")
+print("True Labels: ")
+print(dtest.get_float_info("label")[:20])
+print("\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest)
 
 key_file = open("../key_zeros.txt", 'rb')
@@ -71,6 +73,6 @@ key_file.close()
 crypto = xgb.CryptoUtils()
 
 # Decrypt predictions
-print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+print(crypto.decrypt_predictions(sym_key, predictions, num_preds)[:20])
 
 xgb.rabit.finalize()
