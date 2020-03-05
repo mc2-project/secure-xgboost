@@ -47,7 +47,11 @@ ConsoleLogger::LogVerbosity ConsoleLogger::global_verbosity_ =
 ConsoleLoggerParam ConsoleLogger::param_ = ConsoleLoggerParam();
 
 bool ConsoleLogger::ShouldLog(LogVerbosity verbosity) {
+#ifdef __ENCLAVE_ENABLE_LOGGER__
   return verbosity <= global_verbosity_ || verbosity == LV::kIgnore;
+#else
+  return false;
+#endif
 }
 
 void ConsoleLogger::Configure(const std::map<std::string, std::string>& args) {

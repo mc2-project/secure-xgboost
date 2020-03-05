@@ -293,20 +293,21 @@ class DateLogger {
     _strtime_s(buffer_, sizeof(buffer_));
 #else
     time_t time_value = time(NULL);
+#ifdef __ENCLAVE__
+    // FIXME: OE does not support time_t parser functions
+    snprintf(buffer_, sizeof(buffer_), "%d", time_value);
+#else // __ENCLAVE__
     struct tm *pnow;
 #if !defined(_WIN32)
     struct tm now;
-#ifdef __ENCLAVE__
-    // TODO do this
-#else // __ENCLAVE__
     pnow = localtime_r(&time_value, &now);
-#endif // __ENCLAVE__
 #else
     pnow = localtime(&time_value);  // NOLINT(*)
 #endif
     snprintf(buffer_, sizeof(buffer_), "%02d:%02d:%02d",
              pnow->tm_hour, pnow->tm_min, pnow->tm_sec);
-#endif
+#endif  // __ENCLAVE__
+#endif  // _MSC_VER
 #endif  // _LIBCPP_SGX_CONFIG
     return buffer_;
   }
