@@ -55,7 +55,8 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
             LOG(FATAL) << "mbedtls_gcm_setkey failed with error " << -ret;
         }
     }
-    this->total_rows = 0;
+    this->total_rows_in_chunk = 0;
+    this->total_rows_global = 0;
     this->starting_row_index = 0;
     this->prev_row_index = 0;
 #endif
@@ -115,7 +116,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
 
 #ifdef __ENCLAVE__ // decryption
   inline void DecryptLine(const char* data, char* output, size_t len) {
-    this->total_rows++;
+    this->total_rows_in_chunk++;
 
     int index_pos = 0;
     int total_pos = 0;
@@ -166,10 +167,18 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     CHECK_EQ(out_len, CIPHER_TAG_SIZE);
     out_len = base64_decode(data + tag_pos + 1, len - tag_pos, ct);
 
-    char *index_str = (char*) malloc (index_pos + 1);
+    char *index_str = (char*) malloc (index_pos);
     memcpy(index_str, data, index_pos);
     index_str[index_pos] = 0;
     uint64_t index = atoi(index_str);
+    CHECK_GT(index, 0);
+
+    uint64_t total_len = total_pos - index_pos - 1;
+    char *total_str = (char*) malloc (total_len + 1);
+    memcpy(total_str, data + index_pos + 1, total_len);
+    total_str[total_len] = 0;
+    uint64_t total = atoi(total_str);
+    CHECK_LE(index, total);
 
     int ret = decrypt_symm(
         &gcm,
@@ -189,9 +198,11 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     // Check row indices are correct (to detect duplication/deletion of rows)
     if (this->starting_row_index == 0) {
         this->starting_row_index = index;
+        this->total_rows_global = total;
         prev_row_index = index;
     } else {
         CHECK_EQ(prev_row_index+1, index);
+        CHECK_EQ(this->total_rows_global, total);
         prev_row_index = index;
     }
   }
