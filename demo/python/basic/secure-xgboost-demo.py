@@ -6,7 +6,7 @@ OE_ENCLAVE_FLAG_DEBUG = 1
 OE_ENCLAVE_FLAG_SIMULATE = 2
 
 print("Creating enclave")
-HOME_DIR = os.getcwd() + "/../../../"
+HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../"
 
 flags = OE_ENCLAVE_FLAG_RELEASE
 
