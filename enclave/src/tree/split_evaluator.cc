@@ -3,7 +3,7 @@
  * \file split_evaluator.cc
  * \brief Contains implementations of different split evaluators.
  */
-#include "split_evaluator.h"
+#include <xgboost/tree/split_evaluator.h>
 #include <dmlc/json.h>
 #include <dmlc/registry.h>
 #include <algorithm>
@@ -14,9 +14,9 @@
 #include <string>
 #include <sstream>
 #include <utility>
-#include "param.h"
-#include "../common/common.h"
-#include "../common/host_device_vector.h"
+#include <xgboost/tree/param.h>
+#include <xgboost/common/common.h>
+#include <xgboost/common/host_device_vector.h>
 
 namespace dmlc {
 DMLC_REGISTRY_ENABLE(::xgboost::tree::SplitEvaluatorReg);

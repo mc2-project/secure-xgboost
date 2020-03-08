@@ -4,7 +4,7 @@
  * \brief C error handling
  */
 #include <dmlc/thread_local.h>
-#include "./c_api_error.h"
+#include <xgboost/c_api/c_api_error.h>
 
 struct XGBAPIErrorEntry {
   std::string last_error;

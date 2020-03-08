@@ -10,8 +10,8 @@
 #include <string>
 #include <memory>
 
-#include "./param.h"
-#include "../common/io.h"
+#include <xgboost/tree/param.h>
+#include <xgboost/common/io.h>
 
 namespace xgboost {
 namespace tree {

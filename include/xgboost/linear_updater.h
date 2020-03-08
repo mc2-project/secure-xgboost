@@ -11,13 +11,8 @@
 #include <utility>
 #include <vector>
 
-#if defined(__SGX__) && defined(__ENCLAVE__)
-#include "../../enclave/src/common/host_device_vector.h"
-#include "../../enclave/src/gbm/gblinear_model.h"
-#else
-#include "../../host/src/common/host_device_vector.h"
-#include "../../host/src/gbm/gblinear_model.h"
-#endif // __SGX__ && __ENCLAVE__
+#include "common/host_device_vector.h"
+#include "gbm/gblinear_model.h"
 
 
 namespace xgboost {

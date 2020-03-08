@@ -6,7 +6,7 @@
 #define XGBOOST_METRIC_METRIC_COMMON_H_
 
 #include <dmlc/parameter.h>
-#include "../common/common.h"
+#include <xgboost/common/common.h>
 
 namespace xgboost {
 namespace metric {

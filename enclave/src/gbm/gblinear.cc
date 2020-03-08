@@ -14,7 +14,7 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
-#include "../common/timer.h"
+#include <xgboost/common/timer.h>
 
 namespace xgboost {
 namespace gbm {
