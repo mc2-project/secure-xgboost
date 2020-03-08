@@ -106,7 +106,7 @@ void test_ObliviousGreater() {
 
     // Test integer overflow
     test("(int32_t) 2147483648 > 42", !ObliviousGreater((int32_t)2147483648, 42));
-    test("2147483648 > 42", ObliviousGreater(2147483648, (int64_t) 42));
+    test("2147483648 > 42", ObliviousGreater((int64_t)2147483648, int64_t(42)));
 }
 
 void test_ObliviousLess() {
@@ -131,7 +131,7 @@ void test_ObliviousLess() {
 
     // Test integer overflow
     test("(int32_t) 2147483648 < 42", ObliviousLess((int32_t)2147483648, 42));
-    test("2147483648 < 42", !ObliviousLess(2147483648, (int64_t) 42));
+    test("2147483648 < 42", !ObliviousLess((int64_t)2147483648, (int64_t) 42));
 }
 
 void test_ObliviousEqual() {
