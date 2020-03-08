@@ -848,6 +848,10 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, uint32_t flags, int log_
   if (!Enclave::getInstance().getEnclave()) {
     oe_result_t result;
 
+#ifdef __ENCLAVE_SIMULATION__
+    flags |= OE_ENCLAVE_FLAG_SIMULATE;
+#endif
+
     oe_enclave_t** enclave = Enclave::getInstance().getEnclaveRef();
     // Create the enclave
     result = oe_create_xgboost_enclave(
@@ -1204,7 +1208,9 @@ bool attest_remote_report(
     size_t remote_report_size,
     const uint8_t* data,
     size_t data_size) {
-
+#ifdef __ENCLAVE_SIMULATION__
+  return true;
+#else
   bool ret = false;
   uint8_t sha256[32];
   oe_report_t parsed_report = {0};
@@ -1259,6 +1265,7 @@ bool attest_remote_report(
   std::cout << "remote attestation succeeded." << std::endl;
 exit:
   return ret;
+#endif __ENCLAVE_SIMULATION__
 }
 
 // FIXME eventually we only need an enclave implementation of this API, callable from the host
