@@ -17,11 +17,11 @@
 #include <string>
 #include <memory>
 
-#include "./c_api_error.h"
-#include "../data/simple_csr_source.h"
-#include "../common/math.h"
-#include "../common/io.h"
-#include "../common/group_data.h"
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
 
 #include <openenclave/host.h>
 #include "xgboost_u.h"
@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "base64.h"
+#include <dmlc/base64.h>
 
 #include <mbedtls/entropy.h>    // mbedtls_entropy_context
 #include <mbedtls/ctr_drbg.h>   // mbedtls_ctr_drbg_context

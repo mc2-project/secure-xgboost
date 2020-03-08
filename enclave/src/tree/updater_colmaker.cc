@@ -11,10 +11,10 @@
 #include <cmath>
 #include <algorithm>
 
-#include "./param.h"
-#include "../common/random.h"
-#include "../common/bitmap.h"
-#include "split_evaluator.h"
+#include <xgboost/tree/param.h>
+#include <xgboost/common/random.h>
+#include <xgboost/common/bitmap.h>
+#include <xgboost/tree/split_evaluator.h>
 
 namespace xgboost {
 namespace tree {
