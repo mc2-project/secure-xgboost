@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <limits>
 #include <utility>
-#include "../common/math.h"
-#include "../common/transform.h"
+#include <xgboost/common/math.h>
+#include <xgboost/common/transform.h>
 
 namespace xgboost {
 namespace obj {

@@ -4,9 +4,9 @@
  * \brief the input data structure for gradient boosting
  * \author Tianqi Chen
  */
-#include "./simple_dmatrix.h"
+#include <xgboost/data/simple_dmatrix.h>
 #include <xgboost/data.h>
-#include "../common/random.h"
+#include <xgboost/common/random.h>
 
 namespace xgboost {
 namespace data {

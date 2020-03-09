@@ -24,7 +24,7 @@ extern "C" {
 
 #ifdef __ENCLAVE__ // includes
 #include "xgboost_t.h"
-#include "../../../src/common/common.h"
+#include <xgboost/common/common.h>
 #endif
 
 

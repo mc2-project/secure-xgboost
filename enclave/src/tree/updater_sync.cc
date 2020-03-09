@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 #include <limits>
-#include "../common/io.h"
+#include <xgboost/common/io.h>
 
 namespace xgboost {
 namespace tree {

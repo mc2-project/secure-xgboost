@@ -5,7 +5,7 @@
 #include <dmlc/base.h>
 #include <xgboost/logging.h>
 #include <limits>
-#include "./simple_csr_source.h"
+#include <xgboost/data/simple_csr_source.h>
 
 namespace xgboost {
 namespace data {

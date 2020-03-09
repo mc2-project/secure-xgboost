@@ -1,4 +1,4 @@
-#include "quantile.h"
+#include <xgboost/common/quantile.h>
 
 namespace xgboost {
 namespace common {
