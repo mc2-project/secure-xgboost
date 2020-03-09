@@ -10,12 +10,15 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
-set_default_configuration_release()
 
 #-- Options
-option(SIMULATE "Run enclave in simulation mode" OFF)
+option(LOGGING "Build enclave in debug mode" OFF)
+option(SIMULATE "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS "Enable oblivious training and inference" ON)
 
+if (LOGGING)
+    message("\nEnabling enclave logger.\n")
+endif (LOGGING)
 if (SIMULATE)
     message("\nBuilding enclave in simulation mode.\n")
 else ()
@@ -26,6 +29,8 @@ if (OBLIVIOUS)
 else ()
     message("\nDisabling obliviousness.\n")
 endif (OBLIVIOUS)
+
+set_default_configuration_release()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)
 add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)

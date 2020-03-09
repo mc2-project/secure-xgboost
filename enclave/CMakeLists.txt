@@ -64,7 +64,6 @@ target_compile_options(xgboost_enclave
   PRIVATE
   -D__SGX__
   -D__ENCLAVE__
-  -D__ENCLAVE_ENABLE_LOGGER__
   -U_FORTIFY_SOURCE 
   -fno-stack-protector
   -fno-strict-aliasing
@@ -85,6 +84,9 @@ target_compile_definitions(xgboost_enclave
   -DDMLC_LOG_CUSTOMIZE=1  # enable custom logging
   ${XGBOOST_DEFINITIONS})
 
+if (LOGGING)
+    target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_ENABLE_LOGGER__)
+endif (LOGGING)
 if (OBLIVIOUS)
   target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_OBLIVIOUS__)
 endif (OBLIVIOUS)
