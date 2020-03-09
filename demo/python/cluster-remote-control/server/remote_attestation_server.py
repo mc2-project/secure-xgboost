@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Python implementation of the GRPC RemoteAttestation server."""
+import sys
+sys.path.append("/home/xgb/mc2-xgboost/rpc")
 
 from concurrent import futures
 import logging
