@@ -24,6 +24,7 @@ def run(channel_addrs, key_path, keypair):
     """
     # Perform attestation and send the client key to each node in the enclave cluster
     for channel_addr in channel_addrs:
+        print("Connecting to", channel_addr)
         # Get remote report from enclave
         with grpc.insecure_channel(channel_addr) as channel:
             stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
@@ -83,7 +84,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ip_addrs = args.ip_addr
+    ip_addrs = args.ip_addrs
+    print(ip_addrs)
     channel_addrs = [str(ip_addr) + ":50051" for ip_addr in ip_addrs]
 
     logging.basicConfig()

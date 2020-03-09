@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    channel_addr = str(args.ip_addr) + ":50051" 
+    channel_addr = str(args.ip_addr) + ":50052" 
 
     logging.basicConfig()
     run(channel_addr, str(args.key), str(args.keypair))

@@ -70,6 +70,18 @@ def xgb_load_train_predict():
 
 def cluster_demo():
     try:
+        #  rabit_args = {
+        #          "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
+        #          "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
+        #          "DMLC_TRACKER_URI": os.environ.get("DMLC_TRACKER_URI"),
+        #          "DMLC_TRACKER_PORT": os.environ.get("DMLC_TRACKER_PORT"),
+        #          "DMLC_ROLE": os.environ.get("DMLC_ROLE"),
+        #          "DMLC_NODE_HOST": os.environ.get("DMLC_NODE_HOST")
+        #          }
+        #  
+        #  rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
+        #  
+        #  xgb.rabit.init(rargs)
         print("Creating training matrix")
         dtrain = xgb.DMatrix(HOME_DIR + "demo/python/cluster-remote-control/client/train.enc", encrypted=True)
 #  
@@ -169,6 +181,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
 
 def serve():
+    print("Starting server...")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(), server)
     server.add_insecure_port('[::]:50051')
