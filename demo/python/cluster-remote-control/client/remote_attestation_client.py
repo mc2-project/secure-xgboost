@@ -14,7 +14,7 @@ import argparse
 import os
 from rpc_utils import *
 
-def run(channel_addr, key_path, keypair):
+def run(channel_addrs, key_path, keypair):
     """
     The client will make 4 calls to the server that will run computation
     1. A call to retrieve the attestation report from the server. The client will use this report
@@ -22,65 +22,69 @@ def run(channel_addr, key_path, keypair):
     2. A call to send the symmetric key used to encrypt the data to the server.
     3. A call to commence computation.
     """
-    # Get remote report from enclave
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-        response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+    # Perform attestation and send the client key to each node in the enclave cluster
+    for channel_addr in channel_addrs:
+        # Get remote report from enclave
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
 
-    pem_key = response.pem_key
-    key_size = response.key_size
-    remote_report = response.remote_report
-    remote_report_size = response.remote_report_size
-    print("Report received from remote enclave")
+        pem_key = response.pem_key
+        key_size = response.key_size
+        remote_report = response.remote_report
+        remote_report_size = response.remote_report_size
+        print("Report received from remote enclave")
 
-    # Verify report
-    enclave_reference = xgb.Enclave(create_enclave=False)
-    enclave_reference.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
-    enclave_reference.verify_remote_report_and_set_pubkey()
-    print("Report successfully verified")
+        # Verify report
+        enclave_reference = xgb.Enclave(create_enclave=False)
+        enclave_reference.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+        enclave_reference.verify_remote_report_and_set_pubkey()
+        print("Report successfully verified")
 
-    # Encrypt and sign symmetric key used to encrypt data
-    key_file = open(key_path, 'rb')
-    sym_key = key_file.read() # The key will be type bytes
-    key_file.close()
+        # Encrypt and sign symmetric key used to encrypt data
+        key_file = open(key_path, 'rb')
+        sym_key = key_file.read() # The key will be type bytes
+        key_file.close()
 
-    crypto_utils = xgb.CryptoUtils()
+        crypto_utils = xgb.CryptoUtils()
 
-    # Encrypt symmetric key
-    enc_sym_key, enc_sym_key_size = crypto_utils.encrypt_data_with_pk(sym_key, len(sym_key), pem_key, key_size)
-    print("Encrypted symmetric key")
+        # Encrypt symmetric key
+        enc_sym_key, enc_sym_key_size = crypto_utils.encrypt_data_with_pk(sym_key, len(sym_key), pem_key, key_size)
+        print("Encrypted symmetric key")
 
-    # Sign encrypted symmetric key
-    sig, sig_len = crypto_utils.sign_data(keypair, enc_sym_key, enc_sym_key_size) 
-    print("Signed ciphertext")
+        # Sign encrypted symmetric key
+        sig, sig_len = crypto_utils.sign_data(keypair, enc_sym_key, enc_sym_key_size) 
+        print("Signed ciphertext")
 
-    # Send data key to the server
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+        # Send data key to the server
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
 
-        response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, key_size=enc_sym_key_size, signature=sig, sig_len=sig_len))
-        print("Symmetric key for data sent to server")
+            response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, key_size=enc_sym_key_size, signature=sig, sig_len=sig_len))
+            print("Symmetric key for data sent to server")
 
-    # Signal start
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-        print("Waiting for training to finish...")
-        response = stub.SignalStartCluster(remote_attestation_pb2.ClusterParams(num_workers=2))
+    for channel_addr in channel_addrs:
+        # Signal start
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            print("Waiting for training to finish...")
+            response = stub.SignalStartCluster(remote_attestation_pb2.ClusterParams(num_workers=2))
 
-        if response.status == 0:
-            print("Training succeeded! Encrypted model has been saved.")
-        else:
-            print("Training failed")
+            if response.status == 0:
+                print("Training succeeded! Encrypted model has been saved.")
+            else:
+                print("Training failed")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ip-addr", help="server IP address", required=True)
+    parser.add_argument("--ip-addrs", nargs="+", help="server IP address", required=True)
     parser.add_argument("--key", help="path to key used to encrypt data on client", required=True)
     parser.add_argument("--keypair", help="path to keypair for signing data", required=True)
 
     args = parser.parse_args()
 
-    channel_addr = str(args.ip_addr) + ":50051" 
+    ip_addrs = args.ip_addr
+    channel_addrs = [str(ip_addr) + ":50051" for ip_addr in ip_addrs]
 
     logging.basicConfig()
-    run(channel_addr, str(args.key), str(args.keypair))
+    run(channel_addrs, str(args.key), str(args.keypair))

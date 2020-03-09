@@ -25,7 +25,8 @@ import os
 import subprocess
 import securexgboost as xgb
 
-HOME_DIR = os.getcwd() + "/../../../../"
+CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+HOME_DIR = CURRENT_DIR + "/../../../../"
 
 # TODO: Make this function configurable by the client
 def xgb_load_train_predict():
@@ -64,6 +65,44 @@ def xgb_load_train_predict():
 
     enc_preds, num_preds = booster.predict(dtest)
     return enc_preds, num_preds
+
+def cluster_demo():
+    try:
+        print("Creating training matrix")
+        dtrain = xgb.DMatrix(HOME_DIR + "demo/python/cluster-remote-control/client/train.enc", encrypted=True)
+#  
+        #  print("Creating training matrix")
+        #  dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
+#  
+
+        print("Beginning Training")
+
+        # Set training parameters
+        params = {
+                "tree_method": "hist",
+                "n_gpus": "0",
+                "objective": "binary:logistic",
+                "min_child_weight": "1",
+                "gamma": "0.1",
+                "max_depth": "3",
+                "verbosity": "1" 
+                }
+
+        # Train and evaluate
+        num_rounds = 5 
+        booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+
+        if xgb.rabit.get_rank() == 0:
+            booster.save_model(CURRENT_DIR + "/demo_model.model")
+
+        #  if xgb.rabit.IsDistributed():
+        xgb.rabit.finalize()
+        
+        return 0
+    except Exception as e:
+        print(e)
+        return -1
+
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
 
@@ -120,8 +159,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         num_workers = request.num_workers
         try:
-            result = subprocess.call(["../../../../host/dmlc-core/tracker/dmlc-submit", "--cluster", "ssh", "--host-file", "hosts.config", "--num-workers", str(num_workers), "--worker-memory", "4g", "python3", "rc-cluster.py"])
-
+            result = cluster_demo()
             return remote_attestation_pb2.Status(status=result)
         except Exception as e:
             print(e)
