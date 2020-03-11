@@ -12,7 +12,7 @@ cmake_policy(SET CMP0022 NEW)
 
 
 #-- Options
-option(LOGGING "Build enclave in debug mode" OFF)
+option(LOGGING "Enable enclave logger (unsafe)" OFF)
 option(SIMULATE "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS "Enable oblivious training and inference" ON)
 
