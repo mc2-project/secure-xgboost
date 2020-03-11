@@ -44,7 +44,7 @@ Installing the Open Enclave SDK
    - Open Enclave version 0.8.1
    - Intel SGX DCAP Driver version 1.21
    
-   Follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_25.04.md>`_ to install the Intel SGX DCAP driver, and the Open Enclave packages and dependencies. 
+   Follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ to install the Intel SGX DCAP driver, and the Open Enclave packages and dependencies. 
 
    Alternatively, you may also acquire a VM with the required features pre-installed from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.8.1, and the DCAP driver to version 1.21:
 
@@ -61,7 +61,7 @@ Installing the Open Enclave SDK
 
       modinfo intel_sgx
 
-   If not, follow `these <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_25.04.md>`_ instructions to update.
+   If not, follow `these <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ instructions to update.
 
 2. Configure environment variables for Open Enclave SDK for Linux:
 
