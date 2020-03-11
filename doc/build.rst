@@ -18,7 +18,7 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 
   .. code-block:: bash
 
-   git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
+   git clone -b hackathon --recursive https://github.com/mc2-project/mc2-xgboost.git
 
 Please refer to `Trouble Shooting`_ section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
@@ -156,4 +156,4 @@ Trouble Shooting
 
    .. code-block:: bash
 
-      git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
+      git clone -b hackathon --recursive https://github.com/mc2-project/mc2-xgboost.git
