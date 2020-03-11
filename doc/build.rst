@@ -30,7 +30,7 @@ to ask questions at `the user forum <https://discuss.xgboost.ai>`_.
 
 * `Installing Secure XGBoost Dependencies`_
 
-* `Building the Shared Library`_
+* `Building Secure XGBoost`_
 
   - `Building on Ubuntu`_
 
@@ -70,13 +70,14 @@ Install cmake >= v3.11. E.g., the following commands install cmake v3.15.6.
    wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
    sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-***************************
-Building the Shared Library
-***************************
+***********************
+Building Secure XGBoost
+***********************
 
-Our goal is to build the shared library:
+Our goal is to build the shared library, along with the enclave:
 
 - On Linux the target library is ``libxgboost.so``
+- The target enclave is ``xgboost_enclave.signed``
 
 The minimal building requirement is
 
@@ -86,18 +87,26 @@ The minimal building requirement is
 Building on Ubuntu
 ==================
 
-On Ubuntu, one builds XGBoost by running CMake:
+1. Clone the repository recursively, and check out the required branch:
 
-.. code-block:: bash
-   
-   git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
-   cd mc2-xgboost
-   mkdir -p build
+   .. code-block:: bash
 
-   pushd build
-   cmake ..
-   make -j4
-   popd
+      git clone -b hackathon --recursive https://github.com/mc2-project/mc2-xgboost.git
+
+2. Configure the enclave parameters in the file ``enclave/xgboost.conf``, including the amount of virtual memory available to the enclave.
+   More details on these parameters can be found `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md>`_.
+
+3. On Ubuntu, build the Secure XGBoost targets by running CMake:
+
+   .. code-block:: bash
+
+      cd mc2-xgboost
+      mkdir -p build
+
+      pushd build
+      cmake ..
+      make -j4
+      popd
 
 Python Package Installation
 ===========================
@@ -146,5 +155,5 @@ Trouble Shooting
    Alternatively, do another clone
 
    .. code-block:: bash
-      
+
       git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
