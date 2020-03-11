@@ -2,15 +2,11 @@
 Installation Guide
 ##################
 
-****************************
-Building XGBoost from source
-****************************
-This page gives instructions on how to build and install Secure XGBoost from scratch. Secure XGBoost has been tested only on Ubuntu 18.04, but it should also work with Ubuntu 16.04. It consists of four steps:
+This page gives instructions on how to build and install Secure XGBoost from scratch. Secure XGBoost has been tested only on Ubuntu 18.04, but it should also work with Ubuntu 16.04. It consists of three steps:
 
 1. First install the Open Enclave SDK
 2. Next install the Secure XGBoost dependencies
-3. Then build the shared library from the C++ code (``libxgboost.so``). 
-4. Lastly, install the Python package.
+3. Then build Secure XGBoost from source. 
 
 .. note:: Use of Git submodules
 
@@ -20,9 +16,9 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 
    git clone -b hackathon --recursive https://github.com/mc2-project/mc2-xgboost.git
 
-Please refer to `Trouble Shooting`_ section first if you have any problem
+Please refer to the `Troubleshooting`_ section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
-to ask questions at `the user forum <https://discuss.xgboost.ai>`_.
+to open an issue on `GitHub <https://github.com/mc2-project/mc2-xgboost/issues>`_.
 
 **Contents**
 
@@ -32,27 +28,48 @@ to ask questions at `the user forum <https://discuss.xgboost.ai>`_.
 
 * `Building Secure XGBoost`_
 
-  - `Building on Ubuntu`_
+  - `Building the Targets`_
+  -  `Python Package Installation`_
 
-* `Python Package Installation`_
-* `Trouble Shooting`_
+* `Troubleshooting`_
 
 *******************************
 Installing the Open Enclave SDK
 *******************************
 
-Follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_. You may also acquire a VM with the required features from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.7:
 
-.. code-block:: bash
 
-   sudo apt -y install open-enclave
+1. The requirements are:
 
-Configure environment variables for Open Enclave SDK for Linux:
+   - Open Enclave version 0.8.1
+   - Intel SGX DCAP Driver version 1.21
+   
+   Follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_25.04.md>`_ to install the Intel SGX DCAP driver, and the Open Enclave packages and dependencies. 
 
-.. code-block:: bash
+   Alternatively, you may also acquire a VM with the required features pre-installed from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.8.1, and the DCAP driver to version 1.21:
 
-   source /opt/openenclave/share/openenclave/openenclaverc
 
+   Confirm that Open Enclave is version 0.8.1:
+
+   .. code-block:: bash
+      
+      sudo apt list open-enclave
+
+   Confirm that the Intel SGX DCAP Driver is version 1.21:
+
+   .. code-block:: bash
+
+      modinfo intel_sgx
+
+   If not, follow `these <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_25.04.md>`_ instructions to update.
+
+2. Configure environment variables for Open Enclave SDK for Linux:
+
+   .. code-block:: bash
+
+      source /opt/openenclave/share/openenclave/openenclaverc
+
+   Consider adding this line to your ``~/.bashrc`` to make the environment variables persist across sessions.
 
 **************************************
 Installing Secure XGBoost Dependencies 
@@ -84,7 +101,7 @@ The minimal building requirement is
 - A recent C++ compiler supporting C++11 (g++-4.8 or higher)
 - CMake 3.11 or higher
 
-Building on Ubuntu
+Building the Targets
 ==================
 
 1. Clone the repository recursively, and check out the required branch:
@@ -107,6 +124,7 @@ Building on Ubuntu
       cmake ..
       make -j4
       popd
+
 
 Python Package Installation
 ===========================
@@ -132,8 +150,9 @@ The Python package is located at ``python-package/``.
    export PYTHONPATH=/path/to/mc2-xgboost/rpc
 
 
-Trouble Shooting
-================
+***************
+Troubleshooting
+***************
 
 1. Compile failed after ``git pull``
 
@@ -157,3 +176,5 @@ Trouble Shooting
    .. code-block:: bash
 
       git clone -b hackathon --recursive https://github.com/mc2-project/mc2-xgboost.git
+
+
