@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include "base64.h"
 
 #include "./c_api_error.h"
 #include "../data/simple_csr_source.h"
@@ -1444,35 +1445,40 @@ inline void XGBoostDumpModelImpl(
   /* Write *out_models to user memory instead */
   unsigned char** usr_addr_model = (unsigned char**) oe_host_malloc(str_vecs.size() * sizeof(char*));
 
-  int buf_len;
-  unsigned char* buf;
-  unsigned char* iv;
-  unsigned char* tag;
-  unsigned char* output;
+  int length;
+  unsigned char* encrypted;
+  unsigned char iv[CIPHER_IV_SIZE];
+  unsigned char tag[CIPHER_TAG_SIZE];
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
-    buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + str_vecs[i].length();
-    buf = (unsigned char*) malloc(buf_len);
-    iv = buf;
-    tag = buf + CIPHER_IV_SIZE;
-    output = tag + CIPHER_TAG_SIZE;
+    length = str_vecs[i].length();
+    encrypted = (unsigned char*) malloc(length * sizeof(char)); 
 
+    /* Encrypt */
     encrypt_symm(
         key,
-        (const unsigned char*)dmlc::BeginPtr(str_vecs[i]),
+        (const unsigned char*) dmlc::BeginPtr(str_vecs[i]),
         str_vecs[i].length(),
         NULL,
         0,
-        output,
+        encrypted,
         iv,
         tag);
 
-    usr_addr_model[i] = (unsigned char*) oe_host_malloc(buf_len);
-    memcpy(usr_addr_model[i], buf, buf_len);
-    free(buf);
+    /* Base64 encode */
+    std::string total_encoded = "";
+    total_encoded.append(dmlc::data::base64_encode(iv, CIPHER_IV_SIZE));
+    total_encoded.append(",");
+    total_encoded.append(dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE));
+    total_encoded.append(",");
+    total_encoded.append(dmlc::data::base64_encode(encrypted, length));
+
+    usr_addr_model[i] = (unsigned char*) oe_host_malloc(total_encoded.length() + 1);
+    memcpy(usr_addr_model[i], total_encoded.c_str(), total_encoded.length() + 1);
+    free(encrypted);
   }
-  /* TODO: Encrypt final usr_addr_model to hide its length? */
+  /* Pad & encrypt final usr_addr_model to hide its length? */
   *out_models = (const char **) usr_addr_model;
 #endif
   *len = static_cast<xgboost::bst_ulong>(str_vecs.size());
