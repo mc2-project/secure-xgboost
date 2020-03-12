@@ -1473,6 +1473,7 @@ inline void XGBoostDumpModelImpl(
     total_encoded.append(dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE));
     total_encoded.append(",");
     total_encoded.append(dmlc::data::base64_encode(encrypted, length));
+    total_encoded.append("\n");
 
     usr_addr_model[i] = (unsigned char*) oe_host_malloc(total_encoded.length() + 1);
     memcpy(usr_addr_model[i], total_encoded.c_str(), total_encoded.length() + 1);
