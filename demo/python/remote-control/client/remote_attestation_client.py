@@ -67,7 +67,7 @@ def run(channel_addr, key_path, keypair):
         print("Waiting for training to finish...")
         response = stub.SignalStart(remote_attestation_pb2.Status(status=1))
 
-        if response.status == 1:
+        if response.status == 0:
             print("Training succeeded! Decrypting predictions...")
            
             enc_preds_serialized = response.predictions
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    channel_addr = str(args.ip_addr) + ":50052" 
+    channel_addr = str(args.ip_addr) + ":50051" 
 
     logging.basicConfig()
     run(channel_addr, str(args.key), str(args.keypair))

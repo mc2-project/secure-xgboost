@@ -33,8 +33,8 @@ def xgb_load_train_predict():
     print("Creating training matrix")
     dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
 
-    print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/test.enc", encrypted=True) 
+    #  print("Creating test matrix")
+    #  dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/test.enc", encrypted=True) 
 
     print("Creating Booster")
     booster = xgb.Booster(cache=(dtrain, dtest))
@@ -58,7 +58,8 @@ def xgb_load_train_predict():
     n_trees = 10
     for i in range(n_trees):
         booster.update(dtrain, i)
-        print(booster.eval_set([(dtrain, "train"), (dtest, "test")], i))
+        #  print(booster.eval_set([(dtrain, "train"), (dtest, "test")], i))
+        print(booster.eval_set([(dtrain, "train")], i))
 
     enc_preds, num_preds = booster.predict(dtest)
     return enc_preds, num_preds
