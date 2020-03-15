@@ -5,7 +5,7 @@
 #include <rabit/c_api.h>
 
 #include "xgboost_t.h"
-#include "src/common/common.h"
+#include <xgboost/common/common.h>
 
 #include <string>
 

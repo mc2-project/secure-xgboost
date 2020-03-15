@@ -17,14 +17,14 @@
 #include <string>
 #include <memory>
 
-#include "./c_api_error.h"
-#include "../data/simple_csr_source.h"
-#include "../common/math.h"
-#include "../common/io.h"
-#include "../common/group_data.h"
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
 
 #ifdef __ENCLAVE__ // includes
-#include "../common/common.h"
+#include <xgboost/common/common.h>
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
 #include "enclave_context.h"

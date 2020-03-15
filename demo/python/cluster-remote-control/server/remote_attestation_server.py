@@ -115,7 +115,7 @@ def cluster_demo():
         return 0
     except Exception as e:
         print(e)
-        return -1
+        return 1
 
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):

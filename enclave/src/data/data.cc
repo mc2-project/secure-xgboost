@@ -6,15 +6,15 @@
 #include <xgboost/logging.h>
 #include <dmlc/registry.h>
 #include <cstring>
-#include "./sparse_page_writer.h"
-#include "./simple_dmatrix.h"
-#include "./simple_csr_source.h"
-#include "../common/common.h"
-#include "../common/io.h"
+#include <xgboost/data/sparse_page_writer.h>
+#include <xgboost/data/simple_dmatrix.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/common.h>
+#include <xgboost/common/io.h>
 
 #if DMLC_ENABLE_STD_THREAD
-#include "./sparse_page_source.h"
-#include "./sparse_page_dmatrix.h"
+#include <xgboost/data/sparse_page_source.h>
+#include <xgboost/data/sparse_page_dmatrix.h>
 #endif  // DMLC_ENABLE_STD_THREAD
 
 #include "xgboost_t.h"
@@ -240,17 +240,20 @@ DMatrix* DMatrix::Load(const std::string& uri,
    * since partitioned data not knowing the real number of features. */
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
-#ifdef __ENCLAVE__ // check row indices are correct
-  // TODO: also need to check no rows deleted from end of file
+#ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
   int *indices = new int[npart];
   memset(indices, 0, sizeof(indices));
-  indices[partid] = parser->total_rows;
+  indices[partid] = parser->total_rows_in_chunk;
   rabit::Allreduce<rabit::op::Max>(indices, npart);
-  int sum = 0;
-  for (int i = 0; i < partid; i++) {
-      sum += indices[i];
+  uint64_t sum = 0;
+  uint64_t sum_prev = 0;
+  for (int i = 0; i < npart; i++) {
+    if (i < partid)
+      sum_prev += indices[i];
+    sum += indices[i];
   }
-  CHECK_EQ(parser->starting_row_index, sum+1);
+  CHECK_EQ(parser->starting_row_index, sum_prev + 1);
+  CHECK_EQ(parser->total_rows_global, sum);
 #endif
 
   // backward compatiblity code.

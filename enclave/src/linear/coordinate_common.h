@@ -10,7 +10,7 @@
 #include <limits>
 
 #include "./param.h"
-#include "../common/random.h"
+#include <xgboost/common/random.h>
 
 namespace xgboost {
 namespace linear {
