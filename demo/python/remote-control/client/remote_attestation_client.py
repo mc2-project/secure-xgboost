@@ -67,7 +67,7 @@ def run(channel_addr, key_path, keypair):
         print("Waiting for training to finish...")
         response = stub.SignalStart(remote_attestation_pb2.Status(status=1))
 
-        if response.status == 0:
+        if response.status == 1:
             print("Training succeeded! Decrypting predictions...")
            
             enc_preds_serialized = response.predictions

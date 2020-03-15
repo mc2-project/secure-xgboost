@@ -22,13 +22,13 @@ print("Creating enclave")
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", flags=(flags))
 
 #  rabit_args = {
-        #  "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
-        #  "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
-        #  "DMLC_TRACKER_URI": os.environ.get("DMLC_TRACKER_URI"),
-        #  "DMLC_TRACKER_PORT": os.environ.get("DMLC_TRACKER_PORT"),
-        #  "DMLC_ROLE": os.environ.get("DMLC_ROLE"),
-        #  "DMLC_NODE_HOST": os.environ.get("DMLC_NODE_HOST")
-        #  }
+#          "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
+#          "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
+#          "DMLC_TRACKER_URI": os.environ.get("DMLC_TRACKER_URI"),
+#          "DMLC_TRACKER_PORT": os.environ.get("DMLC_TRACKER_PORT"),
+#          "DMLC_ROLE": os.environ.get("DMLC_ROLE"),
+#          "DMLC_NODE_HOST": os.environ.get("DMLC_NODE_HOST")
+#          }
 #  
 #  rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
 #  

@@ -13,22 +13,23 @@
 # limitations under the License.
 """The Python implementation of the GRPC RemoteAttestation server."""
 import sys
-sys.path.append("/home/xgb/mc2-xgboost/rpc")
-
-from concurrent import futures
-import logging
-
-import grpc
-
-import remote_attestation_pb2
-import remote_attestation_pb2_grpc
-from rpc_utils import *
 import os
-import subprocess
-import securexgboost as xgb
 
 CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = CURRENT_DIR + "/../../../../"
+
+sys.path.append(HOME_DIR + "/rpc")
+
+from concurrent import futures
+import logging
+import grpc
+import remote_attestation_pb2
+import remote_attestation_pb2_grpc
+from rpc_utils import *
+import subprocess
+import securexgboost as xgb
+import socket
+
 
 # TODO: Make this function configurable by the client
 def xgb_load_train_predict():
@@ -69,53 +70,47 @@ def xgb_load_train_predict():
     return enc_preds, num_preds
 
 def cluster_demo():
-    try:
-        #  rabit_args = {
-        #          "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
-        #          "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
-        #          "DMLC_TRACKER_URI": os.environ.get("DMLC_TRACKER_URI"),
-        #          "DMLC_TRACKER_PORT": os.environ.get("DMLC_TRACKER_PORT"),
-        #          "DMLC_ROLE": os.environ.get("DMLC_ROLE"),
-        #          "DMLC_NODE_HOST": os.environ.get("DMLC_NODE_HOST")
-        #          }
-        #  
-        #  rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
-        #  
-        #  xgb.rabit.init(rargs)
-        print("Creating training matrix")
-        dtrain = xgb.DMatrix(HOME_DIR + "demo/python/cluster-remote-control/client/train.enc", encrypted=True)
-#  
-        #  print("Creating training matrix")
-        #  dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
-#  
+    rabit_args = {
+        "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
+        "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
+        "DMLC_TRACKER_URI": os.environ.get("DMLC_TRACKER_URI"),
+        "DMLC_TRACKER_PORT": os.environ.get("DMLC_TRACKER_PORT"),
+        "DMLC_ROLE": os.environ.get("DMLC_ROLE"),
+        "DMLC_NODE_HOST": os.environ.get("DMLC_NODE_HOST")
+        }
 
-        print("Beginning Training")
+    rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
 
-        # Set training parameters
-        params = {
-                "tree_method": "hist",
-                "n_gpus": "0",
-                "objective": "binary:logistic",
-                "min_child_weight": "1",
-                "gamma": "0.1",
-                "max_depth": "3",
-                "verbosity": "1" 
-                }
+    xgb.rabit.init(rargs)
+    xgb.rabit.tracker_print("Hello from {}".format(socket.gethostname()))
 
-        # Train and evaluate
-        num_rounds = 5 
-        booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+    print("Creating training matrix")
+    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/cluster-remote-control/client/train.enc", encrypted=True)
 
-        if xgb.rabit.get_rank() == 0:
-            booster.save_model(CURRENT_DIR + "/demo_model.model")
+    print("Beginning Training")
 
-        #  if xgb.rabit.IsDistributed():
-        xgb.rabit.finalize()
-        
-        return 0
-    except Exception as e:
-        print(e)
-        return 1
+    # Set training parameters
+    params = {
+            "tree_method": "hist",
+            "n_gpus": "0",
+            "objective": "binary:logistic",
+            "min_child_weight": "1",
+            "gamma": "0.1",
+            "max_depth": "3",
+            "verbosity": "1" 
+            }
+
+    # Train and evaluate
+    num_rounds = 5 
+    booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train")])
+
+    if xgb.rabit.get_rank() == 0:
+        xgb.rabit.tracker_print("{} is rank {}".format(socket.gethostname(), xgb.rabit.get_rank()))
+        booster.save_model(CURRENT_DIR + "/demo_model.model")
+
+    xgb.rabit.finalize()
+    
+    return 0
 
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
@@ -176,8 +171,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             result = cluster_demo()
             return remote_attestation_pb2.Status(status=result)
         except Exception as e:
-            print(e)
-            return remote_attestation_pb2.Status(status=1)
+            # FIXME: Exception is sent to the client for debugging purposes
+            return remote_attestation_pb2.Status(status=1, exception=str(e))
 
 
 def serve():

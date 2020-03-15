@@ -50,7 +50,11 @@ service RemoteAttestation {
 
 // Current status of the node
 message Status {
+  // Status
   int32 status = 1;
+
+  // Exception message
+  string exception = 2;
 }
 
 // A report returned by the enclave for attestation 

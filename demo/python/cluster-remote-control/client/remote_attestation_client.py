@@ -12,6 +12,7 @@ import remote_attestation_pb2_grpc
 import securexgboost as xgb
 import argparse
 import os
+import time
 from rpc_utils import *
 
 def run(channel_addrs, key_path, keypair):
@@ -61,20 +62,38 @@ def run(channel_addrs, key_path, keypair):
         with grpc.insecure_channel(channel_addr) as channel:
             stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
 
+            print("Sending key...")
             response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, key_size=enc_sym_key_size, signature=sig, sig_len=sig_len))
             print("Symmetric key for data sent to server")
 
+    print("Waiting for training to finish...")
+    # Open up a channel to each node to signal start
+    channels = []   
     for channel_addr in channel_addrs:
         # Signal start
-        with grpc.insecure_channel(channel_addr) as channel:
-            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-            print("Waiting for training to finish...")
-            response = stub.SignalStartCluster(remote_attestation_pb2.ClusterParams(num_workers=2))
+        channels.append(grpc.insecure_channel(channel_addr))
 
-            if response.status == 0:
-                print("Training succeeded! Encrypted model has been saved.")
-            else:
-                print("Training failed")
+    # Store futures in a list
+    # Futures hold the result of asynchronous calls to each gRPC server
+    futures = []
+
+    for channel in channels:
+        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+
+        # Asynchronous calls to start job on each node
+        response_future = stub.SignalStartCluster.future(remote_attestation_pb2.ClusterParams(num_workers=2))
+        futures.append(response_future)
+
+    results = []
+    for future in futures:
+        results.append(future.result().status)
+      
+    # If any node returned a non zero exit status
+    if sum(results) == 0:
+        print("Training succeeded! Encrypted model has been saved.")
+    else:
+        print("Training failed")
+        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
