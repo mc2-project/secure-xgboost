@@ -12,5 +12,5 @@ cmake_policy(SET CMP0022 NEW)
 
 set_default_configuration_release()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)
+add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)
