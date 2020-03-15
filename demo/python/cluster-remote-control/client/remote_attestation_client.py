@@ -104,7 +104,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ip_addrs = args.ip_addrs
-    print(ip_addrs)
     channel_addrs = [str(ip_addr) + ":50051" for ip_addr in ip_addrs]
 
     logging.basicConfig()
