@@ -1437,9 +1437,9 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
     mbedtls_gcm_init(&gcm);
     // The personalization string should be unique to your application in order to add some
     // personalized starting randomness to your random sources.
-    char *pers = "aes generate key for MC^2";
+    std::string pers = "aes generate key for MC^2";
     // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
-    int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers, strlen(pers) );
+    int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
     if( ret != 0 )
     {
         printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
