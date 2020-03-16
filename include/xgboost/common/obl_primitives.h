@@ -4,7 +4,10 @@
 #include <cstdint>
 #include <type_traits>
 #include <cstring>
+
+#ifdef USE_AVX2
 #include <intrinsics/immintrin.h>
+#endif
 
 //----------------------------------------------------------------------------
 // Interface
@@ -202,6 +205,7 @@ inline void ObliviousArrayAccessBytes(void *dst, const void *array,
     }
 }
 
+#ifdef USE_AVX2
 /**
  *  Vectorized oblivious array operation helpers
  */
@@ -344,6 +348,7 @@ inline T ObliviousArrayAccessSimd(const T *arr, size_t i, size_t n) {
 
     return retval;
 }
+#endif
 
 // Set arr[i] = val
 template <typename T>
@@ -501,6 +506,7 @@ inline void ObliviousAssignHelper(bool pred, T t_val, T f_val, T *out) {
   *out = static_cast<uint8_t>(result);
 }
 
+#ifdef USE_AVX2
 // Obliviously assigns 32 bytes starting from the address of (cond) ? t_val : f_val into out
 template <typename T>
 inline void ObliviousAssignHelper32(bool cond, T& t_val, T& f_val, T *out) {
@@ -520,6 +526,7 @@ inline void ObliviousAssignHelper16(bool cond, T& t_val, T& f_val, T *out) {
     __m128i result_vector = _mm_blendv_epi8(f_val_vector, t_val_vector, mask);
     _mm_storeu_si128((__m128i*) out, result_vector);
 }
+#endif
 
 inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
                                  const void *f_val, void *out) {
@@ -528,6 +535,7 @@ inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
   char *t = (char *)t_val;
   char *f = (char *)f_val;
 
+#ifdef USE_AVX2
   // Obliviously assign 32 bytes at a time
   size_t num_32_iter = bytes / 32;
   for (int i = 0; i < num_32_iter; i++) {
@@ -553,6 +561,17 @@ inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
     t += 8;
     f += 8;
   }
+#else
+  // Obliviously assign 8 bytes at a time
+  size_t num_8_iter = bytes / 8;
+  for (int i = 0; i < num_8_iter; i++) {
+    ObliviousAssignHelper(pred, *((uint64_t *)t), *((uint64_t *)f),
+                          (uint64_t *)res);
+    res += 8;
+    t += 8;
+    f += 8;
+  }
+#endif
 
   // Obliviously assign 4 bytes
   if ((bytes % 8) / 4) {

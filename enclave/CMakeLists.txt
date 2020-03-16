@@ -70,11 +70,15 @@ target_compile_options(xgboost_enclave
   -fno-strict-aliasing
   -D_GLIBCXX_USE_CXX11_ABI=0 
   -ftls-model=local-exec
-  -mavx2
   )
 if (WIN32 AND MINGW)
   target_compile_options(xgboost_enclave PUBLIC -static-libstdc++)
 endif (WIN32 AND MINGW)
+
+if (USE_AVX2)
+  target_compile_options(xgboost_enclave PRIVATE -mavx2)
+  target_compile_definitions(xgboost_enclave PRIVATE -DUSE_AVX2)
+endif (USE_AVX2)
 
 set_target_properties(xgboost_enclave PROPERTIES
   POSITION_INDEPENDENT_CODE ON
