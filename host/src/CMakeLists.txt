@@ -118,9 +118,9 @@ if (XGBOOST_BUILTIN_PREFETCH_PRESENT)
     -DXGBOOST_BUILTIN_PREFETCH_PRESENT=1)
 endif (XGBOOST_BUILTIN_PREFETCH_PRESENT)
 
-if (SIMULATE)
-    target_compile_definitions(objxgboost PUBLIC -D__ENCLAVE_SIMULATE__)
-endif (SIMULATE)
+if(SIMULATE)
+  target_compile_definitions(objxgboost PUBLIC -D__ENCLAVE_SIMULATE__)
+endif(SIMULATE)
 
 if (USE_OPENMP)
   find_package(OpenMP REQUIRED)

@@ -84,15 +84,15 @@ target_compile_definitions(xgboost_enclave
   -DDMLC_LOG_CUSTOMIZE=1  # enable custom logging
   ${XGBOOST_DEFINITIONS})
 
-if (LOGGING)
+if(LOGGING)
   target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_ENABLE_LOGGER__)
-endif (LOGGING)
-if (SIMULATE)
+endif(LOGGING)
+if(SIMULATE)
   target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_SIMULATION__)
-endif (SIMULATE)
-if (OBLIVIOUS)
+endif(SIMULATE)
+if(OBLIVIOUS)
   target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_OBLIVIOUS__)
-endif (OBLIVIOUS)
+endif(OBLIVIOUS)
 
 target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
 
