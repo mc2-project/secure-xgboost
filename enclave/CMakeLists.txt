@@ -70,6 +70,7 @@ target_compile_options(xgboost_enclave
   -fno-strict-aliasing
   -D_GLIBCXX_USE_CXX11_ABI=0 
   -ftls-model=local-exec
+  -mavx2
   )
 if (WIN32 AND MINGW)
   target_compile_options(xgboost_enclave PUBLIC -static-libstdc++)
