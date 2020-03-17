@@ -15,7 +15,7 @@
 *.Rcheck
 *.rds
 *.tar.gz
-#*conf
+*conf
 *buffer
 *model
 *pyc
