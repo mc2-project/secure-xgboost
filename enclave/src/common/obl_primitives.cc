@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-// #define SIMULATED_OBL_ASSIGN
-// #define SIMULATED_OBL_ASSIGN_HELPER
-
 namespace obl {
 
 // TODO: define this as inline cause segment fault. Need to know why. Is it due
@@ -20,6 +17,19 @@ bool LessImplDouble(double x, double y) {
       : "m"(x), "m"(y)
       : "cc");
   return result;
+}
+
+bool LessImplFloat(float x, float y) {
+    bool result;
+    __asm__ volatile(
+            "movsd %1, %%xmm0;"
+            "movsd %2, %%xmm1;"
+            "comiss %%xmm1, %%xmm0;"
+            "setb %0;"
+            : "=r"(result)
+            : "m"(x), "m"(y)
+            : "cc");
+    return result;
 }
 
 }  // namespace obl

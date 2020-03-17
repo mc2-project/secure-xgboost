@@ -10,7 +10,6 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
-
 # OE configuration options for enclave
 set(OE_DEBUG 0
     CACHE STRING "Build enclave in debug mode (1) or release mode (0)")
@@ -31,6 +30,8 @@ option(SIMULATE
     "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS
     "Enable oblivious training and inference" ON)
+option(USE_AVX2 
+    "Use AVX2 instructions to speed up oblivious primitives" ON)
 
 # Generate conf file
 FILE(WRITE ${PROJECT_SOURCE_DIR}/enclave/xgboost.conf
