@@ -166,7 +166,6 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         Signal to RPC server that client is ready to start
         """
-        num_workers = request.num_workers
         try:
             result = cluster_demo()
             return remote_attestation_pb2.Status(status=result)

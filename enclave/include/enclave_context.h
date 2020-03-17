@@ -146,12 +146,7 @@ class EnclaveContext {
           LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
           return false;
         }
-        //fprintf(stdout, "Decrypted key\n");
-        //for (int i = 0; i < CIPHER_KEY_SIZE; i++)
-        //  fprintf(stdout, "%d\t", output[i]);
-        //fprintf(stdout, "\n");
         std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
-        //client_keys.insert({fname, v});
         memcpy(client_key, output, CIPHER_KEY_SIZE);
         client_key_is_set = true;
       }

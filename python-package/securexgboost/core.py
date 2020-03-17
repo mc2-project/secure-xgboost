@@ -1175,13 +1175,6 @@ class CryptoUtils(object):
         # Add client key
         _LIB.add_client_key(data, data_len, signature, sig_len)
 
-
-    def sync_client_key(self):
-        """
-        Sync client symmetric key across all nodes in cluster
-        """
-        _LIB.sync_client_key();
-
     def decrypt_predictions(self, key, encrypted_preds, num_preds):
         """
         Decrypt encrypted predictions

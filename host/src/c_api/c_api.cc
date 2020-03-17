@@ -1289,12 +1289,6 @@ XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, s
   safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
 }
 
-
-XGB_DLL int sync_client_key() {
-  // FIXME return value / error handling
-  safe_ecall(enclave_sync_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret));
-}
-
 XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_t key_size, uint8_t* encrypted_data, size_t* encrypted_data_size) {
   bool result = false;
   mbedtls_pk_context key;

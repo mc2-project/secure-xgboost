@@ -653,8 +653,6 @@ XGB_DLL int add_client_key(
     uint8_t* signature,
     size_t sig_len);
 
-XGB_DLL int sync_client_key();
-
 XGB_DLL int encrypt_data_with_pk(
     char* data,
     size_t len,

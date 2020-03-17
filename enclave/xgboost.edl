@@ -138,8 +138,6 @@ enclave {
                 [in, size=sig_len] uint8_t* signature,
                 size_t sig_len);
 
-        public int enclave_sync_client_key();
-
         public void enclave_RabitInit(
                 int argc,
                 [user_check] char **argv);
