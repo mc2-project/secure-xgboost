@@ -10,6 +10,9 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
+#-- Options
+option(USE_AVX2 "Use AVX2 instructions to speed up oblivious primitives" ON)
+
 set_default_configuration_release()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)

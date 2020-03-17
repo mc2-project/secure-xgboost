@@ -5,6 +5,10 @@
 #include <type_traits>
 #include <cstring>
 
+#ifdef USE_AVX2
+#include <intrinsics/immintrin.h>
+#endif
+
 //----------------------------------------------------------------------------
 // Interface
 
@@ -50,6 +54,9 @@ inline T ObliviousArrayAccess(const T *arr, size_t i, size_t n);
 
 inline void ObliviousArrayAccessBytes(void *dst, const void *array,
                                       size_t nbytes, size_t i, size_t n);
+
+template <typename T>
+inline T ObliviousArrayAccessSimd(const T *arr, size_t i, size_t n); 
 
 template <typename T>
 inline void ObliviousArrayAssign(T *arr, size_t i, size_t n, const T &val);
@@ -187,6 +194,162 @@ inline T ObliviousArrayAccess(const T *arr, size_t i, size_t n) {
   return result;
 }
 
+inline void ObliviousArrayAccessBytes(void *dst, const void *array,
+        size_t nbytes, size_t i, size_t n) {
+    size_t step = nbytes < CACHE_LINE_SIZE ? CACHE_LINE_SIZE / nbytes : 1;
+    for (size_t j = 0; j < n; j += step) {
+        bool cond = ObliviousEqual(j / step, i / step);
+        int pos = ObliviousChoose(cond, i, j);
+        void *src_pos = (char *)(array) + pos * nbytes;
+        obl::ObliviousBytesAssign(cond, nbytes, src_pos, dst, dst);
+    }
+}
+
+#ifdef USE_AVX2
+/**
+ *  Vectorized oblivious array operation helpers
+ */
+inline int _mm256_extract_epi32_var_indx(__m256i vec, int i ) {   
+    __m128i indx = _mm_cvtsi32_si128(i);
+    __m256i shuffled  = _mm256_permutevar8x32_epi32(vec, _mm256_castsi128_si256(indx));
+    return         _mm_cvtsi128_si32(_mm256_castsi256_si128(shuffled));
+}
+inline float _mm256_extract_ps_var_indx(__m256 vec, int i) {
+    __m128i vidx = _mm_cvtsi32_si128(i);          // vmovd
+    __m256i vidx256 = _mm256_castsi128_si256(vidx);  // no instructions
+    __m256  shuffled = _mm256_permutevar8x32_ps(vec, vidx256);  // vpermps
+    return _mm256_cvtss_f32(shuffled);
+}
+inline int _mm_extract_epi32_var_indx(__m128i vec, int i) {
+    __m128i indx = _mm_cvtsi32_si128(i);
+	__m128i shuffled = (__m128i)_mm_permutevar_ps((__m128)vec, indx);
+	return _mm_cvtsi128_si32(shuffled);
+}
+inline float _mm_extract_ps_var_indx(__m128 vec, int i) {
+	__m128i indx = _mm_cvtsi32_si128(i);
+	__m128  shuffled = _mm_permutevar_ps(vec, indx);
+	return _mm_cvtss_f32(shuffled);
+}
+
+template <typename T>
+inline T extract256(__m256i vec, int i);
+template<>
+inline int extract256<int>(__m256i vec, int i) {
+    return _mm256_extract_epi32_var_indx(vec, i);
+}
+template<>
+inline float extract256<float>(__m256i vec, int i) {
+    return _mm256_extract_ps_var_indx((__m256)vec, i);
+}
+inline __m256i gather256(float const * base, __m256i index, const int scale) {
+    return (__m256i) _mm256_i32gather_ps(base, index, scale);
+}
+inline __m256i gather256(int const * base, __m256i index, const int scale) {
+    return (__m256i) _mm256_i32gather_epi32(base, index, scale);
+}
+template <typename T>
+inline T extract128(__m128i vec, int i);
+template<>
+inline int extract128<int>(__m128i vec, int i) {
+    return _mm_extract_epi32_var_indx(vec, i);
+}
+template<>
+inline float extract128<float>(__m128i vec, int i) {
+    return _mm_extract_ps_var_indx((__m128)vec, i);
+}
+inline __m128i gather128(float const * base, __m128i index, const int scale) {
+    return (__m128i) _mm_i32gather_ps(base, index, scale);
+}
+inline __m128i gather128(int const * base, __m128i index, const int scale) {
+    return (__m128i) _mm_i32gather_epi32(base, index, scale);
+}
+
+
+// Vectorized access into int or float array. Implemented as described in Oblivious Multi-Party Machine Learning paper (Ohrimenko et al.) 
+template <typename T>
+inline T ObliviousArrayAccessSimd(const T *arr, size_t i, size_t n) {
+    T retval;
+
+    // number of elements per cache line
+    int elem_per_cache_line = CACHE_LINE_SIZE / 4;
+    
+    // offset into the cache line
+    int cache_line_offset = i % elem_per_cache_line;
+
+    size_t j = 0;
+    // Gather 8 cache lines at a time
+    {
+      // can jump ahead CACHE_LINE_SIZE * (256 / (sizeof(T) * 8)) bytes per gather...
+      int step_size = elem_per_cache_line * 8; // number of elements we can effectively scan per `gather`
+
+      // the index of the gather that will yield the target
+      int m = i / step_size;
+
+      // offset into the temporary scanning vector register
+      int vector_offset = (i % step_size) / elem_per_cache_line;
+
+      // gather instruction selects at memory addresses (base + IDX * scale)
+      // VPGATHERDD __m128i _mm_i32gather_epi32 (int const * base, __m128i index, const int scale);
+
+      __m256i indices;
+      __m256i scanned;
+      T maybe_retval;
+      T scan_array[8];
+      if (step_size <= n) {
+        indices = _mm256_setr_epi32(cache_line_offset, elem_per_cache_line*1 + cache_line_offset, 
+          elem_per_cache_line*2 + cache_line_offset, elem_per_cache_line*3 + cache_line_offset,
+          elem_per_cache_line*4 + cache_line_offset, elem_per_cache_line*5 + cache_line_offset,
+          elem_per_cache_line*6 + cache_line_offset, elem_per_cache_line*7 + cache_line_offset);
+      }
+      for (; j + step_size <= n; j += step_size) {
+        scanned = gather256(&arr[j], indices, 4);
+        maybe_retval = extract256<T>(scanned, vector_offset);
+        obl::ObliviousBytesAssign(j / step_size == m, 4, &maybe_retval, &retval, &retval);
+      }
+    }
+    
+    // Gather 4 cache lines at a time
+    {
+        // can jump ahead CACHE_LINE_SIZE * (128 / (sizeof(T) * 8)) bytes per gather...
+        int step_size = elem_per_cache_line * 4; // number of elements we can effectively scan per `gather`
+
+        // the index of the gather that will yield the target
+        int m = i / step_size;
+
+        // offset into the temporary scanning vector register
+        int vector_offset = (i % step_size) / elem_per_cache_line;
+
+        // gather instruction selects at memory addresses (base + IDX * scale)
+        // VPGATHERDD __m128i _mm_i32gather_epi32 (int const * base, __m128i index, const int scale);
+
+        __m128i indices;
+        __m128i scanned;
+        T maybe_retval;
+        T scan_array[4];
+        if (j + step_size <= n) {
+            indices = _mm_setr_epi32(cache_line_offset, elem_per_cache_line*1 + cache_line_offset, 
+                    elem_per_cache_line*2 + cache_line_offset, elem_per_cache_line*3 + cache_line_offset);
+        }
+        for (; j + step_size <= n; j += step_size) {
+            scanned = gather128(&arr[j], indices, 4);
+            maybe_retval = extract128<T>(scanned, vector_offset);
+            obl::ObliviousBytesAssign(j / step_size == m, 4, &maybe_retval, &retval, &retval);
+        }
+    }
+
+    // Take care of remaining elements
+    size_t step = CACHE_LINE_SIZE / 4; 
+    for (; j < n; j += step) {
+        bool cond = ObliviousEqual(j / step, i / step);
+        int pos = ObliviousChoose(cond, i, j);
+        void *src_pos = (void*) &arr[pos];
+        obl::ObliviousBytesAssign(cond, 4, src_pos, &retval, &retval);
+    }
+
+    return retval;
+}
+#endif
+
 // Set arr[i] = val
 template <typename T>
 inline void ObliviousArrayAssign(T *arr, size_t i, size_t n, const T &val) {
@@ -201,17 +364,6 @@ inline void ObliviousArrayAssignBytes(void *array, const void *src,
     int pos = ObliviousChoose(cond, i, j);
     void *dst_pos = (char *)(array) + pos * nbytes;
     obl::ObliviousBytesAssign(cond, nbytes, src, dst_pos, dst_pos);
-  }
-}
-
-inline void ObliviousArrayAccessBytes(void *dst, const void *array,
-                                      size_t nbytes, size_t i, size_t n) {
-  size_t step = nbytes < CACHE_LINE_SIZE ? CACHE_LINE_SIZE / nbytes : 1;
-  for (size_t j = 0; j < n; j += step) {
-    bool cond = ObliviousEqual(j / step, i / step);
-    int pos = ObliviousChoose(cond, i, j);
-    void *src_pos = (char *)(array) + pos * nbytes;
-    obl::ObliviousBytesAssign(cond, nbytes, src_pos, dst, dst);
   }
 }
 
@@ -310,8 +462,7 @@ template <typename Iter, typename Comparator>
 inline void ObliviousMerge(Iter begin, Iter end, Comparator cmp) {
   using value_type = typename std::remove_reference<decltype(*begin)>::type;
   value_type *array = &(*begin);
-  return detail::imperative_o_merge<value_type, Comparator>(array, 0,
-                                                            end - begin, cmp);
+  detail::imperative_o_merge<value_type, Comparator>(array, 0, end - begin, cmp);
 }
 
 template <typename Iter, typename Comparator>
@@ -328,9 +479,6 @@ template <typename T,
                                       std::is_scalar<T>::value,
                                   int>::type = 0>
 inline void ObliviousAssignHelper(bool pred, T t_val, T f_val, T *out) {
-#ifdef SIMULATED_OBL_ASSIGN_HELPER
-  *out = pred ? t_val : f_val;
-#else
   T result;
   __asm__ volatile(
       "mov %2, %0;"
@@ -340,15 +488,11 @@ inline void ObliviousAssignHelper(bool pred, T t_val, T f_val, T *out) {
       : "r"(pred), "r"(t_val), "r"(f_val), "m"(out)
       : "cc");
   *out = result;
-#endif
 }
 
 template <typename T, typename std::enable_if<std::is_same<T, uint8_t>::value,
                                               int>::type = 0>
 inline void ObliviousAssignHelper(bool pred, T t_val, T f_val, T *out) {
-#ifdef SIMULATED_OBL_ASSIGN_HELPER
-  *out = pred ? t_val : f_val;
-#else
   uint16_t result;
   uint16_t t = t_val;
   uint16_t f = f_val;
@@ -360,27 +504,66 @@ inline void ObliviousAssignHelper(bool pred, T t_val, T f_val, T *out) {
       : "r"(pred), "r"(t), "r"(f), "m"(out)
       : "cc");
   *out = static_cast<uint8_t>(result);
-#endif
 }
+
+#ifdef USE_AVX2
+// Obliviously assigns 32 bytes starting from the address of (cond) ? t_val : f_val into out
+template <typename T>
+inline void ObliviousAssignHelper32(bool cond, T& t_val, T& f_val, T *out) {
+    __m256i mask = _mm256_set1_epi64x((int)cond * -1); 
+    __m256i t_val_vector = _mm256_loadu_si256((__m256i*) &t_val);
+    __m256i f_val_vector = _mm256_loadu_si256((__m256i*) &f_val);
+    __m256i result_vector = _mm256_blendv_epi8(f_val_vector, t_val_vector, mask);
+    _mm256_storeu_si256((__m256i*) out, result_vector);
+}
+
+// Obliviously assigns 16 bytes starting from the address of (cond) ? t_val : f_val into out
+template <typename T>
+inline void ObliviousAssignHelper16(bool cond, T& t_val, T& f_val, T *out) {
+    __m128i mask = _mm_set1_epi64x((int)cond * -1);
+    __m128i t_val_vector = _mm_loadu_si128((__m128i*) &t_val);
+    __m128i f_val_vector = _mm_loadu_si128((__m128i*) &f_val);
+    __m128i result_vector = _mm_blendv_epi8(f_val_vector, t_val_vector, mask);
+    _mm_storeu_si128((__m128i*) out, result_vector);
+}
+#endif
 
 inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
                                  const void *f_val, void *out) {
-// #define SIMULATED_OBL_ASSIGN
-#ifdef SIMULATED_OBL_ASSIGN
-  if (pred)
-    std::memcpy(out, t_val, nbytes);
-  else
-    std::memcpy(out, f_val, nbytes);
-#else
-
   const size_t bytes = nbytes;
   char *res = (char *)out;
   char *t = (char *)t_val;
   char *f = (char *)f_val;
 
+#ifdef USE_AVX2
+  // Obliviously assign 32 bytes at a time
+  size_t num_32_iter = bytes / 32;
+  for (int i = 0; i < num_32_iter; i++) {
+    ObliviousAssignHelper32(pred, *t, *f, res);
+    res += 32;
+    t += 32;
+    f += 32;
+  }
+
+  // Obliviously assign 16 bytes
+  if ((bytes % 32) / 16) {
+      ObliviousAssignHelper16(pred, *t, *f, res);
+      res += 16;
+      t += 16;
+      f += 16;
+  }
+
+  // Obliviously assign 8 bytes
+  if ((bytes % 16) / 8) {
+    ObliviousAssignHelper(pred, *((uint64_t *)t), *((uint64_t *)f),
+              (uint64_t *)res);
+    res += 8;
+    t += 8;
+    f += 8;
+  }
+#else
   // Obliviously assign 8 bytes at a time
   size_t num_8_iter = bytes / 8;
-#pragma omp simd
   for (int i = 0; i < num_8_iter; i++) {
     ObliviousAssignHelper(pred, *((uint64_t *)t), *((uint64_t *)f),
                           (uint64_t *)res);
@@ -388,6 +571,7 @@ inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
     t += 8;
     f += 8;
   }
+#endif
 
   // Obliviously assign 4 bytes
   if ((bytes % 8) / 4) {
@@ -407,11 +591,11 @@ inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
     f += 2;
   }
 
+  // Obliviously assign 1 byte
   if ((bytes % 2)) {
     ObliviousAssignHelper(pred, *((uint8_t *)t), *((uint8_t *)f),
                           (uint8_t *)res);
   }
-#endif
 }
-
 }  // namespace obl
+
