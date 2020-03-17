@@ -445,11 +445,6 @@ int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len
       return 0;
     return -1;
 }
-
-int sync_client_key() {
-    EnclaveContext::getInstance().sync_client_key();
-    return 0;
-}
 #endif // __ENCLAVE__
 
 /*! \brief entry to to easily hold returning information */
