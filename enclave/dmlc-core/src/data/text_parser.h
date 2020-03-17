@@ -64,7 +64,9 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   virtual ~TextParserBase() {
     delete source_;
 #ifdef __ENCLAVE__ // cipher free
-    mbedtls_gcm_free(&gcm);
+    if (is_encrypted) {
+      mbedtls_gcm_free(&gcm);
+    }
 #endif
   }
   virtual void BeforeFirst(void) {
