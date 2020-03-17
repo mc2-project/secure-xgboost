@@ -25,7 +25,7 @@ set(OE_SECURITY_VERSION 1
     CACHE STRING "Enclave security version (ISVSVN)")
 
 option(LOGGING
-    "Enable enclave logger" ON)
+    "Enable enclave logger" OFF)
 option(SIMULATE
     "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS
