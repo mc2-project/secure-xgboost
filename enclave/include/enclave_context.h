@@ -109,44 +109,48 @@ class EnclaveContext {
       return true;
     }
 
-    bool decrypt_and_save_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-      if (!verifySignature(data, data_len, signature, sig_len)) {
-        LOG(INFO) << "Signature verification failed";
-        return false;
-      }
-
-      int res = 0;
-      mbedtls_rsa_context* rsa_context;
-
-      mbedtls_pk_rsa(m_pk_context)->len = data_len;
-      rsa_context = mbedtls_pk_rsa(m_pk_context);
-      rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
-      rsa_context->hash_id = MBEDTLS_MD_SHA256;
-
-      size_t output_size;
-      uint8_t output[CIPHER_KEY_SIZE];
-
-      res = mbedtls_rsa_pkcs1_decrypt(
-          rsa_context,
-          mbedtls_ctr_drbg_random,
-          &m_ctr_drbg_context,
-          MBEDTLS_RSA_PRIVATE,
-          &output_size,
-          data,
-          output,
-          CIPHER_KEY_SIZE);
-      if (res != 0) {
-        LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
-        return false;
-      }
-      //fprintf(stdout, "Decrypted key\n");
-      //for (int i = 0; i < CIPHER_KEY_SIZE; i++)
-      //  fprintf(stdout, "%d\t", output[i]);
-      //fprintf(stdout, "\n");
-      std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
-      //client_keys.insert({fname, v});
-      memcpy(client_key, output, CIPHER_KEY_SIZE);
+    void sync_client_key() {
+      // The master node (rank 0) broadcasts the client key to other nodes
+      rabit::Broadcast(client_key, CIPHER_KEY_SIZE, 0);
       client_key_is_set = true;
+    }
+
+    bool decrypt_and_save_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
+      if (rabit::GetRank() == 0) {
+        if (!verifySignature(data, data_len, signature, sig_len)) {
+          LOG(INFO) << "Signature verification failed";
+          return false;
+        }
+
+        int res = 0;
+        mbedtls_rsa_context* rsa_context;
+
+        mbedtls_pk_rsa(m_pk_context)->len = data_len;
+        rsa_context = mbedtls_pk_rsa(m_pk_context);
+        rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
+        rsa_context->hash_id = MBEDTLS_MD_SHA256;
+
+        size_t output_size;
+        uint8_t output[CIPHER_KEY_SIZE];
+
+        res = mbedtls_rsa_pkcs1_decrypt(
+            rsa_context,
+            mbedtls_ctr_drbg_random,
+            &m_ctr_drbg_context,
+            MBEDTLS_RSA_PRIVATE,
+            &output_size,
+            data,
+            output,
+            CIPHER_KEY_SIZE);
+        if (res != 0) {
+          LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
+          return false;
+        }
+        std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
+        memcpy(client_key, output, CIPHER_KEY_SIZE);
+        client_key_is_set = true;
+      }
+      sync_client_key();
       return true;
     }
 
