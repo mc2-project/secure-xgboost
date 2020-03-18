@@ -1,9 +1,6 @@
-#include "obl_primitives.h"
+#include <xgboost/common/obl_primitives.h>
 
 #include <iostream>
-
-// #define SIMULATED_OBL_ASSIGN
-// #define SIMULATED_OBL_ASSIGN_HELPER
 
 namespace obl {
 
@@ -20,6 +17,19 @@ bool LessImplDouble(double x, double y) {
       : "m"(x), "m"(y)
       : "cc");
   return result;
+}
+
+bool LessImplFloat(float x, float y) {
+    bool result;
+    __asm__ volatile(
+            "movsd %1, %%xmm0;"
+            "movsd %2, %%xmm1;"
+            "comiss %%xmm1, %%xmm0;"
+            "setb %0;"
+            : "=r"(result)
+            : "m"(x), "m"(y)
+            : "cc");
+    return result;
 }
 
 }  // namespace obl
@@ -106,7 +116,7 @@ void test_ObliviousGreater() {
 
     // Test integer overflow
     test("(int32_t) 2147483648 > 42", !ObliviousGreater((int32_t)2147483648, 42));
-    test("2147483648 > 42", ObliviousGreater(2147483648, (int64_t) 42));
+    test("2147483648 > 42", ObliviousGreater((int64_t)2147483648, int64_t(42)));
 }
 
 void test_ObliviousLess() {
@@ -131,7 +141,7 @@ void test_ObliviousLess() {
 
     // Test integer overflow
     test("(int32_t) 2147483648 < 42", ObliviousLess((int32_t)2147483648, 42));
-    test("2147483648 < 42", !ObliviousLess(2147483648, (int64_t) 42));
+    test("2147483648 < 42", !ObliviousLess((int64_t)2147483648, (int64_t) 42));
 }
 
 void test_ObliviousEqual() {
@@ -280,7 +290,7 @@ void test_ObliviousArrayAccess() {
     for (int i = 0; i < 100; i++) {
         Generic_16B val = ObliviousArrayAccess(g_arr, i, 100);
         if (i % 10 == 0)
-            printf("%f,%llu ", val.x, val.y);
+            printf("%f,%lu ", val.x, val.y);
         pass = pass && (val.x == g_arr[i].x) && (val.y == g_arr[i].y);
     }
     if (pass) 
@@ -321,7 +331,7 @@ void test_ObliviousArrayAssign() {
         }
         ObliviousArrayAssign(g_arr, i, 100, Generic_16B(999.0, 999));
         if (i % 10 == 0)
-            printf("%f,%llu ", g_arr[i].x, g_arr[i].y);
+            printf("%f,%lu ", g_arr[i].x, g_arr[i].y);
         for (int j = 0; j < 100; j++) {
             if (i == j)
                 pass = pass && (g_arr[j].x == 999.0) && (g_arr[j].y == 999);

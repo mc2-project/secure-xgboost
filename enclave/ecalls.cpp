@@ -5,7 +5,7 @@
 #include <rabit/c_api.h>
 
 #include "xgboost_t.h"
-#include "src/common/common.h"
+#include <xgboost/common/common.h>
 
 #include <string>
 
@@ -296,6 +296,11 @@ void enclave_RabitInit(int argc, char **argv) {
 void enclave_RabitFinalize() {
   LOG(DEBUG) << "Ecall: RabitFinalize";
   RabitFinalize();
+}
+
+int enclave_RabitGetRank() {
+  LOG(DEBUG) << "Ecall: RabitGetRank";
+  return RabitGetRank();
 }
 
 int enclave_RabitIsDistributed() {

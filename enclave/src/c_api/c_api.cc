@@ -18,14 +18,14 @@
 #include <memory>
 #include "base64.h"
 
-#include "./c_api_error.h"
-#include "../data/simple_csr_source.h"
-#include "../common/math.h"
-#include "../common/io.h"
-#include "../common/group_data.h"
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
 
 #ifdef __ENCLAVE__ // includes
-#include "../common/common.h"
+#include <xgboost/common/common.h>
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
 #include "enclave_context.h"
@@ -442,8 +442,9 @@ int verify_remote_report_and_set_pubkey(
 }
 
 int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
-    EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len);
-    return 0;
+    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
+      return 0;
+    return -1;
 }
 #endif // __ENCLAVE__
 

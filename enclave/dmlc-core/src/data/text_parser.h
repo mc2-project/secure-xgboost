@@ -55,7 +55,8 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
             LOG(FATAL) << "mbedtls_gcm_setkey failed with error " << -ret;
         }
     }
-    this->total_rows = 0;
+    this->total_rows_in_chunk = 0;
+    this->total_rows_global = 0;
     this->starting_row_index = 0;
     this->prev_row_index = 0;
 #endif
@@ -63,7 +64,9 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   virtual ~TextParserBase() {
     delete source_;
 #ifdef __ENCLAVE__ // cipher free
-    mbedtls_gcm_free(&gcm);
+    if (is_encrypted) {
+      mbedtls_gcm_free(&gcm);
+    }
 #endif
   }
   virtual void BeforeFirst(void) {
@@ -115,22 +118,26 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
 
 #ifdef __ENCLAVE__ // decryption
   inline void DecryptLine(const char* data, char* output, size_t len) {
-    this->total_rows++;
+    this->total_rows_in_chunk++;
 
     int index_pos = 0;
+    int total_pos = 0;
     int iv_pos = 0;
     int tag_pos = 0;
+
     for (int i = 0; i < len; i++) {
-        if (data[i] == ',') {
-            index_pos = i;
-            break;
-        }
+      if (data[i] == ',') {
+        index_pos = i;
+        break;
+      }
     }
-    char *index_str = (char*) malloc (index_pos + 1);
-    memcpy(index_str, data, index_pos);
-    index_str[index_pos] = 0;
-    uint64_t index = atoi(index_str);
     for (int i = index_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        total_pos = i;
+        break;
+      }
+    }
+    for (int i = total_pos + 1; i < len; i++) {
       if (data[i] == ',') {
         iv_pos = i;
         break;
@@ -143,27 +150,46 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
       }
     }
     CHECK_LT(0, index_pos);
-    CHECK_LT(index_pos, iv_pos);
+    CHECK_LT(index_pos, total_pos);
+    CHECK_LT(total_pos, iv_pos);
     CHECK_LT(iv_pos, tag_pos);
 
+    char *aad_str = (char*) malloc (total_pos + 1);
+    memcpy(aad_str, data, total_pos);
+    aad_str[total_pos] = 0;
+
     size_t out_len;
+    char tag[CIPHER_TAG_SIZE];
+    char iv[CIPHER_IV_SIZE];
     char* ct = (char *) malloc(len * sizeof(char));
 
-    out_len = base64_decode(data + index_pos + 1, iv_pos - index_pos, iv);
+    out_len = base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
     CHECK_EQ(out_len, CIPHER_IV_SIZE);
     out_len = base64_decode(data + iv_pos + 1, tag_pos - iv_pos, tag);
     CHECK_EQ(out_len, CIPHER_TAG_SIZE);
     out_len = base64_decode(data + tag_pos + 1, len - tag_pos, ct);
 
-    const unsigned char* add_data = (const unsigned char*) &index;
+    char *index_str = (char*) malloc (index_pos);
+    memcpy(index_str, data, index_pos);
+    index_str[index_pos] = 0;
+    uint64_t index = atoi(index_str);
+    CHECK_GT(index, 0);
+
+    uint64_t total_len = total_pos - index_pos - 1;
+    char *total_str = (char*) malloc (total_len + 1);
+    memcpy(total_str, data + index_pos + 1, total_len);
+    total_str[total_len] = 0;
+    uint64_t total = atoi(total_str);
+    CHECK_LE(index, total);
+
     int ret = decrypt_symm(
         &gcm,
         (const unsigned char*)ct,
         out_len,
         (unsigned char*)iv,
         (unsigned char*)tag,
-        (unsigned char*)add_data,
-        sizeof(uint64_t),
+        (unsigned char*)aad_str,
+        strlen(aad_str),
         (unsigned char*)output);
     output[out_len] = '\0';
     free(ct);
@@ -174,9 +200,11 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     // Check row indices are correct (to detect duplication/deletion of rows)
     if (this->starting_row_index == 0) {
         this->starting_row_index = index;
+        this->total_rows_global = total;
         prev_row_index = index;
     } else {
         CHECK_EQ(prev_row_index+1, index);
+        CHECK_EQ(this->total_rows_global, total);
         prev_row_index = index;
     }
   }
@@ -219,8 +247,6 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
 
   mbedtls_gcm_context gcm;
   char key[CIPHER_KEY_SIZE];
-  char tag[CIPHER_TAG_SIZE];
-  char iv[CIPHER_IV_SIZE];
 #endif
 
 };

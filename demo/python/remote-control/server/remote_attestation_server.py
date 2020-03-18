@@ -24,7 +24,7 @@ from rpc_utils import *
 import os
 import securexgboost as xgb
 
-HOME_DIR = os.getcwd() + "/../../../../"
+HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
 def xgb_load_train_predict():
     """

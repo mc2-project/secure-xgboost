@@ -5,7 +5,8 @@
 #include <xgboost/tree_model.h>
 #include <xgboost/tree_updater.h>
 #include "dmlc/logging.h"
-#include "../common/host_device_vector.h"
+#include <xgboost/common/host_device_vector.h>
+#include <xgboost/common/quantile.h>
 
 namespace xgboost {
 namespace predictor {
@@ -23,8 +24,18 @@ class CPUPredictor : public Predictor {
     p_feats->Fill(inst);
     for (size_t i = tree_begin; i < tree_end; ++i) {
       if (tree_info[i] == bst_group) {
-        int tid = trees[i]->GetLeafIndex(*p_feats, root_index);
-        psum += (*trees[i])[tid].LeafValue();
+        if (common::ObliviousEnabled()) {
+          auto leaf_value = trees[i]->OGetLeafValue(*p_feats, root_index);
+          if (common::ObliviousDebugCheckEnabled()) {
+            int tid = trees[i]->GetLeafIndex(*p_feats, root_index);
+            auto leaf_value2 = (*trees[i])[tid].LeafValue();
+            CHECK_EQ(leaf_value, leaf_value2) << leaf_value << ", " << leaf_value2;
+          }
+          psum += leaf_value;
+        } else {
+          int tid = trees[i]->GetLeafIndex(*p_feats, root_index);
+          psum += (*trees[i])[tid].LeafValue();
+        }
       }
     }
     p_feats->Drop(inst);

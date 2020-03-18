@@ -19,13 +19,13 @@
 #include <string>
 #include <utility>
 
-#include "./param.h"
-#include "./updater_quantile_hist.h"
-#include "./split_evaluator.h"
-#include "../common/random.h"
-#include "../common/hist_util.h"
-#include "../common/row_set.h"
-#include "../common/column_matrix.h"
+#include <xgboost/tree/param.h>
+#include <xgboost/tree/updater_quantile_hist.h>
+#include <xgboost/tree/split_evaluator.h>
+#include <xgboost/common/random.h>
+#include <xgboost/common/hist_util.h>
+#include <xgboost/common/row_set.h>
+#include <xgboost/common/column_matrix.h>
 
 namespace xgboost {
 namespace tree {
