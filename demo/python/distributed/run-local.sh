@@ -1,1 +1,1 @@
-/home/xgb/secure-xgboost/host/dmlc-core/tracker/dmlc-submit --log-level DEBUG --cluster local --num-workers $1 --worker-memory 1g python3 /home/xgb/secure-xgboost/demo/python/distributed/distr-training.py
+../../../host/dmlc-core/tracker/dmlc-submit --log-level DEBUG --cluster local --num-workers $1 --worker-memory 1g python3 distr-training.py

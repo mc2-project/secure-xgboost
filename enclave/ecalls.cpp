@@ -222,6 +222,11 @@ void enclave_RabitFinalize() {
   RabitFinalize();
 }
 
+int enclave_RabitGetRank() {
+  LOG(DEBUG) << "Ecall: RabitGetRank";
+  return RabitGetRank();
+}
+
 int enclave_RabitIsDistributed() {
   LOG(DEBUG) << "Ecall: RabitIsDistributed";
   return RabitIsDistributed();

@@ -15,7 +15,7 @@ Links to Other Helpful Resources
 Python
 ******
 
-Below is a snippet of the full Python demo located at :code:`mc2--xgboost/demo/python/basic/secure-xgboost-demo.py`. 
+Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 
 The snippet assumes that your machine supports hardware enclaves. If your machine doesn't have an enclave available, you can simulate an enclave (for development purposes) by setting the flag ``OE_ENCLAVE_FLAG_SIMULATE`` instead of ``OE_ENCLAVE_FLAG_RELEASE``. Look at lines 11-19 of ``secure-xgboost-demo.py`` for an example.
 
@@ -77,3 +77,21 @@ Troubleshooting
       sudo apt-add-repository https://packages.microsoft.com/ubuntu/18.04/prod
       sudo apt-get update
       sudo apt-get install az-dcap-client
+
+2. ``enclave_create with ENCLAVE_TYPE_SGX1 type failed``
+
+   This error may be symptomatic of a machine that does not support Intel SGX. Check if your machine supports it by doing
+
+   .. code-block:: bash
+
+      oesgx
+
+   If your machine doesn't support SGX, you can still use the library in simulation mode for local development and testing.
+
+   Alternatively, this error may be symptomatic of an outdated DCAP driver. Check the version by doing
+
+   .. code-block:: bash
+
+      modinfo intel_sgx
+
+   If the version is below 1.21, update the DCAP driver by following step 2 `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_.
