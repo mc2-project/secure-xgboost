@@ -983,7 +983,6 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
    safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, len, (char***) out_models));
 }
 
-#ifndef __SGX__
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    int fnum,
                                    const char** fname,
@@ -993,8 +992,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
   safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, format, len, (char***) out_models));
-} API_END();
-#endif
+}
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
@@ -1388,6 +1386,69 @@ XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_
             output);
     *preds = reinterpret_cast<float*>(output);
     return 0;
+}
+
+XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
+  mbedtls_gcm_context gcm;
+
+
+  mbedtls_gcm_init(&gcm);
+  int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
+          MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
+          (const unsigned char*) key,      // encryption key
+          CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
+  if (ret != 0) {
+    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    exit(1);
+  }
+
+  const char* total_encrypted;
+  int out_len;
+  for (int i = 0; i < length; i++) {
+    total_encrypted = models[i];
+
+    char* p = const_cast<char*>(total_encrypted);
+    int iv_pos = 0;
+    while(*p != '\0' && *p != ',') {
+        p++;
+        iv_pos++;
+    }
+    p++;
+    int tag_pos = iv_pos + 1;
+    while(*p != '\0' && *p != ',') {
+        p++;
+        tag_pos++;
+    }
+    size_t out_len;
+    unsigned char tag[CIPHER_TAG_SIZE];
+    unsigned char iv[CIPHER_IV_SIZE];
+
+    char* ct = (char *) malloc(strlen(total_encrypted) * sizeof(char));
+
+    out_len = dmlc::data::base64_decode(total_encrypted, iv_pos, (char *) iv);
+    out_len = dmlc::data::base64_decode(total_encrypted + iv_pos + 1, tag_pos - iv_pos, (char *) tag);
+    out_len = dmlc::data::base64_decode(total_encrypted + tag_pos + 1, strlen(total_encrypted) - tag_pos, ct);
+
+    unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
+    int ret = decrypt_symm(
+            &gcm,
+            (const unsigned char*) ct,
+            out_len,
+            iv,
+            tag,
+            NULL,
+            0,
+            decrypted
+            );
+    decrypted[out_len] = '\0';
+    free(ct);
+    if (ret != 0) {
+      std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
+      exit(1);
+    }
+    models[i] = (char*) decrypted;
+  }
+  return 0;
 }
 
 // Input, output, key
