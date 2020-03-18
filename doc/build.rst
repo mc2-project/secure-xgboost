@@ -110,8 +110,10 @@ Building the Targets
 
       git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
 
-2. Configure the enclave parameters in the file ``enclave/xgboost.conf``, including the amount of virtual memory available to the enclave.
+2. Configure the enclave parameters in ``CMakeLists.txt``, including the amount of virtual memory available to the enclave.
    More details on these parameters can be found `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md>`_.
+ 
+   If your machine does not support hardware enclaves, then you can still build and run the code in simulation mode (for local development and testing) by setting the variables ``OE_DEBUG=1`` and ``SIMULATION=ON`` in ``CMakeLists.txt``.
 
 3. On Ubuntu, build the Secure XGBoost targets by running CMake:
 
