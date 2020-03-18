@@ -6,7 +6,8 @@ OE_ENCLAVE_FLAG_DEBUG = 1
 OE_ENCLAVE_FLAG_SIMULATE = 2
 
 print("Creating enclave")
-HOME_DIR = os.getcwd() + "/"
+DIR = os.path.dirname(os.path.realpath(__file__))
+HOME_DIR = DIR + "/../../../"
 
 flags = OE_ENCLAVE_FLAG_RELEASE
 
@@ -14,15 +15,15 @@ flags = OE_ENCLAVE_FLAG_RELEASE
 #  flags |= OE_ENCLAVE_FLAG_DEBUG
 
 # Uncomment below for enclave simulation mode
-flags |= OE_ENCLAVE_FLAG_SIMULATE
+#  flags |= OE_ENCLAVE_FLAG_SIMULATE
 
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", flags=(flags))
 crypto = xgb.CryptoUtils()
 
 # Remote Attestation
-#print("Remote attestation")
-#enclave.get_remote_report_with_pubkey()
-#enclave.verify_remote_report_and_set_pubkey()
+print("Remote attestation")
+enclave.get_remote_report_with_pubkey()
+enclave.verify_remote_report_and_set_pubkey()
 
 print("Creating training matrix")
 dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
@@ -55,6 +56,5 @@ key_file = open(HOME_DIR +  "demo/python/" + "key_zeros.txt", 'rb')
 sym_key = key_file.read() # The key will be type bytes
 key_file.close()
 
-booster.dump_model(HOME_DIR + "demo/python/" + "encrypted_dump.txt")
 # Decrypt predictions
 print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
