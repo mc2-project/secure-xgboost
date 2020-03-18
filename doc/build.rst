@@ -29,7 +29,7 @@ to open an issue on `GitHub <https://github.com/mc2-project/mc2-xgboost/issues>`
 * `Building Secure XGBoost`_
 
   - `Building the Targets`_
-  -  `Python Package Installation`_
+  - `Python Package Installation`_
 
 * `Troubleshooting`_
 
@@ -104,7 +104,7 @@ The minimal building requirement is
 Building the Targets
 ==================
 
-1. Clone the repository recursively, and check out the required branch:
+1. Clone the repository recursively:
 
    .. code-block:: bash
 
