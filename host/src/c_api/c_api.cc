@@ -848,7 +848,7 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
     oe_result_t result;
 
-    uint32_t flags = OE_ENCLAVE_FLAG_RELEASE;
+    uint32_t flags = 0;
 #ifdef __ENCLAVE_DEBUG__
     flags |= OE_ENCLAVE_FLAG_DEBUG;
 #endif
