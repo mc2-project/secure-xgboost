@@ -127,7 +127,23 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
   check_enclave_ptr(handle);
-  return XGBoosterDumpModelWithFeatures(handle, (int) fnum, fname, ftype, with_stats, len, (const char***) out_models);
+  char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
+  char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
+  unsigned int name_len;
+  unsigned int type_len;
+  for (int i = 0; i < fnum; i++) {
+    name_len = strlen(fname[i]) + 1;
+    type_len = strlen(ftype[i]) + 1;
+
+    check_host_buffer(fname[i], name_len);
+    check_host_buffer(ftype[i], type_len);
+
+    fname_cpy[i] = strndup(fname[i], name_len);
+    fname_cpy[i][name_len] = '\0';
+    ftype_cpy[i] = strndup(ftype[i], type_len);
+    ftype_cpy[i][type_len] = '\0';
+  }
+  return XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, len, (const char***) out_models);
 }
 int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    unsigned int fnum,
@@ -139,7 +155,23 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
   check_enclave_ptr(handle);
-  return XGBoosterDumpModelExWithFeatures(handle, (int) fnum, fname, ftype, with_stats, format, len, (const char***) out_models);
+  char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
+  char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
+  unsigned int name_len;
+  unsigned int type_len;
+  for (int i = 0; i < fnum; i++) {
+    name_len = strlen(fname[i]) + 1;
+    type_len = strlen(ftype[i]) + 1;
+
+    check_host_buffer(fname[i], name_len);
+    check_host_buffer(ftype[i], type_len);
+
+    fname_cpy[i] = strndup(fname[i], name_len);
+    fname_cpy[i][name_len] = '\0';
+    ftype_cpy[i] = strndup(ftype[i], type_len);
+    ftype_cpy[i][type_len] = '\0';
+  }
+  return XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models);
 }
 int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";

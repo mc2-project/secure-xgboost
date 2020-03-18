@@ -58,3 +58,7 @@ key_file.close()
 
 # Decrypt predictions
 print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+
+# Get fscores of model
+print("\n\nModel Feature Importance: ")
+print(booster.get_fscore(sym_key))

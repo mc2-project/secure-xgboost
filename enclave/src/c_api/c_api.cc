@@ -1479,7 +1479,6 @@ inline void XGBoostDumpModelImpl(
     memcpy(usr_addr_model[i], total_encoded.c_str(), total_encoded.length() + 1);
     free(encrypted);
   }
-  /* Pad & encrypt final usr_addr_model to hide its length? */
   *out_models = (const char **) usr_addr_model;
 #endif
   *len = static_cast<xgboost::bst_ulong>(str_vecs.size());

@@ -1395,7 +1395,7 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
   mbedtls_gcm_init(&gcm);
   int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
           MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
-          (const unsigned char*) key,      // encryption key
+          (const unsigned char*) key,     // encryption key
           CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
   if (ret != 0) {
     printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
