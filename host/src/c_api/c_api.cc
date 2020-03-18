@@ -844,10 +844,14 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 
 // xgboost implementation
 
-XGB_DLL int XGBCreateEnclave(const char *enclave_image, uint32_t flags, int log_verbosity) {
+XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
     oe_result_t result;
 
+    uint32_t flags = OE_ENCLAVE_FLAG_RELEASE;
+#ifdef __ENCLAVE_DEBUG__
+    flags |= OE_ENCLAVE_FLAG_DEBUG;
+#endif
 #ifdef __ENCLAVE_SIMULATION__
     flags |= OE_ENCLAVE_FLAG_SIMULATE;
 #endif

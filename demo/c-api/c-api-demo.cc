@@ -55,16 +55,14 @@ int main(int argc, char** argv) {
     }
   }
 
-  uint32_t flags = OE_ENCLAVE_FLAG_DEBUG;
   bool simulate = false;
   if (check_simulate_opt(&argc, argv)) {
     simulate = true;
-    flags |= OE_ENCLAVE_FLAG_SIMULATE;
   }
 
   std::cout << "Creating enclave\n";
   int log_verbosity = 1;
-  safe_xgboost(XGBCreateEnclave(argv[1], flags, log_verbosity));
+  safe_xgboost(XGBCreateEnclave(argv[1], log_verbosity));
   
   oe_result_t result;
   int ret = 1;
