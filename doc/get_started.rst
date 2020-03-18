@@ -17,7 +17,7 @@ Python
 
 Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 
-The snippet assumes that your machine supports hardware enclaves. If your machine doesn't have an enclave available, you can simulate an enclave (for development purposes) by setting the variables ``OE_DEBUG=1`` and  ``SIMULATE=ON`` while building the project (by modifying the root ``CMakeLists.txt`` file). However, note that remote attestation primitives are not supported in simulation mode.
+If your machine doesn't have hardware enclave support, then you can simulate an enclave (for development purposes) by setting the variables ``OE_DEBUG=1`` and  ``SIMULATE=ON`` while building the project (by modifying the root ``CMakeLists.txt`` file). However, note that remote attestation primitives are not supported in simulation mode, and the remote attestation APIs used below simply return dummy values instead of attesting the (simulated) enclave.
 
 .. code-block:: python
 
@@ -25,7 +25,7 @@ The snippet assumes that your machine supports hardware enclaves. If your machin
 
    enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
-   # Remote Attestation (Note: comment out these two lines if building in simulation mode)
+   # Remote Attestation
    enclave.get_remote_report_with_pubkey()
    enclave.verify_remote_report_and_set_pubkey()
 

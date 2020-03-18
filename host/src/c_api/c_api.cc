@@ -1269,7 +1269,7 @@ bool attest_remote_report(
   std::cout << "remote attestation succeeded." << std::endl;
 exit:
   return ret;
-#endif __ENCLAVE_SIMULATION__
+#endif // __ENCLAVE_SIMULATION__
 }
 
 // FIXME eventually we only need an enclave implementation of this API, callable from the host
@@ -1279,7 +1279,9 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
     size_t key_size,
     uint8_t* remote_report,
     size_t remote_report_size) {
-
+#ifdef __ENCLAVE_SIMULATION__
+  return 0;
+#else
   // Attest the remote report and accompanying key.
   if (!attest_remote_report(remote_report, remote_report_size, pem_key, key_size)) {
     std::cout << "verify_report_and_set_pubkey failed." << std::endl;
@@ -1287,6 +1289,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
   }
   std::cout << "verify_report_and_set_pubkey succeeded." << std::endl;
   return 0;
+#endif
 }
 
 //XGB_DLL int add_client_key(char* fname, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {

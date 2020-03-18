@@ -23,17 +23,6 @@ static char test_key[CIPHER_KEY_SIZE] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
-bool check_simulate_opt(int* argc, char* argv[]) {
-  for (int i = 0; i < *argc; i++) {
-    if (strcmp(argv[i], "--simulate") == 0) {
-      std::cout << "Running in simulation mode" << std::endl;
-      memmove(&argv[i], &argv[i + 1], (*argc - i) * sizeof(char*));
-      (*argc)--;
-      return true;
-    }
-  }
-  return false;
-}
 #endif
 
 #define safe_xgboost(call) {                                            \
@@ -55,11 +44,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  bool simulate = false;
-  if (check_simulate_opt(&argc, argv)) {
-    simulate = true;
-  }
-
   std::cout << "Creating enclave\n";
   int log_verbosity = 1;
   safe_xgboost(XGBCreateEnclave(argv[1], log_verbosity));
@@ -79,25 +63,24 @@ int main(int argc, char** argv) {
 	std::string cwd(path);
   std::string fname1(cwd + "/../../demo/data/agaricus.txt.train.enc");
   std::string fname2(cwd + "/../../demo/data/agaricus.txt.test.enc");
-  if (!simulate) {
 
-    safe_xgboost(get_remote_report_with_pubkey(&pem_key, &key_size, &remote_report, &remote_report_size));
-    safe_xgboost(verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size));
+  safe_xgboost(get_remote_report_with_pubkey(&pem_key, &key_size, &remote_report, &remote_report_size));
+  safe_xgboost(verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size));
 
-    uint8_t* encrypted_data = (uint8_t*) malloc(1024*sizeof(uint8_t));
-    size_t encrypted_data_size = 1024;
-    uint8_t* signature = (uint8_t*) malloc(1024*sizeof(uint8_t));
-    size_t sig_len;
+  uint8_t* encrypted_data = (uint8_t*) malloc(1024*sizeof(uint8_t));
+  size_t encrypted_data_size = 1024;
+  uint8_t* signature = (uint8_t*) malloc(1024*sizeof(uint8_t));
+  size_t sig_len;
 
-    safe_xgboost(encrypt_data_with_pk(test_key, CIPHER_KEY_SIZE, pem_key, key_size, encrypted_data, &encrypted_data_size));
-    safe_xgboost(sign_data("keypair.pem", encrypted_data, encrypted_data_size, signature, &sig_len));
-    //verifySignature("publickey.crt", encrypted_data, encrypted_data_size, signature, sig_len);
+  safe_xgboost(encrypt_data_with_pk(test_key, CIPHER_KEY_SIZE, pem_key, key_size, encrypted_data, &encrypted_data_size));
+  safe_xgboost(sign_data("keypair.pem", encrypted_data, encrypted_data_size, signature, &sig_len));
+  //verifySignature("publickey.crt", encrypted_data, encrypted_data_size, signature, sig_len);
 
-    //safe_xgboost(add_client_key((char*)fname1.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
-    //safe_xgboost(add_client_key((char*)fname2.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
-    safe_xgboost(add_client_key(encrypted_data, encrypted_data_size, signature, sig_len));
+  //safe_xgboost(add_client_key((char*)fname1.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
+  //safe_xgboost(add_client_key((char*)fname2.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
+  std::cout << "Adding\n";
+  safe_xgboost(add_client_key(encrypted_data, encrypted_data_size, signature, sig_len));
 
-  } 
 #endif
 
   int silent = 1;
