@@ -295,6 +295,19 @@ int get_remote_report_with_pubkey(
 
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
 
+#ifdef __ENCLAVE_SIMULATION__
+  key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+  if (key_buf == NULL) {
+    ret = OE_OUT_OF_MEMORY;
+    return ret;
+  }
+  memcpy(key_buf, public_key, CIPHER_PK_SIZE);
+
+  *pem_key = key_buf;
+  *key_size = CIPHER_PK_SIZE;
+
+  ret = 0;
+#else
   if (generate_remote_report(public_key, CIPHER_PK_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
@@ -327,7 +340,7 @@ int get_remote_report_with_pubkey(
   } else {
     LOG(FATAL) << "get_remote_report_with_pubkey failed.";
   }
-
+#endif
   return ret;
 } 
 

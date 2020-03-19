@@ -110,8 +110,22 @@ Building the Targets
 
       git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
 
-2. Configure the enclave parameters in the file ``enclave/xgboost.conf``, including the amount of virtual memory available to the enclave.
+2. Configure the enclave parameters in ``CMakeLists.txt``; these parameters are used by the Open Enclave SDK to configure the enclave build.
+
+   * ``OE_DEBUG``: Set this parameter to 0 to build the enclave in release mode, or 1 to build in debug mode.
+   * ``OE_NUM_HEAP_PAGES``: The amount of heap memory (in pages) committed to the enclave; this is the maximum amount of heap memory available to your enclave application.
+   * ``OE_NUM_STACK_PAGES``: The amount of stack memory (in pages) committed to the enclave.
+   * ``OE_NUM_TCS``: The number of enclave thread control structures; this is the maximum number of concurrent threads that can execute within the enclave.
+   * ``OE_PRODUCT_ID``: Enclave product ID.
+   * ``OE_SECURITY_VERSION``: Enclave security version number.
    More details on these parameters can be found `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md>`_.
+
+   We also provide some additional configuration options:
+
+   * ``LOGGING``: Set this parameter to ``ON`` to enable logging within the enclave. This parameter requires ``OE_DEBUG`` to be set to 1.
+   * ``SIMULATE``: Set this parameter to ``ON`` to build the enclave in simulation mode (for local development and testing, in case your machine does not support hardware enclaves). This parameter requires ``OE_DEBUG`` to be set to 1.
+   * ``OBLIVIOUS``: Set this parameter to ``ON`` to perform model training and inference using data-oblivious algorithms (to mitigate access-pattern based side-channel attacks).
+
 
 3. On Ubuntu, build the Secure XGBoost targets by running CMake:
 
