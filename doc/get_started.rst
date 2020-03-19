@@ -28,7 +28,7 @@ If your machine doesn't have hardware enclave support, then you can simulate an 
    # Remote Attestation
    enclave.get_remote_report_with_pubkey()
    # Note: Verification will fail in simulation mode
-   # Comment out this line if running in simulation mode
+   # Comment out this line for testing the code in simulation mode
    enclave.verify_remote_report_and_set_pubkey()
 
    dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
