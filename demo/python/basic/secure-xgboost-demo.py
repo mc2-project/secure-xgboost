@@ -1,28 +1,18 @@
 import securexgboost as xgb
 import os
 
-OE_ENCLAVE_FLAG_RELEASE = 0
-OE_ENCLAVE_FLAG_DEBUG = 1
-OE_ENCLAVE_FLAG_SIMULATE = 2
-
 print("Creating enclave")
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 
-flags = OE_ENCLAVE_FLAG_RELEASE
-
-# Uncomment below for enclave debug mode
-#  flags |= OE_ENCLAVE_FLAG_DEBUG
-
-# Uncomment below for enclave simulation mode
-#  flags |= OE_ENCLAVE_FLAG_SIMULATE
-
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", flags=(flags))
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 crypto = xgb.CryptoUtils()
 
 # Remote Attestation
 print("Remote attestation")
 enclave.get_remote_report_with_pubkey()
+# NOTE: Verification will fail in simulation mode
+# Comment out this line for testing the code in simulation mode
 enclave.verify_remote_report_and_set_pubkey()
 
 print("Creating training matrix")

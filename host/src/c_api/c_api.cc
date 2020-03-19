@@ -844,9 +844,17 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 
 // xgboost implementation
 
-XGB_DLL int XGBCreateEnclave(const char *enclave_image, uint32_t flags, int log_verbosity) {
+XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
     oe_result_t result;
+
+    uint32_t flags = 0;
+#ifdef __ENCLAVE_DEBUG__
+    flags |= OE_ENCLAVE_FLAG_DEBUG;
+#endif
+#ifdef __ENCLAVE_SIMULATION__
+    flags |= OE_ENCLAVE_FLAG_SIMULATE;
+#endif
 
     oe_enclave_t** enclave = Enclave::getInstance().getEnclaveRef();
     // Create the enclave
@@ -1204,7 +1212,6 @@ bool attest_remote_report(
     size_t remote_report_size,
     const uint8_t* data,
     size_t data_size) {
-
   bool ret = false;
   uint8_t sha256[32];
   oe_report_t parsed_report = {0};
@@ -1268,7 +1275,6 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
     size_t key_size,
     uint8_t* remote_report,
     size_t remote_report_size) {
-
   // Attest the remote report and accompanying key.
   if (!attest_remote_report(remote_report, remote_report_size, pem_key, key_size)) {
     std::cout << "verify_report_and_set_pubkey failed." << std::endl;

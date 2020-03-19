@@ -118,6 +118,13 @@ if (XGBOOST_BUILTIN_PREFETCH_PRESENT)
     -DXGBOOST_BUILTIN_PREFETCH_PRESENT=1)
 endif (XGBOOST_BUILTIN_PREFETCH_PRESENT)
 
+if(OE_DEBUG STREQUAL 1)
+  target_compile_definitions(objxgboost PUBLIC -D__ENCLAVE_DEBUG__)
+endif(OE_DEBUG STREQUAL 1)
+if(SIMULATE)
+  target_compile_definitions(objxgboost PUBLIC -D__ENCLAVE_SIMULATION__)
+endif(SIMULATE)
+
 if (USE_OPENMP)
   find_package(OpenMP REQUIRED)
   if (OpenMP_CXX_FOUND OR OPENMP_FOUND)
