@@ -11,6 +11,8 @@ crypto = xgb.CryptoUtils()
 # Remote Attestation
 print("Remote attestation")
 enclave.get_remote_report_with_pubkey()
+# NOTE: Verification will fail in simulation mode
+# Comment out this line if running in simulation mode
 enclave.verify_remote_report_and_set_pubkey()
 
 print("Creating training matrix")
