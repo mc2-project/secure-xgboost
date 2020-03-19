@@ -7,6 +7,7 @@
 #include <xgboost/logging.h>
 
 #include <dmlc/thread_local.h>
+#include <dmlc/base64.h>
 #include <rabit/rabit.h>
 #include <rabit/c_api.h>
 
@@ -16,7 +17,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "base64.h"
 
 #include <xgboost/c_api/c_api_error.h>
 #include <xgboost/data/simple_csr_source.h>
