@@ -8,7 +8,7 @@
 #include <limits>
 #include <cmath>
 #include <iomanip>
-#include "./param.h"
+#include <xgboost/tree/param.h>
 
 namespace xgboost {
 // register tree parameter

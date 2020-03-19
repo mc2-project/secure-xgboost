@@ -28,7 +28,7 @@ bool SSLTcpSocket::ConfigureClientSSL() {
     return false;
   }
 
-#if false // FIXME For testing on non-SGX platform; wrap within `SIMULATION_MODE` macro
+#ifdef __ENCLAVE_SIMULATION__ // disable certificate verification in simulation mode
   mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
 #else
   oe_result_t result = generate_certificate_and_pkey(&srvcert, &pkey);
@@ -69,7 +69,7 @@ bool SSLTcpSocket::ConfigureServerSSL() {
     return false;
   }
 
-#if false // FIXME Inbuilt certs for testing on non-SGX platform; wrap within `SIMULATION_MODE` macro
+#ifdef __ENCLAVE_SIMULATION__ // use inbuilt certs in simulation mode
   if ((ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) mbedtls_test_srv_crt_ec, mbedtls_test_srv_crt_ec_len)) != 0) {
     print_err(ret);
     return false;

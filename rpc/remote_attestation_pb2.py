@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='remote_attestation',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x18remote_attestation.proto\x12\x12remote_attestation\x1a\rndarray.proto\"\x18\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\"\x96\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\"\x91\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\"a\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x0e\n\x06status\x18\x03 \x01(\r2\xf8\x01\n\x11RemoteAttestation\x12J\n\x0eGetAttestation\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12I\n\x07SendKey\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12L\n\x0bSignalStart\x12\x1a.remote_attestation.Status\x1a\x1f.remote_attestation.Predictions\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x18remote_attestation.proto\x12\x12remote_attestation\x1a\rndarray.proto\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\x96\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\"\x91\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\"a\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x0e\n\x06status\x18\x03 \x01(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\xcf\x02\n\x11RemoteAttestation\x12J\n\x0eGetAttestation\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12I\n\x07SendKey\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12L\n\x0bSignalStart\x12\x1a.remote_attestation.Status\x1a\x1f.remote_attestation.Predictions\"\x00\x12U\n\x12SignalStartCluster\x12!.remote_attestation.ClusterParams\x1a\x1a.remote_attestation.Status\"\x00\x62\x06proto3')
   ,
   dependencies=[ndarray__pb2.DESCRIPTOR,])
 
@@ -42,6 +42,13 @@ _STATUS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='exception', full_name='remote_attestation.Status.exception', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -55,7 +62,7 @@ _STATUS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=63,
-  serialized_end=87,
+  serialized_end=106,
 )
 
 
@@ -106,8 +113,8 @@ _REPORT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=90,
-  serialized_end=240,
+  serialized_start=109,
+  serialized_end=259,
 )
 
 
@@ -158,8 +165,8 @@ _DATAMETADATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=243,
-  serialized_end=388,
+  serialized_start=262,
+  serialized_end=407,
 )
 
 
@@ -203,8 +210,39 @@ _PREDICTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=390,
-  serialized_end=487,
+  serialized_start=409,
+  serialized_end=506,
+)
+
+
+_CLUSTERPARAMS = _descriptor.Descriptor(
+  name='ClusterParams',
+  full_name='remote_attestation.ClusterParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='num_workers', full_name='remote_attestation.ClusterParams.num_workers', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=508,
+  serialized_end=544,
 )
 
 _REPORT.fields_by_name['pem_key'].message_type = ndarray__pb2._NDARRAY
@@ -216,6 +254,7 @@ DESCRIPTOR.message_types_by_name['Status'] = _STATUS
 DESCRIPTOR.message_types_by_name['Report'] = _REPORT
 DESCRIPTOR.message_types_by_name['DataMetadata'] = _DATAMETADATA
 DESCRIPTOR.message_types_by_name['Predictions'] = _PREDICTIONS
+DESCRIPTOR.message_types_by_name['ClusterParams'] = _CLUSTERPARAMS
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Status = _reflection.GeneratedProtocolMessageType('Status', (_message.Message,), {
@@ -246,6 +285,13 @@ Predictions = _reflection.GeneratedProtocolMessageType('Predictions', (_message.
   })
 _sym_db.RegisterMessage(Predictions)
 
+ClusterParams = _reflection.GeneratedProtocolMessageType('ClusterParams', (_message.Message,), {
+  'DESCRIPTOR' : _CLUSTERPARAMS,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.ClusterParams)
+  })
+_sym_db.RegisterMessage(ClusterParams)
+
 
 
 _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
@@ -254,8 +300,8 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=490,
-  serialized_end=738,
+  serialized_start=547,
+  serialized_end=882,
   methods=[
   _descriptor.MethodDescriptor(
     name='GetAttestation',
@@ -282,6 +328,15 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_STATUS,
     output_type=_PREDICTIONS,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='SignalStartCluster',
+    full_name='remote_attestation.RemoteAttestation.SignalStartCluster',
+    index=3,
+    containing_service=None,
+    input_type=_CLUSTERPARAMS,
+    output_type=_STATUS,
     serialized_options=None,
   ),
 ])

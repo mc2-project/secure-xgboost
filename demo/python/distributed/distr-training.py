@@ -1,23 +1,11 @@
 import securexgboost as xgb
 import os
 
-OE_ENCLAVE_FLAG_RELEASE = 0
-OE_ENCLAVE_FLAG_DEBUG = 1
-OE_ENCLAVE_FLAG_SIMULATE = 2
-
 print("Creating enclave")
+DIR = os.path.dirname(os.path.realpath(__file__))
+HOME_DIR = DIR + "/../../../"
 
-HOME_DIR = os.getcwd() + "/../../../"
-
-flags = OE_ENCLAVE_FLAG_RELEASE
-
-# Uncomment below for enclave debug mode
-flags |= OE_ENCLAVE_FLAG_DEBUG
-
-# Uncomment below for enclave simulation mode
-#  flags |= OE_ENCLAVE_FLAG_SIMULATE
-
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", flags=(flags))
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 # print("Remote attestation")
@@ -59,9 +47,12 @@ params = {
 # Train and evaluate
 num_rounds = 5 
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+booster.save_model(DIR + "/demo_model.model")
 
 # Get encrypted predictions
-print("\n\nModel Predictions: ")
+print("True Labels: ")
+print(dtest.get_float_info("label")[:20])
+print("\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest)
 
 key_file = open("../key_zeros.txt", 'rb')
@@ -71,6 +62,6 @@ key_file.close()
 crypto = xgb.CryptoUtils()
 
 # Decrypt predictions
-print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+print(crypto.decrypt_predictions(sym_key, predictions, num_preds)[:20])
 
 xgb.rabit.finalize()

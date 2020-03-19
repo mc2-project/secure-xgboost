@@ -16,12 +16,12 @@
 #include <ios>
 #include <utility>
 #include <vector>
-#include "./common/common.h"
-#include "./common/host_device_vector.h"
-#include "./common/io.h"
-#include "./common/random.h"
-#include "./common/enum_class_param.h"
-#include "./common/timer.h"
+#include <xgboost/common/common.h>
+#include <xgboost/common/host_device_vector.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/random.h>
+#include <xgboost/common/enum_class_param.h>
+#include <xgboost/common/timer.h>
 
 #include "xgboost_t.h"
 

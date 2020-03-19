@@ -17,11 +17,11 @@
 #include <string>
 #include <memory>
 
-#include "./c_api_error.h"
-#include "../data/simple_csr_source.h"
-#include "../common/math.h"
-#include "../common/io.h"
-#include "../common/group_data.h"
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
 
 #include <openenclave/host.h>
 #include "xgboost_u.h"
@@ -31,10 +31,11 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "base64.h"
+#include <dmlc/base64.h>
 
 #include <mbedtls/entropy.h>    // mbedtls_entropy_context
 #include <mbedtls/ctr_drbg.h>   // mbedtls_ctr_drbg_context
@@ -843,9 +844,17 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 
 // xgboost implementation
 
-XGB_DLL int XGBCreateEnclave(const char *enclave_image, uint32_t flags, int log_verbosity) {
+XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
     oe_result_t result;
+
+    uint32_t flags = 0;
+#ifdef __ENCLAVE_DEBUG__
+    flags |= OE_ENCLAVE_FLAG_DEBUG;
+#endif
+#ifdef __ENCLAVE_SIMULATION__
+    flags |= OE_ENCLAVE_FLAG_SIMULATE;
+#endif
 
     oe_enclave_t** enclave = Enclave::getInstance().getEnclaveRef();
     // Create the enclave
@@ -1187,7 +1196,6 @@ bool attest_remote_report(
     size_t remote_report_size,
     const uint8_t* data,
     size_t data_size) {
-
   bool ret = false;
   uint8_t sha256[32];
   oe_report_t parsed_report = {0};
@@ -1251,7 +1259,6 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
     size_t key_size,
     uint8_t* remote_report,
     size_t remote_report_size) {
-
   // Attest the remote report and accompanying key.
   if (!attest_remote_report(remote_report, remote_report_size, pem_key, key_size)) {
     std::cout << "verify_report_and_set_pubkey failed." << std::endl;
@@ -1476,9 +1483,9 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
     mbedtls_gcm_init(&gcm);
     // The personalization string should be unique to your application in order to add some
     // personalized starting randomness to your random sources.
-    char *pers = "aes generate key for MC^2";
+    std::string pers = "aes generate key for MC^2";
     // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
-    int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers, strlen(pers) );
+    int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
     if( ret != 0 )
     {
         printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
@@ -1501,25 +1508,39 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
 
     std::string line;
     uint64_t index = 0;
+    uint64_t total = 0;
+
+    // Count total number of lines in file
     while (std::getline(infile, line)) {
+      // Ignore empty lines
+      if (std::all_of(line.begin(), line.end(), isspace))
+        continue;
+      total++;
+    }
+    infile.close();
+
+    infile.open(fname);
+    while (std::getline(infile, line)) {
+        // Ignore empty lines
+        if (std::all_of(line.begin(), line.end(), isspace))
+            continue;
+
         index++;
         size_t length = strlen(line.c_str());
 
+        // We use `<index>,<total>` as additional authenticated data to prevent tampering across lines
+        std::stringstream ss;
+        ss << index << "," << total;
+        std::string ss_str = ss.str();
+
         unsigned char* encrypted = (unsigned char*) malloc(length*sizeof(char));
-        // We use line index as AEAD data to prevent tampering across lines
-        unsigned char* add_data = (unsigned char*) &index;
         ret = encrypt_symm(
                 &gcm,
                 &ctr_drbg,
                 (const unsigned char*)line.c_str(),
                 length,
-// #if false // FIXME disabled for testing
-                add_data,
-                sizeof(uint64_t),
-// #else
-                // NULL,
-                // 0,
-// #endif
+                (unsigned char*)ss_str.c_str(),
+                ss_str.length(),
                 encrypted,
                 iv,
                 tag
@@ -1531,6 +1552,7 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
         std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
         myfile 
             << index << ","
+            << total << ","
             << dmlc::data::base64_encode(iv, CIPHER_IV_SIZE) << ","
             << dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE) << ","
             << dmlc::data::base64_encode(encrypted, length) << "\n";
@@ -1562,27 +1584,44 @@ XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
     std::string line;
     while (std::getline(infile, line)) {
         const char* data = line.c_str();
-        char* p = const_cast<char*>(data);
         int index_pos = 0;
-        while(*p != '\0' && *p != ',') {
-            p++;
-            index_pos++;
+        int total_pos = 0;
+        int iv_pos = 0;
+        int tag_pos = 0;
+        int len = line.length();
+
+        for (int i = 0; i < len; i++) {
+          if (data[i] == ',') {
+            index_pos = i;
+            break;
+          }
         }
-        int iv_pos = index_pos + 1;
-        while(*p != '\0' && *p != ',') {
-            p++;
-            iv_pos++;
+        for (int i = index_pos + 1; i < len; i++) {
+          if (data[i] == ',') {
+            total_pos = i;
+            break;
+          }
         }
-        p++;
-        int tag_pos = iv_pos + 1;
-        while(*p != '\0' && *p != ',') {
-            p++;
-            tag_pos++;
+        for (int i = total_pos + 1; i < len; i++) {
+          if (data[i] == ',') {
+            iv_pos = i;
+            break;
+          }
         }
-        char *index_str = (char*) malloc (index_pos + 1);
-        memcpy(index_str, data, index_pos);
-        index_str[index_pos] = 0;
-        uint64_t index = atoi(index_str);
+        for (int i = iv_pos + 1; i < len; i++) {
+          if (data[i] == ',') {
+            tag_pos = i;
+            break;
+          }
+        }
+        CHECK_LT(0, index_pos);
+        CHECK_LT(index_pos, total_pos);
+        CHECK_LT(total_pos, iv_pos);
+        CHECK_LT(iv_pos, tag_pos);
+
+        char *aad_str = (char*) malloc (total_pos + 1);
+        memcpy(aad_str, data, total_pos);
+        aad_str[total_pos] = 0;
 
         size_t out_len;
         char tag[CIPHER_TAG_SIZE];
@@ -1590,23 +1629,22 @@ XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
 
         char* ct = (char *) malloc(line.size() * sizeof(char));
 
-        out_len = dmlc::data::base64_decode(data + index_pos + 1, iv_pos - index_pos, iv);
+        out_len = dmlc::data::base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
+        CHECK_EQ(out_len, CIPHER_IV_SIZE);
         out_len = dmlc::data::base64_decode(data + iv_pos + 1, tag_pos - iv_pos, tag);
+        CHECK_EQ(out_len, CIPHER_TAG_SIZE);
         out_len = dmlc::data::base64_decode(data + tag_pos + 1, line.size() - tag_pos, ct);
 
         unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
-        unsigned char* add_data = (unsigned char*) &index;
         int ret = decrypt_symm(
                 &gcm,
                 (const unsigned char*)ct,
                 out_len,
                 (unsigned char*)iv,
                 (unsigned char*)tag,
-                add_data,
-                sizeof(uint64_t),
-                decrypted
-                );
-        index++;
+                (unsigned char*)aad_str,
+                strlen(aad_str),
+                decrypted);
         decrypted[out_len] = '\0';
         free(ct);
         if (ret != 0) {

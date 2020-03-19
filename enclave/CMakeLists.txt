@@ -62,9 +62,6 @@ target_include_directories(xgboost_enclave
   ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_options(xgboost_enclave
   PRIVATE
-  -D__SGX__
-  -D__ENCLAVE__
-  -D__ENCLAVE_ENABLE_LOGGER__
   -U_FORTIFY_SOURCE 
   -fno-stack-protector
   -fno-strict-aliasing
@@ -75,15 +72,32 @@ if (WIN32 AND MINGW)
   target_compile_options(xgboost_enclave PUBLIC -static-libstdc++)
 endif (WIN32 AND MINGW)
 
+if (USE_AVX2)
+  target_compile_options(xgboost_enclave PRIVATE -mavx2)
+  target_compile_definitions(xgboost_enclave PRIVATE -DUSE_AVX2)
+endif (USE_AVX2)
+
 set_target_properties(xgboost_enclave PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   CXX_STANDARD 11
   CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(xgboost_enclave
   PRIVATE
+  -D__SGX__
+  -D__ENCLAVE__
   OE_API_VERSION=2
   -DDMLC_LOG_CUSTOMIZE=1  # enable custom logging
   ${XGBOOST_DEFINITIONS})
+
+if(LOGGING)
+  target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_ENABLE_LOGGER__)
+endif(LOGGING)
+if(SIMULATE)
+  target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_SIMULATION__)
+endif(SIMULATE)
+if(OBLIVIOUS)
+  target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_OBLIVIOUS__)
+endif(OBLIVIOUS)
 
 target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
 

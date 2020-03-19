@@ -18,14 +18,14 @@
 #include <memory>
 #include "base64.h"
 
-#include "./c_api_error.h"
-#include "../data/simple_csr_source.h"
-#include "../common/math.h"
-#include "../common/io.h"
-#include "../common/group_data.h"
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
 
 #ifdef __ENCLAVE__ // includes
-#include "../common/common.h"
+#include <xgboost/common/common.h>
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
 #include "enclave_context.h"
@@ -295,6 +295,19 @@ int get_remote_report_with_pubkey(
 
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
 
+#ifdef __ENCLAVE_SIMULATION__
+  key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+  if (key_buf == NULL) {
+    ret = OE_OUT_OF_MEMORY;
+    return ret;
+  }
+  memcpy(key_buf, public_key, CIPHER_PK_SIZE);
+
+  *pem_key = key_buf;
+  *key_size = CIPHER_PK_SIZE;
+
+  ret = 0;
+#else
   if (generate_remote_report(public_key, CIPHER_PK_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
@@ -327,7 +340,7 @@ int get_remote_report_with_pubkey(
   } else {
     LOG(FATAL) << "get_remote_report_with_pubkey failed.";
   }
-
+#endif
   return ret;
 } 
 
@@ -442,8 +455,9 @@ int verify_remote_report_and_set_pubkey(
 }
 
 int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
-    EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len);
-    return 0;
+    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
+      return 0;
+    return -1;
 }
 #endif // __ENCLAVE__
 

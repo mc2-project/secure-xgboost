@@ -962,9 +962,9 @@ class Enclave(object):
 
     A trusted execution environment used for secure XGBoost.
     """
-    def __init__(self, enclave_image=None, flags=3, create_enclave=True, log_verbosity=0):
+    def __init__(self, enclave_image=None, create_enclave=True, log_verbosity=0):
         if create_enclave:
-            _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), ctypes.c_uint(flags), log_verbosity))
+            _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
         self.pem_key = ctypes.POINTER(ctypes.c_uint)()
         self.key_size = ctypes.c_size_t()
         self.remote_report = ctypes.POINTER(ctypes.c_uint)()

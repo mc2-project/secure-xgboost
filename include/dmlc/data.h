@@ -339,7 +339,8 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
 #endif
 #ifdef __ENCLAVE__ // row indices
   uint64_t starting_row_index;
-  uint64_t total_rows;
+  uint64_t total_rows_in_chunk;
+  uint64_t total_rows_global;
 #endif
 };
 
