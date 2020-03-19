@@ -964,12 +964,14 @@ inline void XGBoostDumpModelImpl(
   *out_models = dmlc::BeginPtr(charp_vecs);
   *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
 }
+#endif
+
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
-  return XGBoosterDumpModelEx(handle, fmap, with_stats, "text", len, out_models);
+  safe_ecall(enclave_XGBoosterDumpModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, len, (char***) out_models));
 }
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                        const char* fmap,
@@ -977,17 +979,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                        const char *format,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
-  API_BEGIN();
-  CHECK_HANDLE();
-  FeatureMap featmap;
-  if (strlen(fmap) != 0) {
-    std::unique_ptr<dmlc::Stream> fs(
-        dmlc::Stream::Create(fmap, "r"));
-    dmlc::istream is(fs.get());
-    featmap.LoadText(is);
-  }
-  XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
-  API_END();
+  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, len, (char***) out_models));
 }
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
@@ -997,9 +989,9 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    int with_stats,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
-  return XGBoosterDumpModelExWithFeatures(handle, fnum, fname, ftype, with_stats,
-                                   "text", len, out_models);
+   safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, len, (char***) out_models));
 }
+
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    int fnum,
                                    const char** fname,
@@ -1008,16 +1000,8 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    const char *format,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
-  API_BEGIN();
-  CHECK_HANDLE();
-  FeatureMap featmap;
-  for (int i = 0; i < fnum; ++i) {
-    featmap.PushBack(i, fname[i], ftype[i]);
-  }
-  XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
-  API_END();
+  safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, format, len, (char***) out_models));
 }
-#endif
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
@@ -1409,6 +1393,69 @@ XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_
             output);
     *preds = reinterpret_cast<float*>(output);
     return 0;
+}
+
+XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
+  mbedtls_gcm_context gcm;
+
+
+  mbedtls_gcm_init(&gcm);
+  int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
+          MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
+          (const unsigned char*) key,     // encryption key
+          CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
+  if (ret != 0) {
+    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    exit(1);
+  }
+
+  const char* total_encrypted;
+  int out_len;
+  for (int i = 0; i < length; i++) {
+    total_encrypted = models[i];
+
+    char* p = const_cast<char*>(total_encrypted);
+    int iv_pos = 0;
+    while(*p != '\0' && *p != ',') {
+        p++;
+        iv_pos++;
+    }
+    p++;
+    int tag_pos = iv_pos + 1;
+    while(*p != '\0' && *p != ',') {
+        p++;
+        tag_pos++;
+    }
+    size_t out_len;
+    unsigned char tag[CIPHER_TAG_SIZE];
+    unsigned char iv[CIPHER_IV_SIZE];
+
+    char* ct = (char *) malloc(strlen(total_encrypted) * sizeof(char));
+
+    out_len = dmlc::data::base64_decode(total_encrypted, iv_pos, (char *) iv);
+    out_len = dmlc::data::base64_decode(total_encrypted + iv_pos + 1, tag_pos - iv_pos, (char *) tag);
+    out_len = dmlc::data::base64_decode(total_encrypted + tag_pos + 1, strlen(total_encrypted) - tag_pos, ct);
+
+    unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
+    int ret = decrypt_symm(
+            &gcm,
+            (const unsigned char*) ct,
+            out_len,
+            iv,
+            tag,
+            NULL,
+            0,
+            decrypted
+            );
+    decrypted[out_len] = '\0';
+    free(ct);
+    if (ret != 0) {
+      std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
+      exit(1);
+    }
+    models[i] = (char*) decrypted;
+  }
+  return 0;
 }
 
 // Input, output, key

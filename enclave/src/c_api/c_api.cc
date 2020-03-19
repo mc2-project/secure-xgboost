@@ -7,6 +7,7 @@
 #include <xgboost/logging.h>
 
 #include <dmlc/thread_local.h>
+#include <dmlc/base64.h>
 #include <rabit/rabit.h>
 #include <rabit/c_api.h>
 
@@ -1436,7 +1437,6 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
 inline void XGBoostDumpModelImpl(
     BoosterHandle handle,
     const FeatureMap& fmap,
@@ -1445,16 +1445,57 @@ inline void XGBoostDumpModelImpl(
     xgboost::bst_ulong* len,
     const char*** out_models) {
   std::vector<std::string>& str_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_str;
-  std::vector<const char*>& charp_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_charp;
   auto *bst = static_cast<Booster*>(handle);
   bst->LazyInit();
   str_vecs = bst->learner()->DumpModel(fmap, with_stats != 0, format);
+#ifndef __ENCLAVE__
+  std::vector<const char*>& charp_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_charp;
   charp_vecs.resize(str_vecs.size());
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     charp_vecs[i] = str_vecs[i].c_str();
   }
   *out_models = dmlc::BeginPtr(charp_vecs);
-  *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
+#else
+  /* Write *out_models to user memory instead */
+  unsigned char** usr_addr_model = (unsigned char**) oe_host_malloc(str_vecs.size() * sizeof(char*));
+
+  int length;
+  unsigned char* encrypted;
+  unsigned char iv[CIPHER_IV_SIZE];
+  unsigned char tag[CIPHER_TAG_SIZE];
+  unsigned char key[CIPHER_KEY_SIZE];
+  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
+  for (size_t i = 0; i < str_vecs.size(); ++i) {
+    length = str_vecs[i].length();
+    encrypted = (unsigned char*) malloc(length * sizeof(char)); 
+
+    /* Encrypt */
+    encrypt_symm(
+        key,
+        (const unsigned char*) dmlc::BeginPtr(str_vecs[i]),
+        str_vecs[i].length(),
+        NULL,
+        0,
+        encrypted,
+        iv,
+        tag);
+
+    /* Base64 encode */
+    std::string total_encoded = "";
+    total_encoded.append(dmlc::data::base64_encode(iv, CIPHER_IV_SIZE));
+    total_encoded.append(",");
+    total_encoded.append(dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE));
+    total_encoded.append(",");
+    total_encoded.append(dmlc::data::base64_encode(encrypted, length));
+    total_encoded.append("\n");
+
+    usr_addr_model[i] = (unsigned char*) oe_host_malloc(total_encoded.length() + 1);
+    memcpy(usr_addr_model[i], total_encoded.c_str(), total_encoded.length() + 1);
+    free(encrypted);
+  }
+  *out_models = (const char **) usr_addr_model;
+#endif
+  *len = static_cast<xgboost::bst_ulong>(str_vecs.size());
 }
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
@@ -1509,7 +1550,6 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
   API_END();
 }
-#endif
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
