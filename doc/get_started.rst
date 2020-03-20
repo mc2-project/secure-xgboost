@@ -1,6 +1,6 @@
-########################
+###############################
 Get Started with Secure XGBoost
-########################
+###############################
 
 This is a quick start tutorial showing snippets for you to quickly try out Secure XGBoost
 on the demo dataset on a binary classification task. This sanity check ensures that setup was done properly. This quickstart uses encrypted versions of the :code:`agaricus.txt.train` and :code:`agaricus.txt.test` data files from :code:`demo/data/`.
@@ -9,7 +9,6 @@ on the demo dataset on a binary classification task. This sanity check ensures t
 Links to Other Helpful Resources
 ********************************
 - See :doc:`Installation Guide </build>` on how to install Secure XGBoost.
-- See :doc:`Text Input Format </tutorials/input_format>` on using text format for specifying training/testing data.
 
 ******
 Python

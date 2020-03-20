@@ -37,7 +37,7 @@ Tutorial
 If you are using Azure Confidential Computing, all your VMs must be on the same subnet.
 
 Cluster Setup
-============
+=============
 We'll need to start an RPC process on each node in the cluster to listen for client calls.
 
 1. On the tracker machine, modify ``demo/python/cluster-remote-control/hosts.config`` to contain the IP addresses of the nodes in your cluster. For example, if the nodes in your cluster have IP addresses of ``13.95.157.223`` and ``40.68.135.193``, your ``hosts.config`` should look like the following.
