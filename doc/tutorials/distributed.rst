@@ -38,7 +38,7 @@ Once the topology has been set up, each node in the cluster is assigned a rank. 
 
 The tracker is logically distinct from all nodes in the cluster, and does not actually perform any computation. Once it has finished setting up the topology, the tracker has finished its job. However, a user may choose to colocate the tracker with a master/worker node for simplicity. 
 
-Before training begins, Distributed Secure XGBoost leverages *interenclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code.
+Before training begins, Distributed Secure XGBoost leverages *inter-enclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code.
    
 
 ********************
@@ -47,7 +47,7 @@ Distributed Training
 
 In the distributed setting, distributed training occurs by partitioning a subset of the training data to each node -- each node is responsible for some chunk of the training data when computing the global model. 
 
-During training, the nodes compute a global model by iteratively communicating optimal feature splits to neighboring nodes, enabling the computation of a globally optimal feature split per iteration. This exchange of local optimal feature splits gradually builds up a tree, and a tree ensemble is built up with gradient boosting to form a model. 
+During training, the nodes compute a global model by iteratively communicating optimal feature splits to neighboring nodes. These splits are aggregated at the master node through the Allreduce paradigm, enabling the computation of a globally optimal feature split per iteration. This exchange of local optimal feature splits gradually builds up a tree, and a tree ensemble is built up with gradient boosting to form a model. 
 
 
 .. image:: images/step1.png
@@ -75,14 +75,14 @@ This tutorial demonstrates how to run Distributed Secure XGBoost. The tutorial c
 
 If you are using Azure Confidential Computing, all your VMs must be on the same subnet.
 
-1. Modify ``demo/python/distributed/hosts.config/`` to contain the IP addresses of the nodes in your cluster. For example, if the nodes in your cluster have IP addresses of ``13.95.157.223`` and ``40.68.135.193``, your hosts.config should look like the following.
+1. Modify ``demo/python/distributed/hosts.config`` to contain the IP addresses of the nodes in your cluster. For example, if the nodes in your cluster have IP addresses of ``13.95.157.223`` and ``40.68.135.193``, your hosts.config should look like the following.
 
    .. code-block:: none
       
       13.95.157.223:22
       40.68.135.193:22
 
-2. Ensure that `distr-training.py` is identical and at the same path on every machine in the cluster. 
+2. Ensure that ``distr-training.py`` is identical and at the same path on every machine in the cluster. 
 
 3. Start computation. This will start the tracker and subsequently the job.
 
