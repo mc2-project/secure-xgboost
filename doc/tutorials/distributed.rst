@@ -20,7 +20,7 @@ Additionally, all communication within the cluster is encrypted and happens over
 ************
 Architecture
 ************
-Distributed Secure XGBoost leverages a tracker, or an orchestrator, to configure the cluster. This involves setting up the cluster topology, i.e. the communication patterns. Depending on the data size, the tracker may either set up the nodes in a tree pattern or a ring pattern.
+Distributed Secure XGBoost leverages a tracker to configure the cluster. This involves setting up the cluster topology, i.e. the communication patterns: depending on the data size, the tracker may either set up the nodes in a tree pattern or a ring pattern.
 
 .. figure:: images/tree.png
    :width: 80%
@@ -37,6 +37,8 @@ Distributed Secure XGBoost leverages a tracker, or an orchestrator, to configure
 Once the topology has been set up, each node in the cluster is assigned a rank. The rank is essentially the node identifier in the cluster. The node assigned rank 0 is considered the "master" node, and all other nodes are considered worker nodes.
 
 The tracker is logically distinct from all nodes in the cluster, and does not actually perform any computation. Once it has finished setting up the topology, the tracker has finished its job. However, a user may choose to colocate the tracker with a master/worker node for simplicity. 
+
+The tracker initially communicates with all nodes in the cluster over SSH. This means that the tracker's SSH public key must be authorized by every node in the cluster. Once this initial communication has finished, all other inter-node communication happens over TLS.
 
 Before training begins, Distributed Secure XGBoost leverages *inter-enclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code.
    
@@ -91,6 +93,17 @@ If you are using Azure Confidential Computing, all your VMs must be on the same 
       mc2-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_nodes_in_cluster> --worker-memory 4g python3 distr-training.py
 
 
+   The command takes in the following arguments:
+
+         * ``--cluster`` : how the cluster is set up. In Secure XGBoost we leverage SSH for intra-cluster communication. 
+
+         * ``--host-file`` : the path to the file containing the IP addresses / ports of all nodes in the cluster. 
+
+         * ``--num-workers``  : the number of nodes in the cluster
+
+         * ``--worker-memory`` : the amount of memory to allocate to the job on each machine.
+
+
    Ensure that each node in the cluster has authorized the SSH public key of the machine running the tracker, as the tracker in Distributed Secure XGBoost leverages SSH public keys to set up the topology.
   
 
@@ -103,6 +116,6 @@ Troubleshooting
 
 2. **Hung connection**
 
-   If the tracker is hung after logging a statement similar to "start listen on ...", the tracker may be hung listening for an initial signal from a node in the cluster. Ensure that ports 9000-9100 are open on each machine.
+   If the tracker is hung after logging a statement similar to ``start listen on ...``, the tracker may be hung listening for an initial signal from a node in the cluster. Ensure that ports 9000-9100 are open on each machine.
 
 
