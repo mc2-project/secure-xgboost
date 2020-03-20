@@ -1,6 +1,6 @@
-#####################
+############################
 Secure XGBoost Documentation
-#####################
+############################
 
 **Secure XGBoost** is a secure gradient boosting library based off the popular `XGBoost <https://github.com/dmlc/xgboost>`_ project. In addition to offering the efficiency, flexibility, and portability that vanilla XGBoost does to solve a variety of problems, Secure XGBoost enables secure collaborative learning by leveraging hardware enclaves and oblivious algorithms. This project allows multiple parties to each share their sensitive data to perform joint computation *without revealing the contents of the data*.
 
