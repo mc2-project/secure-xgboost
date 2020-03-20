@@ -189,6 +189,10 @@ inline void ObliviousSort(Iter begin, Iter end) {
 // Return arr[i]
 template <typename T>
 inline T ObliviousArrayAccess(const T *arr, size_t i, size_t n) {
+#ifdef USE_AVX2
+  if (sizeof(T) == 4)
+    return ObliviousArrayAccessSimd(arr, i, n);
+#endif
   T result = arr[0];
   ObliviousArrayAccessBytes(&result, arr, sizeof(T), i, n);
   return result;
