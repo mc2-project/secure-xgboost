@@ -9,6 +9,9 @@ os:
 #osx_image: xcode10.3
 dist: bionic
 
+arch:
+  - x86_64
+
 # Use Build Matrix to do lint and build seperately
 env:
   matrix:

@@ -58,7 +58,7 @@ if [ ${TASK} == "cmake_test" ]; then
     mkdir build && cd build
     #PLUGINS="-DPLUGIN_LZ4=ON -DPLUGIN_DENSE_PARSER=ON"
     #cmake .. -DCMAKE_VERBOSE_MAKEFILE=ON -DGOOGLE_TEST=ON -DUSE_OPENMP=ON -DUSE_DMLC_GTEST=ON ${PLUGINS}
-    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON
+    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DUSE_AVX2=OFF
     make -j4
     #./testxgboost
     cd ..
