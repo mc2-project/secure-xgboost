@@ -4,13 +4,6 @@ Outsourced Distributed Computation
 
 Secure XGBoost is tailored toward an outsourced computation model -- one in which a client with sensitive data wants to outsource computation on the sensitive data to an untrusted server with a trusted hardware enclave. With a lot of training data, a cluster of machines, as opposed to a single server, may have to be used. This tutorial provides an example of such a scenario. 
 
-In this example, the client will encrypt data and send it to each machine in the cluster. The data remains encrypted until it is loaded inside each machine's enclave, at which point it can be decrypted. The cluster will then collectively train a model on the training data following the distributed training pattern outlined in the :doc:`Distributed Secure XGBoost tutorial <distributed>`. Lastly, an encrypted version of the trained model will be saved, available for the client to fetch. 
-
-One node in the cluster will initialize a tracker to start RPC servers on all nodes in the cluster. The tracker is discussed in the :doc:`Distributed Secure XGBoost tutorial <distributed>`.
-
-Each RPC server will listen for client requests. The client will make requests for remote attestation, adding its symmetric key used to encrypt the training data to each enclave, and the end to end training process. 
-
-
 **Contents**
 
 * `Architecture`_
@@ -30,6 +23,13 @@ In this scenario there's a client and an enclave cluster. The client communicate
 .. image:: images/outsourced-distributed.png
    :width: 100% 
    :alt: Outsourced Distributed Architecture
+
+Before computation, one node in the cluster will initialize a tracker to start an RPC server on each node in the cluster. The tracker is discussed in the :doc:`Distributed Secure XGBoost tutorial <distributed>`.
+
+Each RPC server will listen for client requests. The client will make requests for remote attestation, adding its symmetric key used to encrypt the training data to each enclave, and the end-to-end training process. 
+
+The client will first attest each enclave, then encrypt data and send it to each machine in the cluster. The data remains encrypted until it is loaded inside each machine's enclave, at which point the enclave can decrypt it using the symmetric key sent by the client over RPC. Once the client has given the start signal to each node over RPC, the cluster will then collectively train a model on the training data following the distributed training pattern outlined in the :doc:`Distributed Secure XGBoost tutorial <distributed>`. Lastly, an encrypted version of the trained model will be saved, available for the client to fetch. 
+
 
 ********
 Tutorial
