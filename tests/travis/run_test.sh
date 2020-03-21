@@ -55,7 +55,14 @@ if [ ${TASK} == "cmake_test" ]; then
     cd ..
     rm -rf build
 
-    # Build/test with obliviousness
+    # Build/test with obliviousness, without AVX
+    mkdir build && cd build
+    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DOBLIVIOUS=ON -DUSE_AVX2=OFF
+    make -j4
+    cd ..
+    rm -rf build
+
+    # Build/test with obliviousness and AVX
     mkdir build && cd build
     cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DOBLIVIOUS=ON -DUSE_AVX2=ON
     make -j4
