@@ -1,0 +1,86 @@
+# disable sudo for container build.
+#sudo: required
+
+# Enabling test OS X
+os:
+  - linux
+  #- osx
+
+#osx_image: xcode10.3
+dist: bionic
+
+# Use Build Matrix to do lint and build seperately
+env:
+  matrix:
+    ## python package test
+    #- TASK=python_test
+    ## test installation of Python source distribution
+    #- TASK=python_sdist_test
+    ## java package test
+    #- TASK=java_test
+    ## cmake test
+    - TASK=cmake_test
+
+#matrix:
+#  exclude:
+#    - os: linux
+#      env: TASK=python_test
+#    - os: linux
+#      env: TASK=java_test
+#    - os: linux
+#      env: TASK=cmake_test
+
+# dependent brew packages
+#addons:
+#  homebrew:
+#    packages:
+#      - cmake
+#      - libomp
+#      - graphviz
+#      - openssl
+#      - libgit2
+#      - wget
+#      - r
+#    update: true
+
+before_install:
+  #- source dmlc-core/scripts/travis/travis_setup_env.sh
+  #- if [ "${TASK}" != "python_sdist_test" ]; then export PYTHONPATH=${PYTHONPATH}:${PWD}/python-package; fi
+  #- echo "MAVEN_OPTS='-Xmx2g -XX:MaxPermSize=1024m -XX:ReservedCodeCacheSize=512m -Dorg.slf4j.simpleLogger.defaultLogLevel=error'" > ~/.mavenrc
+  - echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+  - wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
+  - echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main" | sudo tee /etc/apt/sources.list.d/llvm-toolchain-bionic-7.list
+  - wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+  - echo "deb [arch=amd64] https://packages.microsoft.com/ubuntu/18.04/prod bionic main" | sudo tee /etc/apt/sources.list.d/msprod.list
+  - wget -qO - https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+  - sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave
+  - source /opt/openenclave/share/openenclave/openenclaverc
+  - wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
+  - sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
+
+
+#install:
+#  - source tests/travis/setup.sh
+
+script:
+  - tests/travis/run_test.sh
+
+#cache:
+#  directories:
+#    - ${HOME}/.cache/usr
+#    - ${HOME}/.cache/pip
+
+#before_cache:
+#  - dmlc-core/scripts/travis/travis_before_cache.sh
+#
+#after_failure:
+#  - tests/travis/travis_after_failure.sh
+#
+#after_success:
+#  - tree build
+#  - bash <(curl -s https://codecov.io/bash) -a '-o src/ src/*.c'
+
+#notifications:
+#  email:
+#    on_success: change
+#    on_failure: always
