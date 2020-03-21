@@ -112,6 +112,6 @@ add_custom_command(OUTPUT xgboost_enclave.info
   COMMAND openenclave::oesign dump -e xgboost_enclave.signed > xgboost_enclave.info)
 
 add_custom_target(sign ALL DEPENDS xgboost_enclave.signed)
-add_custom_target(info ALL DEPENDS xgboost_enclave.info)
+add_custom_target(info DEPENDS xgboost_enclave.info)
 
 #-- End object library
