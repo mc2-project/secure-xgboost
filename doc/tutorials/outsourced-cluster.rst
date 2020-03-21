@@ -36,6 +36,8 @@ Tutorial
 ********
 If you are using Azure Confidential Computing, all your VMs must be on the same subnet.
 
+We'll first set up the enclave cluster, and then set up the client.
+
 Cluster Setup
 =============
 We'll need to start an RPC process on each node in the cluster to listen for client calls.
@@ -69,7 +71,7 @@ This setup will involve encrypting data on the client and transferring the data 
 
 1. **Encrypt data locally.**
 
-   Use the ``encrypt.py`` script to generate a key and encrypt the sample data (``demo/data/agaricus.txt.train`` and ``demo/data/agaricus.txt.test``). It will output two files: 
+   Use the ``encrypt.py`` script to generate a key and encrypt the sample data (``demo/data/agaricus.txt.train``). It will output two files: 
 
    * ``key.txt`` : the key used to encrypt the data
 
