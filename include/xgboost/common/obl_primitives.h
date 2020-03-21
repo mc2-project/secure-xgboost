@@ -245,10 +245,14 @@ template<>
 inline float extract256<float>(__m256i vec, int i) {
     return _mm256_extract_ps_var_indx((__m256)vec, i);
 }
-inline __m256i gather256(float const * base, __m256i index, const int scale) {
+template <typename T>
+inline __m256i gather256(T const * base, __m256i index, const int scale);
+template<>
+inline __m256i gather256<float>(float const * base, __m256i index, const int scale) {
     return (__m256i) _mm256_i32gather_ps(base, index, scale);
 }
-inline __m256i gather256(int const * base, __m256i index, const int scale) {
+template<>
+inline __m256i gather256<int>(int const * base, __m256i index, const int scale) {
     return (__m256i) _mm256_i32gather_epi32(base, index, scale);
 }
 template <typename T>
@@ -261,13 +265,23 @@ template<>
 inline float extract128<float>(__m128i vec, int i) {
     return _mm_extract_ps_var_indx((__m128)vec, i);
 }
-inline __m128i gather128(float const * base, __m128i index, const int scale) {
+template <typename T>
+__m128i gather128(T const * base, __m128i index, const int scale);
+template<>
+inline __m128i gather128<float>(float const * base, __m128i index, const int scale) {
     return (__m128i) _mm_i32gather_ps(base, index, scale);
 }
-inline __m128i gather128(int const * base, __m128i index, const int scale) {
+template<>
+inline __m128i gather128<int>(int const * base, __m128i index, const int scale) {
     return (__m128i) _mm_i32gather_epi32(base, index, scale);
 }
 
+inline int ObliviousArrayAccess(const int *arr, size_t i, size_t n) {
+  return ObliviousArrayAccessSimd(arr, i, n);
+}
+inline float ObliviousArrayAccess(const float *arr, size_t i, size_t n) {
+  return ObliviousArrayAccessSimd(arr, i, n);
+}
 
 // Vectorized access into int or float array. Implemented as described in Oblivious Multi-Party Machine Learning paper (Ohrimenko et al.) 
 template <typename T>
