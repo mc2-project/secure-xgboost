@@ -189,10 +189,6 @@ inline void ObliviousSort(Iter begin, Iter end) {
 // Return arr[i]
 template <typename T>
 inline T ObliviousArrayAccess(const T *arr, size_t i, size_t n) {
-#ifdef USE_AVX2
-  if (sizeof(T) == 4)
-    return ObliviousArrayAccessSimd(arr, i, n);
-#endif
   T result = arr[0];
   ObliviousArrayAccessBytes(&result, arr, sizeof(T), i, n);
   return result;
@@ -242,18 +238,12 @@ inline int extract256<int>(__m256i vec, int i) {
     return _mm256_extract_epi32_var_indx(vec, i);
 }
 template<>
+inline uint32_t extract256<uint32_t>(__m256i vec, int i) {
+    return _mm256_extract_epi32_var_indx(vec, i);
+}
+template<>
 inline float extract256<float>(__m256i vec, int i) {
     return _mm256_extract_ps_var_indx((__m256)vec, i);
-}
-template <typename T>
-inline __m256i gather256(T const * base, __m256i index, const int scale);
-template<>
-inline __m256i gather256<float>(float const * base, __m256i index, const int scale) {
-    return (__m256i) _mm256_i32gather_ps(base, index, scale);
-}
-template<>
-inline __m256i gather256<int>(int const * base, __m256i index, const int scale) {
-    return (__m256i) _mm256_i32gather_epi32(base, index, scale);
 }
 template <typename T>
 inline T extract128(__m128i vec, int i);
@@ -262,21 +252,35 @@ inline int extract128<int>(__m128i vec, int i) {
     return _mm_extract_epi32_var_indx(vec, i);
 }
 template<>
+inline uint32_t extract128<uint32_t>(__m128i vec, int i) {
+    return _mm_extract_epi32_var_indx(vec, i);
+}
+template<>
 inline float extract128<float>(__m128i vec, int i) {
     return _mm_extract_ps_var_indx((__m128)vec, i);
 }
-template <typename T>
-__m128i gather128(T const * base, __m128i index, const int scale);
-template<>
-inline __m128i gather128<float>(float const * base, __m128i index, const int scale) {
-    return (__m128i) _mm_i32gather_ps(base, index, scale);
+inline __m256i gather256(int const * base, __m256i index, const int scale) {
+    return (__m256i) _mm256_i32gather_epi32(base, index, scale);
 }
-template<>
-inline __m128i gather128<int>(int const * base, __m128i index, const int scale) {
+inline __m256i gather256(uint32_t const * base, __m256i index, const int scale) {
+    return (__m256i) _mm256_i32gather_epi32((int const*)base, index, scale);
+}
+inline __m256i gather256(float const * base, __m256i index, const int scale) {
+    return (__m256i) _mm256_i32gather_ps(base, index, scale);
+}
+inline __m128i gather128(int const * base, __m128i index, const int scale) {
     return (__m128i) _mm_i32gather_epi32(base, index, scale);
 }
-
+inline __m128i gather128(uint32_t const * base, __m128i index, const int scale) {
+    return (__m128i) _mm_i32gather_epi32((int const*)base, index, scale);
+}
+inline __m128i gather128(float const * base, __m128i index, const int scale) {
+    return (__m128i) _mm_i32gather_ps(base, index, scale);
+}
 inline int ObliviousArrayAccess(const int *arr, size_t i, size_t n) {
+  return ObliviousArrayAccessSimd(arr, i, n);
+}
+inline uint32_t ObliviousArrayAccess(const uint32_t *arr, size_t i, size_t n) {
   return ObliviousArrayAccessSimd(arr, i, n);
 }
 inline float ObliviousArrayAccess(const float *arr, size_t i, size_t n) {
