@@ -47,30 +47,18 @@
 if [ ${TASK} == "cmake_test" ]; then
     set -e
 
-    #if grep -n -R '<<<.*>>>\(.*\)' src include | grep --invert "NOLINT"; then
-    #    echo 'Do not use raw CUDA execution configuration syntax with <<<blocks, threads>>>.' \
-    #         'try `dh::LaunchKernel`'
-    #    exit -1
-    #fi
-
-    # Build/test
+    # Build/test without obliviousness
     rm -rf build
     mkdir build && cd build
-    #PLUGINS="-DPLUGIN_LZ4=ON -DPLUGIN_DENSE_PARSER=ON"
-    #cmake .. -DCMAKE_VERBOSE_MAKEFILE=ON -DGOOGLE_TEST=ON -DUSE_OPENMP=ON -DUSE_DMLC_GTEST=ON ${PLUGINS}
-    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DUSE_AVX2=OFF
+    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
     make -j4
-    #./testxgboost
     cd ..
     rm -rf build
 
-    # Build/test
+    # Build/test with obliviousness
     mkdir build && cd build
-    #PLUGINS="-DPLUGIN_LZ4=ON -DPLUGIN_DENSE_PARSER=ON"
-    #cmake .. -DCMAKE_VERBOSE_MAKEFILE=ON -DGOOGLE_TEST=ON -DUSE_OPENMP=ON -DUSE_DMLC_GTEST=ON ${PLUGINS}
-    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DUSE_AVX2=ON
+    cmake .. -DOE_DEBUG=1 -DSIMULATE=ON -DOBLIVIOUS=ON -DUSE_AVX2=ON
     make -j4
-    #./testxgboost
     cd ..
     rm -rf build
 fi
