@@ -36,9 +36,9 @@ int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle
   return XGDMatrixCreateFromFile(fname, silent, out);
 }
 
-int enclave_XGDMatrixCreateFromEncryptedFile(const char *fname, int silent, DMatrixHandle *out) {
+int enclave_XGDMatrixCreateFromEncryptedFile(const char *fname, int silent, DMatrixHandle *out, char* username) {
   LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
-  return XGDMatrixCreateFromEncryptedFile(fname, silent, out);
+  return XGDMatrixCreateFromEncryptedFile(fname, silent, out,username);
 }
 
 int enclave_XGBoosterCreate(const DMatrixHandle dmats[], bst_ulong len, BoosterHandle* out) {
@@ -85,16 +85,16 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
   return XGBoosterEvalOneIter(handle, iter, dmats, (const char**) eval_names, len, (const char**) out_str);
 }
 
-int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname) {
+int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, char * username) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModel";
   check_enclave_ptr(handle);
-  return XGBoosterLoadModel(handle, fname);
+  return XGBoosterLoadModel(handle, fname, username);
 }
 
-int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname) {
+int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char * username) {
   LOG(DEBUG) << "Ecall: XGBoosterSaveModel";
   check_enclave_ptr(handle);
-  return XGBoosterSaveModel(handle, fname);
+  return XGBoosterSaveModel(handle, fname, username);
 }
 
 int enclave_XGBoosterDumpModel(BoosterHandle handle,
@@ -173,23 +173,23 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   }
   return XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models);
 }
-int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
+int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char * username) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
   check_enclave_ptr(handle);
-  return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr);
+  return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr, username);
 }
 
-int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len) {
+int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char * username) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
   check_enclave_ptr(handle);
-  return XGBoosterLoadModelFromBuffer(handle, buf, len);
+  return XGBoosterLoadModelFromBuffer(handle, buf, len, username);
 }
 
-int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result) {
+int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char * username) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
   check_enclave_ptr(handle);
   check_enclave_ptr(dmat);
-  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result);
+  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
 }
 
 int enclave_XGDMatrixGetFloatInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, bst_float **out_dptr) {
@@ -285,6 +285,17 @@ int enclave_add_client_key(
         size_t sig_len) {
     LOG(DEBUG) << "Ecall: add_client_key";
     return add_client_key(data, data_len, signature, sig_len);
+}
+
+int enclave_add_client_key_with_certificate(
+        char * cert,
+        int cert_len,
+        uint8_t* data,
+        size_t data_len,
+        uint8_t* signature,
+        size_t sig_len) {
+    fprintf(stdout, "Ecall: add_client_key_with_certificate !\n");
+    return add_client_key_with_certificate(cert, cert_len, data, data_len, signature, sig_len);
 }
 
 // FIXME: check bounds

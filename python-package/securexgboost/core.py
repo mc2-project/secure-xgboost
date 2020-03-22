@@ -370,7 +370,7 @@ class DMatrix(object):
     def __init__(self, data, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
-                 nthread=None):
+                 nthread=None, username = None):
         """
         Parameters
         ----------
@@ -402,6 +402,8 @@ class DMatrix(object):
         nthread : integer, optional
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
+        username : string, optional
+            User's username. Used to find the corresponding key to decrypt the training data.
         """
         # force into void_p, mac need to pass things in as void_p
         if data is None:
@@ -433,7 +435,8 @@ class DMatrix(object):
             if encrypted:
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
                     ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+                    ctypes.byref(handle),
+                    ctypes.c_char_p(c_str(username))))
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
@@ -1175,6 +1178,39 @@ class CryptoUtils(object):
         # Add client key
         _LIB.add_client_key(data, data_len, signature, sig_len)
 
+    def add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
+        """
+        Add client symmetric key used to encrypt file fname
+
+        Parameters
+        ----------
+        certificate : a string
+            content of the user certificate
+        data : proto.NDArray
+            key used to encrypt client files
+        data_len : int
+            length of data
+        signature : proto.NDArray
+            signature over data, signed with client private key
+        sig_len : int
+            length of signature
+        """
+        # length needed to call cert parse later
+        cert_len = len(certificate) + 1
+        # Cast certificate to a char*
+        certificate = ctypes.c_char_p(str.encode(certificate))
+
+        # Cast data : proto.NDArray to pointer to pass into C++ add_client_key()
+        data = proto_to_pointer(data)
+        data_len = ctypes.c_size_t(data_len)
+
+        # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
+        signature = proto_to_pointer(signature)
+        sig_len = ctypes.c_size_t(sig_len)
+
+        # Add client key
+        _LIB.add_client_key(certificate, cert_len, data, data_len, signature, sig_len)
+
     def decrypt_predictions(self, key, encrypted_preds, num_preds):
         """
         Decrypt encrypted predictions
@@ -1502,7 +1538,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True):
+                validate_features=True, username = None):
         """
         Predict with data.
 
@@ -1560,6 +1596,9 @@ class Booster(object):
             When this is True, validate that the Booster's and data's feature_names are identical.
             Otherwise, it is assumed that the feature_names are the same.
 
+        username: string
+            Use the name to find the encryption key used for prediction result
+
         Returns
         -------
         prediction : numpy array
@@ -1586,7 +1625,8 @@ class Booster(object):
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
-                                          ctypes.byref(preds)))
+                                          ctypes.byref(preds),
+                                          ctypes.c_char_p(c_str(username))))
                          
         #  preds = ctypes2numpy(preds, length.value, np.float32)
         #  if pred_leaf:
@@ -1612,7 +1652,7 @@ class Booster(object):
         #          preds = preds.reshape(nrow, chunk_size)
         return preds, length.value
 
-    def save_model(self, fname):
+    def save_model(self, fname, username):
         """
         Save the model to a file.
 
@@ -1625,16 +1665,20 @@ class Booster(object):
         ----------
         fname : string
             Output file name
+        username: string
+            Used to encrypt the file
         """
         if isinstance(fname, STRING_TYPES):  # assume file name
-            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname)))
+            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), ctypes.c_char_p(c_str(username))))
         else:
             raise TypeError("fname must be a string")
 
-    def save_raw(self):
+    def save_raw(self, username):
         """
         Save the model to a in memory buffer representation
 
+        username: string
+            usred to encrypt this file 
         Returns
         -------
         a in memory buffer representation of the model
@@ -1643,10 +1687,11 @@ class Booster(object):
         cptr = ctypes.POINTER(ctypes.c_char)()
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
                                               ctypes.byref(length),
-                                              ctypes.byref(cptr)))
+                                              ctypes.byref(cptr),
+                                              ctypes.c_char_p(c_str(username))))
         return ctypes2buffer(cptr, length.value)
 
-    def load_model(self, fname):
+    def load_model(self, fname, username):
         """
         Load the model from a file.
 
@@ -1659,15 +1704,17 @@ class Booster(object):
         ----------
         fname : string or a memory buffer
             Input file name or memory buffer(see also save_raw)
+        username: string
+            Used to find the encryption key
         """
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname)))
+            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), ctypes.c_char_p(c_str(username))))
         else:
             buf = fname
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length))
+            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, ctypes.c_char_p(c_str(username))))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
