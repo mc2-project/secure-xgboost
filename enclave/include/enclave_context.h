@@ -4,6 +4,14 @@
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
 
+// needed for certificate 
+#include "mbedtls/platform.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+
+
 class EnclaveContext {
   // FIXME Embed root CA for clients
 
@@ -18,6 +26,9 @@ class EnclaveContext {
     //std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
     uint8_t client_key[CIPHER_KEY_SIZE];
     bool client_key_is_set;
+
+    // map username to client_key
+    std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
 
     EnclaveContext() {
       generate_public_key();
@@ -57,11 +68,11 @@ class EnclaveContext {
     //  }
     //}
 
-    bool get_client_key(uint8_t* key) {
-      if (client_key_is_set)
-          memcpy(key, client_key, CIPHER_KEY_SIZE);
-      else
-          memset(key, 0, CIPHER_KEY_SIZE);
+    bool get_client_key(uint8_t* key, char * username) {
+
+      // returning the key held by user
+
+      memcpy(key,(uint8_t *) &client_keys[CharPtrToString(username)][0], CIPHER_KEY_SIZE);
     }
 
     // FIXME verify client identity using root CA
@@ -153,6 +164,180 @@ class EnclaveContext {
       sync_client_key();
       return true;
     }
+
+
+  
+    bool verifySignatureWithCertificate(char* cert,
+                int cert_len,
+                uint8_t* data,
+                size_t data_len,
+                uint8_t* signature,
+                size_t sig_len) {
+      mbedtls_pk_context _pk_context;
+
+      unsigned char hash[32];
+      int ret = 1;
+
+      mbedtls_pk_init(&_pk_context);
+
+      const char* rootkey =  "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArzxQ9wZ8pwKYEs+XZ1aJ\n"
+        "POur2Fm2AZhnev9hblLVAKUUcRijzieYLDrVoremwSNNoMtN1BED24yLBWJgaAli\n"
+        "0IQsfalXkQQUHOTdfqc6fH0IqdENbKCVMiVfKZ+hLZmuNPVH373xtMT2k95yqExR\n"
+        "wh6/4QRt/zHwUN+1FeumrM3TGB81ZjD5LDAr9AxhQVo17HuU94Nm5FDsCi/mumJ3\n"
+        "9vgi3TWKPAPs0egUbdpzakDBO0gmS9R4FlOQf2ygv8t3Q9Lmv1gr4iXrw1+fyZbf\n"
+        "vInXl8iUINK7imBUGffub1ALgsOuBVd5XomYYAsGdvmNovZu68Iqy2btwf9Bsgbi\n"
+        "uwIDAQAB\n"
+        "-----END PUBLIC KEY-----";
+
+      const char* CA_cert = "-----BEGIN CERTIFICATE-----\n"
+          "MIIDPDCCAiSgAwIBAgIBATANBgkqhkiG9w0BAQsFADA3MRYwFAYDVQQDDA1zZWN1\n"
+          "cmV4Z2Jvb3N0MRAwDgYDVQQKDAdyaXNlbGFiMQswCQYDVQQGEwJOTDAeFw0xMzAx\n"
+          "MDEwMDAwMDBaFw0yNTEyMzEyMzU5NTlaMDcxFjAUBgNVBAMMDXNlY3VyZXhnYm9v\n"
+          "c3QxEDAOBgNVBAoMB3Jpc2VsYWIxCzAJBgNVBAYTAk5MMIIBIjANBgkqhkiG9w0B\n"
+          "AQEFAAOCAQ8AMIIBCgKCAQEArzxQ9wZ8pwKYEs+XZ1aJPOur2Fm2AZhnev9hblLV\n"
+          "AKUUcRijzieYLDrVoremwSNNoMtN1BED24yLBWJgaAli0IQsfalXkQQUHOTdfqc6\n"
+          "fH0IqdENbKCVMiVfKZ+hLZmuNPVH373xtMT2k95yqExRwh6/4QRt/zHwUN+1Feum\n"
+          "rM3TGB81ZjD5LDAr9AxhQVo17HuU94Nm5FDsCi/mumJ39vgi3TWKPAPs0egUbdpz\n"
+          "akDBO0gmS9R4FlOQf2ygv8t3Q9Lmv1gr4iXrw1+fyZbfvInXl8iUINK7imBUGffu\n"
+          "b1ALgsOuBVd5XomYYAsGdvmNovZu68Iqy2btwf9BsgbiuwIDAQABo1MwUTAPBgNV\n"
+          "HRMECDAGAQH/AgEAMB0GA1UdDgQWBBQsyoN7J2skAO4oDOLrFCA1QarjjDAfBgNV\n"
+          "HSMEGDAWgBQsyoN7J2skAO4oDOLrFCA1QarjjDANBgkqhkiG9w0BAQsFAAOCAQEA\n"
+          "KkN+iohzbT97qz2DwlpQywVkz5t6Z0mZsTVexNObPsylEi4hz3mj2NHsgr8BNEdl\n"
+          "nLpOeDaFKs44giavKUPOfvREU2RiDm0lwLkWNVY232s/3YxXlUSGGONQtfJbOf9D\n"
+          "YQVCUi1twlLyFq5ZaBeBrKras7MCimKhZxUvPf6c99myBGsSkjH15UzX90bQev/q\n"
+          "tTStoaXW4CfAhz385U8PffADBpdOHqW8wpOh54juyPGK6UsQUKtVuxDeb3kzS6PM\n"
+          "wGfqCp4LSbJ0UQr2FTnI29qlS9LQqh1fdNhcrnMZ5iw6klPO+ZLAMyjpBXzVnDU7\n"
+          "ko6CD0TAPKr7JWDfUPSP/g==\n"
+          "-----END CERTIFICATE-----";
+
+      mbedtls_x509_crt _cacert;
+      mbedtls_x509_crt_init(&_cacert);
+      if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) CA_cert,
+                   strlen(CA_cert)+1)) != 0) {
+         LOG(INFO) << "verification failed - Could not read root certificate";
+         LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+         return false;
+}
+
+      mbedtls_x509_crt user_cert;
+      mbedtls_x509_crt_init(&user_cert);
+      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
+                   cert_len+1)) != 0) {
+         LOG(INFO) << "verification failed - Could not read user certificate";
+         LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+         return false;
+      }
+
+      uint32_t result;
+      mbedtls_x509_crt_verify(&user_cert, &_cacert, NULL, NULL, &result, NULL, NULL);
+      if (result!=0){
+        LOG(INFO) << "verification failed - mbedtls_x509_crt_verify returned" << result;
+        return false;
+      }
+
+      mbedtls_pk_context user_public_key_context = user_cert.pk;
+
+      if(!mbedtls_pk_can_do(&user_public_key_context, MBEDTLS_PK_RSA)) {
+        LOG(INFO) << "verification failed - Key is not an RSA key";
+        return false;
+      }
+
+      mbedtls_rsa_set_padding(mbedtls_pk_rsa(user_public_key_context), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
+
+      if((ret = compute_sha256(data, data_len, hash)) != 0) {
+        LOG(INFO) << "verification failed -- Could not hash";
+        return false;
+      }
+
+      if((ret = mbedtls_pk_verify(&user_public_key_context, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0) {
+        LOG(INFO) << "verification failed -- mbedtls_pk_verify returned " << ret;
+        return false;
+      }
+
+      return true;
+    }
+
+    bool decrypt_and_save_client_key_with_certificate(char * cert,
+            int cert_len,
+            uint8_t* data,
+            size_t data_len,
+            uint8_t* signature,
+            size_t sig_len) {
+      if (!verifySignatureWithCertificate(cert,cert_len,data,data_len,signature,sig_len)) {
+        LOG(INFO) << "Signature verification failed";
+        return false;
+      }
+
+      int res = 0;
+      mbedtls_rsa_context* rsa_context;
+
+      mbedtls_pk_rsa(m_pk_context)->len = data_len;
+      rsa_context = mbedtls_pk_rsa(m_pk_context);
+      rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
+      rsa_context->hash_id = MBEDTLS_MD_SHA256;
+
+      size_t output_size;
+      uint8_t output[CIPHER_KEY_SIZE];
+
+      res = mbedtls_rsa_pkcs1_decrypt(
+          rsa_context,
+          mbedtls_ctr_drbg_random,
+          &m_ctr_drbg_context,
+          MBEDTLS_RSA_PRIVATE,
+          &output_size,
+          data,
+          output,
+          CIPHER_KEY_SIZE);
+      if (res != 0) {
+        LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
+        return false;
+      }
+
+      mbedtls_x509_crt user_cert;
+      mbedtls_x509_crt_init(&user_cert);
+      int ret;
+      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
+                   cert_len+1)) != 0) {
+         LOG(INFO) << "verification failed - Could not read user certificate";
+         LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+         return false;
+      }
+
+      mbedtls_x509_name subject_name = user_cert.subject;
+      mbedtls_asn1_buf name = subject_name.val;
+      unsigned char * nameptr = name.p;
+      size_t name_len = name.len;
+
+      //fprintf(stdout, "Decrypted key\n");
+      //for (int i = 0; i < CIPHER_KEY_SIZE; i++)
+      //  fprintf(stdout, "%d\t", output[i]);
+      //fprintf(stdout, "\n");
+      std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
+      std::string user_nam =  convertToString((char *)nameptr, name_len);
+      client_keys.insert({user_nam, v});
+
+      return true;
+    }
+
+    std::string convertToString(char* a, int size) {
+    int i;
+    std::string s = "";
+    for (i = 0; i < size; i++) {
+        s = s + a[i];
+    }
+    return s;
+}
+
+std::string CharPtrToString(char* a) {
+  int i;
+  std::string s = "";
+  for (i = 0; a[i] != (char) 0; i++) {
+      s = s + a[i];
+  }
+  return s;
+}
+
 
   private:
     /**
