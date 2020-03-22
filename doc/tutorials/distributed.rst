@@ -38,11 +38,8 @@ Once the topology has been set up, each node in the cluster is assigned a rank. 
 
 The tracker is logically distinct from all nodes in the cluster, and does not actually perform any computation. Once it has finished setting up the topology, the tracker has finished its job. However, a user may choose to colocate the tracker with a master/worker node for simplicity. 
 
-The tracker initially communicates with all nodes in the cluster over SSH. This means that the tracker's SSH public key must be authorized by every node in the cluster. Once this initial communication has finished, all other inter-node communication happens over TLS.
-
-Before training begins, Distributed Secure XGBoost leverages *inter-enclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code.
+Before training begins, the tracker first logs into each node in the cluster via SSH and configures it for distributed training. Distributed Secure XGBoost then leverages *inter-enclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code. During attestation, enclaves establish TLS connections with one another, enabling a secure channel to communicate on whie training. 
    
-
 ********************
 Distributed Training
 ********************
@@ -105,6 +102,13 @@ If you are using Azure Confidential Computing, all your VMs must be on the same 
 
 
    Ensure that each node in the cluster has authorized the SSH public key of the machine running the tracker, as the tracker in Distributed Secure XGBoost leverages SSH public keys to set up the topology.
+
+   Note that this tutorial can also be run locally by simulating the cluster on one machine. To do this, type in the following command.
+
+   .. code-block:: bash
+
+      mc2-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster local --num-workers <num_nodes_in_cluster> --worker-memory 1g python3 distr-training.py
+
   
 
 ***************
