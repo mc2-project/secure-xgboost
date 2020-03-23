@@ -38,7 +38,7 @@ Once the topology has been set up, each node in the cluster is assigned a rank. 
 
 The tracker is logically distinct from all nodes in the cluster, and does not actually perform any computation. Once it has finished setting up the topology, the tracker has finished its job. However, a user may choose to colocate the tracker with a master/worker node for simplicity. 
 
-Before training begins, the tracker first logs into each node in the cluster via SSH and configures it for distributed training. Distributed Secure XGBoost then leverages *inter-enclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code. During attestation, enclaves establish TLS connections with one another, enabling a secure channel to communicate on whie training. 
+Before training begins, the tracker first logs into each node in the cluster via SSH and configures it for distributed training. Distributed Secure XGBoost then leverages *inter-enclave attestation* to authenticate all enclaves in the cluster -- each enclave attests all neighboring enclaves to verify the enclave's identity and to verify that the enclave will be running the proper code. During attestation, enclaves establish TLS connections with one another, enabling a secure channel to communicate on while training. 
    
 ********************
 Distributed Training
