@@ -28,7 +28,7 @@ Before computation, one node in the cluster will initialize a tracker to start a
 
 Each RPC server will listen for client requests. The client will make requests for remote attestation, adding its symmetric key used to encrypt the training data to each enclave, and the end-to-end training process. 
 
-The client will first attest each enclave, then encrypt data and send it to each machine in the cluster. The data remains encrypted until it is loaded inside each machine's enclave, at which point the enclave can decrypt it using the symmetric key sent by the client over RPC. Once the client has given the start signal to each node over RPC, the cluster will then collectively train a model on the training data following the distributed training pattern outlined in the :doc:`Distributed Secure XGBoost tutorial <distributed>`. Lastly, an encrypted version of the trained model will be saved, available for the client to fetch. 
+The client will first attest each enclave, then encrypt the data and send it to the cluster. The data remains encrypted until an enclave at each machine loads a part of the data, at which point the enclave can decrypt the data using the symmetric key sent by the client over RPC. Once the client has given the start signal to each node over RPC, the cluster will then collectively train a model on the training data following the distributed training pattern outlined in the :doc:`Distributed Secure XGBoost tutorial <distributed>`. Lastly, an encrypted version of the trained model will be saved, available for the client to fetch. 
 
 
 ********
