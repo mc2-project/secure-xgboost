@@ -8,8 +8,8 @@ HOME_DIR = DIR + "/../../../"
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
-# print("Remote attestation")
-# enclave.get_remote_report_with_pubkey()
+# print("Remote attestation")	
+# enclave.get_remote_report_with_pubkey()	
 # enclave.verify_remote_report_and_set_pubkey()
 
 rabit_args = {
