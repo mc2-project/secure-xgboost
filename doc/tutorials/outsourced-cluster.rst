@@ -24,11 +24,11 @@ In this scenario there's a client and an enclave cluster. The client communicate
    :width: 100% 
    :alt: Outsourced Distributed Architecture
 
-Before computation, one node in the cluster will initialize a tracker to start an RPC server on each node in the cluster. The tracker is discussed in the :doc:`Distributed Secure XGBoost tutorial <distributed>`.
+Before computation, one node in the cluster initializes a tracker to start an RPC server on each node in the cluster. The :doc:`Distributed Secure XGBoost tutorial <distributed>` provides further information about the tracker.
 
-Each RPC server will listen for client requests. The client will make requests for remote attestation, adding its symmetric key used to encrypt the training data to each enclave, and the end-to-end training process. 
+Each RPC server listens for client requests. The client makes requests for remote attestation, adding its symmetric key used to encrypt the training data to each enclave, and the end-to-end training process. 
 
-The client will first attest each enclave, then encrypt the data and send it to the cluster. The data remains encrypted until an enclave at each machine loads a part of the data, at which point the enclave can decrypt the data using the symmetric key sent by the client over RPC. Once the client has given the start signal to each node over RPC, the cluster will then collectively train a model on the training data following the distributed training pattern outlined in the :doc:`Distributed Secure XGBoost tutorial <distributed>`. Lastly, an encrypted version of the trained model will be saved, available for the client to fetch. 
+The client first attests each enclave, then encrypts the data and sends it to the cluster. Each enclave in the cluster loads a subset of the encrypted data and decrypts it using the symmetric key sent by the client over RPC. Once the client has given the start signal to each node over RPC, the cluster then collectively trains a model on the training data following the distributed training pattern outlined in the :doc:`Distributed Secure XGBoost tutorial <distributed>`. Lastly, an encrypted version of the trained model is saved, available for the client to fetch. 
 
 
 ********
