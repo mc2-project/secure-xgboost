@@ -118,6 +118,7 @@ Building the Targets
    * ``OE_NUM_TCS``: The number of enclave thread control structures; this is the maximum number of concurrent threads that can execute within the enclave.
    * ``OE_PRODUCT_ID``: Enclave product ID.
    * ``OE_SECURITY_VERSION``: Enclave security version number.
+
    More details on these parameters can be found `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md>`_.
 
    We also provide some additional configuration options:
