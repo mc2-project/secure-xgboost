@@ -26,7 +26,7 @@ The relevant code is located at ``demo/python/remote-control``.
 Server Setup
 ************
 
-First setup a machine that will act as the untrusted server. This tutorial will work regardless of whether there's an enclave available, as OpenEnclave supports a simulation mode. However, if your server machine doesn't have an enclave available, you'll need to enable simulation mode by going into ``demo/python/remote-control/server/enclave_serve.py``, uncommenting the line to create an enclave in simulation mode, and commenting out the line to run in hardware mode. 
+First setup a machine that will act as the untrusted server. 
 
 We'll need to start an RPC process on the server to listen for client calls. 
 

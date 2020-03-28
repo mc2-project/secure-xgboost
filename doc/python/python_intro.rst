@@ -8,7 +8,7 @@ This document gives a basic walkthrough of securexgboost python package. There's
 * :doc:`Python API Reference <python_api>`
 
 Install Secure XGBoost
----------------
+----------------------
 To install Secure XGBoost, follow instructions in :doc:`/build`.
 
 To verify your installation, run the following in Python:
@@ -23,8 +23,6 @@ The Secure XGBoost python module is able to load data from:
 
 - LibSVM text format file
 - Comma-separated values (CSV) file
-
-(See :doc:`/tutorials/input_format` for detailed description of text input format.)
 
 The data is stored in a :py:class:`DMatrix <securexgboost.DMatrix>` object.
 
