@@ -211,12 +211,14 @@ class EnclaveContext {
           "ko6CD0TAPKr7JWDfUPSP/g==\n"
           "-----END CERTIFICATE-----";
 
+      printf("print usable??");
       mbedtls_x509_crt _cacert;
       mbedtls_x509_crt_init(&_cacert);
       if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) CA_cert,
                    strlen(CA_cert)+1)) != 0) {
          LOG(INFO) << "verification failed - Could not read root certificate";
          LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+         printf("parse failed");
          return false;
 }
 
@@ -290,6 +292,7 @@ class EnclaveContext {
           output,
           CIPHER_KEY_SIZE);
       if (res != 0) {
+
         LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
         return false;
       }
@@ -316,7 +319,9 @@ class EnclaveContext {
       std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
       std::string user_nam =  convertToString((char *)nameptr, name_len);
       client_keys.insert({user_nam, v});
-
+        
+      LOG(INFO) << "verifiation succeded - user added";
+      LOG(INFO) << "username :" << user_nam;
       return true;
     }
 
