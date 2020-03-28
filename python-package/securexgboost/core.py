@@ -1209,7 +1209,7 @@ class CryptoUtils(object):
         sig_len = ctypes.c_size_t(sig_len)
 
         # Add client key
-        _LIB.add_client_key(certificate, cert_len, data, data_len, signature, sig_len)
+        print(_LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len))
 
     def decrypt_predictions(self, key, encrypted_preds, num_preds):
         """

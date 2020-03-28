@@ -1479,7 +1479,10 @@ inline void XGBoostDumpModelImpl(
   unsigned char iv[CIPHER_IV_SIZE];
   unsigned char tag[CIPHER_TAG_SIZE];
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
+
+  //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer 
+  char * username; 
+  EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
     encrypted = (unsigned char*) malloc(length * sizeof(char)); 
