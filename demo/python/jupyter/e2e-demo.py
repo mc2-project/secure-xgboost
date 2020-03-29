@@ -163,14 +163,14 @@ print("user key added!")
 
 
 # Load training data
-dtrain = xgb.DMatrix(os.getcwd() + "/" + enc_training_data, encrypted=True)
+dtrain = xgb.DMatrix(os.getcwd() + "/" + enc_training_data, encrypted=True, username= user_name)
 
 
 # In[ ]:
 
 
 # Load test data
-dtest = xgb.DMatrix(os.getcwd() + "/" + enc_test_data, encrypted=True)
+dtest = xgb.DMatrix(os.getcwd() + "/" + enc_test_data, encrypted=True, username = user_name)
 
 
 # ## 5. Training
@@ -206,12 +206,13 @@ booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest
 
 
 # Get Encrypted Predictions
-enc_preds, num_preds = booster.predict(dtest)
+print(user_name)
+enc_preds, num_preds = booster.predict(dtest, username = user_name)
 
 
 # In[ ]:
 
 
 # Decrypt Predictions
-preds = crypto.decrypt_predictions(sym_key, enc_preds, num_preds, user_name)
+preds = crypto.decrypt_predictions(sym_key, enc_preds, num_preds)
 print(preds)
