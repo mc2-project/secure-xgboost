@@ -88,7 +88,7 @@ flags = (flags | OE_ENCLAVE_FLAG_SIMULATE)
 
 # Create an enclave
 # NOTE: the directory changed 
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity = 3)
 
 
 # Next, the client verifies that the enclace has been correctly deployed, using remote attestation.
@@ -154,6 +154,7 @@ else:
     # Send the encrypted key to the enclave
     crypto.add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_size)
 
+print("user key added!")
 
 # ## 4. Data loading
 # The enclave is now ready to start the training process. First, load the encrypted data into a `DMatrix` within the enclave.
@@ -212,5 +213,5 @@ enc_preds, num_preds = booster.predict(dtest)
 
 
 # Decrypt Predictions
-preds = crypto.decrypt_predictions(sym_key, enc_preds, num_preds)
+preds = crypto.decrypt_predictions(sym_key, enc_preds, num_preds, user_name)
 print(preds)
