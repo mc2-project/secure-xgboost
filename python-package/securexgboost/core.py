@@ -436,7 +436,7 @@ class DMatrix(object):
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
                     ctypes.c_int(silent),
                     ctypes.byref(handle),
-                    ctypes.c_char_p(c_str(username))))
+                    c_str(username)))
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
@@ -1626,7 +1626,7 @@ class Booster(object):
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
                                           ctypes.byref(preds),
-                                          ctypes.c_char_p(c_str(username))))
+                                          c_str(username)))
                          
         #  preds = ctypes2numpy(preds, length.value, np.float32)
         #  if pred_leaf:
@@ -1669,7 +1669,7 @@ class Booster(object):
             Used to encrypt the file
         """
         if isinstance(fname, STRING_TYPES):  # assume file name
-            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), ctypes.c_char_p(c_str(username))))
+            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
             raise TypeError("fname must be a string")
 
@@ -1688,7 +1688,7 @@ class Booster(object):
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
                                               ctypes.byref(length),
                                               ctypes.byref(cptr),
-                                              ctypes.c_char_p(c_str(username))))
+                                              c_str(username)))
         return ctypes2buffer(cptr, length.value)
 
     def load_model(self, fname, username):
@@ -1709,12 +1709,12 @@ class Booster(object):
         """
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), ctypes.c_char_p(c_str(username))))
+            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
             buf = fname
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, ctypes.c_char_p(c_str(username))))
+            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
