@@ -9,4 +9,3 @@ This section contains tutorials discussing how to use Secure XGBoost.
   :caption: Contents:
 
   jupyter
-  outsourced

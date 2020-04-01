@@ -17,7 +17,6 @@ Contents
   :titlesonly:
 
   build
-  get_started
   tutorials/index
   parameter
   Python package <python/index>

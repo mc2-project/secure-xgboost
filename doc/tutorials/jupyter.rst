@@ -4,7 +4,7 @@ Secure XGBoost in Jupyter
 
 Secure XGBoost comes with a demo Jupyter notebook that provides some insight into how one can use the library. The notebook gives an end to end demo of a complete workflow. A practical use case of Secure XGBoost would involve outsourced computation requiring at least two machines (a client who owns the data and a server where computation on the data is done), but the workflow in the notebook has been simplified to require only one machine.
 
-The notebook is located at ``demo/python/jupyter/e2e-demo.ipynb``.
+The notebook is located at ``demo/python/jupyter/e2e-demo.ipynb`` and can also be found `here <https://nbviewer.jupyter.org/github/mc2-project/mc2-xgboost/blob/hackathon/demo/python/jupyter/e2e-demo.ipynb>`_.
 
 **********************
 An End to End Workflow
