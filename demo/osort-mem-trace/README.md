@@ -2,17 +2,17 @@
 ## Setup
 
 #### Install Intel Pin
-Download the software into the `/opt` directory
+Download the software
 
     wget https://software.intel.com/sites/landingpage/pintool/downloads/pin-3.11-97998-g7ecce2dac-gcc-linux.tar.gz
-    sudo cp pin-3.11-97998-g7ecce2dac-gcc-linux.tar.gz /opt/
-    cd /opt
+    cp pin-3.11-97998-g7ecce2dac-gcc-linux.tar.gz ~
+    cd ~
     tar -zxvf pin-3.11-97998-g7ecce2dac-gcc-linux.tar.gz 
-    ln -s /opt/pin-3.11-97998-g7ecce2dac-gcc-linux /opt/pin-dir
+    ln -s ~/pin-3.11-97998-g7ecce2dac-gcc-linux ~/pin-dir
 
 Set environment variable
 
-    export PIN_ROOT=/opt/pin-dir
+    export PIN_ROOT=~/pin-dir
 
 Build Intel Pin
 
