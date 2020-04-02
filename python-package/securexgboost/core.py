@@ -362,9 +362,7 @@ def switch_user(user_name):
     user_name : string
         user you want to switch to
     """
-    if "current_user" in globals():
-        global current_user
-        current_user = user_name
+    globals()["current_user"]=user_name
 
 class DMatrix(object):
     """Data Matrix used in XGBoost.
@@ -417,7 +415,7 @@ class DMatrix(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = current_user
+            username = globals()["current_user"]
 
         # force into void_p, mac need to pass things in as void_p
         if data is None:
@@ -1620,7 +1618,7 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = current_user
+            username = globals()["current_user"]
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1687,7 +1685,7 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = current_user
+            username = globals()["current_user"]
         if isinstance(fname, STRING_TYPES):  # assume file name
             _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -1705,7 +1703,7 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = current_user
+            username = globals()["current_user"]
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
@@ -1732,7 +1730,7 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = current_user
+            username = globals()["current_user"]
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
