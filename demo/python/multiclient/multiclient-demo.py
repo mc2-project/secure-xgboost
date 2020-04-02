@@ -1,5 +1,6 @@
 import securexgboost as xgb
 import os
+from securexgboost import switch_user
 
 HOME_DIR = os.path.abspath('') + "/../../../"
 crypto = xgb.CryptoUtils()
