@@ -218,7 +218,6 @@ class EnclaveContext {
           "ko6CD0TAPKr7JWDfUPSP/g==\n"
           "-----END CERTIFICATE-----";
 
-      printf("print usable??");
       mbedtls_x509_crt _cacert;
       mbedtls_x509_crt_init(&_cacert);
       if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) CA_cert,
