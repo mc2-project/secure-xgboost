@@ -224,7 +224,6 @@ class EnclaveContext {
                    strlen(CA_cert)+1)) != 0) {
          LOG(INFO) << "verification failed - Could not read root certificate";
          LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
-         printf("parse failed");
          return false;
 }
 
