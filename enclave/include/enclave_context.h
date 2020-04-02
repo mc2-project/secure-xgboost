@@ -232,7 +232,7 @@ class EnclaveContext {
       mbedtls_x509_crt user_cert;
       mbedtls_x509_crt_init(&user_cert);
       if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
-                   cert_len+1)) != 0) {
+                   cert_len)) != 0) {
          LOG(INFO) << "verification failed - Could not read user certificate";
          LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
          return false;
@@ -308,7 +308,7 @@ class EnclaveContext {
       mbedtls_x509_crt_init(&user_cert);
       int ret;
       if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
-                   cert_len+1)) != 0) {
+                   cert_len)) != 0) {
          LOG(INFO) << "verification failed - Could not read user certificate";
          LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
          return false;
