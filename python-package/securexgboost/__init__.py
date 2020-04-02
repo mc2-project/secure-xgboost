@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 import os
 
-from .core import DMatrix, Booster, Enclave, CryptoUtils
+from .core import DMatrix, Booster, Enclave, CryptoUtils, switch_user
 from .training import train #, cv
 from . import rabit                   # noqa
 try:
