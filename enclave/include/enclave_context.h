@@ -4,7 +4,7 @@
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
 
-// needed for certificate 
+// needed for certificate
 #include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
@@ -68,12 +68,18 @@ class EnclaveContext {
     //  }
     //}
 
-    bool get_client_key(uint8_t* key, char * username) {
+    bool get_client_key(uint8_t* key, char *username) {
 
       // returning the key held by user
-        
-        LOG(INFO) << "User requested username " << username;
-      memcpy(key,(uint8_t *) &client_keys[CharPtrToString(username)][0], CIPHER_KEY_SIZE);
+      LOG(INFO) << "User requested username " << username;
+      if (client_keys.count(username) > 0){
+        memcpy(key,(uint8_t *) &client_keys[CharPtrToString(username)][0], CIPHER_KEY_SIZE);
+      }
+      else
+      {
+        LOG(INFO) << "User " << username << " does not exist, using zero key instead";
+        memset(key, 0, CIPHER_KEY_SIZE);
+      }
     }
 
     // FIXME verify client identity using root CA
@@ -167,7 +173,7 @@ class EnclaveContext {
     }
 
 
-  
+
     bool verifySignatureWithCertificate(char* cert,
                 int cert_len,
                 uint8_t* data,
@@ -320,7 +326,7 @@ class EnclaveContext {
       std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
       std::string user_nam =  convertToString((char *)nameptr, name_len);
       client_keys.insert({user_nam, v});
-        
+
       LOG(INFO) << "verifiation succeded - user added";
       LOG(INFO) << "username :" << user_nam;
       return true;

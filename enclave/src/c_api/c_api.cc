@@ -1328,7 +1328,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* us
   API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char * username) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *username) {
   API_BEGIN();
   CHECK_HANDLE();
 #ifdef __ENCLAVE__ // save encrypted model to file
@@ -1375,7 +1375,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char * u
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                  const void* buf,
                                  xgboost::bst_ulong len,
-                                 char * username) {
+                                 char *username) {
   API_BEGIN();
   CHECK_HANDLE();
 #ifdef __ENCLAVE__ // write results to host memory
@@ -1481,7 +1481,7 @@ inline void XGBoostDumpModelImpl(
   unsigned char key[CIPHER_KEY_SIZE];
 
   //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer 
-  char * username; 
+  char *username; 
   EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();

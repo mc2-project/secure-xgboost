@@ -479,7 +479,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
  */
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
-                             char * username);
+                             char *username);
 /*!
  * \brief save model into existing file
  * \param handle handle
@@ -511,7 +511,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
-                                 char * username);
+                                 char *username);
 /*!
  * \brief dump model, return array of strings representing model dump
  * \param handle handle
