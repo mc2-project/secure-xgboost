@@ -22,8 +22,8 @@ VERSION_FILE = os.path.join(os.path.dirname(__file__), 'VERSION')
 with open(VERSION_FILE) as f:
     __version__ = f.read().strip()
 
-__all__ = ['DMatrix', 'Booster', 'Enclave', 'CryptoUtils',
-           'train', 'cv',
+__all__ = ['DMatrix', 'Booster', 'Enclave', 'CryptoUtils', 
+           'train', 'cv', 'switch_user', 
            'XGBModel', 'XGBClassifier', 'XGBRegressor', 'XGBRanker',
            'XGBRFClassifier', 'XGBRFRegressor',
            'plot_importance', 'plot_tree', 'to_graphviz']
