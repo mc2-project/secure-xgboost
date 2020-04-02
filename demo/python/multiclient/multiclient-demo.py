@@ -114,7 +114,7 @@ enc_test_data = "test2.enc"
 # Encrypt test data with user 2's key
 crypto.encrypt_file(test_data, enc_test_data, KEY_FILE_2)
 dtest = xgb.DMatrix(os.getcwd() + "/" + enc_test_data, encrypted=True)
-enc_preds, num_preds = booster.predict(dtest, username="user2")
+enc_preds, num_preds = booster.predict(dtest)
 
 preds = crypto.decrypt_predictions(sym_key_2, enc_preds, num_preds)
 print("user 2's prediction:")
