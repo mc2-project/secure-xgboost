@@ -5,11 +5,36 @@
 #include <xgboost/learner.h>
 #include <xgboost/c_api.h>
 #include <xgboost/logging.h>
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
 
 #include <dmlc/thread_local.h>
+#include <dmlc/base64.h>
+
 #include <rabit/rabit.h>
 #include <rabit/c_api.h>
 
+#include <enclave/crypto.h>
+#include <enclave/attestation.h>
+#include <enclave/enclave.h>
+
+#include <openenclave/host.h>
+
+#include <mbedtls/entropy.h>    // mbedtls_entropy_context
+#include <mbedtls/ctr_drbg.h>   // mbedtls_ctr_drbg_context
+#include <mbedtls/cipher.h>     // MBEDTLS_CIPHER_ID_AES
+#include <mbedtls/gcm.h>        // mbedtls_gcm_context
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
@@ -17,30 +42,7 @@
 #include <string>
 #include <memory>
 
-#include <xgboost/c_api/c_api_error.h>
-#include <xgboost/data/simple_csr_source.h>
-#include <xgboost/common/math.h>
-#include <xgboost/common/io.h>
-#include <xgboost/common/group_data.h>
-
-#include <openenclave/host.h>
 #include "xgboost_u.h"
-#include <enclave/crypto.h>
-#include <enclave/attestation.h>
-#include <enclave/enclave.h>
-
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <dmlc/base64.h>
-
-#include <mbedtls/entropy.h>    // mbedtls_entropy_context
-#include <mbedtls/ctr_drbg.h>   // mbedtls_ctr_drbg_context
-#include <mbedtls/cipher.h>     // MBEDTLS_CIPHER_ID_AES
-#include <mbedtls/gcm.h>        // mbedtls_gcm_context
 
 #define safe_ecall(call) {                                      \
 if (!Enclave::getInstance().getEnclave()) {                     \
@@ -278,15 +280,25 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
 }
 
 int XGDMatrixCreateFromFile(const char *fname,
-                            int silent,
-                            DMatrixHandle *out) {
-    safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
+    int silent,
+    DMatrixHandle *out) {
+  safe_ecall(enclave_XGDMatrixCreateFromFile(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        fname,
+        silent,
+        out));
 }
 
 int XGDMatrixCreateFromEncryptedFile(const char *fname,
-        int silent,
-        DMatrixHandle *out) {
-    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
+    int silent,
+    DMatrixHandle *out) {
+  safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        fname,
+        silent,
+        out));
 }
 
 #ifndef __SGX__
@@ -772,7 +784,10 @@ XGB_DLL int XGDMatrixSliceDMatrix(DMatrixHandle handle,
 
 
 XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
-    safe_ecall(enclave_XGDMatrixFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
+  safe_ecall(enclave_XGDMatrixFree(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle));
 }
 
 #ifndef __SGX__
@@ -787,18 +802,28 @@ XGB_DLL int XGDMatrixSaveBinary(DMatrixHandle handle,
 #endif
 
 XGB_DLL int XGDMatrixSetFloatInfo(DMatrixHandle handle,
-                          const char* field,
-                          const bst_float* info,
-                          xgboost::bst_ulong len) {
-
-  safe_ecall(enclave_XGDMatrixSetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
+    const char* field,
+    const bst_float* info,
+    xgboost::bst_ulong len) {
+  safe_ecall(enclave_XGDMatrixSetFloatInfo(Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        field,
+        info,
+        len));
 }
 
 XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
-                         const char* field,
-                         const unsigned* info,
-                         xgboost::bst_ulong len) {
-  safe_ecall(enclave_XGDMatrixSetUIntInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
+    const char* field,
+    const unsigned* info,
+    xgboost::bst_ulong len) {
+  safe_ecall(enclave_XGDMatrixSetUIntInfo(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        field,
+        info,
+        len));
 }
 
 #ifndef __SGX__
@@ -819,27 +844,47 @@ XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
 #endif
 
 XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
-                                  const char* field,
-                                  xgboost::bst_ulong* out_len,
-                                  const bst_float** out_dptr) {
-    safe_ecall(enclave_XGDMatrixGetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (bst_float**) out_dptr));
+    const char* field,
+    xgboost::bst_ulong* out_len,
+    const bst_float** out_dptr) {
+  safe_ecall(enclave_XGDMatrixGetFloatInfo(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        field,
+        out_len,
+        reinterpret_cast<bst_float**>(out_dptr)));
 }
 
 XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
                                  const char *field,
                                  xgboost::bst_ulong *out_len,
                                  const unsigned **out_dptr) {
-  safe_ecall(enclave_XGDMatrixGetUintInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (unsigned**) out_dptr));
+  safe_ecall(enclave_XGDMatrixGetUintInfo(
+        Enclave::getInstance().getEnclave(),
+        Enclave::getInstance().enclave_ret,
+        handle,
+        field,
+        out_len,
+        reinterpret_cast<unsigned**>(out_dptr)));
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
-  safe_ecall(enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
+  safe_ecall(enclave_XGDMatrixNumRow(
+        Enclave::getInstance().getEnclave(),
+        Enclave::getInstance().enclave_ret,
+        handle,
+        out));
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
-  safe_ecall(enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
+  safe_ecall(enclave_XGDMatrixNumCol(
+        Enclave::getInstance().getEnclave(),
+        Enclave::getInstance().enclave_ret,
+        handle,
+        out));
 }
 
 // xgboost implementation
@@ -875,73 +920,133 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
 }
 
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
-                    xgboost::bst_ulong len,
-                    BoosterHandle *out) {
-    safe_ecall(enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, dmats, len, out));
+    xgboost::bst_ulong len,
+    BoosterHandle *out) {
+  safe_ecall(enclave_XGBoosterCreate(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        dmats,
+        len,
+        out));
 }
 
 XGB_DLL int XGBoosterFree(BoosterHandle handle) {
-    safe_ecall(enclave_XGBoosterFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
+  safe_ecall(enclave_XGBoosterFree(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle));
 }
 
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
-                              const char *name,
-                              const char *value) {
-    safe_ecall(enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value));
+    const char *name,
+    const char *value) {
+  safe_ecall(enclave_XGBoosterSetParam(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        name,
+        value));
 }
 
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
-                                   int iter,
-                                   DMatrixHandle dtrain) {
-    safe_ecall(enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain));
+    int iter,
+    DMatrixHandle dtrain) {
+  safe_ecall(enclave_XGBoosterUpdateOneIter(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        iter,
+        dtrain));
 }
 
 XGB_DLL int XGBoosterBoostOneIter(BoosterHandle handle,
-                                  DMatrixHandle dtrain,
-                                  bst_float *grad,
-                                  bst_float *hess,
-                                  xgboost::bst_ulong len) {
-    //TODO: test this API
-  safe_ecall(enclave_XGBoosterBoostOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dtrain, grad, hess, len));
+    DMatrixHandle dtrain,
+    bst_float *grad,
+    bst_float *hess,
+    xgboost::bst_ulong len) {
+  safe_ecall(enclave_XGBoosterBoostOneIter(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        dtrain,
+        grad,
+        hess,
+        len));
 }
 
 XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
-                                 int iter,
-                                 DMatrixHandle dmats[],
-                                 const char* evnames[],
-                                 xgboost::bst_ulong len,
-                                 const char** out_str) {
-    safe_ecall(enclave_XGBoosterEvalOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dmats, evnames, len, (char**) out_str));
+    int iter,
+    DMatrixHandle dmats[],
+    const char* evnames[],
+    xgboost::bst_ulong len,
+    const char** out_str) {
+  safe_ecall(enclave_XGBoosterEvalOneIter(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        iter,
+        dmats,
+        evnames,
+        len,
+        reinterpret_cast<char**>(out_str)));
 }
 
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
-                             DMatrixHandle dmat,
-                             int option_mask,
-                             unsigned ntree_limit,
-                             xgboost::bst_ulong *len,
-                             uint8_t **out_result) {
-    safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result));
+    DMatrixHandle dmat,
+    int option_mask,
+    unsigned ntree_limit,
+    xgboost::bst_ulong *len,
+    uint8_t **out_result) {
+  safe_ecall(enclave_XGBoosterPredict(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        dmat,
+        option_mask,
+        ntree_limit,
+        len,
+        out_result));
 }
 
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
-    safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname));
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
+    const char* fname) {
+  safe_ecall(enclave_XGBoosterLoadModel(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        fname));
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
-    safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname));
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
+    const char* fname) {
+  safe_ecall(enclave_XGBoosterSaveModel(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        fname));
 }
 
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
-                                 const void* buf,
-                                 xgboost::bst_ulong len) {
-  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len));
+    const void* buf,
+    xgboost::bst_ulong len) {
+  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        buf,
+        len));
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
-                         xgboost::bst_ulong* out_len,
-                         const char** out_dptr) {
-  safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr));
+    xgboost::bst_ulong* out_len,
+    const char** out_dptr) {
+  safe_ecall(enclave_XGBoosterGetModelRaw(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        out_len,
+        reinterpret_cast<char**>(out_dptr)));
 }
 
 #ifndef __SGX__
@@ -967,53 +1072,93 @@ inline void XGBoostDumpModelImpl(
 #endif
 
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
-                       const char* fmap,
-                       int with_stats,
-                       xgboost::bst_ulong* len,
-                       const char*** out_models) {
-  safe_ecall(enclave_XGBoosterDumpModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, len, (char***) out_models));
+    const char* fmap,
+    int with_stats,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  safe_ecall(enclave_XGBoosterDumpModel(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        fmap,
+        with_stats,
+        len,
+        reinterpret_cast<char***>(out_models)));
 }
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
-                       const char* fmap,
-                       int with_stats,
-                       const char *format,
-                       xgboost::bst_ulong* len,
-                       const char*** out_models) {
-  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, len, (char***) out_models));
+    const char* fmap,
+    int with_stats,
+    const char *format,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  safe_ecall(enclave_XGBoosterDumpModelEx(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        fmap,
+        with_stats,
+        format,
+        len,
+        reinterpret_cast<char***>(out_models)));
 }
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
-                                   int fnum,
-                                   const char** fname,
-                                   const char** ftype,
-                                   int with_stats,
-                                   xgboost::bst_ulong* len,
-                                   const char*** out_models) {
-   safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, len, (char***) out_models));
+    int fnum,
+    const char** fname,
+    const char** ftype,
+    int with_stats,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  safe_ecall(enclave_XGBoosterDumpModelWithFeatures(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        (unsigned int) fnum,
+        fname,
+        ftype,
+        with_stats,
+        len,
+        reinterpret_cast<char***>(out_models)));
 }
 
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
-                                   int fnum,
-                                   const char** fname,
-                                   const char** ftype,
-                                   int with_stats,
-                                   const char *format,
-                                   xgboost::bst_ulong* len,
-                                   const char*** out_models) {
-  safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, ftype, with_stats, format, len, (char***) out_models));
+    int fnum,
+    const char** fname,
+    const char** ftype,
+    int with_stats,
+    const char *format,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        (unsigned int) fnum,
+        fname,
+        ftype,
+        with_stats,
+        format,
+        len,
+        reinterpret_cast<char***>(out_models)));
 }
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
-                     const char* key,
-                     const char** out,
-                     int* success) {
-  safe_ecall(enclave_XGBoosterGetAttr(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, key, (char**)out, success));
+    const char* key,
+    const char** out,
+    int* success) {
+  safe_ecall(enclave_XGBoosterGetAttr(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        key,
+        reinterpret_cast<char**>(out),
+        success));
 }
 
 #ifndef __SGX__
 XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
-                     const char* key,
-                     const char* value) {
+    const char* key,
+    const char* value) {
   auto* bst = static_cast<Booster*>(handle);
   API_BEGIN();
   CHECK_HANDLE();
@@ -1027,14 +1172,19 @@ XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
 #endif
 
 XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
-                     xgboost::bst_ulong* out_len,
-                     const char*** out) {
-  safe_ecall(enclave_XGBoosterGetAttrNames(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char***)out));
+    xgboost::bst_ulong* out_len,
+    const char*** out) {
+  safe_ecall(enclave_XGBoosterGetAttrNames(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        handle,
+        out_len,
+        reinterpret_cast<char***>(out)));
 }
 
 #ifndef __SGX__
 XGB_DLL int XGBoosterLoadRabitCheckpoint(BoosterHandle handle,
-                                 int* version) {
+    int* version) {
   API_BEGIN();
   CHECK_HANDLE();
   auto* bst = static_cast<Booster*>(handle);
@@ -1088,7 +1238,13 @@ XGB_DLL int get_remote_report_with_pubkey(
     size_t* key_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
-  safe_ecall(enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, remote_report, remote_report_size));
+  safe_ecall(enclave_get_remote_report_with_pubkey(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        pem_key,
+        key_size,
+        remote_report,
+        remote_report_size));
 }
 
 bool verify_mrsigner(
@@ -1129,7 +1285,7 @@ bool verify_mrsigner(
 
   rsa_ctx = mbedtls_pk_rsa(ctx);
   modulus_size = mbedtls_rsa_get_len(rsa_ctx);
-  modulus = (uint8_t*)malloc(modulus_size);
+  modulus = reinterpret_cast<uint8_t*>(malloc(modulus_size));
   if (modulus == NULL) {
     printf("malloc for modulus failed with size %zu:\n", modulus_size);
     goto exit;
@@ -1213,7 +1369,7 @@ bool attest_remote_report(
   // signing key that was used to sign an enclave. Check that the enclave was
   // signed by an trusted entity.
   if (!verify_mrsigner(
-        (char*)ENCLAVE_PUBLIC_KEY,
+        reinterpret_cast<char*>(ENCLAVE_PUBLIC_KEY),
         sizeof(ENCLAVE_PUBLIC_KEY),
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
@@ -1221,7 +1377,7 @@ bool attest_remote_report(
     goto exit;
   }
 
-  //FIXME add verification for mrenclave
+  // FIXME add verification for mrenclave
 
   // check the enclave's product id and security version
   // see enc.conf for values specified when signing the enclave.
@@ -1268,18 +1424,23 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
   return 0;
 }
 
-//XGB_DLL int add_client_key(char* fname, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-//    // FIXME return value / error handling
-//    enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, data, data_len, signature, sig_len);
-//    return Enclave::getInstance().enclave_ret;
-//}
-
 XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
     // FIXME return value / error handling
-  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
+  safe_ecall(enclave_add_client_key(
+        Enclave::getInstance().getEnclave(),
+        &Enclave::getInstance().enclave_ret,
+        data,
+        data_len,
+        signature,
+        sig_len));
 }
 
-XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_t key_size, uint8_t* encrypted_data, size_t* encrypted_data_size) {
+XGB_DLL int encrypt_data_with_pk(char* data,
+    size_t len,
+    uint8_t* pem_key,
+    size_t key_size,
+    uint8_t* encrypted_data,
+    size_t* encrypted_data_size) {
   bool result = false;
   mbedtls_pk_context key;
   int res = -1;
@@ -1300,7 +1461,7 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
   mbedtls_pk_init(&key);
 
   // Read the given public key.
-  key_size = strlen((const char*)pem_key) + 1; // Include ending '\0'.
+  key_size = strlen((const char*)pem_key) + 1;  // Include ending '\0'.
   res = mbedtls_pk_parse_public_key(&key, pem_key, key_size);
 
   if (res != 0) {
@@ -1316,7 +1477,6 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
   // Encrypt the data.
   res = mbedtls_rsa_pkcs1_encrypt(
       rsa_context,
-      //mbedtls_pk_rsa(key),
       mbedtls_ctr_drbg_random,
       &m_ctr_drbg_context,
       MBEDTLS_RSA_PUBLIC,
@@ -1331,68 +1491,81 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
 
   *encrypted_data_size = mbedtls_pk_rsa(key)->len;
 
-  mbedtls_pk_free( &m_pk_context );
-  mbedtls_ctr_drbg_free( &m_ctr_drbg_context );
-  mbedtls_entropy_free( &m_entropy_context );
+  mbedtls_pk_free(&m_pk_context);
+  mbedtls_ctr_drbg_free(&m_ctr_drbg_context);
+  mbedtls_entropy_free(&m_entropy_context);
   return 0;
 }
 
-XGB_DLL int sign_data(char *keyfile, uint8_t* data, size_t data_size, uint8_t* signature, size_t* sig_len) {
+XGB_DLL int sign_data(char *keyfile,
+    uint8_t* data,
+    size_t data_size,
+    uint8_t* signature,
+    size_t* sig_len) {
   mbedtls_pk_context pk;
   mbedtls_entropy_context m_entropy_context;
   mbedtls_ctr_drbg_context m_ctr_drbg_context;
 
-  mbedtls_entropy_init( &m_entropy_context );
-  mbedtls_pk_init( &pk );
-  mbedtls_ctr_drbg_init( &m_ctr_drbg_context ); 
+  mbedtls_entropy_init(&m_entropy_context);
+  mbedtls_pk_init(&pk);
+  mbedtls_ctr_drbg_init(&m_ctr_drbg_context);
 
   unsigned char hash[32];
   int ret = 1;
 
-  ret = mbedtls_ctr_drbg_seed(&m_ctr_drbg_context, mbedtls_entropy_func, &m_entropy_context, NULL, 0);
+  ret = mbedtls_ctr_drbg_seed(
+      &m_ctr_drbg_context,
+      mbedtls_entropy_func,
+      &m_entropy_context,
+      NULL,
+      0);
 
-  if((ret = mbedtls_pk_parse_keyfile( &pk, keyfile, "")) != 0) {
-    printf( " failed\n  ! Could not read key from '%s'\n", keyfile);
-    printf( "  ! mbedtls_pk_parse_public_keyfile returned %d\n\n", ret );
+  if ((ret = mbedtls_pk_parse_keyfile(&pk, keyfile, "")) != 0) {
+    printf(" failed\n  ! Could not read key from '%s'\n", keyfile);
+    printf("  ! mbedtls_pk_parse_public_keyfile returned %d\n\n", ret);
     return ret;
   }
-  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
-    printf( " failed\n  ! Key is not an RSA key\n" );
+  if (!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
+    printf(" failed\n  ! Key is not an RSA key\n");
     return ret;
   }
 
-  mbedtls_rsa_set_padding(mbedtls_pk_rsa(pk), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
+  mbedtls_rsa_set_padding(mbedtls_pk_rsa(pk), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
 
-  if((ret = compute_sha256(data, data_size, hash)) != 0) {
-    printf( " failed\n  ! Could not hash\n\n");
+  if ((ret = compute_sha256(data, data_size, hash)) != 0) {
+    printf(" failed\n  ! Could not hash\n\n");
     return ret;
   }
 
-  if((ret = mbedtls_pk_sign(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len, mbedtls_ctr_drbg_random, &m_ctr_drbg_context)) != 0) {
-    printf( " failed\n  ! mbedtls_pk_sign returned %d\n\n", ret );
+  if ((ret = mbedtls_pk_sign(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len,
+          mbedtls_ctr_drbg_random, &m_ctr_drbg_context)) != 0) {
+    printf(" failed\n  ! mbedtls_pk_sign returned %d\n\n", ret);
     return ret;
   }
   return 0;
 }
 
-XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_preds, bst_float** preds) {
-    size_t len = num_preds*sizeof(float);
-    unsigned char* iv = (unsigned char*)encrypted_preds;
-    unsigned char* tag = iv + CIPHER_IV_SIZE;
-    unsigned char* data = tag + CIPHER_TAG_SIZE;
-    unsigned char* output = (unsigned char*) malloc(len);
+XGB_DLL int decrypt_predictions(char* key,
+    uint8_t* encrypted_preds,
+    size_t num_preds,
+    bst_float** preds) {
+  size_t len = num_preds*sizeof(float);
+  unsigned char* iv = (unsigned char*)encrypted_preds;
+  unsigned char* tag = iv + CIPHER_IV_SIZE;
+  unsigned char* data = tag + CIPHER_TAG_SIZE;
+  unsigned char* output = (unsigned char*) malloc(len);
 
-    decrypt_symm(
-            (uint8_t*) key,
-            data,
-            len,
-            iv,
-            tag,
-            NULL,
-            0,
-            output);
-    *preds = reinterpret_cast<float*>(output);
-    return 0;
+  decrypt_symm(
+      reinterpret_cast<uint8_t*>(key),
+      data,
+      len,
+      iv,
+      tag,
+      NULL,
+      0,
+      output);
+  *preds = reinterpret_cast<float*>(output);
+  return 0;
 }
 
 XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
@@ -1400,12 +1573,13 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
 
 
   mbedtls_gcm_init(&gcm);
-  int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
-          MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
-          (const unsigned char*) key,     // encryption key
-          CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
+  int ret = mbedtls_gcm_setkey(
+      &gcm,                           // GCM context to be initialized
+      MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
+      (const unsigned char*) key,     // encryption key
+      CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
   if (ret != 0) {
-    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    printf("mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret);
     exit(1);
   }
 
@@ -1416,13 +1590,13 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
 
     char* p = const_cast<char*>(total_encrypted);
     int iv_pos = 0;
-    while(*p != '\0' && *p != ',') {
+    while (*p != '\0' && *p != ',') {
         p++;
         iv_pos++;
     }
     p++;
     int tag_pos = iv_pos + 1;
-    while(*p != '\0' && *p != ',') {
+    while (*p != '\0' && *p != ',') {
         p++;
         tag_pos++;
     }
@@ -1430,229 +1604,234 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
     unsigned char tag[CIPHER_TAG_SIZE];
     unsigned char iv[CIPHER_IV_SIZE];
 
-    char* ct = (char *) malloc(strlen(total_encrypted) * sizeof(char));
+    char* ct = reinterpret_cast<char *>(malloc(strlen(total_encrypted) * sizeof(char)));
 
-    out_len = dmlc::data::base64_decode(total_encrypted, iv_pos, (char *) iv);
-    out_len = dmlc::data::base64_decode(total_encrypted + iv_pos + 1, tag_pos - iv_pos, (char *) tag);
-    out_len = dmlc::data::base64_decode(total_encrypted + tag_pos + 1, strlen(total_encrypted) - tag_pos, ct);
+    out_len = dmlc::data::base64_decode(
+        total_encrypted, iv_pos, reinterpret_cast<char *>(iv));
+    out_len = dmlc::data::base64_decode(
+        total_encrypted + iv_pos + 1, tag_pos - iv_pos, reinterpret_cast<char *>(tag));
+    out_len = dmlc::data::base64_decode(
+        total_encrypted + tag_pos + 1, strlen(total_encrypted) - tag_pos, ct);
 
     unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
     int ret = decrypt_symm(
-            &gcm,
-            (const unsigned char*) ct,
-            out_len,
-            iv,
-            tag,
-            NULL,
-            0,
-            decrypted
-            );
+        &gcm,
+        (const unsigned char*) ct,
+        out_len,
+        iv,
+        tag,
+        NULL,
+        0,
+        decrypted);
+
     decrypted[out_len] = '\0';
     free(ct);
     if (ret != 0) {
       std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
       exit(1);
     }
-    models[i] = (char*) decrypted;
+    models[i] = reinterpret_cast<char*>(decrypted);
   }
   return 0;
 }
 
 // Input, output, key
 XGB_DLL int encrypt_file(char* fname, char* e_fname, char* k_fname) {
-    char key[CIPHER_KEY_SIZE];
-    std::ifstream keyfile;
-    keyfile.open(k_fname);
-    keyfile.read(key, CIPHER_KEY_SIZE);
-    keyfile.close();
-    return encrypt_file_with_keybuf(fname, e_fname, key);
+  char key[CIPHER_KEY_SIZE];
+  std::ifstream keyfile;
+  keyfile.open(k_fname);
+  keyfile.read(key, CIPHER_KEY_SIZE);
+  keyfile.close();
+  return encrypt_file_with_keybuf(fname, e_fname, key);
 }
 
 XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-    mbedtls_gcm_context gcm;
+  mbedtls_ctr_drbg_context ctr_drbg;
+  mbedtls_entropy_context entropy;
+  mbedtls_gcm_context gcm;
 
-    unsigned char iv[CIPHER_IV_SIZE];
-    unsigned char tag[CIPHER_TAG_SIZE];
+  unsigned char iv[CIPHER_IV_SIZE];
+  unsigned char tag[CIPHER_TAG_SIZE];
 
-    // Initialize the entropy pool and the random source
-    mbedtls_entropy_init( &entropy );
-    mbedtls_ctr_drbg_init( &ctr_drbg );
-    // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
-    mbedtls_gcm_init(&gcm);
-    // The personalization string should be unique to your application in order to add some
-    // personalized starting randomness to your random sources.
-    std::string pers = "aes generate key for MC^2";
-    // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
-    int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
-    if( ret != 0 )
-    {
-        printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
-        exit(1);
+  // Initialize the entropy pool and the random source
+  mbedtls_entropy_init(&entropy);
+  mbedtls_ctr_drbg_init(&ctr_drbg);
+  // Initialize GCM context (just makes references valid) --
+  // makes the context ready for mbedtls_gcm_setkey()
+  mbedtls_gcm_init(&gcm);
+  // The personalization string should be unique to your application in order to add some
+  // personalized starting randomness to your random sources.
+  std::string pers = "aes generate key for MC^2";
+  // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
+  int ret = mbedtls_ctr_drbg_seed(&ctr_drbg,
+      mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length());
+  if (ret != 0) {
+    printf("mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret);
+    exit(1);
+  }
+
+  // Initialize the GCM context with our key and desired cipher
+  ret = mbedtls_gcm_setkey(&gcm,     // GCM context to be initialized
+      MBEDTLS_CIPHER_ID_AES,     // cipher to use (a 128-bit block cipher)
+      (unsigned char*) key,      // encryption key
+      CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
+  if (ret != 0) {
+    printf("mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret);
+    exit(1);
+  }
+
+  std::ifstream infile(fname);
+  std::ofstream myfile;
+  myfile.open(e_fname);
+
+  std::string line;
+  uint64_t index = 0;
+  uint64_t total = 0;
+
+  // Count total number of lines in file
+  while (std::getline(infile, line)) {
+    // Ignore empty lines
+    if (std::all_of(line.begin(), line.end(), isspace))
+      continue;
+    total++;
+  }
+  infile.close();
+
+  infile.open(fname);
+  while (std::getline(infile, line)) {
+    // Ignore empty lines
+    if (std::all_of(line.begin(), line.end(), isspace))
+      continue;
+
+    index++;
+    size_t length = strlen(line.c_str());
+
+    // We use `<index>,<total>` as additional authenticated data to prevent tampering across lines
+    std::stringstream ss;
+    ss << index << "," << total;
+    std::string ss_str = ss.str();
+
+    unsigned char* encrypted = (unsigned char*) malloc(length*sizeof(char));
+    ret = encrypt_symm(
+        &gcm,
+        &ctr_drbg,
+        (const unsigned char*)line.c_str(),
+        length,
+        (unsigned char*)ss_str.c_str(),
+        ss_str.length(),
+        encrypted,
+        iv,
+        tag);
+
+    if (ret != 0) {
+      printf("mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret);
+      exit(1);
     }
-
-    // Initialize the GCM context with our key and desired cipher
-    ret = mbedtls_gcm_setkey(&gcm,     // GCM context to be initialized
-            MBEDTLS_CIPHER_ID_AES,     // cipher to use (a 128-bit block cipher)
-            (unsigned char*) key,      // encryption key
-            CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
-    if( ret != 0 ) {
-        printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-        exit(1);
-    }
-
-    std::ifstream infile(fname);
-    std::ofstream myfile;
-    myfile.open(e_fname);
-
-    std::string line;
-    uint64_t index = 0;
-    uint64_t total = 0;
-
-    // Count total number of lines in file
-    while (std::getline(infile, line)) {
-      // Ignore empty lines
-      if (std::all_of(line.begin(), line.end(), isspace))
-        continue;
-      total++;
-    }
-    infile.close();
-
-    infile.open(fname);
-    while (std::getline(infile, line)) {
-        // Ignore empty lines
-        if (std::all_of(line.begin(), line.end(), isspace))
-            continue;
-
-        index++;
-        size_t length = strlen(line.c_str());
-
-        // We use `<index>,<total>` as additional authenticated data to prevent tampering across lines
-        std::stringstream ss;
-        ss << index << "," << total;
-        std::string ss_str = ss.str();
-
-        unsigned char* encrypted = (unsigned char*) malloc(length*sizeof(char));
-        ret = encrypt_symm(
-                &gcm,
-                &ctr_drbg,
-                (const unsigned char*)line.c_str(),
-                length,
-                (unsigned char*)ss_str.c_str(),
-                ss_str.length(),
-                encrypted,
-                iv,
-                tag
-                );
-        if( ret != 0 ) {
-            printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
-            exit(1);
-        }
-        std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
-        myfile 
-            << index << ","
-            << total << ","
-            << dmlc::data::base64_encode(iv, CIPHER_IV_SIZE) << ","
-            << dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE) << ","
-            << dmlc::data::base64_encode(encrypted, length) << "\n";
-        free(encrypted);
-    }
-    infile.close();
-    myfile.close();
-    return 0;
+    std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
+    myfile
+      << index << ","
+      << total << ","
+      << dmlc::data::base64_encode(iv, CIPHER_IV_SIZE) << ","
+      << dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE) << ","
+      << dmlc::data::base64_encode(encrypted, length) << "\n";
+    free(encrypted);
+  }
+  infile.close();
+  myfile.close();
+  return 0;
 }
 
 XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
-    mbedtls_gcm_context gcm;
+  mbedtls_gcm_context gcm;
 
-    // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
-    mbedtls_gcm_init(&gcm);
-    int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
-            MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
-            (const unsigned char*)key,      // encryption key
-            CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
-    if( ret != 0 ) {
-        printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-        exit(1);
+  // Initialize GCM context (just makes references valid) --
+  // makes the context ready for mbedtls_gcm_setkey()
+  mbedtls_gcm_init(&gcm);
+  int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
+      MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
+      (const unsigned char*)key,      // encryption key
+      CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
+  if (ret != 0) {
+    printf("mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret);
+    exit(1);
+  }
+
+  std::ifstream infile(fname);
+  std::ofstream myfile;
+  myfile.open(d_fname);
+
+  std::string line;
+  while (std::getline(infile, line)) {
+    const char* data = line.c_str();
+    int index_pos = 0;
+    int total_pos = 0;
+    int iv_pos = 0;
+    int tag_pos = 0;
+    int len = line.length();
+
+    for (int i = 0; i < len; i++) {
+      if (data[i] == ',') {
+        index_pos = i;
+        break;
+      }
     }
-
-    std::ifstream infile(fname);
-    std::ofstream myfile;
-    myfile.open(d_fname);
-
-    std::string line;
-    while (std::getline(infile, line)) {
-        const char* data = line.c_str();
-        int index_pos = 0;
-        int total_pos = 0;
-        int iv_pos = 0;
-        int tag_pos = 0;
-        int len = line.length();
-
-        for (int i = 0; i < len; i++) {
-          if (data[i] == ',') {
-            index_pos = i;
-            break;
-          }
-        }
-        for (int i = index_pos + 1; i < len; i++) {
-          if (data[i] == ',') {
-            total_pos = i;
-            break;
-          }
-        }
-        for (int i = total_pos + 1; i < len; i++) {
-          if (data[i] == ',') {
-            iv_pos = i;
-            break;
-          }
-        }
-        for (int i = iv_pos + 1; i < len; i++) {
-          if (data[i] == ',') {
-            tag_pos = i;
-            break;
-          }
-        }
-        CHECK_LT(0, index_pos);
-        CHECK_LT(index_pos, total_pos);
-        CHECK_LT(total_pos, iv_pos);
-        CHECK_LT(iv_pos, tag_pos);
-
-        char *aad_str = (char*) malloc (total_pos + 1);
-        memcpy(aad_str, data, total_pos);
-        aad_str[total_pos] = 0;
-
-        size_t out_len;
-        char tag[CIPHER_TAG_SIZE];
-        char iv[CIPHER_IV_SIZE];
-
-        char* ct = (char *) malloc(line.size() * sizeof(char));
-
-        out_len = dmlc::data::base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
-        CHECK_EQ(out_len, CIPHER_IV_SIZE);
-        out_len = dmlc::data::base64_decode(data + iv_pos + 1, tag_pos - iv_pos, tag);
-        CHECK_EQ(out_len, CIPHER_TAG_SIZE);
-        out_len = dmlc::data::base64_decode(data + tag_pos + 1, line.size() - tag_pos, ct);
-
-        unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
-        int ret = decrypt_symm(
-                &gcm,
-                (const unsigned char*)ct,
-                out_len,
-                (unsigned char*)iv,
-                (unsigned char*)tag,
-                (unsigned char*)aad_str,
-                strlen(aad_str),
-                decrypted);
-        decrypted[out_len] = '\0';
-        free(ct);
-        if (ret != 0) {
-            std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
-            exit(1);
-        }
-        myfile << decrypted << "\n";
+    for (int i = index_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        total_pos = i;
+        break;
+      }
     }
-    infile.close();
-    myfile.close();
+    for (int i = total_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        iv_pos = i;
+        break;
+      }
+    }
+    for (int i = iv_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        tag_pos = i;
+        break;
+      }
+    }
+    CHECK_LT(0, index_pos);
+    CHECK_LT(index_pos, total_pos);
+    CHECK_LT(total_pos, iv_pos);
+    CHECK_LT(iv_pos, tag_pos);
+
+    char *aad_str = reinterpret_cast<char*>(malloc(total_pos + 1));
+    memcpy(aad_str, data, total_pos);
+    aad_str[total_pos] = 0;
+
+    size_t out_len;
+    char tag[CIPHER_TAG_SIZE];
+    char iv[CIPHER_IV_SIZE];
+
+    char* ct = reinterpret_cast<char *>(malloc(line.size() * sizeof(char)));
+
+    out_len = dmlc::data::base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
+    CHECK_EQ(out_len, CIPHER_IV_SIZE);
+    out_len = dmlc::data::base64_decode(data + iv_pos + 1, tag_pos - iv_pos, tag);
+    CHECK_EQ(out_len, CIPHER_TAG_SIZE);
+    out_len = dmlc::data::base64_decode(data + tag_pos + 1, line.size() - tag_pos, ct);
+
+    unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
+    int ret = decrypt_symm(
+        &gcm,
+        (const unsigned char*)ct,
+        out_len,
+        (unsigned char*)iv,
+        (unsigned char*)tag,
+        (unsigned char*)aad_str,
+        strlen(aad_str),
+        decrypted);
+    decrypted[out_len] = '\0';
+    free(ct);
+    if (ret != 0) {
+      std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
+      exit(1);
+    }
+    myfile << decrypted << "\n";
+  }
+  infile.close();
+  myfile.close();
 }
