@@ -853,7 +853,7 @@ XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
         handle,
         field,
         out_len,
-        reinterpret_cast<bst_float**>(out_dptr)));
+        const_cast<bst_float**>(out_dptr)));
 }
 
 XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
@@ -862,18 +862,18 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
                                  const unsigned **out_dptr) {
   safe_ecall(enclave_XGDMatrixGetUintInfo(
         Enclave::getInstance().getEnclave(),
-        Enclave::getInstance().enclave_ret,
+        &Enclave::getInstance().enclave_ret,
         handle,
         field,
         out_len,
-        reinterpret_cast<unsigned**>(out_dptr)));
+        const_cast<unsigned**>(out_dptr)));
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
   safe_ecall(enclave_XGDMatrixNumRow(
         Enclave::getInstance().getEnclave(),
-        Enclave::getInstance().enclave_ret,
+        &Enclave::getInstance().enclave_ret,
         handle,
         out));
 }
@@ -882,7 +882,7 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
   safe_ecall(enclave_XGDMatrixNumCol(
         Enclave::getInstance().getEnclave(),
-        Enclave::getInstance().enclave_ret,
+        &Enclave::getInstance().enclave_ret,
         handle,
         out));
 }
@@ -988,7 +988,7 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
         dmats,
         evnames,
         len,
-        reinterpret_cast<char**>(out_str)));
+        const_cast<char**>(out_str)));
 }
 
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
@@ -1046,7 +1046,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
         &Enclave::getInstance().enclave_ret,
         handle,
         out_len,
-        reinterpret_cast<char**>(out_dptr)));
+        const_cast<char**>(out_dptr)));
 }
 
 #ifndef __SGX__
@@ -1083,7 +1083,7 @@ XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
         fmap,
         with_stats,
         len,
-        reinterpret_cast<char***>(out_models)));
+        const_cast<char***>(out_models)));
 }
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
     const char* fmap,
@@ -1099,7 +1099,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
         with_stats,
         format,
         len,
-        reinterpret_cast<char***>(out_models)));
+        const_cast<char***>(out_models)));
 }
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
@@ -1118,7 +1118,7 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
         ftype,
         with_stats,
         len,
-        reinterpret_cast<char***>(out_models)));
+        const_cast<char***>(out_models)));
 }
 
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
@@ -1139,7 +1139,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
         with_stats,
         format,
         len,
-        reinterpret_cast<char***>(out_models)));
+        const_cast<char***>(out_models)));
 }
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
@@ -1151,7 +1151,7 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
         &Enclave::getInstance().enclave_ret,
         handle,
         key,
-        reinterpret_cast<char**>(out),
+        const_cast<char**>(out),
         success));
 }
 
@@ -1179,7 +1179,7 @@ XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
         &Enclave::getInstance().enclave_ret,
         handle,
         out_len,
-        reinterpret_cast<char***>(out)));
+        const_cast<char***>(out)));
 }
 
 #ifndef __SGX__
@@ -1248,7 +1248,7 @@ XGB_DLL int get_remote_report_with_pubkey(
 }
 
 bool verify_mrsigner(
-    char* siging_public_key_buf,
+    const char* siging_public_key_buf,
     size_t siging_public_key_buf_size,
     uint8_t* signer_id_buf,
     size_t signer_id_buf_size) {
@@ -1369,7 +1369,7 @@ bool attest_remote_report(
   // signing key that was used to sign an enclave. Check that the enclave was
   // signed by an trusted entity.
   if (!verify_mrsigner(
-        reinterpret_cast<char*>(ENCLAVE_PUBLIC_KEY),
+        ENCLAVE_PUBLIC_KEY,
         sizeof(ENCLAVE_PUBLIC_KEY),
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
