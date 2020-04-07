@@ -6,6 +6,9 @@
 #include <xgboost/tree/split_evaluator.h>
 #include <dmlc/json.h>
 #include <dmlc/registry.h>
+#include <xgboost/tree/param.h>
+#include <xgboost/common/common.h>
+#include <xgboost/common/host_device_vector.h>
 #include <algorithm>
 #include <unordered_set>
 #include <vector>
@@ -14,9 +17,6 @@
 #include <string>
 #include <sstream>
 #include <utility>
-#include <xgboost/tree/param.h>
-#include <xgboost/common/common.h>
-#include <xgboost/common/host_device_vector.h>
 
 namespace dmlc {
 DMLC_REGISTRY_ENABLE(::xgboost::tree::SplitEvaluatorReg);

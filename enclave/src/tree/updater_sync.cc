@@ -4,10 +4,10 @@
  * \brief synchronize the tree in all distributed nodes
  */
 #include <xgboost/tree_updater.h>
+#include <xgboost/common/io.h>
 #include <vector>
 #include <string>
 #include <limits>
-#include <xgboost/common/io.h>
 
 namespace xgboost {
 namespace tree {

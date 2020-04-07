@@ -9,12 +9,12 @@
 #include <xgboost/data.h>
 #include <xgboost/logging.h>
 #include <xgboost/objective.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/transform.h>
 #include <vector>
 #include <algorithm>
 #include <limits>
 #include <utility>
-#include <xgboost/common/math.h>
-#include <xgboost/common/transform.h>
 
 namespace xgboost {
 namespace obj {

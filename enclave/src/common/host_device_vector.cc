@@ -7,9 +7,9 @@
 
 #include <xgboost/base.h>
 #include <xgboost/data.h>
+#include <xgboost/common/host_device_vector.h>
 #include <cstdint>
 #include <utility>
-#include <xgboost/common/host_device_vector.h>
 
 namespace xgboost {
 

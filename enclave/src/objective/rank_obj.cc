@@ -7,11 +7,11 @@
 #include <dmlc/omp.h>
 #include <xgboost/logging.h>
 #include <xgboost/objective.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/random.h>
 #include <vector>
 #include <algorithm>
 #include <utility>
-#include <xgboost/common/math.h>
-#include <xgboost/common/random.h>
 
 namespace xgboost {
 namespace obj {

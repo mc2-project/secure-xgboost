@@ -11,17 +11,17 @@
 #include <xgboost/gbm.h>
 #include <xgboost/predictor.h>
 #include <xgboost/tree_updater.h>
+#include <xgboost/common/common.h>
+#include <xgboost/common/host_device_vector.h>
+#include <xgboost/common/random.h>
+#include <xgboost/gbm/gbtree_model.h>
+#include <xgboost/common/timer.h>
 #include <vector>
 #include <memory>
 #include <utility>
 #include <string>
 #include <limits>
 #include <algorithm>
-#include <xgboost/common/common.h>
-#include <xgboost/common/host_device_vector.h>
-#include <xgboost/common/random.h>
-#include <xgboost/gbm/gbtree_model.h>
-#include <xgboost/common/timer.h>
 
 namespace xgboost {
 namespace gbm {

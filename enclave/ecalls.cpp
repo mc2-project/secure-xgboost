@@ -1,13 +1,15 @@
+/*!
+ *  Copyright (c) 2019 by Contributors
+ */
+
+#include <sys/mount.h>
+#include <rabit/c_api.h>
 #include <xgboost/c_api.h>
 #include <xgboost/base.h>
 #include <xgboost/logging.h>
-#include <sys/mount.h>
-#include <rabit/c_api.h>
-
-#include "xgboost_t.h"
 #include <xgboost/common/common.h>
-
 #include <string>
+#include "xgboost_t.h"
 
 void enclave_init(int log_verbosity) {
   std::vector<std::pair<std::string, std::string> > args;
@@ -62,14 +64,23 @@ int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle
   return XGBoosterUpdateOneIter(handle, iter, dtrain);
 }
 
-int enclave_XGBoosterBoostOneIter(BoosterHandle handle, DMatrixHandle dtrain, bst_float *grad, bst_float *hess, xgboost::bst_ulong len) {
+int enclave_XGBoosterBoostOneIter(BoosterHandle handle,
+    DMatrixHandle dtrain,
+    bst_float *grad,
+    bst_float *hess,
+    xgboost::bst_ulong len) {
   LOG(DEBUG) << "Ecall: XGBoosterBoostOneIter";
   check_enclave_ptr(handle);
   check_enclave_ptr(dtrain);
   return XGBoosterBoostOneIter(handle, dtrain, grad, hess, len);
 }
 
-int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle dmats[], const char* evnames[], bst_ulong len, char** out_str) {
+int enclave_XGBoosterEvalOneIter(BoosterHandle handle,
+    int iter,
+    DMatrixHandle dmats[],
+    const char* evnames[],
+    bst_ulong len,
+    char** out_str) {
   LOG(DEBUG) << "Ecall: XGBoosterEvalOneIter " << strlen(evnames[0]);
   check_enclave_ptr(handle);
   char* eval_names[len];
@@ -82,7 +93,8 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
       eval_names[i] = strndup(name, nlen);
       eval_names[i][nlen] = '\0';
   }
-  return XGBoosterEvalOneIter(handle, iter, dmats, (const char**) eval_names, len, (const char**) out_str);
+  return XGBoosterEvalOneIter(handle, iter, dmats,
+      const_cast<const char**>(eval_names), len, (const char**) out_str);
 }
 
 int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname) {
@@ -127,8 +139,8 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
   check_enclave_ptr(handle);
-  char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
-  char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
+  char** fname_cpy = reinterpret_cast<char**>(malloc(sizeof(char*) * fnum));
+  char** ftype_cpy = reinterpret_cast<char**>(malloc(sizeof(char*) * fnum));
   unsigned int name_len;
   unsigned int type_len;
   for (int i = 0; i < fnum; i++) {
@@ -143,7 +155,9 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
     ftype_cpy[i] = strndup(ftype[i], type_len);
     ftype_cpy[i][type_len] = '\0';
   }
-  return XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, len, (const char***) out_models);
+  return XGBoosterDumpModelWithFeatures(handle, static_cast<int>(fnum),
+      const_cast<const char**>(fname_cpy), const_cast<const char**>(ftype_cpy),
+      with_stats, len, const_cast<const char***>(out_models));
 }
 int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    unsigned int fnum,
@@ -155,8 +169,8 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
   check_enclave_ptr(handle);
-  char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
-  char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
+  char** fname_cpy = reinterpret_cast<char**>(malloc(sizeof(char*) * fnum));
+  char** ftype_cpy = reinterpret_cast<char**>(malloc(sizeof(char*) * fnum));
   unsigned int name_len;
   unsigned int type_len;
   for (int i = 0; i < fnum; i++) {
@@ -171,46 +185,68 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     ftype_cpy[i] = strndup(ftype[i], type_len);
     ftype_cpy[i][type_len] = '\0';
   }
-  return XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models);
+  return XGBoosterDumpModelExWithFeatures(handle, static_cast<int>(fnum),
+      const_cast<const char**>(fname_cpy), const_cast<const char**>(ftype_cpy),
+      with_stats, format, len, const_cast<const char***>(out_models));
 }
-int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
+int enclave_XGBoosterGetModelRaw(BoosterHandle handle,
+    xgboost::bst_ulong *out_len, char **out_dptr) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
   check_enclave_ptr(handle);
   return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr);
 }
 
-int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len) {
+int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle,
+    const void* buf, xgboost::bst_ulong len) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
   check_enclave_ptr(handle);
   return XGBoosterLoadModelFromBuffer(handle, buf, len);
 }
 
-int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result) {
+int enclave_XGBoosterPredict(BoosterHandle handle,
+    DMatrixHandle dmat,
+    int option_mask,
+    unsigned ntree_limit,
+    bst_ulong *len,
+    uint8_t **out_result) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
   check_enclave_ptr(handle);
   check_enclave_ptr(dmat);
   return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result);
 }
 
-int enclave_XGDMatrixGetFloatInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, bst_float **out_dptr) {
+int enclave_XGDMatrixGetFloatInfo(const DMatrixHandle handle,
+    const char* field,
+    bst_ulong *out_len,
+    bst_float **out_dptr) {
   LOG(DEBUG) << "Ecall: XGDMatrixGetFloatInfo";
   check_enclave_ptr(handle);
-  return XGDMatrixGetFloatInfo(handle, field, out_len, (const bst_float**) out_dptr);
+  return XGDMatrixGetFloatInfo(handle,
+      field, out_len, (const bst_float**) out_dptr);
 }
 
-int enclave_XGDMatrixGetUintInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, unsigned **out_dptr) {
+int enclave_XGDMatrixGetUintInfo(const DMatrixHandle handle,
+    const char* field,
+    bst_ulong *out_len,
+    unsigned **out_dptr) {
   LOG(DEBUG) << "Ecall: XGDMatrixGetFloatInfo";
   check_enclave_ptr(handle);
   return XGDMatrixGetUIntInfo(handle, field, out_len, (const unsigned**) out_dptr);
 }
 
-int enclave_XGDMatrixSetFloatInfo(DMatrixHandle handle, const char* field, const bst_float* info, bst_ulong len) {
+int enclave_XGDMatrixSetFloatInfo(DMatrixHandle handle,
+    const char* field,
+    const bst_float* info,
+    bst_ulong len) {
   LOG(DEBUG) << "Ecall: XGDMatrixSetFloatInfo";
   check_enclave_ptr(handle);
   return XGDMatrixSetFloatInfo(handle, field, info, len);
 }
 
-int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle, const char* field, const unsigned* info, bst_ulong len) {
+int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle,
+    const char* field,
+    const unsigned* info,
+    bst_ulong len) {
   LOG(DEBUG) << "Ecall: XGDMatrixSetUIntInfo";
   check_enclave_ptr(handle);
   return XGDMatrixSetUIntInfo(handle, field, info, len);
@@ -268,15 +304,17 @@ int enclave_verify_remote_report_and_set_pubkey(
   return verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
-//int enclave_add_client_key(
-//    char* fname,
-//    uint8_t* data,
-//    size_t data_len,
-//    uint8_t* signature,
-//    size_t sig_len) {
-//  LOG(DEBUG) << "Ecall: add_client_key";
-//  return add_client_key(fname, data, data_len, signature, sig_len);
-//}
+/*
+int enclave_add_client_key(
+    char* fname,
+    uint8_t* data,
+    size_t data_len,
+    uint8_t* signature,
+    size_t sig_len) {
+  LOG(DEBUG) << "Ecall: add_client_key";
+  return add_client_key(fname, data, data_len, signature, sig_len);
+}
+*/
 
 int enclave_add_client_key(
         uint8_t* data,

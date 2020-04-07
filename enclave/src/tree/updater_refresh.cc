@@ -6,12 +6,11 @@
  */
 #include <rabit/rabit.h>
 #include <xgboost/tree_updater.h>
+#include <xgboost/tree/param.h>
+#include <xgboost/common/io.h>
 
 #include <vector>
 #include <limits>
-
-#include <xgboost/tree/param.h>
-#include <xgboost/common/io.h>
 
 namespace xgboost {
 namespace tree {

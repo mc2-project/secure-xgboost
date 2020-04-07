@@ -4,8 +4,8 @@
  */
 #include <dmlc/base.h>
 #include <xgboost/logging.h>
-#include <limits>
 #include <xgboost/data/simple_csr_source.h>
+#include <limits>
 
 namespace xgboost {
 namespace data {
@@ -28,7 +28,7 @@ void SimpleCSRSource::CopyFrom(dmlc::Parser<uint32_t>* parser) {
   const uint64_t default_max = std::numeric_limits<uint64_t>::max();
   uint64_t last_group_id = default_max;
   bst_uint group_size = 0;
-  this->Clear(); 
+  this->Clear();
   while (parser->Next()) {
     const dmlc::RowBlock<uint32_t>& batch = parser->Value();
     if (batch.label != nullptr) {

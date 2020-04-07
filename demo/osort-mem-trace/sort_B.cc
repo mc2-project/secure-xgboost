@@ -1,18 +1,24 @@
-#include "../../enclave/src/common/obl_primitives.h"
+/*!
+ * Copyright 2019 XGBoost contributors
+ *
+ * \file sort_B.cc
+ */
+
+#include <stdlib.h>
 #include <iostream>
 #include <algorithm>
-#include <stdlib.h>
 #include <vector>
+#include "../../include/xgboost/common/obl_primitives.h"
 #include "arr_B.h"
 
-void sort(std::vector<int> &V, char* algo, size_t n) {
-    if (!strcmp(algo, "S")) {
-        std::sort(V.begin(), V.end());
-    } else {
-        ObliviousSort(V.begin(), V.end());
-    }
+void sort(std::vector<int> *V, char* algo, size_t n) {
+  if (!strcmp(algo, "S")) {
+    std::sort(V->begin(), V->end());
+  } else {
+    ObliviousSort(V->begin(), V->end());
+  }
 }
 
 int main(int argc, char* argv[]) {
-    sort (V, argv[1], 1000);
+  sort(&V, argv[1], 1000);
 }

@@ -14,6 +14,8 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
+#include <functional>
+#include <limits>
 #include "obl_primitives.h"
 
 namespace xgboost {

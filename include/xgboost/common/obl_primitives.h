@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <cstring>
+#include <functional>
 
 
 //----------------------------------------------------------------------------
@@ -539,20 +540,20 @@ inline void ObliviousAssignHelper(bool pred, T t_val, T f_val, T *out) {
 #ifdef USE_AVX2
 // Obliviously assigns 32 bytes starting from the address of (cond) ? t_val : f_val into out
 template <typename T>
-inline void ObliviousAssignHelper32(bool cond, T& t_val, T& f_val, T *out) {
+inline void ObliviousAssignHelper32(bool cond, T* t_val, T* f_val, T *out) {
     __m256i mask = _mm256_set1_epi64x(static_cast<int>(cond) * -1);
-    __m256i t_val_vector = _mm256_loadu_si256(reinterpret_cast<__m256i*>(&t_val));
-    __m256i f_val_vector = _mm256_loadu_si256(reinterpret_cast<__m256i*>(&f_val));
+    __m256i t_val_vector = _mm256_loadu_si256(reinterpret_cast<__m256i*>(t_val));
+    __m256i f_val_vector = _mm256_loadu_si256(reinterpret_cast<__m256i*>(f_val));
     __m256i result_vector = _mm256_blendv_epi8(f_val_vector, t_val_vector, mask);
     _mm256_storeu_si256(reinterpret_cast<__m256i*>(out), result_vector);
 }
 
 // Obliviously assigns 16 bytes starting from the address of (cond) ? t_val : f_val into out
 template <typename T>
-inline void ObliviousAssignHelper16(bool cond, T& t_val, T& f_val, T *out) {
+inline void ObliviousAssignHelper16(bool cond, T* t_val, T* f_val, T *out) {
     __m128i mask = _mm_set1_epi64x(static_cast<int>(cond) * -1);
-    __m128i t_val_vector = _mm_loadu_si128(reinterpret_cast<__m128i*>(&t_val));
-    __m128i f_val_vector = _mm_loadu_si128(reinterpret_cast<__m128i*>(&f_val));
+    __m128i t_val_vector = _mm_loadu_si128(reinterpret_cast<__m128i*>(t_val));
+    __m128i f_val_vector = _mm_loadu_si128(reinterpret_cast<__m128i*>(f_val));
     __m128i result_vector = _mm_blendv_epi8(f_val_vector, t_val_vector, mask);
     _mm_storeu_si128(reinterpret_cast<__m128i*>(out), result_vector);
 }
@@ -569,7 +570,7 @@ inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
   // Obliviously assign 32 bytes at a time
   size_t num_32_iter = bytes / 32;
   for (int i = 0; i < num_32_iter; i++) {
-    ObliviousAssignHelper32(pred, *t, *f, res);
+    ObliviousAssignHelper32(pred, t, f, res);
     res += 32;
     t += 32;
     f += 32;
@@ -577,7 +578,7 @@ inline void ObliviousBytesAssign(bool pred, size_t nbytes, const void *t_val,
 
   // Obliviously assign 16 bytes
   if ((bytes % 32) / 16) {
-      ObliviousAssignHelper16(pred, *t, *f, res);
+      ObliviousAssignHelper16(pred, t, f, res);
       res += 16;
       t += 16;
       f += 16;

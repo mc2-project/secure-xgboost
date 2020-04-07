@@ -6,11 +6,10 @@
  */
 #include <rabit/rabit.h>
 #include <xgboost/metric.h>
-#include <cmath>
-
-#include "metric_common.h"
 #include <xgboost/common/math.h>
 #include <xgboost/common/common.h>
+#include <cmath>
+#include "metric_common.h"
 
 #if defined(XGBOOST_USE_CUDA)
 #include <thrust/execution_policy.h>  // thrust::cuda::par

@@ -4,14 +4,15 @@
  */
 #include <rabit/rabit.h>
 #include <dmlc/omp.h>
-#include <numeric>
-#include <vector>
 
 #include <xgboost/common/random.h>
 #include <xgboost/common/column_matrix.h>
 #include <xgboost/common/hist_util.h>
 #include <xgboost/common/quantile.h>
 #include <xgboost/tree/updater_quantile_hist.h>
+
+#include <numeric>
+#include <vector>
 
 #if defined(XGBOOST_MM_PREFETCH_PRESENT)
   #include <xmmintrin.h>

@@ -7,12 +7,11 @@
 #include <rabit/rabit.h>
 #include <xgboost/base.h>
 #include <xgboost/tree_updater.h>
-#include <vector>
-#include <algorithm>
-
 #include <xgboost/common/quantile.h>
 #include <xgboost/common/group_data.h>
 #include <xgboost/tree/updater_basemaker-inl.h>
+#include <vector>
+#include <algorithm>
 
 namespace xgboost {
 namespace tree {

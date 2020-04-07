@@ -3,14 +3,13 @@
  * \author Rory Mitchell
  */
 #pragma once
+#include <xgboost/common/random.h>
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 #include <limits>
-
 #include "./param.h"
-#include <xgboost/common/random.h>
 
 namespace xgboost {
 namespace linear {

@@ -5,7 +5,6 @@
 #include <xgboost/data.h>
 #include <xgboost/logging.h>
 #include <dmlc/registry.h>
-#include <cstring>
 #include <xgboost/data/sparse_page_writer.h>
 #include <xgboost/data/simple_dmatrix.h>
 #include <xgboost/data/simple_csr_source.h>
@@ -17,6 +16,7 @@
 #include <xgboost/data/sparse_page_dmatrix.h>
 #endif  // DMLC_ENABLE_STD_THREAD
 
+#include <cstring>
 #include "xgboost_t.h"
 
 namespace dmlc {
@@ -152,7 +152,7 @@ void MetaInfo::SetInfo(const char* key, const void* dptr, DataType dtype, size_t
 DMatrix* DMatrix::Load(const std::string& uri,
                        bool silent,
                        bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
+#ifdef __ENCLAVE__  // pass decryption key
                        bool is_encrypted,
                        char* key,
 #endif
@@ -223,9 +223,10 @@ DMatrix* DMatrix::Load(const std::string& uri,
     }
   }
 
-#ifdef __ENCLAVE__ // pass decryption key
+#ifdef __ENCLAVE__  // pass decryption key
   std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-      dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, key));
+      dmlc::Parser<uint32_t>::Create(
+        fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, key));
 #else
   std::unique_ptr<dmlc::Parser<uint32_t> > parser(
       dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));
@@ -240,7 +241,7 @@ DMatrix* DMatrix::Load(const std::string& uri,
    * since partitioned data not knowing the real number of features. */
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
-#ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
+#ifdef __ENCLAVE__  // check that row indices and total rows in file are correct
   if (is_encrypted) {
     int *indices = new int[npart];
     memset(indices, 0, sizeof(indices));
@@ -259,7 +260,7 @@ DMatrix* DMatrix::Load(const std::string& uri,
 #endif
 
   // backward compatiblity code.
-#ifndef __ENCLAVE__ // FIXME: currently disabled to prevent OE errors if file not found
+#ifndef __ENCLAVE__  // FIXME: currently disabled to prevent OE errors if file not found
   if (!load_row_split) {
     MetaInfo& info = dmat->Info();
     if (MetaTryLoadGroup(fname + ".group", &info.group_ptr_) && !silent) {
@@ -326,7 +327,7 @@ DMatrix* DMatrix::Create(std::unique_ptr<DataSource>&& source,
 }  // namespace xgboost
 
 namespace xgboost {
-data::SparsePageFormat* 
+data::SparsePageFormat*
 data::SparsePageFormat::Create(const std::string& name) {
     auto *e = ::dmlc::Registry< ::xgboost::data::SparsePageFormatReg>::Get()->Find(name);
     if (e == nullptr) {

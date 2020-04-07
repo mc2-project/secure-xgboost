@@ -8,6 +8,12 @@
 #include <dmlc/timer.h>
 #include <xgboost/learner.h>
 #include <xgboost/logging.h>
+#include <xgboost/common/common.h>
+#include <xgboost/common/host_device_vector.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/random.h>
+#include <xgboost/common/enum_class_param.h>
+#include <xgboost/common/timer.h>
 #include <algorithm>
 #include <iomanip>
 #include <limits>
@@ -16,12 +22,6 @@
 #include <ios>
 #include <utility>
 #include <vector>
-#include <xgboost/common/common.h>
-#include <xgboost/common/host_device_vector.h>
-#include <xgboost/common/io.h>
-#include <xgboost/common/random.h>
-#include <xgboost/common/enum_class_param.h>
-#include <xgboost/common/timer.h>
 
 #include "xgboost_t.h"
 
@@ -171,9 +171,8 @@ DMLC_REGISTER_PARAMETER(LearnerTrainParam);
 
 class LearnerImpl : public Learner {
  public:
-  LearnerImpl(std::vector<std::shared_ptr<DMatrix> >  cache) 
-      : cache_(std::move(cache)) 
-  {
+  explicit LearnerImpl(std::vector<std::shared_ptr<DMatrix> >  cache)
+      : cache_(std::move(cache)) {
     // boosted tree
     name_obj_ = "reg:squarederror";
     name_gbm_ = "gbtree";
@@ -615,7 +614,7 @@ class LearnerImpl : public Learner {
 
     int ret;
     ret = rabit::IsDistributed();
-    if (ret) { 
+    if (ret) {
       CHECK(tparam_.dsplit != DataSplitMode::kAuto)
         << "Precondition violated; dsplit cannot be 'auto' in distributed mode";
       if (tparam_.dsplit == DataSplitMode::kCol) {

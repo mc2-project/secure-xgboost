@@ -8,16 +8,14 @@
 #include <dmlc/omp.h>
 #include <xgboost/logging.h>
 #include <xgboost/objective.h>
-#include <cmath>
-#include <memory>
-#include <vector>
-
 #include <xgboost/common/span.h>
 #include <xgboost/common/transform.h>
 #include <xgboost/common/common.h>
 #include <xgboost/common/host_device_vector.h>
+#include <cmath>
+#include <memory>
+#include <vector>
 #include "./regression_loss.h"
-
 
 namespace xgboost {
 namespace obj {
@@ -276,7 +274,7 @@ XGBOOST_REGISTER_OBJECTIVE(PoissonRegression, "count:poisson")
 .set_body([]() { return new PoissonRegression(); });
 
 
-#ifndef __ENCLAVE__ // FIXME enable CoxRegression
+#ifndef __ENCLAVE__  // FIXME enable CoxRegression
 // cox regression for survival data (negative values mean they are censored)
 class CoxRegression : public ObjFunction {
  public:
@@ -363,7 +361,7 @@ class CoxRegression : public ObjFunction {
 XGBOOST_REGISTER_OBJECTIVE(CoxRegression, "survival:cox")
 .describe("Cox regression for censored survival data (negative labels are considered censored).")
 .set_body([]() { return new CoxRegression(); });
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
 
 struct GammaRegressionParam : public dmlc::Parameter<GammaRegressionParam> {
   int n_gpus;

@@ -1,3 +1,8 @@
+/*!
+ * Copyright 2017-2019 by Contributors
+ * \file quantile.h
+ */
+
 #include <xgboost/common/quantile.h>
 
 namespace xgboost {
@@ -16,7 +21,7 @@ constexpr bool kEnableObliviousDebugCheck = false;
 constexpr bool kEnableOblivious = false;
 #endif
 
-} // namespace
+}  // namespace
 
 bool ObliviousSetCombineEnabled() {
   return kEnableObliviousCombine;

@@ -11,6 +11,17 @@
 #include <rabit/rabit.h>
 #include <rabit/c_api.h>
 
+#include <xgboost/c_api/c_api_error.h>
+#include <xgboost/data/simple_csr_source.h>
+#include <xgboost/common/math.h>
+#include <xgboost/common/io.h>
+#include <xgboost/common/group_data.h>
+
+#ifdef __ENCLAVE__  // includes
+#include <xgboost/common/common.h>
+#include <enclave/crypto.h>
+#endif
+
 #include <cstdio>
 #include <cstring>
 #include <algorithm>
@@ -18,16 +29,8 @@
 #include <string>
 #include <memory>
 
-#include <xgboost/c_api/c_api_error.h>
-#include <xgboost/data/simple_csr_source.h>
-#include <xgboost/common/math.h>
-#include <xgboost/common/io.h>
-#include <xgboost/common/group_data.h>
-
-#ifdef __ENCLAVE__ // includes
-#include <xgboost/common/common.h>
+#ifdef __ENCLAVE__  // includes
 #include "xgboost_t.h"
-#include <enclave/crypto.h>
 #include "enclave_context.h"
 #endif
 
@@ -78,7 +81,6 @@ class Booster {
   inline void LoadSavedParamFromAttr() {
     // Locate saved parameters from learner attributes
     const std::string prefix = "SAVED_PARAM_";
-    //learner_->print();
     for (const std::string& attr_name : learner_->GetAttrNames()) {
       if (attr_name.find(prefix) == 0) {
         const std::string saved_param = attr_name.substr(prefix.length());
@@ -110,7 +112,7 @@ class Booster {
   std::vector<std::pair<std::string, std::string> > cfg_;
 };
 
-#ifndef __ENCLAVE__ // FIXME enable functions
+#ifndef __ENCLAVE__  // FIXME enable functions
 
 // declare the data callback.
 XGB_EXTERN_C int XGBoostNativeDataIterSetData(
@@ -220,12 +222,12 @@ int XGBoostNativeDataIterSetData(
   static_cast<xgboost::NativeDataIter*>(handle)->SetData(batch);
   API_END();
 }
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
 }  // namespace xgboost
 
 using namespace xgboost; // NOLINT(*);
 
-#ifdef __ENCLAVE__ // attestation
+#ifdef __ENCLAVE__  // attestation
 
 // FIXME wrap in a struct / class?
 
@@ -262,9 +264,9 @@ bool generate_remote_report(
   // function.
   result = oe_get_report(
       OE_REPORT_FLAGS_REMOTE_ATTESTATION,
-      sha256, // Store sha256 in report_data field
+      sha256,  // Store sha256 in report_data field
       sizeof(sha256),
-      NULL, // opt_params must be null
+      NULL,  // opt_params must be null
       0,
       &temp_buf,
       remote_report_buf_size);
@@ -296,7 +298,7 @@ int get_remote_report_with_pubkey(
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
 
 #ifdef __ENCLAVE_SIMULATION__
-  key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+  key_buf = reinterpret_cast<uint8_t*>(oe_host_malloc(CIPHER_PK_SIZE));
   if (key_buf == NULL) {
     ret = OE_OUT_OF_MEMORY;
     return ret;
@@ -310,7 +312,7 @@ int get_remote_report_with_pubkey(
 #else
   if (generate_remote_report(public_key, CIPHER_PK_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
-    *remote_report = (uint8_t*)oe_host_malloc(report_size);
+    *remote_report = reinterpret_cast<uint8_t*>(oe_host_malloc(report_size));
     if (*remote_report == NULL) {
       ret = OE_OUT_OF_MEMORY;
       if (report)
@@ -321,7 +323,7 @@ int get_remote_report_with_pubkey(
     *remote_report_size = report_size;
     oe_free_report(report);
 
-    key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+    key_buf = reinterpret_cast<uint8_t*>(oe_host_malloc(CIPHER_PK_SIZE));
     if (key_buf == NULL) {
       ret = OE_OUT_OF_MEMORY;
       if (report)
@@ -342,7 +344,7 @@ int get_remote_report_with_pubkey(
   }
 #endif
   return ret;
-} 
+}
 
 /**
  * Attest the given remote report and accompanying data. It consists of the
@@ -445,7 +447,7 @@ int verify_remote_report_and_set_pubkey(
   // Attest the remote report and accompanying key.
   if (attest_remote_report(remote_report, remote_report_size, pem_key, key_size)) {
     // FIXME save the pubkey passed by the other enclave
-    //memcpy(m_crypto->get_the_other_enclave_public_key(), pem_key, key_size);
+    // memcpy(m_crypto->get_the_other_enclave_public_key(), pem_key, key_size);
   } else {
     LOG(INFO) << "verify_report_and_set_pubkey failed.";
     return -1;
@@ -459,7 +461,7 @@ int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len
       return 0;
     return -1;
 }
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
 
 /*! \brief entry to to easily hold returning information */
 struct XGBAPIThreadLocalEntry {
@@ -495,14 +497,16 @@ int XGDMatrixCreateFromEncryptedFile(const char *fname,
             << "will split data among workers";
         load_row_split = true;
     }
-#ifdef __ENCLAVE__ // pass decryption key
+#ifdef __ENCLAVE__  // pass decryption key
     // FIXME consistently use uint8_t* for key bytes
     char key[CIPHER_KEY_SIZE];
-    EnclaveContext::getInstance().get_client_key((uint8_t*) key);
-    //EnclaveContext::getInstance().get_client_key(fname, (uint8_t*) key);
-    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, true, key));
+    EnclaveContext::getInstance().get_client_key(reinterpret_cast<uint8_t*>(key));
+    // EnclaveContext::getInstance().get_client_key(fname, (uint8_t*) key);
+    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(
+          fname, silent != 0, load_row_split, true, key));
 #else
-    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split));
+    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(
+          fname, silent != 0, load_row_split));
 #endif
     API_END();
 }
@@ -517,15 +521,17 @@ int XGDMatrixCreateFromFile(const char *fname,
             << "will split data among workers";
         load_row_split = true;
     }
-#ifdef __ENCLAVE__ // pass decryption key
-    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, false, NULL));
+#ifdef __ENCLAVE__  // pass decryption key
+    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(
+          fname, silent != 0, load_row_split, false, NULL));
 #else
-    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split));
+    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(
+          fname, silent != 0, load_row_split));
 #endif
     API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
+#ifndef __ENCLAVE__  // FIXME enable functions
 int XGDMatrixCreateFromDataIter(
     void* data_handle,
     XGBCallbackDataIterNext* callback,
@@ -1004,7 +1010,7 @@ XGB_DLL int XGDMatrixSliceDMatrix(DMatrixHandle handle,
   *out = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
   API_END();
 }
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
 
 XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
   API_BEGIN();
@@ -1013,7 +1019,7 @@ XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
   API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
+#ifndef __ENCLAVE__  // FIXME enable functions
 XGB_DLL int XGDMatrixSaveBinary(DMatrixHandle handle,
                                 const char* fname,
                                 int silent) {
@@ -1046,7 +1052,7 @@ XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
   API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
+#ifndef __ENCLAVE__  // FIXME enable functions
 XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
                               const unsigned* group,
                               xgboost::bst_ulong len) {
@@ -1061,7 +1067,7 @@ XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
   }
   API_END();
 }
-#endif //__ENCLAVE__
+#endif  // __ENCLAVE__
 
 XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
                                   const char* field,
@@ -1081,8 +1087,8 @@ XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
     LOG(FATAL) << "Unknown float field name " << field;
   }
   *out_len = static_cast<xgboost::bst_ulong>(vec->size());  // NOLINT
-#ifdef __ENCLAVE__ // write results to host memory
-  bst_float* result = (bst_float*) oe_host_malloc(vec->size() * sizeof(bst_float));
+#ifdef __ENCLAVE__  // write results to host memory
+  bst_float* result = reinterpret_cast<bst_float*>(oe_host_malloc(vec->size() * sizeof(bst_float)));
   memcpy(result, dmlc::BeginPtr(*vec), *out_len * sizeof(bst_float));
   *out_dptr = result;
 #else
@@ -1102,8 +1108,8 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
   if (!std::strcmp(field, "root_index")) {
     vec = &info.root_index_;
     *out_len = static_cast<xgboost::bst_ulong>(vec->size());
-#ifdef __ENCLAVE__ // write results to host memory
-    unsigned* result = (unsigned*) oe_host_malloc(vec->size() * sizeof(unsigned));
+#ifdef __ENCLAVE__  // write results to host memory
+    unsigned* result = reinterpret_cast<unsigned*>(oe_host_malloc(vec->size() * sizeof(unsigned)));
     memcpy(result, dmlc::BeginPtr(*vec), *out_len * sizeof(unsigned));
     *out_dptr = result;
 #else
@@ -1217,11 +1223,11 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
 
   bst->LazyInit();
   eval_str = bst->learner()->EvalOneIter(iter, data_sets, data_names);
-#ifdef __ENCLAVE__ // write results to host memory
+#ifdef __ENCLAVE__  // write results to host memory
   *out_str = oe_host_strndup(eval_str.c_str(), eval_str.length());
 #else
   *out_str = eval_str.c_str();
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
   API_END();
 }
 
@@ -1252,16 +1258,18 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
       (option_mask & 8) != 0,
       (option_mask & 16) != 0);
   preds = tmp_preds.HostVector();
-#ifdef __ENCLAVE__ // write results to host memory
-  //bst_float* result = (bst_float*) oe_host_malloc(preds.size()*sizeof(float));
-  //for (int i = 0; i < preds.size(); ++i) {
-  //    result[i] = preds[i];
-  //}
-  //*len = static_cast<xgboost::bst_ulong>(preds.size());
-  //*out_result = result;
+#ifdef __ENCLAVE__  // write results to host memory
+  /*
+  bst_float* result = (bst_float*) oe_host_malloc(preds.size()*sizeof(float));
+  for (int i = 0; i < preds.size(); ++i) {
+      result[i] = preds[i];
+  }
+  *len = static_cast<xgboost::bst_ulong>(preds.size());
+  *out_result = result;
+  */
 
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key(reinterpret_cast<uint8_t*>(key));
 
   int preds_len = preds.size()*sizeof(float);
   size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + preds_len;
@@ -1285,7 +1293,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   memcpy(host_buf, buf, buf_len);
   free(buf);
   *len = static_cast<xgboost::bst_ulong>(preds.size());
-  *out_result = (uint8_t*)host_buf;
+  *out_result = reinterpret_cast<uint8_t*>(host_buf);
 
 #else
   *out_result = dmlc::BeginPtr(preds);
@@ -1297,7 +1305,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__ // load encrypted model from file
+#ifdef __ENCLAVE__  // load encrypted model from file
   std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
   size_t buf_len;
   fi->Read(&buf_len, sizeof(size_t));
@@ -1318,7 +1326,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__ // save encrypted model to file
+#ifdef __ENCLAVE__  // save encrypted model to file
   std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
   raw_str.resize(0);
 
@@ -1334,7 +1342,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key(reinterpret_cast<uint8_t*>(key));
 
   encrypt_symm(
       key,
@@ -1364,15 +1372,15 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                  xgboost::bst_ulong len) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__ // write results to host memory
+#ifdef __ENCLAVE__  // write results to host memory
   len -= (CIPHER_IV_SIZE + CIPHER_TAG_SIZE);
 
   unsigned char* iv = const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(buf));
   unsigned char* tag = iv + CIPHER_IV_SIZE;
   unsigned char* data = tag + CIPHER_TAG_SIZE;
-  unsigned char* output = (unsigned char*) malloc (len);
+  unsigned char* output = reinterpret_cast<unsigned char*>(malloc(len));
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key(reinterpret_cast<uint8_t*>(key));
 
   decrypt_symm(
       key,
@@ -1406,7 +1414,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   auto *bst = static_cast<Booster*>(handle);
   bst->LazyInit();
   bst->learner()->Save(&fo);
-#ifdef __ENCLAVE__ // write results to host memory
+#ifdef __ENCLAVE__  // write results to host memory
   int buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + raw_str.length();
   unsigned char* buf  = (unsigned char*) malloc(buf_len);
 
@@ -1414,7 +1422,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key(reinterpret_cast<uint8_t*>(key));
 
   encrypt_symm(
       key,
@@ -1457,17 +1465,18 @@ inline void XGBoostDumpModelImpl(
   *out_models = dmlc::BeginPtr(charp_vecs);
 #else
   /* Write *out_models to user memory instead */
-  unsigned char** usr_addr_model = (unsigned char**) oe_host_malloc(str_vecs.size() * sizeof(char*));
+  unsigned char** usr_addr_model =
+    (unsigned char**) oe_host_malloc(str_vecs.size() * sizeof(char*));
 
   int length;
   unsigned char* encrypted;
   unsigned char iv[CIPHER_IV_SIZE];
   unsigned char tag[CIPHER_TAG_SIZE];
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
+  EnclaveContext::getInstance().get_client_key(reinterpret_cast<uint8_t*>(key));
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
-    encrypted = (unsigned char*) malloc(length * sizeof(char)); 
+    encrypted = (unsigned char*) malloc(length * sizeof(char));
 
     /* Encrypt */
     encrypt_symm(
@@ -1569,7 +1578,7 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
   API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
+#ifndef __ENCLAVE__  // FIXME enable functions
 XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
                      const char* key,
                      const char* value) {
@@ -1603,7 +1612,7 @@ XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
   API_END();
 }
 
-#ifndef __ENCLAVE__ // FIXME enable functions
+#ifndef __ENCLAVE__  // FIXME enable functions
 XGB_DLL int XGBoosterLoadRabitCheckpoint(BoosterHandle handle,
                                  int* version) {
   API_BEGIN();
@@ -1639,4 +1648,4 @@ QueryBoosterConfigurationArguments(BoosterHandle handle) {
 
 // force link rabit
 static DMLC_ATTRIBUTE_UNUSED int XGBOOST_LINK_RABIT_C_API_ = RabitLinkTag();
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__

@@ -8,6 +8,13 @@
 #include <rabit/rabit.h>
 #include <xgboost/logging.h>
 #include <xgboost/tree_updater.h>
+#include <xgboost/tree/param.h>
+#include <xgboost/tree/updater_quantile_hist.h>
+#include <xgboost/tree/split_evaluator.h>
+#include <xgboost/common/random.h>
+#include <xgboost/common/hist_util.h>
+#include <xgboost/common/row_set.h>
+#include <xgboost/common/column_matrix.h>
 
 #include <cmath>
 #include <memory>
@@ -19,13 +26,6 @@
 #include <string>
 #include <utility>
 
-#include <xgboost/tree/param.h>
-#include <xgboost/tree/updater_quantile_hist.h>
-#include <xgboost/tree/split_evaluator.h>
-#include <xgboost/common/random.h>
-#include <xgboost/common/hist_util.h>
-#include <xgboost/common/row_set.h>
-#include <xgboost/common/column_matrix.h>
 
 namespace xgboost {
 namespace tree {

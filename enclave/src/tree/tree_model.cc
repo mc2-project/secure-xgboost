@@ -4,11 +4,11 @@
  * \brief model structure for tree
  */
 #include <xgboost/tree_model.h>
+#include <xgboost/tree/param.h>
 #include <sstream>
 #include <limits>
 #include <cmath>
 #include <iomanip>
-#include <xgboost/tree/param.h>
 
 namespace xgboost {
 // register tree parameter
