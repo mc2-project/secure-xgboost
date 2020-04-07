@@ -20,7 +20,7 @@ namespace data {
 
 template<typename IndexType, typename DType = real_t>
 Parser<IndexType> *
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
 CreateLibSVMParser(const std::string& path,
     const std::map<std::string, std::string>& args,
     unsigned part_index,
@@ -35,7 +35,7 @@ CreateLibSVMParser(const std::string& path,
 #endif
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
   ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, args, 2, is_encrypted, key);
 #else
   ParserImpl<IndexType> *parser = new LibSVMParser<IndexType>(source, args, 2);
@@ -48,7 +48,7 @@ CreateLibSVMParser(const std::string& path,
 
 template<typename IndexType, typename DType = real_t>
 Parser<IndexType> *
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
 CreateLibFMParser(const std::string& path,
     const std::map<std::string, std::string>& args,
     unsigned part_index,
@@ -63,7 +63,7 @@ CreateLibFMParser(const std::string& path,
 #endif
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
   ParserImpl<IndexType> *parser = new LibFMParser<IndexType>(source, args, 2, is_encrypted, key);
 #else
   ParserImpl<IndexType> *parser = new LibFMParser<IndexType>(source, args, 2);
@@ -76,7 +76,7 @@ CreateLibFMParser(const std::string& path,
 
 template<typename IndexType, typename DType = real_t>
 Parser<IndexType, DType> *
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
 CreateCSVParser(const std::string& path,
     const std::map<std::string, std::string>& args,
     unsigned part_index,
@@ -91,7 +91,7 @@ CreateCSVParser(const std::string& path,
 #endif
   InputSplit* source = InputSplit::Create(
       path.c_str(), part_index, num_parts, "text");
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
   return new CSVParser<IndexType, DType>(source, args, 2, is_encrypted, key);
 #else
   return new CSVParser<IndexType, DType>(source, args, 2);
@@ -100,7 +100,7 @@ CreateCSVParser(const std::string& path,
 
 template<typename IndexType, typename DType = real_t>
 inline Parser<IndexType, DType> *
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
 CreateParser_(const char *uri_,
     unsigned part_index,
     unsigned num_parts,
@@ -129,7 +129,7 @@ CreateParser_(const char *uri_,
     LOG(FATAL) << "Unknown data type " << ptype;
   }
   // create parser
-#ifdef __ENCLAVE__ // Init with encryption key
+#ifdef __ENCLAVE__  // Init with encryption key
   return (*e->body)(spec.uri, spec.args, part_index, num_parts, is_encrypted, key);
 #else
   return (*e->body)(spec.uri, spec.args, part_index, num_parts);
@@ -173,7 +173,8 @@ RowBlockIter<uint32_t, real_t>::Create(const char *uri,
                                        unsigned part_index,
                                        unsigned num_parts,
                                        const char *type) {
-  return data::CreateIter_<uint32_t, real_t>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint32_t, real_t>(
+      uri, part_index, num_parts, type);
 }
 
 template<>
@@ -182,7 +183,8 @@ RowBlockIter<uint64_t, real_t>::Create(const char *uri,
                                        unsigned part_index,
                                        unsigned num_parts,
                                        const char *type) {
-  return data::CreateIter_<uint64_t, real_t>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint64_t, real_t>(
+      uri, part_index, num_parts, type);
 }
 
 template<>
@@ -191,7 +193,8 @@ RowBlockIter<uint32_t, int32_t>::Create(const char *uri,
                                     unsigned part_index,
                                     unsigned num_parts,
                                     const char *type) {
-  return data::CreateIter_<uint32_t, int32_t>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint32_t, int32_t>(
+      uri, part_index, num_parts, type);
 }
 
 template<>
@@ -200,7 +203,8 @@ RowBlockIter<uint64_t, int32_t>::Create(const char *uri,
                                     unsigned part_index,
                                     unsigned num_parts,
                                     const char *type) {
-  return data::CreateIter_<uint64_t, int32_t>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint64_t, int32_t>(
+      uri, part_index, num_parts, type);
 }
 
 template<>
@@ -209,7 +213,8 @@ RowBlockIter<uint32_t, int64_t>::Create(const char *uri,
                                         unsigned part_index,
                                         unsigned num_parts,
                                         const char *type) {
-  return data::CreateIter_<uint32_t, int64_t>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint32_t, int64_t>(
+      uri, part_index, num_parts, type);
 }
 
 template<>
@@ -218,7 +223,8 @@ RowBlockIter<uint64_t, int64_t>::Create(const char *uri,
                                         unsigned part_index,
                                         unsigned num_parts,
                                         const char *type) {
-  return data::CreateIter_<uint64_t, int64_t>(uri, part_index, num_parts, type);
+  return data::CreateIter_<uint64_t, int64_t>(
+      uri, part_index, num_parts, type);
 }
 
 template<>
@@ -274,7 +280,7 @@ Parser<uint64_t, int64_t>::Create(const char *uri_,
                                   const char *type) {
   return data::CreateParser_<uint64_t, int64_t>(uri_, part_index, num_parts, type);
 }
-#else // __ENCLAVE__
+#else  // __ENCLAVE__
 template<>
 Parser<uint32_t, real_t> *
 Parser<uint32_t, real_t>::Create(const char *uri_,
@@ -283,7 +289,8 @@ Parser<uint32_t, real_t>::Create(const char *uri_,
     const char *type,
     bool is_encrypted,
     const char* key) {
-  return data::CreateParser_<uint32_t, real_t>(uri_, part_index, num_parts, type, is_encrypted, key);
+  return data::CreateParser_<uint32_t, real_t>(
+      uri_, part_index, num_parts, type, is_encrypted, key);
 }
 
 template<>
@@ -294,7 +301,8 @@ Parser<uint64_t, real_t>::Create(const char *uri_,
     const char *type,
     bool is_encrypted,
     const char* key) {
-  return data::CreateParser_<uint64_t, real_t>(uri_, part_index, num_parts, type, is_encrypted, key);
+  return data::CreateParser_<uint64_t, real_t>(
+      uri_, part_index, num_parts, type, is_encrypted, key);
 }
 
 template<>
@@ -305,7 +313,8 @@ Parser<uint32_t, int32_t>::Create(const char *uri_,
     const char *type,
     bool is_encrypted,
     const char* key) {
-  return data::CreateParser_<uint32_t, int32_t>(uri_, part_index, num_parts, type, is_encrypted, key);
+  return data::CreateParser_<uint32_t, int32_t>(
+      uri_, part_index, num_parts, type, is_encrypted, key);
 }
 
 template<>
@@ -316,7 +325,8 @@ Parser<uint64_t, int32_t>::Create(const char *uri_,
     const char *type,
     bool is_encrypted,
     const char* key) {
-  return data::CreateParser_<uint64_t, int32_t>(uri_, part_index, num_parts, type, is_encrypted, key);
+  return data::CreateParser_<uint64_t, int32_t>(
+      uri_, part_index, num_parts, type, is_encrypted, key);
 }
 
 template<>
@@ -327,7 +337,8 @@ Parser<uint32_t, int64_t>::Create(const char *uri_,
     const char *type,
     bool is_encrypted,
     const char* key) {
-  return data::CreateParser_<uint32_t, int64_t>(uri_, part_index, num_parts, type, is_encrypted, key);
+  return data::CreateParser_<uint32_t, int64_t>(
+      uri_, part_index, num_parts, type, is_encrypted, key);
 }
 
 template<>
@@ -338,9 +349,10 @@ Parser<uint64_t, int64_t>::Create(const char *uri_,
     const char *type,
     bool is_encrypted,
     const char* key) {
-  return data::CreateParser_<uint64_t, int64_t>(uri_, part_index, num_parts, type, is_encrypted, key);
+  return data::CreateParser_<uint64_t, int64_t>(
+      uri_, part_index, num_parts, type, is_encrypted, key);
 }
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
 
 // registry
 typedef ParserFactoryReg<uint32_t, real_t> Reg32flt;

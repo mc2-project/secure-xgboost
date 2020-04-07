@@ -42,8 +42,6 @@ class AllreduceBase : public IEngine {
   virtual void Init(int argc, char* argv[]);
   // shutdown the engine
   virtual void Shutdown(void);
-  // Init ssl context.
-  virtual void InitSSL();
   /*!
    * \brief set parameters to the engine
    * \param name parameter name

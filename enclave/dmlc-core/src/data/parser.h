@@ -10,9 +10,9 @@
 #include <dmlc/base.h>
 #include <dmlc/logging.h>
 #include <dmlc/threadediter.h>
+#include <stdio.h>
 #include <vector>
 #include "./row_block.h"
-#include <stdio.h>
 
 namespace dmlc {
 namespace data {

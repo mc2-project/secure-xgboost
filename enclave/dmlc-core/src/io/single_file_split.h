@@ -60,7 +60,7 @@ class SingleFileSplit : public InputSplit {
   }
   virtual size_t GetTotalSize(void) {
     struct stat_struct buf;
-#ifdef __ENCLAVE__ // FIXME enable fstat
+#ifdef __ENCLAVE__  // FIXME enable fstat
     LOG(FATAL) << "fstat not implemented";
 #else
     fstat(fileno(fp_), &buf);

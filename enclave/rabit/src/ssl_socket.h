@@ -1,5 +1,15 @@
-#ifndef RABIT_TLS_SOCKET_H_
-#define RABIT_TLS_SOCKET_H_
+/*!
+ *  Copyright (c) 2019 by Contributors
+ * \file obl_primitives.h
+ */
+
+#ifndef RABIT_SSL_SOCKET_H_
+#define RABIT_SSL_SOCKET_H_
+
+#include <dmlc/logging.h>
+
+#include <memory>
+#include <string>
 
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/ssl.h"
@@ -10,11 +20,7 @@
 #include "mbedtls/error.h"
 #include "mbedtls/debug.h"
 
-#include <memory>
-#include <string>
-
 #include "socket.h"
-#include "../include/dmlc/logging.h"
 
 namespace rabit {
 namespace utils {
@@ -29,18 +35,17 @@ static void print_err(int error_code) {
 
 #define DEBUG_LEVEL 0
 
-static void my_debug( void *ctx, int level,
+static void my_debug(void *ctx, int level,
     const char *file, int line,
-    const char *str ) {
+    const char *str) {
   ((void) level);
 
-  mbedtls_fprintf( (FILE *) ctx, "%s:%04d: %s", file, line, str );
-  fflush(  (FILE *) ctx  );
+  mbedtls_fprintf(reinterpret_cast<FILE *>(ctx), "%s:%04d: %s", file, line, str);
+  fflush(reinterpret_cast<FILE *>(ctx));
 }
 
 class SSLTcpSocket : public TCPSocket {
  public:
-
   SSLTcpSocket() : TCPSocket() {
     mbedtls_net_init(&net);
     mbedtls_ssl_config_init(&conf);
@@ -73,13 +78,13 @@ class SSLTcpSocket : public TCPSocket {
   // SSL Write, note this does not support |flag| argument.
   ssize_t SSLSend(const void *buf, size_t len) {
     int ret = -1;
-    while( ( ret = mbedtls_ssl_write( &ssl, (const unsigned char*)buf, len ) ) <= 0 ) {
-      if( ret == MBEDTLS_ERR_NET_CONN_RESET ) {
+    while ((ret = mbedtls_ssl_write(&ssl, (const unsigned char*)buf, len)) <= 0) {
+      if (ret == MBEDTLS_ERR_NET_CONN_RESET) {
         print_err(ret);
         return -1;
       }
 
-      if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
+      if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
         print_err(ret);
         return -1;
       }
@@ -88,16 +93,16 @@ class SSLTcpSocket : public TCPSocket {
   }
 
   // SSL Read, note this does not support |flag| argument.
-  ssize_t SSLRecv(void *buf, size_t len) { 
+  ssize_t SSLRecv(void *buf, size_t len) {
     int ret = -1;
     do {
       ret = mbedtls_ssl_read(&ssl, (unsigned char*)buf, len);
 
-      if( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE )
+      if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
         continue;
 
-      if( ret <= 0 ) {
-        switch( ret ) {
+      if (ret <= 0) {
+        switch (ret) {
           case MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY:
             print_err(ret);
             return -1;
@@ -112,9 +117,9 @@ class SSLTcpSocket : public TCPSocket {
         }
       }
 
-      if( ret > 0 )
+      if (ret > 0)
         break;
-    } while( 1 );
+    } while (1);
     return ret;
   }
 
@@ -182,6 +187,7 @@ class SSLTcpSocket : public TCPSocket {
   }
 
   mbedtls_ssl_context ssl;
+
  private:
   mbedtls_net_context net;
   mbedtls_ctr_drbg_context ctr_drbg;
@@ -197,4 +203,4 @@ class SSLTcpSocket : public TCPSocket {
 }  // namespace utils
 }  // namespace rabit
 
-#endif  // RABIT_TLS_SOCKET_H_
+#endif  // RABIT_SSL_SOCKET_H_

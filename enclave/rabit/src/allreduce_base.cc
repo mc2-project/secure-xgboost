@@ -72,10 +72,6 @@ AllreduceBase::AllreduceBase(void) {
   env_vars.push_back("DMLC_WORKER_CONNECT_RETRY");
 }
 
-void AllreduceBase::InitSSL() {
-
-}
-
 // initialization function
 void AllreduceBase::Init(int argc, char* argv[]) {
   // setup from enviroment variables
@@ -136,8 +132,7 @@ void AllreduceBase::Init(int argc, char* argv[]) {
   }
   // clear the setting before start reconnection
   this->rank = -1;
-  // Init ssl context.
-  InitSSL();
+
   //---------------------
   // start socket
   utils::Socket::Startup();
@@ -381,7 +376,7 @@ void AllreduceBase::ReConnectLinks(const char *cmd) {
         if (all_links[i].rank == hrank) {
           Assert(all_links[i].sock->IsClosed(),
                  "Override a link that is active");
-          all_links[i].sock = r.sock; match = true; 
+          all_links[i].sock = r.sock; match = true;
           break;
         }
       }
@@ -401,7 +396,6 @@ void AllreduceBase::ReConnectLinks(const char *cmd) {
   for (int i = num_conn; i < num_conn + num_accept; ++i) {
     LinkRecord r;
     r.sock = new utils::SSLTcpSocket();
-    //r.sock = sock_listen.SSLAccept();
     sock_listen.SSLAccept(r.sock);
     Assert(r.sock->SSLSendAll(&rank, sizeof(rank)) == sizeof(rank),
            "ReConnectLink failure 15");
@@ -412,7 +406,7 @@ void AllreduceBase::ReConnectLinks(const char *cmd) {
       if (all_links[i].rank == r.rank) {
         utils::Assert(all_links[i].sock->IsClosed(),
                       "Override a link that is active");
-        all_links[i].sock = r.sock; match = true; 
+        all_links[i].sock = r.sock; match = true;
         break;
       }
     }
@@ -420,7 +414,7 @@ void AllreduceBase::ReConnectLinks(const char *cmd) {
       all_links.push_back(r);
     }
   }
-  
+
   this->parent_index = -1;
   // setup tree links and ring structure
   tree_links.plinks.clear();

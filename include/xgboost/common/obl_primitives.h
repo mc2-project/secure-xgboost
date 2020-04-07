@@ -1,5 +1,5 @@
 /*!
- *  Copyright (c) 2014 by Contributors
+ *  Copyright (c) 2019 by Contributors
  * \file obl_primitives.h
  * \author Rishabh Poddar, Andrew Law
  */

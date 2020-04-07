@@ -1,3 +1,8 @@
+/*!
+ *  Copyright (c) 2019 by Contributors
+ * \file obl_primitives.h
+ */
+
 #include "ssl_attestation.h"
 #include <stdio.h>
 #include <enclave/crypto.h>
@@ -19,7 +24,7 @@ oe_result_t generate_key_pair(
   // to enclave instance, it can generate its own key pair using any chosen
   // crypto API
 
-  params.type = OE_ASYMMETRIC_KEY_EC_SECP256P1; // MBEDTLS_ECP_DP_SECP256R1
+  params.type = OE_ASYMMETRIC_KEY_EC_SECP256P1;  // MBEDTLS_ECP_DP_SECP256R1
   params.format = OE_ASYMMETRIC_KEY_PEM;
   params.user_data = user_data;
   params.user_data_size = user_data_size;
@@ -119,7 +124,7 @@ exit:
 }
 
 bool verify_mrsigner(
-    char* siging_public_key_buf,
+    const char* siging_public_key_buf,
     size_t siging_public_key_buf_size,
     uint8_t* signer_id_buf,
     size_t signer_id_buf_size) {
@@ -156,7 +161,7 @@ bool verify_mrsigner(
 
   rsa_ctx = mbedtls_pk_rsa(ctx);
   modulus_size = mbedtls_rsa_get_len(rsa_ctx);
-  modulus = (uint8_t*)malloc(modulus_size);
+  modulus = reinterpret_cast<uint8_t*>(malloc(modulus_size));
   if (modulus == NULL) {
     printf("malloc for modulus failed with size %zu:\n", modulus_size);
     goto exit;
@@ -212,7 +217,7 @@ oe_result_t enclave_identity_verifier_callback(
   oe_result_t result = OE_VERIFY_FAILED;
   bool bret = false;
 
-#if false // FIXME verify MRENCLAVE
+#if false  // FIXME verify MRENCLAVE
   // the unique ID for the enclave, for SGX enclaves, this is the MRENCLAVE value
   for (int i = 0; i < OE_UNIQUE_ID_SIZE; i++) {
     printf("0x%0x ", (uint8_t)identity->unique_id[i]);
@@ -230,11 +235,11 @@ oe_result_t enclave_identity_verifier_callback(
 
   // The signer ID for the enclave, for SGX enclaves, this is the MRSIGNER value
   if (!verify_mrsigner(
-        (char*)ENCLAVE_PUBLIC_KEY,
+        ENCLAVE_PUBLIC_KEY,
         sizeof(ENCLAVE_PUBLIC_KEY),
         identity->signer_id,
         sizeof(identity->signer_id))) {
-    printf( "failed:mrsigner not equal!\n");
+    printf("failed:mrsigner not equal!\n");
     goto exit;
   }
 

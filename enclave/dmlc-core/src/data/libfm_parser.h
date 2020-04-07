@@ -45,18 +45,18 @@ struct LibFMParserParam : public Parameter<LibFMParserParam> {
 template <typename IndexType, typename DType = real_t>
 class LibFMParser : public TextParserBase<IndexType, DType> {
  public:
-#ifdef __ENCLAVE__ // Init with encryption key
-   explicit LibFMParser(InputSplit *source, int nthread, bool is_encrypted, char* key)
-     : LibFMParser(source, std::map<std::string, std::string>(), nthread, is_encrypted, key) {}
-   explicit LibFMParser(InputSplit *source,
-       const std::map<std::string, std::string>& args,
-       int nthread,
-       bool is_encrypted,
-       const char* key)
-     : TextParserBase<IndexType>(source, nthread, is_encrypted, key) {
-       param_.Init(args);
-       CHECK_EQ(param_.format, "libfm");
-     }
+#ifdef __ENCLAVE__  // Init with encryption key
+  explicit LibFMParser(InputSplit *source, int nthread, bool is_encrypted, char* key)
+    : LibFMParser(source, std::map<std::string, std::string>(), nthread, is_encrypted, key) {}
+  explicit LibFMParser(InputSplit *source,
+      const std::map<std::string, std::string>& args,
+      int nthread,
+      bool is_encrypted,
+      const char* key)
+    : TextParserBase<IndexType>(source, nthread, is_encrypted, key) {
+      param_.Init(args);
+      CHECK_EQ(param_.format, "libfm");
+    }
 #else
   explicit LibFMParser(InputSplit *source, int nthread)
       : LibFMParser(source, std::map<std::string, std::string>(), nthread) {}
@@ -70,7 +70,7 @@ class LibFMParser : public TextParserBase<IndexType, DType> {
 #endif
 
  protected:
-#ifdef __ENCLAVE__ // Parse blocks in encrypted files
+#ifdef __ENCLAVE__  // Parse blocks in encrypted files
   virtual void ParseEncryptedBlock(const char *begin,
           const char *end,
           RowBlockContainer<IndexType, DType> *out);
@@ -83,7 +83,7 @@ class LibFMParser : public TextParserBase<IndexType, DType> {
   LibFMParserParam param_;
 };
 
-#ifdef __ENCLAVE__ // Decrypt and parse file
+#ifdef __ENCLAVE__  // Decrypt and parse file
 template <typename IndexType, typename DType>
 void LibFMParser<IndexType, DType>::
 ParseEncryptedBlock(const char *begin,

@@ -1,3 +1,8 @@
+/*!
+ *  Copyright (c) 2019 by Contributors
+ * \file obl_primitives.h
+ */
+
 #include "ssl_socket.h"
 #include "ssl_attestation.h"
 #include "../include/dmlc/logging.h"
@@ -12,7 +17,7 @@ bool SSLTcpSocket::ConfigureClientSSL() {
   int ret;
   mbedtls_x509_crt_init(&srvcert);
   mbedtls_x509_crt_init(&cachain);
-  mbedtls_pk_init( &pkey );
+  mbedtls_pk_init(&pkey);
 
   if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0) {
     print_err(ret);
@@ -28,7 +33,7 @@ bool SSLTcpSocket::ConfigureClientSSL() {
     return false;
   }
 
-#ifdef __ENCLAVE_SIMULATION__ // disable certificate verification in simulation mode
+#ifdef __ENCLAVE_SIMULATION__  // disable certificate verification in simulation mode
   mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
 #else
   oe_result_t result = generate_certificate_and_pkey(&srvcert, &pkey);
@@ -47,7 +52,7 @@ bool SSLTcpSocket::ConfigureClientSSL() {
   mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
   mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 
-  mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
+  mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
   mbedtls_debug_set_threshold(DEBUG_LEVEL);
 
   // set up SSL context
@@ -62,23 +67,29 @@ bool SSLTcpSocket::ConfigureServerSSL() {
   int ret;
   mbedtls_x509_crt_init(&srvcert);
   mbedtls_x509_crt_init(&cachain);
-  mbedtls_pk_init( &pkey );
+  mbedtls_pk_init(&pkey);
 
   if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0)) != 0) {
     print_err(ret);
     return false;
   }
 
-#ifdef __ENCLAVE_SIMULATION__ // use inbuilt certs in simulation mode
-  if ((ret = mbedtls_x509_crt_parse( &srvcert, (const unsigned char *) mbedtls_test_srv_crt_ec, mbedtls_test_srv_crt_ec_len)) != 0) {
+#ifdef __ENCLAVE_SIMULATION__  // use inbuilt certs in simulation mode
+  if ((ret = mbedtls_x509_crt_parse(&srvcert,
+          (const unsigned char *) mbedtls_test_srv_crt_ec,
+          mbedtls_test_srv_crt_ec_len)) != 0) {
     print_err(ret);
     return false;
   }
-  if ((ret = mbedtls_x509_crt_parse( &cachain, (const unsigned char *) mbedtls_test_cas_pem, mbedtls_test_cas_pem_len )) != 0) {
+  if ((ret = mbedtls_x509_crt_parse(&cachain,
+          (const unsigned char *) mbedtls_test_cas_pem,
+          mbedtls_test_cas_pem_len)) != 0) {
     print_err(ret);
     return false;
   }
-  if ((ret = mbedtls_pk_parse_key( &pkey, (const unsigned char *) mbedtls_test_srv_key_ec, mbedtls_test_srv_key_ec_len, NULL, 0)) != 0) {
+  if ((ret = mbedtls_pk_parse_key(&pkey,
+          (const unsigned char *) mbedtls_test_srv_key_ec,
+          mbedtls_test_srv_key_ec_len, NULL, 0)) != 0) {
     print_err(ret);
     return false;
   }
@@ -109,9 +120,9 @@ bool SSLTcpSocket::ConfigureServerSSL() {
     return false;
   }
 
-  mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
+  mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 
-  mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
+  mbedtls_ssl_conf_dbg(&conf, my_debug, stdout);
   mbedtls_debug_set_threshold(DEBUG_LEVEL);
 
   if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
@@ -140,7 +151,7 @@ bool SSLTcpSocket::SSLConnect(const SockAddr &addr) {
     net.fd = this->sockfd;
     this->SetBio();
 
-    if(!SSLHandshake())
+    if (!SSLHandshake())
       return false;
 
     return true;
@@ -159,7 +170,7 @@ bool SSLTcpSocket::SSLAccept(SSLTcpSocket* client_sock) {
 
   client_sock->SetBio();
 
-  if(!client_sock->SSLHandshake())
+  if (!client_sock->SSLHandshake())
     return false;
 
   return true;

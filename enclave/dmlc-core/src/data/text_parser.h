@@ -18,7 +18,7 @@
 #include "./row_block.h"
 #include "./parser.h"
 
-#ifdef __ENCLAVE__ // encryption
+#ifdef __ENCLAVE__  // encryption
 #include <dmlc/base64.h>
 #include <enclave/crypto.h>
 #endif
@@ -33,11 +33,11 @@ namespace data {
 template <typename IndexType, typename DType = real_t>
 class TextParserBase : public ParserImpl<IndexType, DType> {
  public:
-#ifdef __ENCLAVE__ // pass decryption key
-   explicit TextParserBase(InputSplit *source,
-       int nthread,
-       bool _is_encrypted,
-       const char* _key)
+#ifdef __ENCLAVE__  // pass decryption key
+  explicit TextParserBase(InputSplit *source,
+      int nthread,
+      bool _is_encrypted,
+      const char* _key)
 #else
   explicit TextParserBase(InputSplit *source,
                           int nthread)
@@ -46,13 +46,13 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     int maxthread = std::max(omp_get_num_procs() / 2 - 4, 1);
     nthread_ = std::min(maxthread, nthread);
 
-#ifdef __ENCLAVE__ // cipher init
+#ifdef __ENCLAVE__  // cipher init
     is_encrypted = _is_encrypted;
     if (is_encrypted) {
         memcpy(key, _key, CIPHER_KEY_SIZE);
         int ret = cipher_init(&gcm, (unsigned char*)key);
-        if( ret != 0 ) {
-            LOG(FATAL) << "mbedtls_gcm_setkey failed with error " << -ret;
+        if (ret != 0) {
+          LOG(FATAL) << "mbedtls_gcm_setkey failed with error " << -ret;
         }
     }
     this->total_rows_in_chunk = 0;
@@ -63,7 +63,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   }
   virtual ~TextParserBase() {
     delete source_;
-#ifdef __ENCLAVE__ // cipher free
+#ifdef __ENCLAVE__  // cipher free
     if (is_encrypted) {
       mbedtls_gcm_free(&gcm);
     }
@@ -87,7 +87,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     */
   virtual void ParseBlock(const char *begin, const char *end,
                           RowBlockContainer<IndexType, DType> *out) = 0;
-#ifdef __ENCLAVE__ // parse encrypted data
+#ifdef __ENCLAVE__  // parse encrypted data
   /*!
    * \brief parse data into out
    * \param begin beginning of buffer
@@ -116,7 +116,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
      return begin;
   }
 
-#ifdef __ENCLAVE__ // decryption
+#ifdef __ENCLAVE__  // decryption
   inline void DecryptLine(const char* data, char* output, size_t len) {
     this->total_rows_in_chunk++;
 
@@ -154,14 +154,14 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     CHECK_LT(total_pos, iv_pos);
     CHECK_LT(iv_pos, tag_pos);
 
-    char *aad_str = (char*) malloc (total_pos + 1);
+    char *aad_str = reinterpret_cast<char*>(malloc(total_pos + 1));
     memcpy(aad_str, data, total_pos);
     aad_str[total_pos] = 0;
 
     size_t out_len;
     char tag[CIPHER_TAG_SIZE];
     char iv[CIPHER_IV_SIZE];
-    char* ct = (char *) malloc(len * sizeof(char));
+    char* ct = reinterpret_cast<char *>(malloc(len * sizeof(char)));
 
     out_len = base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
     CHECK_EQ(out_len, CIPHER_IV_SIZE);
@@ -169,14 +169,14 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
     CHECK_EQ(out_len, CIPHER_TAG_SIZE);
     out_len = base64_decode(data + tag_pos + 1, len - tag_pos, ct);
 
-    char *index_str = (char*) malloc (index_pos);
+    char *index_str = reinterpret_cast<char*>(malloc(index_pos));
     memcpy(index_str, data, index_pos);
     index_str[index_pos] = 0;
     uint64_t index = atoi(index_str);
     CHECK_GT(index, 0);
 
     uint64_t total_len = total_pos - index_pos - 1;
-    char *total_str = (char*) malloc (total_len + 1);
+    char *total_str = reinterpret_cast<char*>(malloc(total_len + 1));
     memcpy(total_str, data + index_pos + 1, total_len);
     total_str[total_len] = 0;
     uint64_t total = atoi(total_str);
@@ -240,7 +240,7 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   // OMPException object to catch and rethrow exceptions in omp blocks
   dmlc::OMPException omp_exc_;
 
-#ifdef __ENCLAVE__ // cipher 
+#ifdef __ENCLAVE__  // cipher
   bool is_encrypted;
 
   uint64_t prev_row_index;
@@ -248,7 +248,6 @@ class TextParserBase : public ParserImpl<IndexType, DType> {
   mbedtls_gcm_context gcm;
   char key[CIPHER_KEY_SIZE];
 #endif
-
 };
 
 // implementation
@@ -266,12 +265,12 @@ inline bool TextParserBase<IndexType, DType>::FillData(
   CHECK_NE(chunk.size, 0U);
   const char *head = reinterpret_cast<char *>(chunk.dptr);
 
-#ifdef __ENCLAVE__ // FIXME support multi-threading
+#ifdef __ENCLAVE__  // FIXME support multi-threading
   if (is_encrypted)
       ParseEncryptedBlock(head, head + chunk.size, &(*data)[0]);
   else
       ParseBlock(head, head + chunk.size, &(*data)[0]);
-#else // __ENCLAVE__
+#else  // __ENCLAVE__
   std::vector<std::thread> threads;
   for (int tid = 0; tid < nthread; ++tid) {
     threads.push_back(std::thread([&chunk, head, data, nthread, tid, this] {
@@ -293,7 +292,7 @@ inline bool TextParserBase<IndexType, DType>::FillData(
   for (int i = 0; i < nthread; ++i) {
     threads[i].join();
   }
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
   omp_exc_.Rethrow();
 
   this->data_ptr_ = 0;

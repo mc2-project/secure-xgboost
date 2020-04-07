@@ -1,3 +1,8 @@
+/*!
+ *  Copyright (c) 2019 by Contributors
+ * \file obl_primitives.h
+ */
+
 #ifndef RABIT_SSL_ATTESTATION_H_
 #define RABIT_SSL_ATTESTATION_H_
 
@@ -18,4 +23,4 @@ int cert_verify_callback(
         int depth,
         uint32_t* flags);
 
-#endif
+#endif  // RABIT_SSL_ATTESTATION_H_

@@ -1,5 +1,11 @@
-#ifndef CERTS_H_
-#define CERTS_H_
+/*!
+ *  Copyright (c) 2019 by Contributors
+ * \file ocalls.cc
+ * \author Rishabh Poddar
+ */
+
+#ifndef RABIT_CERTS_H_
+#define RABIT_CERTS_H_
 
 const char mbedtls_test_srv_crt_ec[] =
 "-----BEGIN CERTIFICATE-----\r\n"
@@ -19,7 +25,7 @@ const char mbedtls_test_srv_crt_ec[] =
 const size_t mbedtls_test_srv_crt_ec_len = sizeof(mbedtls_test_srv_crt_ec);
 
 #define TEST_CA_CRT_EC                                                  \
-    "-----BEGIN CERTIFICATE-----\r\n"                                       \
+"-----BEGIN CERTIFICATE-----\r\n"                                       \
 "MIICUjCCAdegAwIBAgIJAMFD4n5iQ8zoMAoGCCqGSM49BAMCMD4xCzAJBgNVBAYT\r\n"  \
 "Ak5MMREwDwYDVQQKEwhQb2xhclNTTDEcMBoGA1UEAxMTUG9sYXJzc2wgVGVzdCBF\r\n"  \
 "QyBDQTAeFw0xMzA5MjQxNTQ5NDhaFw0yMzA5MjIxNTQ5NDhaMD4xCzAJBgNVBAYT\r\n"  \
@@ -69,4 +75,4 @@ const char mbedtls_test_srv_key_ec[] =
 "-----END EC PRIVATE KEY-----\r\n";
 const size_t mbedtls_test_srv_key_ec_len = sizeof( mbedtls_test_srv_key_ec );
 
-#endif
+#endif  // RABIT_CERTS_H_
