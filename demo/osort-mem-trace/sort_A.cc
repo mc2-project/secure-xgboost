@@ -1,4 +1,4 @@
-#include "../../include/xgboost/common/obl_primitives.h"
+#include <xgboost/common/obl_primitives.h>
 #include <iostream>
 #include <algorithm>
 #include <stdlib.h>
