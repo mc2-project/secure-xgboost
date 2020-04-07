@@ -304,7 +304,7 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
   *
   * \return the created parser
   */
-#ifdef __ENCLAVE__ // pass decryption key
+#ifdef __ENCLAVE__  // pass decryption key
   static Parser<IndexType, DType> *
   Create(const char *uri_,
          unsigned part_index,
@@ -322,7 +322,7 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
   /*! \return size of bytes read so far */
   virtual size_t BytesRead(void) const = 0;
   /*! \brief Factory type of the parser*/
-#ifdef __ENCLAVE__ // pass decryption key
+#ifdef __ENCLAVE__  // pass decryption key
   typedef Parser<IndexType, DType>* (*Factory)
     (const std::string& path,
      const std::map<std::string, std::string>& args,
@@ -337,7 +337,7 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
        unsigned part_index,
        unsigned num_parts);
 #endif
-#ifdef __ENCLAVE__ // row indices
+#ifdef __ENCLAVE__  // row indices
   uint64_t starting_row_index;
   uint64_t total_rows_in_chunk;
   uint64_t total_rows_global;

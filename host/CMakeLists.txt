@@ -44,6 +44,7 @@ else ()
 endif (MINGW OR R_LIB)
 add_library(rabit STATIC ${RABIT_SOURCES} ${PROJECT_BINARY_DIR}/xgboost_u.c)
 target_include_directories(rabit PRIVATE
+  ${CMAKE_CURRENT_BINARY_DIR}
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/rabit>)
 target_link_libraries(rabit PRIVATE ${LINKED_LIBRARIES_PRIVATE} openenclave::oehostapp mbedcrypto mbedtls)

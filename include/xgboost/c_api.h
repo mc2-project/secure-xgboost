@@ -24,7 +24,7 @@
 #define XGB_DLL XGB_EXTERN_C
 #endif  // defined(_MSC_VER) || defined(_WIN32)
 
-#ifdef __ENCLAVE__ // macros for errors / safety checks
+#ifdef __ENCLAVE__  // macros for errors / safety checks
 #define safe_ocall(call) {                                \
 oe_result_t result = (call);                              \
 if (result != OE_OK) {                                    \
@@ -66,10 +66,8 @@ if (!oe_is_outside_enclave((ptr), size)) {                \
 // manually define unsigned long
 typedef uint64_t bst_ulong;  // NOLINT(*)
 
-//#ifdef __ENCLAVE__
 // FIXME added this here, but perhaps not necessary
 typedef float bst_float;  // NOLINT(*)
-//#endif
 
 
 /*! \brief handle to DMatrix */
@@ -161,7 +159,7 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
  */
 XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
                                     int silent,
-                                    DMatrixHandle *out); 
+                                    DMatrixHandle *out);
 
 #if defined(__SGX__)
 /*!
@@ -633,7 +631,7 @@ XGB_DLL int XGBoosterLoadRabitCheckpoint(
  */
 XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
-#if defined(__SGX__) 
+#if defined(__SGX__)
 XGB_DLL int get_remote_report_with_pubkey(
     uint8_t** pem_key,
     size_t* key_size,
@@ -647,7 +645,6 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
     size_t remote_report_size);
 
 XGB_DLL int add_client_key(
-    //char* fname,
     uint8_t* data,
     size_t data_len,
     uint8_t* signature,
@@ -688,7 +685,7 @@ XGB_DLL int decrypt_file_with_keybuf(
     char* fname,
     char* e_fname,
     char* key);
-#endif // __SGX__ && __ENCLAVE__
+#endif  // __SGX__ && __ENCLAVE__
 
 #if defined(__SGX__) && defined(__HOST__)
 // Ocalls
@@ -697,6 +694,6 @@ int ocall_rabit__GetRank();
 int ocall_rabit__GetWorldSize();
 
 int ocall_rabit__IsDistributed();
-#endif // __SGX__ && __HOST__
+#endif  // __SGX__ && __HOST__
 
 #endif  // XGBOOST_C_API_H_

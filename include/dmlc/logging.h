@@ -296,7 +296,7 @@ class DateLogger {
 #ifdef __ENCLAVE__
     // FIXME: OE does not support time_t parser functions
     snprintf(buffer_, sizeof(buffer_), "%ld", time_value);
-#else // __ENCLAVE__
+#else  // __ENCLAVE__
     struct tm *pnow;
 #if !defined(_WIN32)
     struct tm now;

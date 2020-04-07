@@ -15,7 +15,7 @@
 namespace xgboost {
 namespace common {
 struct Timer {
-#ifdef __ENCLAVE__ // replace high_resolution_clock with system_clock for OE
+#ifdef __ENCLAVE__  // replace high_resolution_clock with system_clock for OE
   using ClockT = std::chrono::system_clock;
   using TimePointT = std::chrono::system_clock::time_point;
   using DurationT = std::chrono::system_clock::duration;
@@ -23,7 +23,7 @@ struct Timer {
   using ClockT = std::chrono::high_resolution_clock;
   using TimePointT = std::chrono::high_resolution_clock::time_point;
   using DurationT = std::chrono::high_resolution_clock::duration;
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
   using SecondsT = std::chrono::duration<double>;
 
   TimePointT start;
@@ -64,8 +64,8 @@ struct Monitor {
   Timer self_timer;
 
  public:
-  Monitor() { 
-    self_timer.Start(); 
+  Monitor() {
+    self_timer.Start();
   }
 
   ~Monitor() {

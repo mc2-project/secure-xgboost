@@ -104,7 +104,7 @@ class MetaInfo {
 
     return label_order_cache_;
   }
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
 
   /*! \brief clear all the information */
   void Clear();
@@ -186,7 +186,7 @@ class SparsePage {
     }
 #else
     size = offset_vec[i + 1] - offset_vec[i];
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
     return {data_vec.data() + offset_vec[i],
             static_cast<Inst::index_type>(size)};
   }
@@ -454,7 +454,7 @@ class DMatrix {
   static DMatrix* Load(const std::string& uri,
                        bool silent,
                        bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
+#ifdef __ENCLAVE__  // pass decryption key
                        // TODO(rishabh): add support for unencrypted files
                        bool is_encrypted,
                        char* key,

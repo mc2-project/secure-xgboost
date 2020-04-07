@@ -29,10 +29,10 @@ inline double GetTime(void) {
 #ifdef __ENCLAVE__
   return std::chrono::duration<double>(
       std::chrono::system_clock::now().time_since_epoch()).count();
-#else // __ENCLAVE__
+#else  // __ENCLAVE__
   return std::chrono::duration<double>(
       std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-#endif // __ENCLAVE__
+#endif  // __ENCLAVE__
   #elif defined __MACH__
   clock_serv_t cclock;
   mach_timespec_t mts;

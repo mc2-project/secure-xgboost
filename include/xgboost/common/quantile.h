@@ -112,7 +112,7 @@ struct WQSummaryQEntryHelper {
   WQSummaryQEntryHelper(DType value, RType weight)
       : entry(value, weight), is_new(false) {}
   // ctor from entry
-  WQSummaryQEntryHelper(const QEntry &entry) : entry(entry), is_new(false) {}
+  explicit WQSummaryQEntryHelper(const QEntry &entry) : entry(entry), is_new(false) {}
   // comparator
   inline bool operator<(const WQSummaryQEntryHelper &b) const {
     return entry < b.entry;
@@ -595,7 +595,7 @@ struct WQSummary {
       return;
     }
 
-    // TODO: need confirm.
+    // TODO(shuyan): need confirm.
     if (sa.size == 0) {
       this->CopyFrom(sb);
       return;

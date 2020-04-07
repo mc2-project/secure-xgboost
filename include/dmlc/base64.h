@@ -1,6 +1,10 @@
+/*!
+ *  Copyright (c) 2014 by Contributors
+ * \file base64.h
+ */
 
-#ifndef BASE64_H
-#define BASE64_H
+#ifndef DMLC_BASE64_H_
+#define DMLC_BASE64_H_
 
 #include <string>
 #include <iostream>
@@ -12,7 +16,7 @@ static int base64_decode(const char* encoded_string, size_t in_len, char* decode
 static std::string base64_decode(std::string const& encoded_string);
 static std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_len);
 
-static const std::string base64_chars = 
+const std::string base64_chars =  // NOLINT
   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
   "abcdefghijklmnopqrstuvwxyz"
   "0123456789+/";
@@ -37,31 +41,27 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
       char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
       char_array_4[3] = char_array_3[2] & 0x3f;
 
-      for(i = 0; (i <4) ; i++)
+      for (i = 0; (i <4) ; i++)
         ret += base64_chars[char_array_4[i]];
       i = 0;
     }
   }
 
-  if (i)
-  {
-    for(j = i; j < 3; j++)
+  if (i) {
+    for (j = i; j < 3; j++)
       char_array_3[j] = '\0';
 
-    char_array_4[0] = ( char_array_3[0] & 0xfc) >> 2;
+    char_array_4[0] =  (char_array_3[0] & 0xfc) >> 2;
     char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
     char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
 
     for (j = 0; (j < i + 1); j++)
       ret += base64_chars[char_array_4[j]];
 
-    while((i++ < 3))
+    while ((i++ < 3))
       ret += '=';
-
   }
-
   return ret;
-
 }
 
 int base64_decode(const char* encoded_string, size_t in_len, char* decoded_string) {
@@ -71,13 +71,13 @@ int base64_decode(const char* encoded_string, size_t in_len, char* decoded_strin
   unsigned char char_array_4[4], char_array_3[3];
   size_t pos = 0;
 
-  while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
+  while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
     char_array_4[i++] = encoded_string[in_]; in_++;
     if (i ==4) {
       for (i = 0; i <4; i++)
         char_array_4[i] = base64_chars.find(char_array_4[i]) & 0xff;
 
-      char_array_3[0] = ( char_array_4[0] << 2       ) + ((char_array_4[1] & 0x30) >> 4);
+      char_array_3[0] =  (char_array_4[0] << 2)        + ((char_array_4[1] & 0x30) >> 4);
       char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) +   char_array_4[3];
 
@@ -111,13 +111,13 @@ std::string base64_decode(std::string const& encoded_string) {
   unsigned char char_array_4[4], char_array_3[3];
   std::string ret;
 
-  while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
+  while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
     char_array_4[i++] = encoded_string[in_]; in_++;
     if (i ==4) {
       for (i = 0; i <4; i++)
         char_array_4[i] = base64_chars.find(char_array_4[i]) & 0xff;
 
-      char_array_3[0] = ( char_array_4[0] << 2       ) + ((char_array_4[1] & 0x30) >> 4);
+      char_array_3[0] =  (char_array_4[0] << 2)        + ((char_array_4[1] & 0x30) >> 4);
       char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) +   char_array_4[3];
 
@@ -138,9 +138,9 @@ std::string base64_decode(std::string const& encoded_string) {
   }
 
   return ret;
-} 
+}
 
-} // namespace data
-} // namespace dmlc
+}  // namespace data
+}  // namespace dmlc
 
-#endif // BASE64_H
+#endif  // DMLC_BASE64_H_

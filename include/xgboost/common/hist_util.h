@@ -93,7 +93,7 @@ struct HistCutMatrix {
   std::vector<uint32_t> row_ptr;
   /*! \brief minimum value of each feature */
   std::vector<bst_float> min_val;
-  // TODO: we need to add padding to make |cut| oblivious for each row.
+  // TODO(shuyan): we need to add padding to make |cut| oblivious for each row.
   // If |cut| is oblivious, then |row_ptr| is oblivious too.
   /*! \brief the cut field */
   std::vector<bst_float> cut;
@@ -136,7 +136,7 @@ using GHistIndexRow = Span<uint32_t const>;
  *  This is a global histogram index.
  */
 struct GHistIndexMatrix {
-  // TODO: add padding here to make sparsity oblivious ?
+  // TODO(shuyan): add padding here to make sparsity oblivious ?
   /*! \brief row pointer to rows by element position */
   std::vector<size_t> row_ptr;
   /*! \brief The index data */

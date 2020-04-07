@@ -1,5 +1,11 @@
-#ifndef ATTESTATION_H_
-#define ATTESTATION_H_
+/*!
+ *  Copyright (c) 2019 by Contributors
+ * \file ocalls.cc
+ * \author Rishabh Poddar
+ */
+
+#ifndef ENCLAVE_ATTESTATION_H_
+#define ENCLAVE_ATTESTATION_H_
 
 static const char ENCLAVE_PUBLIC_KEY[] =
 "-----BEGIN PUBLIC KEY-----\n"
@@ -14,4 +20,4 @@ static const char ENCLAVE_PUBLIC_KEY[] =
 "3Kd+ffXQ81eZBqt82FNullMWmz4OoPiOTT5DWTYrIjwXAgED\n"
 "-----END PUBLIC KEY-----\n";
 
-#endif
+#endif  // ENCLAVE_ATTESTATION_H_
