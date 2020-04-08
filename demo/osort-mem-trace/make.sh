@@ -13,7 +13,7 @@ echo "Generating random arrays"
 ./gen_arr.sh B
 
 echo "Building"
-g++ -w -O2 -fno-strict-aliasing sort_A.cc ../../enclave/src/common/obl_primitives.h -o sort_A
-g++ -w -O2 -fno-strict-aliasing sort_B.cc ../../enclave/src/common/obl_primitives.h -o sort_B
+g++ -w -O2 -fno-strict-aliasing sort_A.cc -I../../include/ -o sort_A
+g++ -w -O2 -fno-strict-aliasing sort_B.cc -I../../include/ -o sort_B
 
 echo "Done"
