@@ -432,12 +432,12 @@ class DMatrix(object):
             handle = ctypes.c_void_p()
             if encrypted:
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+                                                                  ctypes.c_int(silent),
+                                                                  ctypes.byref(handle)))
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+                                                         ctypes.c_int(silent),
+                                                         ctypes.byref(handle)))
             self.handle = handle
         elif isinstance(data, scipy.sparse.csr_matrix):
             self._init_from_csr(data)
@@ -593,7 +593,7 @@ class DMatrix(object):
                                                c_str(field),
                                                ctypes.byref(length),
                                                ctypes.byref(ret)))
-                                  
+
         return ctypes2numpy(ret, length.value, np.float32)
 
     def get_uint_info(self, field):
@@ -689,20 +689,20 @@ class DMatrix(object):
                                               c_array(ctypes.c_uint, data),
                                               c_bst_ulong(len(data))))
 
-    #  def save_binary(self, fname, silent=True):
-        #  """Save DMatrix to an XGBoost buffer.  Saved binary can be later loaded
-        #  by providing the path to :py:func:`xgboost.DMatrix` as input.
-#  
-        #  Parameters
-        #  ----------
-        #  fname : string
-            #  Name of the output buffer file.
-        #  silent : bool (optional; default: True)
-            #  If set, the output is suppressed.
-        #  """
-        #  _check_call(_LIB.XGDMatrixSaveBinary(self.handle,
-                                             #  c_str(fname),
-                                             #  ctypes.c_int(silent)))
+     # def save_binary(self, fname, silent=True):
+     #     """Save DMatrix to an XGBoost buffer.  Saved binary can be later loaded
+     #     by providing the path to :py:func:`xgboost.DMatrix` as input.
+     #
+     #     Parameters
+     #     ----------
+     #     fname : string
+     #         Name of the output buffer file.
+     #     silent : bool (optional; default: True)
+     #         If set, the output is suppressed.
+     #     """
+     #     _check_call(_LIB.XGDMatrixSaveBinary(self.handle,
+     #                                          c_str(fname),
+     #                                          ctypes.c_int(silent)))
 
     def set_label(self, label):
         """Set label of dmatrix
@@ -776,17 +776,17 @@ class DMatrix(object):
         """
         self.set_float_info('base_margin', margin)
 
-    #  def set_group(self, group):
-        #  """Set group size of DMatrix (used for ranking).
-#  
-        #  Parameters
-        #  ----------
-        #  group : array like
-            #  Group size of each group
-        #  """
-        #  _check_call(_LIB.XGDMatrixSetGroup(self.handle,
-                                           #  c_array(ctypes.c_uint, group),
-                                           #  c_bst_ulong(len(group))))
+     # def set_group(self, group):
+     #     """Set group size of DMatrix (used for ranking).
+     #
+     #     Parameters
+     #     ----------
+     #     group : array like
+     #         Group size of each group
+     #     """
+     #     _check_call(_LIB.XGDMatrixSetGroup(self.handle,
+     #                                        c_array(ctypes.c_uint, group),
+     #                                        c_bst_ulong(len(group))))
 
     def get_label(self):
         """Get the label of the DMatrix.
@@ -814,7 +814,7 @@ class DMatrix(object):
         base_margin : float
         """
         return self.get_float_info('base_margin')
-#  
+
     def num_row(self):
         """Get the number of rows in the DMatrix.
 
@@ -839,27 +839,27 @@ class DMatrix(object):
                                          ctypes.byref(ret)))
         return ret.value
 
-    #  def slice(self, rindex):
-        #  """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
-#  
-        #  Parameters
-        #  ----------
-        #  rindex : list
-            #  List of indices to be selected.
-#  
-        #  Returns
-        #  -------
-        #  res : DMatrix
-            #  A new DMatrix containing only selected indices.
-        #  """
-        #  res = DMatrix(None, feature_names=self.feature_names,
-                      #  feature_types=self.feature_types)
-        #  res.handle = ctypes.c_void_p()
-        #  _check_call(_LIB.XGDMatrixSliceDMatrix(self.handle,
-                                               #  c_array(ctypes.c_int, rindex),
-                                               #  c_bst_ulong(len(rindex)),
-                                               #  ctypes.byref(res.handle)))
-        #  return res
+     # def slice(self, rindex):
+     #     """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
+     #
+     #     Parameters
+     #     ----------
+     #     rindex : list
+     #         List of indices to be selected.
+     #
+     #     Returns
+     #     -------
+     #     res : DMatrix
+     #         A new DMatrix containing only selected indices.
+     #     """
+     #     res = DMatrix(None, feature_names=self.feature_names,
+     #                   feature_types=self.feature_types)
+     #     res.handle = ctypes.c_void_p()
+     #     _check_call(_LIB.XGDMatrixSliceDMatrix(self.handle,
+     #                                            c_array(ctypes.c_int, rindex),
+     #                                            c_bst_ulong(len(rindex)),
+     #                                            ctypes.byref(res.handle)))
+     #     return res
 
     @property
     def feature_names(self):
@@ -974,13 +974,19 @@ class Enclave(object):
         """
         Get remote attestation report and public key of enclave
         """
-        _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+        _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key),
+                                                       ctypes.byref(self.key_size),
+                                                       ctypes.byref(self.remote_report),
+                                                       ctypes.byref(self.remote_report_size)))
 
     def verify_remote_report_and_set_pubkey(self):
         """
         Verify the received attestation report and set the public key
         """
-        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
+        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key,
+                                                             self.key_size,
+                                                             self.remote_report,
+                                                             self.remote_report_size))
 
     def set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
         """
@@ -991,7 +997,7 @@ class Enclave(object):
         pem_key_ndarray = proto_to_ndarray(pem_key)
         self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.key_size = ctypes.c_size_t(key_size)
- 
+
         remote_report_ndarray = proto_to_ndarray(remote_report)
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.remote_report_size = ctypes.c_size_t(remote_report_size)
@@ -1004,7 +1010,7 @@ class Enclave(object):
 
         Must be called after get_remote_report_with_pubkey() is called
 
-        Returns 
+        Returns
         -------
         pem_key : proto.NDArray
         key_size : int
@@ -1020,7 +1026,7 @@ class Enclave(object):
         remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint32)
         remote_report = ndarray_to_proto(remote_report)
         remote_report_size = self.remote_report_size.value
-        
+
         return pem_key, key_size, remote_report, remote_report_size
 
 
@@ -1070,7 +1076,7 @@ class CryptoUtils(object):
         input_file_bytes = input_file.encode('utf-8')
         output_file_bytes = output_file.encode('utf-8')
         key_file_bytes = key_file.encode('utf-8')
-        
+
         # Convert to proper ctypes
         input_path = ctypes.c_char_p(input_file_bytes)
         output_path = ctypes.c_char_p(output_file_bytes)
@@ -1082,14 +1088,14 @@ class CryptoUtils(object):
         """
         Parameters
         ----------
-        data : byte array  
+        data : byte array
         data_len : int
-        pem_key : proto 
+        pem_key : proto
         key_size : int
 
         Returns
         -------
-        encrypted_data : proto.NDArray 
+        encrypted_data : proto.NDArray
         encrypted_data_size_as_int : int
         """
         # Cast data to char*
@@ -1105,7 +1111,12 @@ class CryptoUtils(object):
         encrypted_data_size = ctypes.c_size_t(1024)
 
         # Encrypt the data with pk pem_key
-        _check_call(_LIB.encrypt_data_with_pk(data, data_len, pem_key, key_size, encrypted_data, ctypes.byref(encrypted_data_size)))
+        _check_call(_LIB.encrypt_data_with_pk(data,
+                                              data_len,
+                                              pem_key,
+                                              key_size,
+                                              encrypted_data,
+                                              ctypes.byref(encrypted_data_size)))
 
         # Cast the encrypted data back to a proto.NDArray (for RPC purposes) and return it
         encrypted_data_size_as_int = encrypted_data_size.value
@@ -1117,22 +1128,22 @@ class CryptoUtils(object):
         """
         Parameters
         ----------
-        keyfile : str 
-        data : proto.NDArray 
-        data_size : int 
+        keyfile : str
+        data : proto.NDArray
+        data_size : int
 
         Returns
         -------
-        signature : proto.NDArray 
+        signature : proto.NDArray
         sig_len_as_int : int
         """
-        # Cast the keyfile to a char* 
-        keyfile = ctypes.c_char_p(str.encode(keyfile)) 
+        # Cast the keyfile to a char*
+        keyfile = ctypes.c_char_p(str.encode(keyfile))
 
         # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
         data = proto_to_pointer(data)
         data_size = ctypes.c_size_t(data_size)
-        
+
         # Allocate memory to store the signature and sig_len
         signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         sig_len = ctypes.c_size_t(1024)
@@ -1149,11 +1160,11 @@ class CryptoUtils(object):
     def add_client_key(self, data, data_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
-        
+
         Parameters
         ----------
         data : proto.NDArray
-            key used to encrypt client files 
+            key used to encrypt client files
         data_len : int
             length of data
         signature : proto.NDArray
@@ -1199,7 +1210,10 @@ class CryptoUtils(object):
 
         preds = ctypes.POINTER(ctypes.c_float)()
 
-        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
+        _check_call(_LIB.decrypt_predictions(c_char_p_key,
+                                             encrypted_preds,
+                                             size_t_num_preds,
+                                             ctypes.byref(preds)))
 
         # Convert c pointer to numpy array
         preds = ctypes2numpy(preds, num_preds, np.float32)
@@ -1283,32 +1297,32 @@ class Booster(object):
     def __deepcopy__(self, _):
         return Booster(model_file=self.save_raw())
 
-    #  def copy(self):
-        #  """Copy the booster object.
-#  
-        #  Returns
-        #  -------
-        #  booster: `Booster`
-            #  a copied booster model
-        #  """
-        #  return self.__copy__()
-
-    #  def load_rabit_checkpoint(self):
-        #  """Initialize the model by load from rabit checkpoint.
-#  
-        #  Returns
-        #  -------
-        #  version: integer
-            #  The version number of the model.
-        #  """
-        #  version = ctypes.c_int()
-        #  _check_call(_LIB.XGBoosterLoadRabitCheckpoint(
-            #  self.handle, ctypes.byref(version)))
-        #  return version.value
-
-    #  def save_rabit_checkpoint(self):
-        #  """Save the current booster to rabit checkpoint."""
-        #  _check_call(_LIB.XGBoosterSaveRabitCheckpoint(self.handle))
+     # def copy(self):
+     #     """Copy the booster object.
+     #
+     #     Returns
+     #     -------
+     #     booster: `Booster`
+     #         a copied booster model
+     #     """
+     #     return self.__copy__()
+     #
+     # def load_rabit_checkpoint(self):
+     #     """Initialize the model by load from rabit checkpoint.
+     #
+     #     Returns
+     #     -------
+     #     version: integer
+     #         The version number of the model.
+     #     """
+     #     version = ctypes.c_int()
+     #     _check_call(_LIB.XGBoosterLoadRabitCheckpoint(
+     #         self.handle, ctypes.byref(version)))
+     #     return version.value
+     #
+     # def save_rabit_checkpoint(self):
+     #     """Save the current booster to rabit checkpoint."""
+     #     _check_call(_LIB.XGBoosterSaveRabitCheckpoint(self.handle))
 
     def attr(self, key):
         """Get attribute string from the Booster.
@@ -1331,38 +1345,38 @@ class Booster(object):
             return py_str(ret.value)
         return None
 
-    #  def attributes(self):
-        #  """Get attributes stored in the Booster as a dictionary.
-#  
-        #  Returns
-        #  -------
-        #  result : dictionary of  attribute_name: attribute_value pairs of strings.
-            #  Returns an empty dict if there's no attributes.
-        #  """
-        #  # FIXME: this function most likely has a bug
-        #  length = c_bst_ulong()
-        #  sarr = ctypes.POINTER(ctypes.c_char_p)()
-        #  _check_call(_LIB.XGBoosterGetAttrNames(self.handle,
-                                               #  ctypes.byref(length),
-                                               #  ctypes.byref(sarr)))
-        #  attr_names = from_cstr_to_pystr(sarr, length)
-        #  return {n: self.attr(n) for n in attr_names}
-
-    #  def set_attr(self, **kwargs):
-        #  """Set the attribute of the Booster.
-#  
-        #  Parameters
-        #  ----------
-        #  **kwargs
-            #  The attributes to set. Setting a value to None deletes an attribute.
-        #  """
-        #  for key, value in kwargs.items():
-            #  if value is not None:
-                #  if not isinstance(value, STRING_TYPES):
-                    #  raise ValueError("Set Attr only accepts string values")
-                #  value = c_str(str(value))
-            #  _check_call(_LIB.XGBoosterSetAttr(
-                #  self.handle, c_str(key), value))
+     # def attributes(self):
+     #     """Get attributes stored in the Booster as a dictionary.
+     #
+     #     Returns
+     #     -------
+     #     result : dictionary of  attribute_name: attribute_value pairs of strings.
+     #         Returns an empty dict if there's no attributes.
+     #     """
+     #     # FIXME: this function most likely has a bug
+     #     length = c_bst_ulong()
+     #     sarr = ctypes.POINTER(ctypes.c_char_p)()
+     #     _check_call(_LIB.XGBoosterGetAttrNames(self.handle,
+     #                                            ctypes.byref(length),
+     #                                            ctypes.byref(sarr)))
+     #     attr_names = from_cstr_to_pystr(sarr, length)
+     #     return {n: self.attr(n) for n in attr_names}
+     #
+     # def set_attr(self, **kwargs):
+     #     """Set the attribute of the Booster.
+     #
+     #     Parameters
+     #     ----------
+     #     **kwargs
+     #         The attributes to set. Setting a value to None deletes an attribute.
+     #     """
+     #     for key, value in kwargs.items():
+     #         if value is not None:
+     #             if not isinstance(value, STRING_TYPES):
+     #                 raise ValueError("Set Attr only accepts string values")
+     #             value = c_str(str(value))
+     #         _check_call(_LIB.XGBoosterSetAttr(
+     #             self.handle, c_str(key), value))
 
     def set_param(self, params, value=None):
         """Set parameters into the Booster.
@@ -1465,7 +1479,7 @@ class Booster(object):
                                               dmats, evnames,
                                               c_bst_ulong(len(evals)),
                                               ctypes.byref(msg)))
-                                       
+
         res = msg.value.decode()
         if feval is not None:
             for dmat, evname in evals:
@@ -1587,15 +1601,15 @@ class Booster(object):
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
                                           ctypes.byref(preds)))
-                         
+
         #  preds = ctypes2numpy(preds, length.value, np.float32)
         #  if pred_leaf:
         #      preds = preds.astype(np.int32)
-        #  
+        #
         #  nrow = data.num_row()
         #  if preds.size != nrow and preds.size % nrow == 0:
         #      chunk_size = int(preds.size / nrow)
-        #  
+        #
         #      if pred_interactions:
         #          ngroup = int(chunk_size / ((data.num_col() + 1) * (data.num_col() + 1)))
         #          if ngroup == 1:
@@ -1760,7 +1774,7 @@ class Booster(object):
         """
         _check_call(_LIB.decrypt_dump(key, sarr, length))
 
- 
+
     def get_fscore(self, key, fmap=''):
         """Get feature importance of each feature.
 
@@ -1782,7 +1796,7 @@ class Booster(object):
         """
 
         return self.get_score(key, fmap, importance_type='weight')
- 
+
     def get_score(self, key, fmap='', importance_type='weight'):
         """Get feature importance of each feature.
         Importance type can be defined as:

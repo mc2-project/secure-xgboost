@@ -16,3 +16,6 @@ python3 tests/ci-build/lint.py xgboost cpp enclave/ --exclude_path enclave/rabit
 
 # demo
 python3 tests/ci-build/lint.py xgboost cpp demo --exclude_path demo/osort-mem-trace/arr_*.h
+
+# python
+python3 tests/ci-build/lint.py --pylint-rc /root/mc2/code/mc2-xgboost/python-package/.pylintrc xgboost all python-package/securexgboost
