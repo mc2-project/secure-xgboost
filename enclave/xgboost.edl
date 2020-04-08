@@ -179,7 +179,7 @@ enclave {
                 size_t sig_len);
 
         public int enclave_add_client_key_with_certificate(
-                [in, size = cert_len] char * cert,
+                [in, size=cert_len] char * cert,
                 int cert_len,
                 [in, size=data_len] uint8_t* data,
                 size_t data_len,

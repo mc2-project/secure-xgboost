@@ -1,11 +1,11 @@
 import securexgboost as xgb
 import os
-from securexgboost import switch_user
+from securexgboost import Set_user
 
 HOME_DIR = os.path.abspath('') + "/../../../"
 crypto = xgb.CryptoUtils()
 
-# setting global variable user this will be changed by switch_user() function
+# setting global variable user this will be changed by Set_user() function
 current_user = None
 
 # Generate two keys to be used for encryption.
@@ -78,7 +78,7 @@ crypto.add_client_key_with_certificate(user_certificate,
                                        sig, sig_size)
 
 # Load training data encrypted with user 1's key
-switch_user("user1")
+Set_user("user1")
 dtrain = xgb.DMatrix(os.getcwd() + "/" + enc_training_data, encrypted=True)
 
 # Load test data
@@ -108,7 +108,7 @@ print("user 1's prediction:")
 print(preds)
 
 print("user 2's turn")
-switch_user("user2")
+Set_user("user2")
 test_data = HOME_DIR + "demo/data/agaricus.txt.test"
 enc_test_data = "test2.enc"
 

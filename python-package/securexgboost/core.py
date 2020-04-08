@@ -355,7 +355,7 @@ def _maybe_dt_array(array):
 
     return array
 
-def switch_user(user_name):
+def Set_user(user_name):
     """
     Parameters
     ----------
@@ -416,7 +416,8 @@ class DMatrix(object):
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
-
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         # force into void_p, mac need to pass things in as void_p
         if data is None:
             self.handle = None
@@ -1221,7 +1222,7 @@ class CryptoUtils(object):
         sig_len = ctypes.c_size_t(sig_len)
 
         # Add client key
-        print(_LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len))
+        _LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len)
 
     def decrypt_predictions(self, key, encrypted_preds, num_preds):
         """
@@ -1619,6 +1620,8 @@ class Booster(object):
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1686,6 +1689,8 @@ class Booster(object):
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
             _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -1704,6 +1709,8 @@ class Booster(object):
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
@@ -1731,6 +1738,8 @@ class Booster(object):
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))

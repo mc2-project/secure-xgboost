@@ -74,11 +74,13 @@ class EnclaveContext {
       LOG(INFO) << "User requested username " << username;
       if (client_keys.count(username) > 0){
         memcpy(key,(uint8_t *) &client_keys[CharPtrToString(username)][0], CIPHER_KEY_SIZE);
+        return true;
       }
       else
       {
         LOG(INFO) << "User " << username << " does not exist, using zero key instead";
         memset(key, 0, CIPHER_KEY_SIZE);
+        return false;
       }
     }
 
