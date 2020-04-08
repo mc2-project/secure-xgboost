@@ -22,6 +22,7 @@ def call(args):
     matched = re.search('(workspace|xgboost)/.*(src|tests|include)/.*warning:',
                         error_msg,
                         re.MULTILINE)
+    # FIXME(rishabh): enable this
     # if matched is None:
     #     return_code = 0
     # else:
@@ -75,6 +76,7 @@ class ClangTidy(object):
         '''Run CMake to generate compilation database.'''
         os.mkdir(self.cdb_path)
         os.chdir(self.cdb_path)
+        # FIXME(rishabh): revert google test to ON
         cmake_args = ['cmake', '..', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
                       '-DGOOGLE_TEST=OFF']
         if self.use_dmlc_gtest:
