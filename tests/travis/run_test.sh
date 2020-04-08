@@ -44,6 +44,14 @@
 #    mvn -q test
 #fi
 
+if [ ${TASK} == "lint" ]; then
+    mkdir build && cd build
+    cmake ..
+    make lint || exit -1
+    cd ..
+    rm -rf build
+fi
+
 if [ ${TASK} == "cmake_test" ]; then
     set -e
 

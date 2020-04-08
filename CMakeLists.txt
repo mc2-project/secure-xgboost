@@ -69,3 +69,28 @@ set_default_configuration_release()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)
 add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)
+
+set(LINTER ${PROJECT_SOURCE_DIR}/tests/ci-build/lint.py)
+add_custom_target(lint
+    # Includes
+    COMMAND python ${LINTER} xgboost cpp ${PROJECT_SOURCE_DIR}/include/xgboost
+    COMMAND python ${LINTER} xgboost cpp ${PROJECT_SOURCE_DIR}/include/enclave
+    COMMAND python ${LINTER} dmlc cpp ${PROJECT_SOURCE_DIR}/include/dmlc --exclude_path ${PROJECT_SOURCE_DIR}/include/dmlc/blockingconcurrentqueue.h ${PROJECT_SOURCE_DIR}/include/dmlc/concurrentqueue.h ${PROJECT_SOURCE_DIR}/include/dmlc/build_config.h ${PROJECT_SOURCE_DIR}/include/dmlc/build_config_default.h
+    COMMAND python ${LINTER} rabit cpp ${PROJECT_SOURCE_DIR}/include/rabit
+
+    # Host
+    COMMAND python ${LINTER} xgboost cpp ${PROJECT_SOURCE_DIR}/host/src/
+    COMMAND python ${LINTER} rabit cpp ${PROJECT_SOURCE_DIR}/host/rabit
+    COMMAND python ${LINTER} dmlc cpp ${PROJECT_SOURCE_DIR}/host/dmlc-core --exclude_path ${PROJECT_SOURCE_DIR}/host/dmlc-core/include/dmlc/build_config.h
+
+    # Enclave
+    COMMAND python ${LINTER} rabit cpp ${PROJECT_SOURCE_DIR}/enclave/rabit
+    COMMAND python ${LINTER} dmlc cpp ${PROJECT_SOURCE_DIR}/enclave/dmlc-core
+    COMMAND python ${LINTER} xgboost cpp ${PROJECT_SOURCE_DIR}/enclave/ --exclude_path ${PROJECT_SOURCE_DIR}/enclave/rabit ${PROJECT_SOURCE_DIR}/enclave/dmlc-core
+
+    # Python
+    COMMAND python ${LINTER} --pylint-rc ${PROJECT_SOURCE_DIR}/python-package/.pylintrc xgboost all ${PROJECT_SOURCE_DIR}/python-package/securexgboost
+
+    # Demo
+    COMMAND python ${LINTER} xgboost cpp ${PROJECT_SOURCE_DIR}/demo --exclude_path ${PROJECT_SOURCE_DIR}/demo/osort-mem-trace/arr_*.h
+)

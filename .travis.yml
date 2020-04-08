@@ -5,6 +5,8 @@ dist: bionic
 
 env:
   matrix:
+    # lint test
+    - TASK=lint
     # cmake test
     - TASK=cmake_test
 
@@ -18,16 +20,15 @@ before_install:
   - echo "deb [arch=amd64] https://packages.microsoft.com/ubuntu/18.04/prod bionic main" | sudo tee /etc/apt/sources.list.d/msprod.list
   - wget -qO - https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
   - sudo apt-get -qq update
+
+install:
   # Install dependencies
   - sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave libmbedtls-dev
   - wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
   - sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
-  # Setup OE environment variables
+  - pip install cpplint pylint
+    # Setup OE environment variables
   - source /opt/openenclave/share/openenclave/openenclaverc
-
-
-#install:
-#  - source tests/travis/setup.sh
 
 script:
   - tests/travis/run_test.sh
