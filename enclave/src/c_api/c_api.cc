@@ -459,6 +459,17 @@ int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len
       return 0;
     return -1;
 }
+
+int add_client_key_with_certificate(char * cert,
+        int cert_len,
+        uint8_t* data,
+        size_t data_len,
+        uint8_t* signature,
+        size_t sig_len) {
+    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len);
+    return 0;
+}
+
 #endif // __ENCLAVE__
 
 /*! \brief entry to to easily hold returning information */
@@ -487,7 +498,8 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
 
 int XGDMatrixCreateFromEncryptedFile(const char *fname,
         int silent,
-        DMatrixHandle *out) {
+        DMatrixHandle *out,
+        char* username ) {
     API_BEGIN();
     bool load_row_split = false;
     if (rabit::IsDistributed()) {
@@ -498,7 +510,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fname,
 #ifdef __ENCLAVE__ // pass decryption key
     // FIXME consistently use uint8_t* for key bytes
     char key[CIPHER_KEY_SIZE];
-    EnclaveContext::getInstance().get_client_key((uint8_t*) key);
+    EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
     //EnclaveContext::getInstance().get_client_key(fname, (uint8_t*) key);
     *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, true, key));
 #else
@@ -1232,7 +1244,8 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              unsigned ntree_limit,
                              xgboost::bst_ulong *len,
 #ifdef __ENCLAVE__
-                             uint8_t **out_result) {
+                            uint8_t **out_result,
+                            char* username) {
 #else
                              const bst_float **out_result) {
 #endif
@@ -1261,7 +1274,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   //*out_result = result;
 
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
 
   int preds_len = preds.size()*sizeof(float);
   size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + preds_len;
@@ -1294,7 +1307,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   API_END();
 }
 
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username) {
   API_BEGIN();
   CHECK_HANDLE();
 #ifdef __ENCLAVE__ // load encrypted model from file
@@ -1307,7 +1320,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
   char* buf = dmlc::BeginPtr(raw_str);
   fi->Read(buf, buf_len);
 
-  XGBoosterLoadModelFromBuffer(handle, buf, buf_len);
+  XGBoosterLoadModelFromBuffer(handle, buf, buf_len, username);
 #else
   std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
   static_cast<Booster*>(handle)->LoadModel(fi.get());
@@ -1315,7 +1328,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
   API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *username) {
   API_BEGIN();
   CHECK_HANDLE();
 #ifdef __ENCLAVE__ // save encrypted model to file
@@ -1334,7 +1347,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
 
   encrypt_symm(
       key,
@@ -1361,7 +1374,8 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                  const void* buf,
-                                 xgboost::bst_ulong len) {
+                                 xgboost::bst_ulong len,
+                                 char *username) {
   API_BEGIN();
   CHECK_HANDLE();
 #ifdef __ENCLAVE__ // write results to host memory
@@ -1372,7 +1386,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
   unsigned char* data = tag + CIPHER_TAG_SIZE;
   unsigned char* output = (unsigned char*) malloc (len);
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
 
   decrypt_symm(
       key,
@@ -1396,7 +1410,8 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                          xgboost::bst_ulong* out_len,
-                         const char** out_dptr) {
+                         const char** out_dptr,
+                         char* username) {
   std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
   raw_str.resize(0);
 
@@ -1414,7 +1429,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
 
   encrypt_symm(
       key,
@@ -1464,7 +1479,10 @@ inline void XGBoostDumpModelImpl(
   unsigned char iv[CIPHER_IV_SIZE];
   unsigned char tag[CIPHER_TAG_SIZE];
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
+
+  //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer 
+  char *username; 
+  EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
     encrypted = (unsigned char*) malloc(length * sizeof(char)); 
