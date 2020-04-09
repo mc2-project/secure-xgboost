@@ -355,7 +355,7 @@ def _maybe_dt_array(array):
 
     return array
 
-def Set_user(user_name):
+def set_user(user_name):
     """
     Parameters
     ----------

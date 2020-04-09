@@ -69,16 +69,13 @@ class EnclaveContext {
     //}
 
     bool get_client_key(uint8_t* key, char *username) {
-
-      // returning the key held by user
-      LOG(INFO) << "User requested username " << username;
-      if (client_keys.count(username) > 0){
+      // Returning the key held by user
+      LOG(DEBUG) << "Rquested username " << username;
+      if (client_keys.count(username) > 0) {
         memcpy(key,(uint8_t *) &client_keys[CharPtrToString(username)][0], CIPHER_KEY_SIZE);
         return true;
-      }
-      else
-      {
-        LOG(INFO) << "User " << username << " does not exist, using zero key instead";
+      } else {
+        LOG(DEBUG) << "User " << username << " does not exist, using zero key instead";
         memset(key, 0, CIPHER_KEY_SIZE);
         return false;
       }
@@ -227,7 +224,7 @@ class EnclaveContext {
          LOG(INFO) << "verification failed - Could not read root certificate";
          LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
          return false;
-}
+      }
 
       mbedtls_x509_crt user_cert;
       mbedtls_x509_crt_init(&user_cert);
@@ -247,19 +244,19 @@ class EnclaveContext {
 
       mbedtls_pk_context user_public_key_context = user_cert.pk;
 
-      if(!mbedtls_pk_can_do(&user_public_key_context, MBEDTLS_PK_RSA)) {
+      if (!mbedtls_pk_can_do(&user_public_key_context, MBEDTLS_PK_RSA)) {
         LOG(INFO) << "verification failed - Key is not an RSA key";
         return false;
       }
 
       mbedtls_rsa_set_padding(mbedtls_pk_rsa(user_public_key_context), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
 
-      if((ret = compute_sha256(data, data_len, hash)) != 0) {
+      if ((ret = compute_sha256(data, data_len, hash)) != 0) {
         LOG(INFO) << "verification failed -- Could not hash";
         return false;
       }
 
-      if((ret = mbedtls_pk_verify(&user_public_key_context, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0) {
+      if ((ret = mbedtls_pk_verify(&user_public_key_context, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0) {
         LOG(INFO) << "verification failed -- mbedtls_pk_verify returned " << ret;
         return false;
       }
@@ -316,39 +313,35 @@ class EnclaveContext {
 
       mbedtls_x509_name subject_name = user_cert.subject;
       mbedtls_asn1_buf name = subject_name.val;
-      unsigned char * nameptr = name.p;
+      unsigned char* nameptr = name.p;
       size_t name_len = name.len;
 
-      //fprintf(stdout, "Decrypted key\n");
-      //for (int i = 0; i < CIPHER_KEY_SIZE; i++)
-      //  fprintf(stdout, "%d\t", output[i]);
-      //fprintf(stdout, "\n");
       std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
-      std::string user_nam =  convertToString((char *)nameptr, name_len);
+      std::string user_nam =  convertToString((char*) nameptr, name_len);
       client_keys.insert({user_nam, v});
 
-      LOG(INFO) << "verifiation succeded - user added";
+      LOG(INFO) << "Verification succeeded - user added";
       LOG(INFO) << "username :" << user_nam;
       return true;
     }
 
     std::string convertToString(char* a, int size) {
-    int i;
-    std::string s = "";
-    for (i = 0; i < size; i++) {
-        s = s + a[i];
+      int i;
+      std::string s = "";
+      for (i = 0; i < size; i++) {
+          s = s + a[i];
+      }
+      return s;
     }
-    return s;
-}
 
-std::string CharPtrToString(char* a) {
-  int i;
-  std::string s = "";
-  for (i = 0; a[i] != (char) 0; i++) {
-      s = s + a[i];
-  }
-  return s;
-}
+    std::string CharPtrToString(char* a) {
+      int i;
+      std::string s = "";
+      for (i = 0; a[i] != (char) 0; i++) {
+          s = s + a[i];
+      }
+      return s;
+    }
 
 
   private:
