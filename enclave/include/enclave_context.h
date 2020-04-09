@@ -70,7 +70,7 @@ class EnclaveContext {
 
     bool get_client_key(uint8_t* key, char *username) {
       // Returning the key held by user
-      LOG(DEBUG) << "Rquested username " << username;
+      LOG(DEBUG) << "Requested username " << username;
       if (client_keys.count(username) > 0) {
         memcpy(key,(uint8_t *) &client_keys[CharPtrToString(username)][0], CIPHER_KEY_SIZE);
         return true;
