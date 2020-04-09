@@ -3,6 +3,7 @@
 
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
+#include <xgboost/c_api.h>
 
 // needed for certificate
 #include "mbedtls/platform.h"
@@ -30,6 +31,9 @@ class EnclaveContext {
     // map username to client_key
     std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
 
+    // Training data to aggregate all clients's training data
+    DMatrixHandle dtrain;
+
     EnclaveContext() {
       generate_public_key();
       client_key_is_set = false;
@@ -53,6 +57,10 @@ class EnclaveContext {
 
     uint8_t* get_private_key() {
       return m_private_key;
+    }
+
+    DMatrixHandle get_unified_training_data() {
+      return &dtrain;
     }
 
     //bool get_client_key(std::string fname, uint8_t* key) {
