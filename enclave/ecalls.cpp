@@ -288,8 +288,3 @@ int enclave_RabitIsDistributed() {
   LOG(DEBUG) << "Ecall: RabitIsDistributed";
   return RabitIsDistributed();
 }
-
-void enclave_RabitTrackerPrint(const char *msg) {
-  LOG(DEBUG) << "Ecall: TrackerPrint";
-  RabitTrackerPrint(msg);
-}

@@ -175,9 +175,6 @@ enclave {
         public int enclave_RabitGetRank();
 
         public int enclave_RabitIsDistributed();
-
-        public void enclave_RabitTrackerPrint(
-                [user_check] const char *msg);
     };
 };
 
