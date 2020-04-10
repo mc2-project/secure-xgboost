@@ -170,7 +170,7 @@ enclave {
         public int enclave_verify_remote_report_and_set_pubkey(
                 [in, count=key_size] uint8_t *pem_key, 
                 size_t key_size,
-                [in, count=remote_report_size] uint8_t *remote_report,
+                [in, size=remote_report_size] uint8_t *remote_report,
                 size_t remote_report_size);
         
         public int enclave_add_client_key(
@@ -181,7 +181,8 @@ enclave {
         
         public void enclave_RabitInit(
                 int argc,
-                [user_check] char **argv);
+                [in, count=argc] char **argv,
+                [in, count=argc] size_t* arg_lengths);
         
         public void enclave_RabitFinalize();
         

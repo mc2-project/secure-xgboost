@@ -278,10 +278,17 @@ int enclave_add_client_key(
     return add_client_key(data, data_len, signature, sig_len);
 }
 
-// FIXME: check bounds
-void enclave_RabitInit(int argc, char **argv) {
+void enclave_RabitInit(int argc, char **argv, size_t arg_lengths[]) {
   LOG(DEBUG) << "Ecall: RabitInit";
-  RabitInit(argc, argv);
+  char* args[argc];
+  for (int i = 0; i < argc; i++) {
+    char* arg = argv[i];
+    size_t len = arg_lengths[i];
+    check_host_buffer(arg, len);
+    args[i] = strndup(arg, len);
+    args[i][len] = '\0';
+  }
+  RabitInit(argc, args);
 }
 
 void enclave_RabitFinalize() {
