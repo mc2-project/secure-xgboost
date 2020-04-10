@@ -43,6 +43,8 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *fname, int silent, DMat
 
 int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, BoosterHandle* out) {
   LOG(DEBUG) << "Ecall: XGBoosterCreate";
+
+  // Validate buffers and copy to enclave memory
   DMatrixHandle dmats[len];
   for (int i = 0; i < len; i++) {
     char* name = dmat_handles[i];
@@ -71,6 +73,8 @@ int enclave_XGBoosterBoostOneIter(BoosterHandle handle, DMatrixHandle dtrain, bs
 
 int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle dmat_handles[], size_t handle_lengths[], const char* evnames[], size_t names_lengths[], bst_ulong len, char** out_str) {
   LOG(DEBUG) << "Ecall: XGBoosterEvalOneIter";
+
+  // Validate buffers and copy to enclave memory
   char* dmats[len];
   char* eval_names[len];
   for (int i = 0; i < len; i++) {
@@ -129,6 +133,8 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    xgboost::bst_ulong* len,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
+
+  // Validate buffers and copy to enclave memory
   char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
   char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
   size_t name_len;
@@ -158,6 +164,8 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    xgboost::bst_ulong* len,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
+
+  // Validate buffers and copy to enclave memory
   char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
   char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
   size_t name_len;
@@ -280,6 +288,8 @@ int enclave_add_client_key(
 
 void enclave_RabitInit(int argc, char **argv, size_t arg_lengths[]) {
   LOG(DEBUG) << "Ecall: RabitInit";
+
+  // Validate buffers and copy to enclave memory
   char* args[argc];
   for (int i = 0; i < argc; i++) {
     char* arg = argv[i];
