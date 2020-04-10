@@ -160,12 +160,6 @@ enclave {
                 [out] uint8_t **remote_report,
                 [out] size_t  *remote_report_size);
 
-        public int enclave_verify_remote_report_and_set_pubkey(
-                [in, count=key_size] uint8_t *pem_key, 
-                size_t key_size,
-                [in, count=remote_report_size] uint8_t *remote_report,
-                size_t remote_report_size);
-
         public int enclave_add_client_key(
                 [in, size=data_len] uint8_t* data, 
                 size_t data_len, 
