@@ -35,15 +35,6 @@ if (result != OE_OK) {                                    \
 }                                                         \
 }
 
-#define check_enclave_ptr(ptr) {                          \
-if (!oe_is_within_enclave((ptr), sizeof((ptr)))) {        \
-  fprintf(stderr,                                         \
-      "%s:%d: Ptr bounds check faileds\n",                \
-      __FILE__, __LINE__);                                \
-  exit(1);                                                \
-}                                                         \
-}
-
 #define check_enclave_buffer(ptr, size) {                 \
 if (!oe_is_within_enclave((ptr), size)) {                 \
     fprintf(stderr,                                       \
@@ -72,10 +63,17 @@ typedef float bst_float;  // NOLINT(*)
 //#endif
 
 
+#ifdef __SGX__
+/*! \brief handle to DMatrix */
+typedef char* DMatrixHandle;  // NOLINT(*)
+/*! \brief handle to Booster */
+typedef char* BoosterHandle;  // NOLINT(*)
+#else
 /*! \brief handle to DMatrix */
 typedef void *DMatrixHandle;  // NOLINT(*)
 /*! \brief handle to Booster */
 typedef void *BoosterHandle;  // NOLINT(*)
+#endif
 /*! \brief handle to a data iterator */
 typedef void *DataIterHandle;  // NOLINT(*)
 /*! \brief handle to a internal data holder. */
