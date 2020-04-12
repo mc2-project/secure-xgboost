@@ -283,11 +283,12 @@ int XGDMatrixCreateFromFile(const char *fname,
     safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
 }
 
-int XGDMatrixCreateFromEncryptedFile(const char *fname,
+int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
+        xgboost::bst_ulong num_files,
         int silent,
         DMatrixHandle *out,
       char* username) {
-    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out, username));
+    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, num_files, silent, out, username));
 }
 
 #ifndef __SGX__

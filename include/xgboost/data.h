@@ -461,6 +461,17 @@ class DMatrix {
 #endif
                        const std::string& file_format = "auto",
                        const size_t page_size = kPageSize);
+
+  static DMatrix* LoadMultiple(std::vector<const std::string>& uris,
+          int num_uris,
+          bool silent,
+          bool load_row_split,
+#ifdef __ENCLAVE__ // pass decryption key
+          bool is_encrypted,
+          std::vector<char*> keys,
+#endif
+          const std::string& file_format,
+          const size_t page_size); 
   /*!
    * \brief create a new DMatrix, by wrapping a row_iterator, and meta info.
    * \param source The source iterator of the data, the create function takes ownership of the source.
@@ -486,6 +497,10 @@ class DMatrix {
   static DMatrix* Create(dmlc::Parser<uint32_t>* parser,
                          const std::string& cache_prefix = "",
                          const size_t page_size = kPageSize);
+
+  static DMatrix* CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers,
+          const std::string& cache_prefix = "",
+          const size_t page_size = kPageSize);
 
   /*! \brief page size 32 MB */
   static const size_t kPageSize = 32UL << 20UL;

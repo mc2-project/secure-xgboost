@@ -171,7 +171,8 @@ XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
  * \param out a loaded data matrix
  * \return 0 when success, -1 when failure happens
  */
-XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fname,
+XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
+        bst_ulong num_files,
         int silent,
         DMatrixHandle *out,
         char* username);

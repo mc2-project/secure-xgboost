@@ -11,7 +11,8 @@ enclave {
                 [out] DMatrixHandle *out);
 
         public int enclave_XGDMatrixCreateFromEncryptedFile(
-                [in, string] const char *fname,
+                [in, count=num_files] const char **fnames,
+                bst_ulong num_files,
                 int silent,
                 [out] DMatrixHandle *out,
                 [in, string] char* username);

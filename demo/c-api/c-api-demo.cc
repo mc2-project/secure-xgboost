@@ -92,7 +92,8 @@ int main(int argc, char** argv) {
   DMatrixHandle dtrain, dtest;
 #ifdef __SGX__
   std::cout << "Loading train data\n";
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
+  // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile({"../data/1train.enc, ../data/2train.enc"}, 2, silent, &dtrain, "chester"));
   std::cout << "Loading test data\n";
   safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname2.c_str(), silent, &dtest));
 #else
