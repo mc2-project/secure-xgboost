@@ -32,7 +32,8 @@ int main() {
 }
 " XGBOOST_BUILTIN_PREFETCH_PRESENT)
 
-find_package(OpenEnclave CONFIG REQUIRED)
+set(OE_MIN_VERSION 0.8.2)
+find_package(OpenEnclave ${OE_MIN_VERSION} CONFIG REQUIRED)
 
 # Check endianness
 include(TestBigEndian)
