@@ -33,6 +33,11 @@ int main() {
 " XGBOOST_BUILTIN_PREFETCH_PRESENT)
 
 set(OE_MIN_VERSION 0.8.2)
+if (LVI_MITIGATION)
+  # Configure the cmake to use customized compilation toolchain.
+  # This package has to be added before `project()`.
+  find_package(OpenEnclave-LVI-Mitigation ${OE_MIN_VERSION} CONFIG REQUIRED)
+endif()
 find_package(OpenEnclave ${OE_MIN_VERSION} CONFIG REQUIRED)
 
 # Check endianness
@@ -99,7 +104,14 @@ if(OBLIVIOUS)
   target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_OBLIVIOUS__)
 endif(OBLIVIOUS)
 
-target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
+if (LVI_MITIGATION)
+    # Helper to enable compiler options for LVI mitigation.
+    apply_lvi_mitigation(xgboost_enclave)
+    # Link against LVI-mitigated libraries.
+    target_link_libraries(xgboost_enclave openenclave::oeenclave-lvi-cfg openenclave::oelibcxx-lvi-cfg openenclave::oehostfs-lvi-cfg openenclave::oehostsock-lvi-cfg openenclave::oehostresolver-lvi-cfg)
+else()
+    target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
+endif()
 
 # Sign enclave
 add_custom_command(OUTPUT xgboost_enclave.signed
