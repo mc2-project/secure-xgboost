@@ -64,7 +64,6 @@ target_include_directories(xgboost_enclave
 target_compile_options(xgboost_enclave
   PRIVATE
   -U_FORTIFY_SOURCE 
-  -fno-stack-protector
   -fno-strict-aliasing
   -D_GLIBCXX_USE_CXX11_ABI=0 
   -ftls-model=local-exec
