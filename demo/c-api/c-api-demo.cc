@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 
   //safe_xgboost(add_client_key((char*)fname1.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
   //safe_xgboost(add_client_key((char*)fname2.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
-  std::cout << "Adding\n";
+  std::cout << "Adding client key\n";
   safe_xgboost(add_client_key(encrypted_data, encrypted_data_size, signature, sig_len));
 
 #endif
