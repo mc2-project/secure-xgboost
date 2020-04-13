@@ -14,7 +14,7 @@ print("Remote attestation")
 enclave.get_remote_report_with_pubkey()
 # NOTE: Verification will fail in simulation mode
 # Comment out this line for testing the code in simulation mode
-# enclave.verify_remote_report_and_set_pubkey()
+enclave.verify_remote_report_and_set_pubkey()
 
 print("Send private key to enclave")
 enclave_pem_key, enclave_key_size, _, _ = enclave.get_report_attrs()
