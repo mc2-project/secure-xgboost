@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "Creating enclave\n";
-  int log_verbosity = 1;
+  int log_verbosity = 3;
   safe_xgboost(XGBCreateEnclave(argv[1], log_verbosity));
   
   oe_result_t result;
@@ -64,28 +64,31 @@ int main(int argc, char** argv) {
   std::string fname1(cwd + "/../../demo/data/agaricus.txt.train.enc");
   std::string fname2(cwd + "/../../demo/data/agaricus.txt.test.enc");
 
+  std::string train1(cwd + "/../../demo/data/1train.enc");
+  std::string train2(cwd + "/../../demo/data/2train.enc");
+
   safe_xgboost(get_remote_report_with_pubkey(&pem_key, &key_size, &remote_report, &remote_report_size));
   // NOTE: Verification will fail in simulation mode
   // Comment out this line for testing the code in simulation mode
-  safe_xgboost(verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size));
+  // safe_xgboost(verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size));
 
-  uint8_t* encrypted_data = (uint8_t*) malloc(1024*sizeof(uint8_t));
-  size_t encrypted_data_size = 1024;
-  uint8_t* signature = (uint8_t*) malloc(1024*sizeof(uint8_t));
-  size_t sig_len;
-
-  safe_xgboost(encrypt_data_with_pk(test_key, CIPHER_KEY_SIZE, pem_key, key_size, encrypted_data, &encrypted_data_size));
-  safe_xgboost(sign_data("keypair.pem", encrypted_data, encrypted_data_size, signature, &sig_len));
-  //verifySignature("publickey.crt", encrypted_data, encrypted_data_size, signature, sig_len);
-
-  //safe_xgboost(add_client_key((char*)fname1.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
-  //safe_xgboost(add_client_key((char*)fname2.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
-  std::cout << "Adding\n";
-  safe_xgboost(add_client_key(encrypted_data, encrypted_data_size, signature, sig_len));
+  // uint8_t* encrypted_data = (uint8_t*) malloc(1024*sizeof(uint8_t));
+  // size_t encrypted_data_size = 1024;
+  // uint8_t* signature = (uint8_t*) malloc(1024*sizeof(uint8_t));
+  // size_t sig_len;
+// 
+  // safe_xgboost(encrypt_data_with_pk(test_key, CIPHER_KEY_SIZE, pem_key, key_size, encrypted_data, &encrypted_data_size));
+  // safe_xgboost(sign_data("keypair.pem", encrypted_data, encrypted_data_size, signature, &sig_len));
+  // //verifySignature("publickey.crt", encrypted_data, encrypted_data_size, signature, sig_len);
+// 
+  // //safe_xgboost(add_client_key((char*)fname1.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
+  // //safe_xgboost(add_client_key((char*)fname2.c_str(), encrypted_data, encrypted_data_size, signature, sig_len));
+  // std::cout << "Adding\n";
+  // safe_xgboost(add_client_key(encrypted_data, encrypted_data_size, signature, sig_len));
 
 #endif
 
-  int silent = 1;
+  int silent = 0;
   int use_gpu = 0; // set to 1 to use the GPU for training
   
   // load the data
@@ -93,9 +96,11 @@ int main(int argc, char** argv) {
 #ifdef __SGX__
   std::cout << "Loading train data\n";
   // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile({"../data/1train.enc, ../data/2train.enc"}, 2, silent, &dtrain, "chester"));
-  std::cout << "Loading test data\n";
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname2.c_str(), silent, &dtest));
+  const char* data_files[2] = {(const char*) fname1.c_str(), (const char*) fname1.c_str()};
+  std::cout << data_files[0] << std::endl;
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(data_files, 2, silent, &dtrain, "chester"));
+  // std::cout << "Loading test data\n";
+  // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname2.c_str(), silent, &dtest));
 #else
   safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.train", silent, &dtrain));
   safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.test", silent, &dtest));
@@ -104,7 +109,8 @@ int main(int argc, char** argv) {
 
   // create the booster
   BoosterHandle booster;
-  DMatrixHandle eval_dmats[2] = {dtrain, dtest};
+  // DMatrixHandle eval_dmats[2] = {dtrain, dtest};
+  DMatrixHandle eval_dmats[1] = {dtrain};
   safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
   std::cout << "Booster created" << std::endl;
 
@@ -140,14 +146,14 @@ int main(int argc, char** argv) {
   }
   
   // save model
-  std::string fname(cwd + "/demo_model.model");
-  safe_xgboost(XGBoosterSaveModel(booster, fname.c_str()));
-  std::cout << "Saved model to demo_model.model" << std::endl;
-  // load model
-  booster = NULL;
-  safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
-  safe_xgboost(XGBoosterLoadModel(booster, fname.c_str()));
-  std::cout << "Loaded model from demo_model.model" << std::endl;
+  // std::string fname(cwd + "/demo_model.model");
+  // safe_xgboost(XGBoosterSaveModel(booster, fname.c_str()));
+  // std::cout << "Saved model to demo_model.model" << std::endl;
+  // // load model
+  // booster = NULL;
+  // safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
+  // safe_xgboost(XGBoosterLoadModel(booster, fname.c_str()));
+  // std::cout << "Loaded model from demo_model.model" << std::endl;
 
   // predict
   bst_ulong out_len = 0;
@@ -155,24 +161,24 @@ int main(int argc, char** argv) {
   float* out_result = NULL;
   int n_print = 10;
   
-  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result));
-  safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
-  printf("n_pred: %d %x\n", out_len, out_result);
-  printf("y_pred: ");
-  for (int i = 0; i < n_print; ++i) {
-    printf("%1.4f ", out_result[i]);
-  }
-  printf("\n");
-  
-  safe_xgboost(XGDMatrixGetFloatInfo(dtrain, "label", &out_len, (const float**)&out_result));
-  printf("y_test: ");
-  for (int i = 0; i < n_print; ++i) {
-    printf("%1.4f ", out_result[i]);
-  }
-  printf("\n");
+  // safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result));
+  // safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
+  // printf("n_pred: %d %x\n", out_len, out_result);
+  // printf("y_pred: ");
+  // for (int i = 0; i < n_print; ++i) {
+  //   printf("%1.4f ", out_result[i]);
+  // }
+  // printf("\n");
+  // 
+  // safe_xgboost(XGDMatrixGetFloatInfo(dtrain, "label", &out_len, (const float**)&out_result));
+  // printf("y_test: ");
+  // for (int i = 0; i < n_print; ++i) {
+  //   printf("%1.4f ", out_result[i]);
+  // }
+  // printf("\n");
   
   safe_xgboost(XGBoosterFree(booster));
   safe_xgboost(XGDMatrixFree(dtrain));
-  safe_xgboost(XGDMatrixFree(dtest));
+  // safe_xgboost(XGDMatrixFree(dtest));
   return 0;
 }

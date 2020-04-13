@@ -286,7 +286,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
                        bool load_row_split,
 #ifdef __ENCLAVE__ // pass decryption key
                        bool is_encrypted,
-                       std::vector<char*> keys,
+                       char* key,
 #endif
                        const std::string& file_format,
                        const size_t page_size) {
@@ -341,36 +341,38 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
               << " of " << npart << " parts";
       }
 
-      // // legacy handling of binary data loading
-      // if (file_format == "auto" && npart == 1) {
-      //   int magic;
-      //   std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname.c_str(), "r", true));
-      //   if (fi != nullptr) {
-      //     common::PeekableInStream is(fi.get());
-      //     if (is.PeekRead(&magic, sizeof(magic)) == sizeof(magic) &&
-      //         magic == data::SimpleCSRSource::kMagic) {
-      //       std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-      //       source->LoadBinary(&is);
-      //       DMatrix* dmat = DMatrix::Create(std::move(source), cache_file);
-      //       if (!silent) {
-      //         LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
-      //                      << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
-      //       }
-      //       return dmat;
-      //     }
-      //   }
-      // }
-
+      // legacy handling of binary data loading
+      if (file_format == "auto" && npart == 1) {
+        int magic;
+        std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname.c_str(), "r", true));
+        if (fi != nullptr) {
+          common::PeekableInStream is(fi.get());
+          if (is.PeekRead(&magic, sizeof(magic)) == sizeof(magic) &&
+              magic == data::SimpleCSRSource::kMagic) {
+            std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+            source->LoadBinary(&is);
+            DMatrix* dmat = DMatrix::Create(std::move(source), cache_file);
+            if (!silent) {
+              LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+                           << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
+            }
+            return dmat;
+          }
+        }
+      }
+     LOG(DEBUG) << "Creating parser for " << fname;
+     // LOG(DEBUG) << "Key: " << keys[i];
 #ifdef __ENCLAVE__ // pass decryption key
       // FIXME: create multiple parsers here, one for each file?
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-              dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[i]));
+              dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, key));
 #else
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
               dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));
 #endif
       parsers.push_back(std::move(parser));
   }
+  LOG(DEBUG) << "Creating DMatrices, passing in parsers";
   DMatrix* dmat = DMatrix::CreateMultiple(std::move(parsers), num_uris, cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
@@ -469,11 +471,12 @@ DMatrix* DMatrix::CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32
         int num_parsers,
         const std::string& cache_prefix,
         const size_t page_size) {
+    LOG(DEBUG) << "In DMatrix::CreateMultiple";
     if (cache_prefix.length() == 0) {
         std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-        // FIXME chester done: pass in multiple parsers here?
+        LOG(DEBUG) << "About to copy to source";
         source->CopyFromMultiple(std::move(parsers), num_parsers);
-        // std::string concatenated_prefixes = std::accumulate(cache_prefixes.begin(), cache_prefixes.end(), std::string(""));
+        LOG(DEBUG) << "Finished copying to source\n";
         return DMatrix::Create(std::move(source), cache_prefix);
     } else {
 #if DMLC_ENABLE_STD_THREAD
