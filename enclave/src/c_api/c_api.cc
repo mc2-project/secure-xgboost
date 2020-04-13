@@ -108,7 +108,8 @@ class Booster {
   std::vector<std::pair<std::string, std::string> > cfg_;
 };
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * // declare the data callback.
  * XGB_EXTERN_C int XGBoostNativeDataIterSetData(
  *     void *handle, XGBoostBatchCSR batch);
@@ -401,7 +402,8 @@ int XGDMatrixCreateFromFile(const char *fname,
     API_END();
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * int XGDMatrixCreateFromDataIter(
  *     void* data_handle,
  *     XGBCallbackDataIterNext* callback,
@@ -889,7 +891,8 @@ XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
   API_END();
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGDMatrixSaveBinary(DMatrixHandle handle,
  *                                 const char* fname,
  *                                 int silent) {
@@ -922,7 +925,8 @@ XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
   API_END();
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
  *                               const unsigned* group,
  *                               xgboost::bst_ulong len) {
@@ -1406,19 +1410,22 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
   API_END();
 }
 
-// XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
-//                      const char* key,
-//                      const char* value) {
-//   auto* bst = static_cast<Booster*>(handle);
-//   API_BEGIN();
-//   CHECK_HANDLE();
-//   if (value == nullptr) {
-//     bst->learner()->DelAttr(key);
-//   } else {
-//     bst->learner()->SetAttr(key, value);
-//   }
-//   API_END();
-// }
+/* TODO(rishabhp): Enable this
+ *
+ * XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
+ *                      const char* key,
+ *                      const char* value) {
+ *   auto* bst = static_cast<Booster*>(handle);
+ *   API_BEGIN();
+ *   CHECK_HANDLE();
+ *   if (value == nullptr) {
+ *     bst->learner()->DelAttr(key);
+ *   } else {
+ *     bst->learner()->SetAttr(key, value);
+ *   }
+ *   API_END();
+ * }
+ */
 
 XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
                      xgboost::bst_ulong* out_len,
@@ -1438,7 +1445,8 @@ XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
   API_END();
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGBoosterLoadRabitCheckpoint(BoosterHandle handle,
  *                                  int* version) {
  *   API_BEGIN();

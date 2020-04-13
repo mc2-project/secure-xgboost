@@ -276,7 +276,8 @@ XGBOOST_REGISTER_OBJECTIVE(PoissonRegression, "count:poisson")
 .set_body([]() { return new PoissonRegression(); });
 
 
-/*
+/* TODO(rishabh): Enable this
+ *
  * // cox regression for survival data (negative values mean they are censored)
  * class CoxRegression : public ObjFunction {
  *  public:

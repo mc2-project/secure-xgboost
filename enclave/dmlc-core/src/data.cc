@@ -92,7 +92,8 @@ CreateParser_(const char *uri_,
   return (*e->body)(spec.uri, spec.args, part_index, num_parts, is_encrypted, key);
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * template<typename IndexType, typename DType = real_t>
  * inline RowBlockIter<IndexType, DType> *
  * CreateIter_(const char *uri_,

@@ -289,7 +289,8 @@ int XGDMatrixCreateFromEncryptedFile(const char *fname,
     safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * int XGDMatrixCreateFromDataIter(
  *     void* data_handle,
  *     XGBCallbackDataIterNext* callback,
@@ -775,7 +776,8 @@ XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
     safe_ecall(enclave_XGDMatrixFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGDMatrixSaveBinary(DMatrixHandle handle,
  *                                 const char* fname,
  *                                 int silent) {
@@ -801,7 +803,8 @@ XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
   safe_ecall(enclave_XGDMatrixSetUIntInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
  *                               const unsigned* group,
  *                               xgboost::bst_ulong len) {
@@ -944,7 +947,8 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr));
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * inline void XGBoostDumpModelImpl(
  *     BoosterHandle handle,
  *     const FeatureMap& fmap,
@@ -1010,7 +1014,8 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
   safe_ecall(enclave_XGBoosterGetAttr(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, key, (char**)out, success));
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
  *                      const char* key,
  *                      const char* value) {
@@ -1032,7 +1037,8 @@ XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
   safe_ecall(enclave_XGBoosterGetAttrNames(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char***)out));
 }
 
-/*
+/* TODO(rishabhp): Enable this
+ *
  * XGB_DLL int XGBoosterLoadRabitCheckpoint(BoosterHandle handle,
  *                                  int* version) {
  *   API_BEGIN();
