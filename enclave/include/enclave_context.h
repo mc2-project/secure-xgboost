@@ -60,22 +60,19 @@ class EnclaveContext {
       oss << "Booster_" << ++booster_ctr;
       auto str = oss.str();
       booster_map[str] = booster;
-      BoosterHandle handle = const_cast<char*>(str.c_str());
-      booster_map[handle] = booster;
+      //BoosterHandle handle = const_cast<char*>(str.c_str());
+      BoosterHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added booster " << handle;
       return handle;
     }
 
     DMatrixHandle add_dmatrix(void* dmatrix) {
-      LOG(DEBUG) << "Map size " << dmatrix_map.size();
-      for(auto kv : dmatrix_map) {
-        LOG(DEBUG) << kv.first;
-      } 
       std::ostringstream oss;
       oss << "DMatrix_" << ++dmatrix_ctr;
       auto str = oss.str();
       dmatrix_map[str] = dmatrix;
-      DMatrixHandle handle = const_cast<char*>(str.c_str());
+      //DMatrixHandle handle = const_cast<char*>(str.c_str());
+      DMatrixHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added dmatrix " << handle;
       return handle;
     }
@@ -101,7 +98,6 @@ class EnclaveContext {
         LOG(FATAL) << "No such dmatrix oject";
         return NULL;
       } else {
-        LOG(DEBUG) << "Returning dmatrix " << handle;
         return iter->second;
       }
     }
