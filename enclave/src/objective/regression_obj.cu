@@ -276,94 +276,94 @@ XGBOOST_REGISTER_OBJECTIVE(PoissonRegression, "count:poisson")
 .set_body([]() { return new PoissonRegression(); });
 
 
-#ifndef __ENCLAVE__ // FIXME enable CoxRegression
-// cox regression for survival data (negative values mean they are censored)
-class CoxRegression : public ObjFunction {
- public:
-  // declare functions
-  void Configure(const std::vector<std::pair<std::string, std::string> >& args) override {}
-  void GetGradient(const HostDeviceVector<bst_float>& preds,
-                   const MetaInfo &info,
-                   int iter,
-                   HostDeviceVector<GradientPair> *out_gpair) override {
-    CHECK_NE(info.labels_.Size(), 0U) << "label set cannot be empty";
-    CHECK_EQ(preds.Size(), info.labels_.Size()) << "labels are not correctly provided";
-    const auto& preds_h = preds.HostVector();
-    out_gpair->Resize(preds_h.size());
-    auto& gpair = out_gpair->HostVector();
-    const std::vector<size_t> &label_order = info.LabelAbsSort();
-
-    const omp_ulong ndata = static_cast<omp_ulong>(preds_h.size()); // NOLINT(*)
-
-    // pre-compute a sum
-    double exp_p_sum = 0;  // we use double because we might need the precision with large datasets
-    for (omp_ulong i = 0; i < ndata; ++i) {
-      exp_p_sum += std::exp(preds_h[label_order[i]]);
-    }
-
-    // start calculating grad and hess
-    const auto& labels = info.labels_.HostVector();
-    double r_k = 0;
-    double s_k = 0;
-    double last_exp_p = 0.0;
-    double last_abs_y = 0.0;
-    double accumulated_sum = 0;
-    for (omp_ulong i = 0; i < ndata; ++i) { // NOLINT(*)
-      const size_t ind = label_order[i];
-      const double p = preds_h[ind];
-      const double exp_p = std::exp(p);
-      const double w = info.GetWeight(ind);
-      const double y = labels[ind];
-      const double abs_y = std::abs(y);
-
-      // only update the denominator after we move forward in time (labels are sorted)
-      // this is Breslow's method for ties
-      accumulated_sum += last_exp_p;
-      if (last_abs_y < abs_y) {
-        exp_p_sum -= accumulated_sum;
-        accumulated_sum = 0;
-      } else {
-        CHECK(last_abs_y <= abs_y) << "CoxRegression: labels must be in sorted order, " <<
-                                      "MetaInfo::LabelArgsort failed!";
-      }
-
-      if (y > 0) {
-        r_k += 1.0/exp_p_sum;
-        s_k += 1.0/(exp_p_sum*exp_p_sum);
-      }
-
-      const double grad = exp_p*r_k - static_cast<bst_float>(y > 0);
-      const double hess = exp_p*r_k - exp_p*exp_p * s_k;
-      gpair.at(ind) = GradientPair(grad * w, hess * w);
-
-      last_abs_y = abs_y;
-      last_exp_p = exp_p;
-    }
-  }
-  void PredTransform(HostDeviceVector<bst_float> *io_preds) override {
-    std::vector<bst_float> &preds = io_preds->HostVector();
-    const long ndata = static_cast<long>(preds.size()); // NOLINT(*)
-#pragma omp parallel for schedule(static)
-    for (long j = 0; j < ndata; ++j) {  // NOLINT(*)
-      preds[j] = std::exp(preds[j]);
-    }
-  }
-  void EvalTransform(HostDeviceVector<bst_float> *io_preds) override {
-    PredTransform(io_preds);
-  }
-  bst_float ProbToMargin(bst_float base_score) const override {
-    return std::log(base_score);
-  }
-  const char* DefaultEvalMetric() const override {
-    return "cox-nloglik";
-  }
-};
-
-// register the objective function
-XGBOOST_REGISTER_OBJECTIVE(CoxRegression, "survival:cox")
-.describe("Cox regression for censored survival data (negative labels are considered censored).")
-.set_body([]() { return new CoxRegression(); });
-#endif // __ENCLAVE__
+/*
+ * // cox regression for survival data (negative values mean they are censored)
+ * class CoxRegression : public ObjFunction {
+ *  public:
+ *   // declare functions
+ *   void Configure(const std::vector<std::pair<std::string, std::string> >& args) override {}
+ *   void GetGradient(const HostDeviceVector<bst_float>& preds,
+ *                    const MetaInfo &info,
+ *                    int iter,
+ *                    HostDeviceVector<GradientPair> *out_gpair) override {
+ *     CHECK_NE(info.labels_.Size(), 0U) << "label set cannot be empty";
+ *     CHECK_EQ(preds.Size(), info.labels_.Size()) << "labels are not correctly provided";
+ *     const auto& preds_h = preds.HostVector();
+ *     out_gpair->Resize(preds_h.size());
+ *     auto& gpair = out_gpair->HostVector();
+ *     const std::vector<size_t> &label_order = info.LabelAbsSort();
+ *
+ *     const omp_ulong ndata = static_cast<omp_ulong>(preds_h.size()); // NOLINT(*)
+ *
+ *     // pre-compute a sum
+ *     double exp_p_sum = 0;  // we use double because we might need the precision with large datasets
+ *     for (omp_ulong i = 0; i < ndata; ++i) {
+ *       exp_p_sum += std::exp(preds_h[label_order[i]]);
+ *     }
+ *
+ *     // start calculating grad and hess
+ *     const auto& labels = info.labels_.HostVector();
+ *     double r_k = 0;
+ *     double s_k = 0;
+ *     double last_exp_p = 0.0;
+ *     double last_abs_y = 0.0;
+ *     double accumulated_sum = 0;
+ *     for (omp_ulong i = 0; i < ndata; ++i) { // NOLINT(*)
+ *       const size_t ind = label_order[i];
+ *       const double p = preds_h[ind];
+ *       const double exp_p = std::exp(p);
+ *       const double w = info.GetWeight(ind);
+ *       const double y = labels[ind];
+ *       const double abs_y = std::abs(y);
+ *
+ *       // only update the denominator after we move forward in time (labels are sorted)
+ *       // this is Breslow's method for ties
+ *       accumulated_sum += last_exp_p;
+ *       if (last_abs_y < abs_y) {
+ *         exp_p_sum -= accumulated_sum;
+ *         accumulated_sum = 0;
+ *       } else {
+ *         CHECK(last_abs_y <= abs_y) << "CoxRegression: labels must be in sorted order, " <<
+ *                                       "MetaInfo::LabelArgsort failed!";
+ *       }
+ *
+ *       if (y > 0) {
+ *         r_k += 1.0/exp_p_sum;
+ *         s_k += 1.0/(exp_p_sum*exp_p_sum);
+ *       }
+ *
+ *       const double grad = exp_p*r_k - static_cast<bst_float>(y > 0);
+ *       const double hess = exp_p*r_k - exp_p*exp_p * s_k;
+ *       gpair.at(ind) = GradientPair(grad * w, hess * w);
+ *
+ *       last_abs_y = abs_y;
+ *       last_exp_p = exp_p;
+ *     }
+ *   }
+ *   void PredTransform(HostDeviceVector<bst_float> *io_preds) override {
+ *     std::vector<bst_float> &preds = io_preds->HostVector();
+ *     const long ndata = static_cast<long>(preds.size()); // NOLINT(*)
+ * #pragma omp parallel for schedule(static)
+ *     for (long j = 0; j < ndata; ++j) {  // NOLINT(*)
+ *       preds[j] = std::exp(preds[j]);
+ *     }
+ *   }
+ *   void EvalTransform(HostDeviceVector<bst_float> *io_preds) override {
+ *     PredTransform(io_preds);
+ *   }
+ *   bst_float ProbToMargin(bst_float base_score) const override {
+ *     return std::log(base_score);
+ *   }
+ *   const char* DefaultEvalMetric() const override {
+ *     return "cox-nloglik";
+ *   }
+ * };
+ *
+ * // register the objective function
+ * XGBOOST_REGISTER_OBJECTIVE(CoxRegression, "survival:cox")
+ * .describe("Cox regression for censored survival data (negative labels are considered censored).")
+ * .set_body([]() { return new CoxRegression(); });
+ */
 
 struct GammaRegressionParam : public dmlc::Parameter<GammaRegressionParam> {
   int n_gpus;

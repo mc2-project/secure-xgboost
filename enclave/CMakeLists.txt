@@ -83,7 +83,6 @@ set_target_properties(xgboost_enclave PROPERTIES
   CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(xgboost_enclave
   PRIVATE
-  -D__SGX__
   -D__ENCLAVE__
   OE_API_VERSION=2
   -DDMLC_LOG_CUSTOMIZE=1  # enable custom logging

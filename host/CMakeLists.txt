@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.11)
 project(xgboost LANGUAGES CXX C VERSION 0.90)
 # openenclave
 find_package(OpenEnclave CONFIG REQUIRED)
-add_definitions(-D__SGX__)
 
 ## Deprecation warning
 if (USE_AVX)

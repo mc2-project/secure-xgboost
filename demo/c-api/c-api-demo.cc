@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <xgboost/c_api.h>
 
-#ifdef __SGX__
 #include <enclave/crypto.h>
 #include <openenclave/host.h>
 
@@ -22,8 +21,6 @@ static char test_key[CIPHER_KEY_SIZE] = {
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0
 };
-
-#endif
 
 #define safe_xgboost(call) {                                            \
 int err = (call);                                                       \
@@ -35,7 +32,6 @@ if (err != 0) {                                                         \
 
 int main(int argc, char** argv) {
 
-#ifdef __SGX__
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--encrypt") == 0) {
       encrypt_file_with_keybuf("../data/agaricus.txt.train", "train.encrypted", test_key);
@@ -83,22 +79,15 @@ int main(int argc, char** argv) {
   std::cout << "Adding client key\n";
   safe_xgboost(add_client_key(encrypted_data, encrypted_data_size, signature, sig_len));
 
-#endif
-
   int silent = 1;
   int use_gpu = 0; // set to 1 to use the GPU for training
   
   // load the data
   DMatrixHandle dtrain, dtest;
-#ifdef __SGX__
   std::cout << "Loading train data\n";
   safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
   std::cout << "Loading test data\n";
   safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname2.c_str(), silent, &dtest));
-#else
-  safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.train", silent, &dtrain));
-  safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.test", silent, &dtest));
-#endif
   std::cout << "Data loaded" << std::endl;
 
   // create the booster
