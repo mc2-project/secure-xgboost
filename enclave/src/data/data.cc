@@ -371,10 +371,10 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
 #endif
       parsers.push_back(std::move(parser));
   }
-  DMatrix* dmat = DMatrix::CreateMultiple(parsers, cache_file, page_size);
+  DMatrix* dmat = DMatrix::CreateMultiple(std::move(parsers), num_uris, cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
-                 << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
+                 << dmat->Info().num_nonzero_ << " entries loaded from " << std::accumulate(uris.begin(), uris.end(), std::string(""));;
   }
   /* sync up number of features after matrix loaded.
    * partitioned data will fail the train/val validation check
@@ -422,51 +422,6 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
   return dmat;
 }
 
-DMatrix* DMatrix::Create(dmlc::Parser<uint32_t> parsers,
-                         const std::string& cache_prefix,
-                         const size_t page_size) {
-  if (cache_prefix.length() == 0) {
-    std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-    source->CopyFrom(std::move(parser));
-    return DMatrix::Create(std::move(source), cache_prefix);
-  } else {
-#if DMLC_ENABLE_STD_THREAD
-    if (!data::SparsePageSource::CacheExist(cache_prefix, ".row.page")) {
-      data::SparsePageSource::CreateRowPage(parser, cache_prefix, page_size);
-    }
-    std::unique_ptr<data::SparsePageSource> source(
-        new data::SparsePageSource(cache_prefix, ".row.page"));
-    return DMatrix::Create(std::move(source), cache_prefix);
-#else
-    LOG(FATAL) << "External memory is not enabled in mingw";
-    return nullptr;
-#endif  // DMLC_ENABLE_STD_THREAD
-  }
-}
-
-DMatrix* DMatrix::CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers,
-        const std::string& cache_prefix,
-        const size_t page_size) {
-    if (cache_prefix.length() == 0) {
-        std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-        // FIXME chester done: pass in multiple parsers here?
-        source->CopyFrom(std::move(parsers));
-        // std::string concatenated_prefixes = std::accumulate(cache_prefixes.begin(), cache_prefixes.end(), std::string(""));
-        return DMatrix::Create(std::move(source), cache_prefix);
-    } else {
-#if DMLC_ENABLE_STD_THREAD
-        if (!data::SparsePageSource::CacheExist(cache_prefix, ".row.page")) {
-            data::SparsePageSource::CreateRowPage(parser, cache_prefix, page_size);
-        }
-        std::unique_ptr<data::SparsePageSource> source(
-                new data::SparsePageSource(cache_prefix, ".row.page"));
-        return DMatrix::Create(std::move(source), cache_prefix);
-#else
-        LOG(FATAL) << "External memory is not enabled in mingw";
-        return nullptr;
-#endif  // DMLC_ENABLE_STD_THREAD
-    }
-}
 void DMatrix::SaveToLocalFile(const std::string& fname) {
   data::SimpleCSRSource source;
   source.CopyFrom(this);
@@ -486,6 +441,53 @@ DMatrix* DMatrix::Create(std::unique_ptr<DataSource>&& source,
     return nullptr;
 #endif  // DMLC_ENABLE_STD_THREAD
   }
+}
+
+DMatrix* DMatrix::Create(dmlc::Parser<uint32_t>* parser,
+                         const std::string& cache_prefix,
+                         const size_t page_size) {
+  if (cache_prefix.length() == 0) {
+    std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+    source->CopyFrom(parser);
+    return DMatrix::Create(std::move(source), cache_prefix);
+  } else {
+#if DMLC_ENABLE_STD_THREAD
+    if (!data::SparsePageSource::CacheExist(cache_prefix, ".row.page")) {
+      data::SparsePageSource::CreateRowPage(parser, cache_prefix, page_size);
+    }
+    std::unique_ptr<data::SparsePageSource> source(
+        new data::SparsePageSource(cache_prefix, ".row.page"));
+    return DMatrix::Create(std::move(source), cache_prefix);
+#else
+    LOG(FATAL) << "External memory is not enabled in mingw";
+    return nullptr;
+#endif  // DMLC_ENABLE_STD_THREAD
+  }
+}
+
+DMatrix* DMatrix::CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers,
+        int num_parsers,
+        const std::string& cache_prefix,
+        const size_t page_size) {
+    if (cache_prefix.length() == 0) {
+        std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+        // FIXME chester done: pass in multiple parsers here?
+        source->CopyFromMultiple(std::move(parsers), num_parsers);
+        // std::string concatenated_prefixes = std::accumulate(cache_prefixes.begin(), cache_prefixes.end(), std::string(""));
+        return DMatrix::Create(std::move(source), cache_prefix);
+    } else {
+#if DMLC_ENABLE_STD_THREAD
+        if (!data::SparsePageSource::CacheExist(cache_prefix, ".row.page")) {
+            data::SparsePageSource::CreateRowPage(parser, cache_prefix, page_size);
+        }
+        std::unique_ptr<data::SparsePageSource> source(
+                new data::SparsePageSource(cache_prefix, ".row.page"));
+        return DMatrix::Create(std::move(source), cache_prefix);
+#else
+        LOG(FATAL) << "External memory is not enabled in mingw";
+        return nullptr;
+#endif  // DMLC_ENABLE_STD_THREAD
+    }
 }
 }  // namespace xgboost
 

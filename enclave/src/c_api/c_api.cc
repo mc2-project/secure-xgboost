@@ -511,17 +511,17 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
 #ifdef __ENCLAVE__ // pass decryption key
     // FIXME consistently use uint8_t* for key bytes
     std::vector<char*> keys;
-    std::vector<const char*> fnames_vector;
+    std::vector<const std::string> fnames_vector;
     for (xgboost::bst_ulong i = 0; i < num_files; ++i) {
         char key[CIPHER_KEY_SIZE];
         EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
         keys.push_back(key);
-        fnames_vector.push_back(fnames[i]);
+        fnames_vector.push_back(std::string(fnames[i]));
     }
     // std::vector<char*> fnames_vector(std::begin(fnames), std::end(fnames));
     // std::vector<char*> fnames_vector(fnames, fnames + sizeof fnames / sizeof fnames[0]);
     //EnclaveContext::getInstance().get_client_key(fname, (uint8_t*) key);
-    *out = new std::shared_ptr<DMatrix>(DMatrix::LoadMultiple(fnames_vector, silent != 0, load_row_split, true, keys));
+    *out = new std::shared_ptr<DMatrix>(DMatrix::LoadMultiple(fnames_vector, (int) num_files, silent != 0, load_row_split, true, keys));
 #else
     *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames, silent != 0, load_row_split));
 #endif

@@ -470,8 +470,8 @@ class DMatrix {
           bool is_encrypted,
           std::vector<char*> keys,
 #endif
-          const std::string& file_format,
-          const size_t page_size); 
+          const std::string& file_format = "auto",
+          const size_t page_size = kPageSize); 
   /*!
    * \brief create a new DMatrix, by wrapping a row_iterator, and meta info.
    * \param source The source iterator of the data, the create function takes ownership of the source.
@@ -499,6 +499,7 @@ class DMatrix {
                          const size_t page_size = kPageSize);
 
   static DMatrix* CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers,
+          int num_parsers,
           const std::string& cache_prefix = "",
           const size_t page_size = kPageSize);
 
