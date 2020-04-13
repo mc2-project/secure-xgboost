@@ -53,7 +53,11 @@ int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[
     dmats[i] = strndup(name, nlen);
     dmats[i][nlen] = '\0';
   }
-  return XGBoosterCreate(dmats, len, out);
+  int ret = XGBoosterCreate(dmats, len, out);
+  for (int i = 0; i < len; i++) {
+    free(dmats[i]);
+  }
+  return ret;
 }
 
 int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char *value) {
@@ -91,7 +95,12 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
     eval_names[i] = strndup(name, nlen);
     eval_names[i][nlen] = '\0';
   }
-  return XGBoosterEvalOneIter(handle, iter, dmats, (const char**) eval_names, len, (const char**) out_str);
+  int ret = XGBoosterEvalOneIter(handle, iter, dmats, (const char**) eval_names, len, (const char**) out_str);
+  for (int i = 0; i < len; i++) {
+    free(dmats[i]);
+    free(eval_names[i]);
+  }
+  return ret;
 }
 
 int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname) {
@@ -135,8 +144,8 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
 
   // Validate buffers and copy to enclave memory
-  char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
-  char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
+  char* fname_cpy[fnum];
+  char* ftype_cpy[fnum];
   size_t name_len;
   size_t type_len;
   for (int i = 0; i < fnum; i++) {
@@ -151,7 +160,12 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
     ftype_cpy[i] = strndup(ftype[i], type_len);
     ftype_cpy[i][type_len] = '\0';
   }
-  return XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, len, (const char***) out_models);
+  int ret = XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, len, (const char***) out_models);
+  for (int i = 0; i < fnum; i++) {
+    free(fname_cpy[i]);
+    free(ftype_cpy[i]);
+  }
+  return ret;
 }
 int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    unsigned int fnum,
@@ -166,8 +180,8 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
 
   // Validate buffers and copy to enclave memory
-  char** fname_cpy = (char**) malloc(sizeof(char*) * fnum);
-  char** ftype_cpy = (char**) malloc(sizeof(char*) * fnum);
+  char* fname_cpy[fnum];
+  char* ftype_cpy[fnum];
   size_t name_len;
   size_t type_len;
   for (int i = 0; i < fnum; i++) {
@@ -182,7 +196,12 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     ftype_cpy[i] = strndup(ftype[i], type_len);
     ftype_cpy[i][type_len] = '\0';
   }
-  return XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models);
+  int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models);
+  for (int i = 0; i < fnum; i++) {
+    free(fname_cpy[i]);
+    free(ftype_cpy[i]);
+  }
+  return ret;
 }
 int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
@@ -299,6 +318,9 @@ void enclave_RabitInit(int argc, char **argv, size_t arg_lengths[]) {
     args[i][len] = '\0';
   }
   RabitInit(argc, args);
+  for (int i = 0; i < argc; i++) {
+    free(args[i]);
+  }
 }
 
 void enclave_RabitFinalize() {

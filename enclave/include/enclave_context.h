@@ -55,23 +55,23 @@ class EnclaveContext {
       return m_private_key;
     }
 
+    // Note: Returned handle needs to be freed
     BoosterHandle add_booster(void* booster) {
       std::ostringstream oss;
       oss << "Booster_" << ++booster_ctr;
       auto str = oss.str();
       booster_map[str] = booster;
-      //BoosterHandle handle = const_cast<char*>(str.c_str());
       BoosterHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added booster " << handle;
       return handle;
     }
 
+    // Note: Returned handle needs to be freed
     DMatrixHandle add_dmatrix(void* dmatrix) {
       std::ostringstream oss;
       oss << "DMatrix_" << ++dmatrix_ctr;
       auto str = oss.str();
       dmatrix_map[str] = dmatrix;
-      //DMatrixHandle handle = const_cast<char*>(str.c_str());
       DMatrixHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added dmatrix " << handle;
       return handle;
@@ -91,7 +91,6 @@ class EnclaveContext {
 
     void* get_dmatrix(DMatrixHandle handle) {
       LOG(DEBUG) << "Getting dmatrix " << handle;
-      dmatrix_map.find(handle);
       std::string str(handle);
       std::unordered_map<std::string, void*>::const_iterator iter = dmatrix_map.find(str);
       if (iter == dmatrix_map.end()) {

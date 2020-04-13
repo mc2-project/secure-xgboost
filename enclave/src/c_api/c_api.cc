@@ -503,6 +503,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fname,
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, true, key));
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat);
     *out = oe_host_strndup(out_str, strlen(out_str));
+    free(out_str);
 #else
     *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split));
 #endif
@@ -523,6 +524,7 @@ int XGDMatrixCreateFromFile(const char *fname,
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, false, NULL));
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat);
     *out = oe_host_strndup(out_str, strlen(out_str));
+    free(out_str);
 #else
     *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split));
 #endif
@@ -1197,6 +1199,7 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
   void* booster = new Booster(mats);
   char* out_str = EnclaveContext::getInstance().add_booster(booster);
   *out = oe_host_strndup(out_str, strlen(out_str));
+  free(out_str);
 #else
   *out = new Booster(mats);
 #endif
