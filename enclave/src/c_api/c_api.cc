@@ -514,19 +514,20 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     // std::vector<char*> keys;
     char* keys[num_files];
     std::vector<const std::string> fnames_vector;
-    char key[CIPHER_KEY_SIZE];
+    // char key[CIPHER_KEY_SIZE];
     for (xgboost::bst_ulong i = 0; i < num_files; ++i) {
-        // char key[CIPHER_KEY_SIZE];
-        // EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
+        char key[CIPHER_KEY_SIZE];
+        EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
         // keys.push_back(key);
         // keys[i] = key;
+        keys[i] = (char*) malloc(sizeof(char) * CIPHER_KEY_SIZE);
+        memcpy(keys[i], key, CIPHER_KEY_SIZE);
         fnames_vector.push_back(std::string(fnames[i]));
     }
-    // std::vector<char*> fnames_vector(std::begin(fnames), std::end(fnames));
-    // std::vector<char*> fnames_vector(fnames, fnames + sizeof fnames / sizeof fnames[0]);
     // EnclaveContext::getInstance().get_client_key(fname, (uint8_t*) key);
-    EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
-    *out = new std::shared_ptr<DMatrix>(DMatrix::LoadMultiple(fnames_vector, (int) num_files, silent != 0, load_row_split, true, key));
+    // EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
+    // LOG(DEBUG) << keys[0];
+    *out = new std::shared_ptr<DMatrix>(DMatrix::LoadMultiple(fnames_vector, num_files, silent != 0, load_row_split, true, keys));
 #else
     *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames, silent != 0, load_row_split));
 #endif

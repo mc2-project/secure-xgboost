@@ -468,7 +468,7 @@ class DMatrix {
           bool load_row_split,
 #ifdef __ENCLAVE__ // pass decryption key
           bool is_encrypted,
-          char* key,
+          char* keys[],
 #endif
           const std::string& file_format = "auto",
           const size_t page_size = kPageSize); 

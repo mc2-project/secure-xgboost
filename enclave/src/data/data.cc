@@ -286,7 +286,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
                        bool load_row_split,
 #ifdef __ENCLAVE__ // pass decryption key
                        bool is_encrypted,
-                       char* key,
+                       char* keys[],
 #endif
                        const std::string& file_format,
                        const size_t page_size) {
@@ -294,8 +294,8 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
   std::string cache_file = "";
   std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers;
 
-  for (int i = 0; i < num_uris; ++i) {
-      const std::string uri = uris[i];
+  for (int j = 0; j < num_uris; ++j) {
+      const std::string uri = uris[j];
       size_t dlm_pos = uri.find('#');
       if (dlm_pos != std::string::npos) {
           cache_file = uri.substr(dlm_pos + 1, uri.length());
@@ -361,11 +361,11 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
         }
       }
      LOG(DEBUG) << "Creating parser for " << fname;
-     // LOG(DEBUG) << "Key: " << keys[i];
+     LOG(DEBUG) << "Iteration: " << j;
+     LOG(DEBUG) << "Key: " << keys[j];
 #ifdef __ENCLAVE__ // pass decryption key
-      // FIXME: create multiple parsers here, one for each file?
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-              dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, key));
+              dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[j]));
 #else
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
               dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));

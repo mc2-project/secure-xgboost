@@ -134,7 +134,6 @@ void SimpleCSRSource::CopyFromMultiple(std::vector<std::unique_ptr<dmlc::Parser<
         // copy the data over
         // auto& data_vec = page_.data.HostVector();
         // auto& offset_vec = page_.offset.HostVector();
-        // FIXME: one batch of data gets copied here
         for (size_t i = batch.offset[0]; i < batch.offset[batch.size]; ++i) {
             uint32_t index = batch.index[i];
             bst_float fvalue = batch.value == nullptr ? 1.0f : batch.value[i];
