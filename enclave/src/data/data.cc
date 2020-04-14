@@ -376,7 +376,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
   DMatrix* dmat = DMatrix::CreateMultiple(std::move(parsers), num_uris, cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
-                 << dmat->Info().num_nonzero_ << " entries loaded from " << std::accumulate(uris.begin(), uris.end(), std::string(""));;
+                 << dmat->Info().num_nonzero_ << " entries loaded from " << std::accumulate(uris.begin(), uris.end(), std::string(", "));;
   }
   /* sync up number of features after matrix loaded.
    * partitioned data will fail the train/val validation check

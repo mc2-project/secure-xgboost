@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 
 #endif
 
-  int silent = 0;
+  int silent = 1;
   int use_gpu = 0; // set to 1 to use the GPU for training
   
   // load the data
@@ -96,11 +96,12 @@ int main(int argc, char** argv) {
 #ifdef __SGX__
   std::cout << "Loading train data\n";
   // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
-  const char* data_files[2] = {(const char*) fname1.c_str(), (const char*) fname1.c_str()};
+  const char* data_files[2] = {(const char*) train1.c_str(), (const char*) train2.c_str()};
   std::cout << data_files[0] << std::endl;
   safe_xgboost(XGDMatrixCreateFromEncryptedFile(data_files, 2, silent, &dtrain, "chester"));
   // std::cout << "Loading test data\n";
-  // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname2.c_str(), silent, &dtest));
+  const char* test_file[1] = {(const char*) fname2.c_str()};
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(test_file, 1, silent, &dtest, "chester"));
 #else
   safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.train", silent, &dtrain));
   safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.test", silent, &dtest));
@@ -109,8 +110,8 @@ int main(int argc, char** argv) {
 
   // create the booster
   BoosterHandle booster;
-  // DMatrixHandle eval_dmats[2] = {dtrain, dtest};
-  DMatrixHandle eval_dmats[1] = {dtrain};
+  DMatrixHandle eval_dmats[2] = {dtrain, dtest};
+  // DMatrixHandle eval_dmats[1] = {dtrain};
   safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
   std::cout << "Booster created" << std::endl;
 
