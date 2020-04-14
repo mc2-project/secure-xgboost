@@ -85,6 +85,7 @@ target_compile_definitions(xgboost_enclave
   PRIVATE
   -D__SGX__
   -D__ENCLAVE__
+  -DDMLC_CORE_USE_CMAKE
   OE_API_VERSION=2
   -DDMLC_LOG_CUSTOMIZE=1  # enable custom logging
   ${XGBOOST_DEFINITIONS})
