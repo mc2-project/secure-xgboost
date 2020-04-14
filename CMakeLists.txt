@@ -32,6 +32,10 @@ option(OBLIVIOUS
     "Enable oblivious training and inference" ON)
 option(USE_AVX2 
     "Use AVX2 instructions to speed up oblivious primitives" ON)
+option(LVI_MITIGATION
+    "Enable mitigations for LVI vulnerability" ON)
+set(LVI_MITIGATION_BINDIR "/opt/openenclave/lvi_mitigation_bin"
+    CACHE STRING "Path to LVI mitigation dependencies")
 
 # Generate conf file
 FILE(WRITE ${PROJECT_SOURCE_DIR}/enclave/xgboost.conf
