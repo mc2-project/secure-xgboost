@@ -162,24 +162,24 @@ int main(int argc, char** argv) {
   float* out_result = NULL;
   int n_print = 10;
   
-  // safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result));
-  // safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
-  // printf("n_pred: %d %x\n", out_len, out_result);
-  // printf("y_pred: ");
-  // for (int i = 0; i < n_print; ++i) {
-  //   printf("%1.4f ", out_result[i]);
-  // }
-  // printf("\n");
-  // 
-  // safe_xgboost(XGDMatrixGetFloatInfo(dtrain, "label", &out_len, (const float**)&out_result));
-  // printf("y_test: ");
-  // for (int i = 0; i < n_print; ++i) {
-  //   printf("%1.4f ", out_result[i]);
-  // }
-  // printf("\n");
+  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result, "chester"));
+  safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
+  printf("n_pred: %d %x\n", out_len, out_result);
+  printf("y_pred: ");
+  for (int i = 0; i < n_print; ++i) {
+    printf("%1.4f ", out_result[i]);
+  }
+  printf("\n");
+  
+  safe_xgboost(XGDMatrixGetFloatInfo(dtrain, "label", &out_len, (const float**)&out_result));
+  printf("y_test: ");
+  for (int i = 0; i < n_print; ++i) {
+    printf("%1.4f ", out_result[i]);
+  }
+  printf("\n");
   
   safe_xgboost(XGBoosterFree(booster));
   safe_xgboost(XGDMatrixFree(dtrain));
-  // safe_xgboost(XGDMatrixFree(dtest));
+  safe_xgboost(XGDMatrixFree(dtest));
   return 0;
 }

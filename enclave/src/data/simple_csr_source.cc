@@ -91,6 +91,7 @@ void SimpleCSRSource::CopyFromMultiple(std::vector<std::unique_ptr<dmlc::Parser<
   auto& weights = info.weights_.HostVector();
   auto& data_vec = page_.data.HostVector();
   auto& offset_vec = page_.offset.HostVector();
+
   for (int i = 0; i < num_parsers; i++) {
     dmlc::Parser<uint32_t>* parser = parsers[i].get();
     // use qid to get group info
