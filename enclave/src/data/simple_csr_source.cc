@@ -98,15 +98,12 @@ void SimpleCSRSource::CopyFromMultiple(std::vector<std::unique_ptr<dmlc::Parser<
     const uint64_t default_max = std::numeric_limits<uint64_t>::max();
     uint64_t last_group_id = default_max;
     bst_uint group_size = 0;
-    // this->Clear(); 
     while (parser->Next()) {
         const dmlc::RowBlock<uint32_t>& batch = parser->Value();
         if (batch.label != nullptr) {
-            // auto& labels = info.labels_.HostVector();
             labels.insert(labels.end(), batch.label, batch.label + batch.size);
         }
         if (batch.weight != nullptr) {
-            // auto& weights = info.weights_.HostVector();
             weights.insert(weights.end(), batch.weight, batch.weight + batch.size);
         }
         if (batch.qid != nullptr) {
@@ -130,10 +127,8 @@ void SimpleCSRSource::CopyFromMultiple(std::vector<std::unique_ptr<dmlc::Parser<
 
         // update information
         this->info.num_row_ += batch.size;
-        LOG(DEBUG) << "num rows copied so far: " << this->info.num_row_;
+
         // copy the data over
-        // auto& data_vec = page_.data.HostVector();
-        // auto& offset_vec = page_.offset.HostVector();
         for (size_t i = batch.offset[0]; i < batch.offset[batch.size]; ++i) {
             uint32_t index = batch.index[i];
             bst_float fvalue = batch.value == nullptr ? 1.0f : batch.value[i];
@@ -151,9 +146,6 @@ void SimpleCSRSource::CopyFromMultiple(std::vector<std::unique_ptr<dmlc::Parser<
             info.group_ptr_.push_back(group_size);
         }
     }
-    // this->info.num_nonzero_ = static_cast<uint64_t>(page_.data.Size());
-    // // Either every row has query ID or none at all
-    // CHECK(info.qids_.empty() || info.qids_.size() == info.num_row_);
   }
   this->info.num_nonzero_ = static_cast<uint64_t>(page_.data.Size());
   // Either every row has query ID or none at all

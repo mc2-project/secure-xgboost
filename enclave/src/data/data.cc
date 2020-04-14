@@ -322,7 +322,6 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
                   }
               }
               cache_file.append(os.str());
-              // cache_file = os.str();
           }
       } else {
           fname = uri;
@@ -360,9 +359,6 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
           }
         }
       }
-     LOG(DEBUG) << "Creating parser for " << fname;
-     LOG(DEBUG) << "Iteration: " << j;
-     LOG(DEBUG) << "Key: " << keys[j];
 #ifdef __ENCLAVE__ // pass decryption key
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
               dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[j]));
@@ -372,7 +368,6 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
 #endif
       parsers.push_back(std::move(parser));
   }
-  LOG(DEBUG) << "Creating DMatrices, passing in parsers";
   DMatrix* dmat = DMatrix::CreateMultiple(std::move(parsers), num_uris, cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
@@ -471,12 +466,9 @@ DMatrix* DMatrix::CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32
         int num_parsers,
         const std::string& cache_prefix,
         const size_t page_size) {
-    LOG(DEBUG) << "In DMatrix::CreateMultiple";
     if (cache_prefix.length() == 0) {
         std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-        LOG(DEBUG) << "About to copy to source";
         source->CopyFromMultiple(std::move(parsers), num_parsers);
-        LOG(DEBUG) << "Finished copying to source\n";
         return DMatrix::Create(std::move(source), cache_prefix);
     } else {
 #if DMLC_ENABLE_STD_THREAD

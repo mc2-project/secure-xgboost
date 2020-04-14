@@ -97,9 +97,8 @@ int main(int argc, char** argv) {
   std::cout << "Loading train data\n";
   // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
   const char* data_files[2] = {(const char*) train1.c_str(), (const char*) train2.c_str()};
-  std::cout << data_files[0] << std::endl;
   safe_xgboost(XGDMatrixCreateFromEncryptedFile(data_files, 2, silent, &dtrain, "chester"));
-  // std::cout << "Loading test data\n";
+  std::cout << "Loading test data\n";
   const char* test_file[1] = {(const char*) fname2.c_str()};
   safe_xgboost(XGDMatrixCreateFromEncryptedFile(test_file, 1, silent, &dtest, "chester"));
 #else
