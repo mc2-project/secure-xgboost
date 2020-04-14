@@ -500,7 +500,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         xgboost::bst_ulong num_files,
         int silent,
         DMatrixHandle *out,
-        char* username ) {
+        char* usernames[] ) {
     API_BEGIN();
     LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
@@ -515,7 +515,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     std::vector<const std::string> fnames_vector;
     for (xgboost::bst_ulong i = 0; i < num_files; ++i) {
         char key[CIPHER_KEY_SIZE];
-        EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
+        EnclaveContext::getInstance().get_client_key((uint8_t*) key, usernames[i]);
         keys[i] = (char*) malloc(sizeof(char) * CIPHER_KEY_SIZE);
         memcpy(keys[i], key, CIPHER_KEY_SIZE);
         fnames_vector.push_back(std::string(fnames[i]));

@@ -175,7 +175,7 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         bst_ulong num_files,
         int silent,
         DMatrixHandle *out,
-        char* username);
+        char* usernames[]);
 #endif
 
 /*!

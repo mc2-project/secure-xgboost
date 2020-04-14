@@ -15,7 +15,7 @@ enclave {
                 bst_ulong num_files,
                 int silent,
                 [out] DMatrixHandle *out,
-                [in, string] char* username);
+                [in, count=num_files] char** usernames);
 
         public int enclave_XGBoosterCreate(
                 [in, count=len] const DMatrixHandle* dmats, 

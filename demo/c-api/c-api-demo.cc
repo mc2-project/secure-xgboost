@@ -97,10 +97,13 @@ int main(int argc, char** argv) {
   std::cout << "Loading train data\n";
   // safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
   const char* data_files[2] = {(const char*) train1.c_str(), (const char*) train2.c_str()};
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile(data_files, 2, silent, &dtrain, "chester"));
+  char* data_owners[2] = {"chester", "chexter"};
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(data_files, 2, silent, &dtrain, data_owners));
+
   std::cout << "Loading test data\n";
   const char* test_file[1] = {(const char*) fname2.c_str()};
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile(test_file, 1, silent, &dtest, "chester"));
+  char* test_data_owners[1] = {"chester"};
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(test_file, 1, silent, &dtest, test_data_owners));
 #else
   safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.train", silent, &dtrain));
   safe_xgboost(XGDMatrixCreateFromFile("../data/agaricus.txt.test", silent, &dtest));
