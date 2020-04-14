@@ -61,17 +61,10 @@ typedef uint64_t bst_ulong;  // NOLINT(*)
 typedef float bst_float;  // NOLINT(*)
 
 
-#ifdef __SGX__
 /*! \brief handle to DMatrix */
 typedef char* DMatrixHandle;  // NOLINT(*)
 /*! \brief handle to Booster */
 typedef char* BoosterHandle;  // NOLINT(*)
-#else
-/*! \brief handle to DMatrix */
-typedef void *DMatrixHandle;  // NOLINT(*)
-/*! \brief handle to Booster */
-typedef void *BoosterHandle;  // NOLINT(*)
-#endif
 /*! \brief handle to a data iterator */
 typedef void *DataIterHandle;  // NOLINT(*)
 /*! \brief handle to a internal data holder. */
