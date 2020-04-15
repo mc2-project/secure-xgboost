@@ -366,6 +366,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
               dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));
 #endif
+
       parsers.push_back(std::move(parser));
   }
   DMatrix* dmat = DMatrix::CreateMultiple(std::move(parsers), num_uris, cache_file, page_size);
@@ -379,21 +380,21 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
 #ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
-  // if (is_encrypted) {
-  //   int *indices = new int[npart];
-  //   memset(indices, 0, sizeof(indices));
-  //   indices[partid] = parser->total_rows_in_chunk;
-  //   rabit::Allreduce<rabit::op::Max>(indices, npart);
-  //   uint64_t sum = 0;
-  //   uint64_t sum_prev = 0;
-  //   for (int i = 0; i < npart; i++) {
-  //     if (i < partid)
-  //       sum_prev += indices[i];
-  //     sum += indices[i];
-  //   }
-  //   CHECK_EQ(parser->starting_row_index, sum_prev + 1);
-  //   CHECK_EQ(parser->total_rows_global, sum);
-  // }
+  if (is_encrypted) {
+      int *indices = new int[npart];
+      memset(indices, 0, sizeof(indices));
+      indices[partid] = parser->total_rows_in_chunk;
+      rabit::Allreduce<rabit::op::Max>(indices, npart);
+      uint64_t sum = 0;
+      uint64_t sum_prev = 0;
+      for (int k = 0; k < npart; k++) {
+          if (k < partid)
+              sum_prev += indices[k];
+          sum += indices[k];
+      }
+      CHECK_EQ(parser->starting_row_index, sum_prev + 1);
+      CHECK_EQ(parser->total_rows_global, sum);
+  }
 #endif
 
   // backward compatiblity code.
