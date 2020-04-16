@@ -41,15 +41,15 @@ Installing the Open Enclave SDK
 
 1. The requirements are:
 
-   - Open Enclave version 0.8.1
+   - Open Enclave version 0.8.2
    - Intel SGX DCAP Driver version 1.21
    
    Follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ to install the Intel SGX DCAP driver, and the Open Enclave packages and dependencies. 
 
-   Alternatively, you may also acquire a VM with the required features pre-installed from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.8.1, and the DCAP driver to version 1.21:
+   Alternatively, you may also acquire a VM with the required features pre-installed from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.8.2, and the DCAP driver to version 1.21:
 
 
-   Confirm that Open Enclave is version 0.8.1:
+   Confirm that Open Enclave is version 0.8.2:
 
    .. code-block:: bash
       
@@ -70,6 +70,10 @@ Installing the Open Enclave SDK
       source /opt/openenclave/share/openenclave/openenclaverc
 
    Consider adding this line to your ``~/.bashrc`` to make the environment variables persist across sessions.
+
+3. Starting from version 0.8.2, the Open Enclave SDK supports mitigation against the `LVI vulnerability <https://software.intel.com/security-software-guidance/software-guidance/load-value-injection>`_.
+
+   To enable LVI mitigation, you need to additionally install LVI mitigated versions of the Open Enclave libraries. Follow the instructions for Linux prerequisites described `here <https://github.com/openenclave/openenclave/tree/0.8.2/samples/helloworld#build-and-run-with-lvi-mitigation>`_.
 
 **************************************
 Installing Secure XGBoost Dependencies 
@@ -110,7 +114,7 @@ Building the Targets
 
       git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
 
-2. Configure the enclave parameters in ``CMakeLists.txt``; these parameters are used by the Open Enclave SDK to configure the enclave build.
+2. Configure the enclave parameters listed in ``CMakeLists.txt``; these parameters are used by the Open Enclave SDK to configure the enclave build.
 
    * ``OE_DEBUG``: Set this parameter to 0 to build the enclave in release mode, or 1 to build in debug mode.
    * ``OE_NUM_HEAP_PAGES``: The amount of heap memory (in pages) committed to the enclave; this is the maximum amount of heap memory available to your enclave application.
@@ -119,13 +123,15 @@ Building the Targets
    * ``OE_PRODUCT_ID``: Enclave product ID.
    * ``OE_SECURITY_VERSION``: Enclave security version number.
 
-   More details on these parameters can be found `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md>`_.
+   More details on these parameters can be found `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md#signing-the-enclave>`_.
 
    We also provide some additional configuration options:
 
    * ``LOGGING``: Set this parameter to ``ON`` to enable logging within the enclave. This parameter requires ``OE_DEBUG`` to be set to 1.
    * ``SIMULATE``: Set this parameter to ``ON`` to build the enclave in simulation mode (for local development and testing, in case your machine does not support hardware enclaves). This parameter requires ``OE_DEBUG`` to be set to 1.
    * ``OBLIVIOUS``: Set this parameter to ``ON`` to perform model training and inference using data-oblivious algorithms (to mitigate access-pattern based side-channel attacks).
+
+   Finally, we also provide options to build the library with LVI mitigation. To enable LVI mitigation, set the option ``LVI_MITIGATION`` to ``ON``, and set the variable ``LVI_MITIGATION_BINDIR`` to point to the location where you installed the LVI mitigated Open Enclave libraries.
 
 
 3. On Ubuntu, build the Secure XGBoost targets by running CMake:
@@ -139,6 +145,12 @@ Building the Targets
       cmake ..
       make -j4
       popd
+
+   Note that you can pass the configuration parameters as arguments to ``cmake`` without modifying ``CMakeLists.txt``. For example, to build with LVI mitigation, if you installed the LVI mitigated libraries at the location ``/opt/openenclave/lvi_mitigation_bin``, then you can run ``cmake`` as follows:
+
+   .. code-block:: bash
+
+      cmake -DLVI_MITIGATION=ON -DLVI_MITIGATION_BINDIR=/opt/openenclave/lvi_mitigation_bin ..
 
 
 Python Package Installation

@@ -33,7 +33,7 @@ option(OBLIVIOUS
 option(USE_AVX2 
     "Use AVX2 instructions to speed up oblivious primitives" ON)
 option(LVI_MITIGATION
-    "Enable mitigations for LVI vulnerability" ON)
+    "Enable mitigations for LVI vulnerability" OFF)
 set(LVI_MITIGATION_BINDIR "/opt/openenclave/lvi_mitigation_bin"
     CACHE STRING "Path to LVI mitigation dependencies")
 
@@ -68,6 +68,11 @@ if(OBLIVIOUS)
 else()
     message("\nDisabling obliviousness.\n")
 endif(OBLIVIOUS)
+if(LVI_MITIGATION)
+    message("\nEnabling LVI mitigation.\n")
+else()
+    message("\nDisabling LVI mitigation.\n")
+endif(LVI_MITIGATION)
 
 set_default_configuration_release()
 
