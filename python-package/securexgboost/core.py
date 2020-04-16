@@ -355,6 +355,75 @@ def _maybe_dt_array(array):
 
     return array
 
+class User(object):
+    """
+
+    This should store all the user information.
+    Make sure you call Set_user to set the default in the global variable
+    """
+    def __init__(self, username, private_key, certificate):
+        """
+        Parameters
+        ----------
+        username: string
+            username encoded in the certificate
+        private_key: string
+            path to user's private key file
+        certificate: string
+            path to user's private key file
+        """
+        self.username = username
+        self.private_key = private_key
+        self.certificate = certificate
+        self.crypto = CryptoUtils()
+
+    def set_user(self):
+        """
+        set the current user
+        """
+        globals()["current_user"] = self
+        print("Current user has been set to {}!".format(self.username))
+
+    def sign_statement(self, statement):
+        """
+        Parameters
+        ----------
+        statement: string
+            sign some statement using a user's private key
+
+        Returns
+        -------
+        signature : proto.NDArray
+        sig_len_as_int : int
+        """
+        assert isinstance(statement, str)
+        statement_size = len(statement) + 1
+        statement_pointer = c_str(statement)
+
+        # slightly modified version of sign data
+        # Cast the keyfile to a char*
+        keyfile = ctypes.c_char_p(str.encode(self.private_key))
+
+        # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
+        data = statement_pointer
+        data_size = ctypes.c_size_t(statement_size)
+
+        # Allocate memory to store the signature and sig_len
+        signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+        sig_len = ctypes.c_size_t(1024)
+
+        # Sign data with key keyfile
+        _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
+
+        # Cast the signature and sig_len back to a gRPC serializable format
+        sig_len_as_int = sig_len.value
+        signature = pointer_to_proto(signature, sig_len_as_int)
+
+        return signature, sig_len_as_int
+
+
+
+
 def Set_user(user_name):
     """
     Parameters

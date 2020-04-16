@@ -30,6 +30,12 @@ class EnclaveContext {
     // map username to client_key
     std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
 
+    // map user name to public key
+    std::unordered_map<std::string, std::vector<uint8_t>> client_public_keys;
+
+    //TODO undo/modified hard coding all the expected users
+    string users[2] = {"user1", "user2"};
+
     EnclaveContext() {
       generate_public_key();
       client_key_is_set = false;
@@ -82,6 +88,46 @@ class EnclaveContext {
         memset(key, 0, CIPHER_KEY_SIZE);
         return false;
       }
+    }
+
+    bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, string username){
+          mbedtls_pk_context _pk_context;
+
+      unsigned char hash[32];
+      int ret = 1;
+
+      mbedtls_pk_init(&_pk_context);
+      if (client_keys.count(username) <= 0){
+        LOG(INFO) << "user " << username << " does not exist";
+        return false;
+      }
+
+      uint8_t* pkey = &client_public_keys[username][0];
+
+      if((ret = mbedtls_pk_parse_public_key(&_pk_context, (unsigned char*) pkey, strlen(key) + 1)) != 0) {
+        LOG(INFO) << "verification failed - Could not read key";
+        LOG(INFO) << "verification failed - mbedtls_pk_parse_public_keyfile returned" << ret;
+        return false;
+      }
+
+      if(!mbedtls_pk_can_do(&_pk_context, MBEDTLS_PK_RSA)) {
+        LOG(INFO) << "verification failed - Key is not an RSA key";
+        return false;
+      }
+
+      mbedtls_rsa_set_padding(mbedtls_pk_rsa(_pk_context), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
+
+      if((ret = compute_sha256(data, data_len, hash)) != 0) {
+        LOG(INFO) << "verification failed -- Could not hash";
+        return false;
+      }
+
+      if((ret = mbedtls_pk_verify(&_pk_context, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0) {
+        LOG(INFO) << "verification failed -- mbedtls_pk_verify returned " << ret;
+        return false;
+      }
+
+      return true;
     }
 
     // FIXME verify client identity using root CA
@@ -319,13 +365,15 @@ class EnclaveContext {
       unsigned char * nameptr = name.p;
       size_t name_len = name.len;
 
-      //fprintf(stdout, "Decrypted key\n");
-      //for (int i = 0; i < CIPHER_KEY_SIZE; i++)
-      //  fprintf(stdout, "%d\t", output[i]);
-      //fprintf(stdout, "\n");
-      std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
+      // storing user private key
+      std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);
       std::string user_nam =  convertToString((char *)nameptr, name_len);
-      client_keys.insert({user_nam, v});
+      client_keys.insert({user_nam, user_private_key});
+
+      // storing user public key
+      // TODO verify that user certificate's public key has the same length as the secure enclave public key
+      std::vector<uint8_t> user_public_key((uint8_t *)(user_cert.pk->pk_info->key), (uint8_t *)(user_cert.pk->pk_info->key) + CIPHER_PK_SIZE);
+      client_public_keys.insert({user_nam, user_public_key});
 
       LOG(INFO) << "verifiation succeded - user added";
       LOG(INFO) << "username :" << user_nam;
