@@ -469,6 +469,7 @@ int add_client_key_with_certificate(char * cert,
     if (EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len))
       return 0;
     return -1;
+
 }
 
 #endif // __ENCLAVE__

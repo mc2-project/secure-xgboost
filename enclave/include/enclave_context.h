@@ -375,6 +375,7 @@ class EnclaveContext {
       std::vector<uint8_t> user_public_key((uint8_t *)(user_cert.pk->pk_info->key), (uint8_t *)(user_cert.pk->pk_info->key) + CIPHER_PK_SIZE);
       client_public_keys.insert({user_nam, user_public_key});
 
+
       LOG(INFO) << "verifiation succeded - user added";
       LOG(INFO) << "username :" << user_nam;
       return true;

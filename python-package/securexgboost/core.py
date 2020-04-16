@@ -422,8 +422,6 @@ class User(object):
         return signature, sig_len_as_int
 
 
-
-
 def Set_user(user_name):
     """
     Parameters
