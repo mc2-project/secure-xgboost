@@ -22,9 +22,21 @@ import remote_attestation_pb2
 import remote_attestation_pb2_grpc
 from rpc_utils import *
 import os
+import sys
+import traceback
+import numpy as np
 import securexgboost as xgb
 
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
+
+# Possible available names
+global_names = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+# Per server list of names to DMatrices (used for 1-1 mapping betwee client and server handles)
+names_to_dmatrices = {}
+
+# Per server list of names to Boosters (used for 1-1 mapping between client and server handles)
+names_to_boosters = {}
 
 def xgb_load_train_predict():
     """
@@ -92,6 +104,50 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         result = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
 
         return remote_attestation_pb2.Status(status=result)
+
+    def SendDMatrixAttrs(self, request, context):
+        """
+        Receives the path of a dmatrix from the client and creates the dmatrix on the server side
+        """
+        print("Received request to create DMatrix with path: " + request.data)
+        data = request.data
+        encrypted = request.encrypted 
+        label = list(request.label)
+        if not len(label):
+            label = None
+        missing = request.missing
+        weight = list(request.weight)
+        if not len(weight):
+            weight = None
+        silent = request.silent
+        feature_names = list(request.feature_names)
+        if not len(feature_names):
+            feature_names = None
+        feature_types = list(request.feature_types)
+        if not len(feature_types):
+            feature_types = None
+        nthread = request.nthread
+        try:
+            dmatrix = xgb.DMatrix(data=data, \
+                    encrypted=encrypted, \
+                    label=label, \
+                    missing=missing, \
+                    weight=weight, \
+                    silent=silent, \
+                    feature_names=feature_names, \
+                    feature_types=feature_types, \
+                    nthread=nthread, \
+                    channel_addr=None) 
+            name = global_names.pop()
+            names_to_dmatrices[name] = dmatrix
+            return remote_attestation_pb2.Name(name=name)
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Name(name=None)
 
     def SignalStart(self, request, context):
         """
