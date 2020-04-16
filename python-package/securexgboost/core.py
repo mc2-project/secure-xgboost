@@ -16,6 +16,10 @@ import re
 import sys
 import warnings
 
+import grpc
+import remote_attestation_pb2
+import remote_attestation_pb2_grpc
+
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
 import scipy.sparse
@@ -370,7 +374,7 @@ class DMatrix(object):
     def __init__(self, data, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
-                 nthread=None):
+                 nthread=None, channel_addr=None):
         """
         Parameters
         ----------
@@ -403,6 +407,23 @@ class DMatrix(object):
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
         """
+        # check if RPC call is needed (client provoked initialization)
+        self.channel_addr = channel_addr
+        if self.channel_addr:
+            with grpc.insecure_channel(self.channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.SendDMatrixAttrs(remote_attestation_pb2.DMatrixAttrs(data=data, \
+                        encrypted=encrypted, \
+                        label=label, \
+                        missing=missing, \
+                        weight=weight, \
+                        silent=silent, \
+                        feature_names=feature_names, \
+                        feature_types=feature_types, \
+                        nthread=nthread))
+            self.name = response.name
+            return
+ 
         # force into void_p, mac need to pass things in as void_p
         if data is None:
             self.handle = None
@@ -2040,3 +2061,23 @@ class Booster(object):
             sys.stderr.write(
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
+
+class RPCServer:
+    def __init__(self, channel_addr):
+        self.channel_addr = channel_addr
+
+    def get_remote_report(self):
+        with grpc.insecure_channel(self.channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+        return response
+ 
+    def send_data_key(self, enc_sym_key, enc_sym_key_size, sig, sig_len):
+        with grpc.insecure_channel(self.channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, \
+                    key_size=enc_sym_key_size, \
+                    signature=sig, \
+                    sig_len=sig_len))
+        return response
+ 
