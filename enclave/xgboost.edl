@@ -193,5 +193,9 @@ enclave {
         public void enclave_RabitTrackerPrint(
                 [in, string] const char *msg);
     };
+    untrusted {
+        void host_XGBAPISetLastError(
+                [in, string] const char* msg);
+    };
 };
 

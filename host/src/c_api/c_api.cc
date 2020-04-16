@@ -1427,8 +1427,8 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
           (const unsigned char*) key,     // encryption key
           CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
   if (ret != 0) {
-    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-    exit(1);
+    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
   }
 
   const char* total_encrypted;
@@ -1472,8 +1472,7 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
     decrypted[out_len] = '\0';
     free(ct);
     if (ret != 0) {
-      std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
-      exit(1);
+      LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
     }
     models[i] = (char*) decrypted;
   }
@@ -1510,8 +1509,8 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
     int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
     if( ret != 0 )
     {
-        printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
-        exit(1);
+        //printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
+        LOG(FATAL) << "mbedtls_ctr_drbg_seed() failed - returned " << -ret;
     }
 
     // Initialize the GCM context with our key and desired cipher
@@ -1520,8 +1519,8 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
             (unsigned char*) key,      // encryption key
             CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
     if( ret != 0 ) {
-        printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-        exit(1);
+        //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+        LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
     }
 
     std::ifstream infile(fname);
@@ -1568,8 +1567,8 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
                 tag
                 );
         if( ret != 0 ) {
-            printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
-            exit(1);
+            //printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
+            LOG(FATAL) << "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned " << -ret;
         }
         std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
         myfile 
@@ -1595,8 +1594,8 @@ XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
             (const unsigned char*)key,      // encryption key
             CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
     if( ret != 0 ) {
-        printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-        exit(1);
+        //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+        LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
     }
 
     std::ifstream infile(fname);
@@ -1670,8 +1669,7 @@ XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
         decrypted[out_len] = '\0';
         free(ct);
         if (ret != 0) {
-            std::cout << "mbedtls_gcm_auth_decrypt failed with error " << -ret << std::endl;
-            exit(1);
+            LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
         }
         myfile << decrypted << "\n";
     }
