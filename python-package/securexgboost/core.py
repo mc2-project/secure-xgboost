@@ -375,17 +375,16 @@ class DMatrix(object):
     _feature_names = None  # for previous version's pickle
     _feature_types = None
 
-    def __init__(self, data, encrypted=False, label=None, missing=None,
+    def __init__(self, data_dict, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
-                 nthread=None, usernames=None):
+                 nthread=None):
         """
         Parameters
         ----------
-        data : list of strings
-            List of data sources of DMatrix.
-            When data is string type, it represents the path libsvm format txt file,
-            or binary file that xgboost can read from.
+        data_dict : dictionary 
+            Keys: Usernames
+            Values: Path to training data of corresponding user
         label : list or numpy 1-D array, optional
             Label of the training data.
         missing : float, optional
@@ -410,18 +409,16 @@ class DMatrix(object):
         nthread : integer, optional
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
-        usernames : string, optional
-            User's username. Used to find the corresponding key to decrypt the training data.
         """
         # check the global variable for current_user
         #  if usernames is None and "current_user" in globals():
             #  username = globals()["current_user"]
 
-        if usernames is None:
-            raise ValueError("Please set your username with the set_user function or provide a username as an optional argument")
+        usernames, data = [], []
 
-        if len(usernames) != len(data):
-            raise ValueError("Please provide one username per data file")
+        for user, path in data_dict.items():
+            usernames.append(user)
+            data.append(path)
 
         # force into void_p, mac need to pass things in as void_p
         if data is None:

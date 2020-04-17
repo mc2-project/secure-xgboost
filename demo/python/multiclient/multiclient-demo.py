@@ -33,6 +33,7 @@ test_enc_1 = HOME_DIR + "demo/python/multiclient/test1.enc"
 
 # Generate key, encrypt data, send key to enclave
 crypto.generate_client_key(KEY_FILE_1)
+print("Encrypting user1's file with key {}".format(KEY_FILE_1))
 crypto.encrypt_file(training_data_1, train_enc_1, KEY_FILE_1)
 crypto.encrypt_file(test_data, test_enc_1, KEY_FILE_1)
 
@@ -69,6 +70,7 @@ train_enc_2 = HOME_DIR + "demo/python/multiclient/train2.enc"
 test_enc_2 = HOME_DIR + "demo/python/multiclient/test2.enc"
 
 crypto.generate_client_key(KEY_FILE_2)
+print("Encrypting user2's file with key {}".format(KEY_FILE_2))
 crypto.encrypt_file(training_data_2, train_enc_2, KEY_FILE_2)
 crypto.encrypt_file(test_data, test_enc_2, KEY_FILE_2)
 
@@ -92,11 +94,12 @@ crypto.add_client_key_with_certificate(user_certificate,
 
 # ------------------------------- Begin Computation ------------------------------------------
 # Concatenate and load training data
-dtrain = xgb.DMatrix([train_enc_1, train_enc_2], encrypted=True, usernames=["user1", "user2"])
+print("Loading both users' data")
+dtrain = xgb.DMatrix({"user1": train_enc_1, "user2": train_enc_2}, encrypted=True)
 
 # Load test data
-dtest1 = xgb.DMatrix([test_enc_1], encrypted=True, usernames=["user1"])
-dtest2 = xgb.DMatrix([test_enc_2], encrypted=True, usernames=["user2"])
+dtest1 = xgb.DMatrix({"user1": test_enc_1}, encrypted=True)
+dtest2 = xgb.DMatrix({"user2": test_enc_2}, encrypted=True)
 
 # Set parameters
 params = {
