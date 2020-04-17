@@ -29,15 +29,6 @@ import securexgboost as xgb
 
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
-# Possible available names
-global_names = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-
-# Per server list of names to DMatrices (used for 1-1 mapping betwee client and server handles)
-names_to_dmatrices = {}
-
-# Per server list of names to Boosters (used for 1-1 mapping between client and server handles)
-names_to_boosters = {}
-
 def xgb_load_train_predict():
     """
     This code will have been agreed upon by all parties before being run.
@@ -138,9 +129,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     feature_types=feature_types, \
                     nthread=nthread, \
                     channel_addr=None) 
-            name = global_names.pop()
-            names_to_dmatrices[name] = dmatrix
-            return remote_attestation_pb2.Name(name=name)
+            return remote_attestation_pb2.Name(name=dmatrix.handle)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
