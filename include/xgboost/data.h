@@ -498,7 +498,7 @@ class DMatrix {
                          const std::string& cache_prefix = "",
                          const size_t page_size = kPageSize);
 
-  static DMatrix* CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers,
+  static DMatrix* CreateMultiple(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
           int num_parsers,
           const std::string& cache_prefix = "",
           const size_t page_size = kPageSize);

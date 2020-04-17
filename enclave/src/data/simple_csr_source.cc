@@ -85,7 +85,7 @@ void SimpleCSRSource::CopyFrom(dmlc::Parser<uint32_t>* parser) {
   CHECK(info.qids_.empty() || info.qids_.size() == info.num_row_);
 }
 
-void SimpleCSRSource::CopyFromMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers, int num_parsers) {
+void SimpleCSRSource::CopyFromMultiple(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers, int num_parsers) {
   this->Clear(); 
   auto& labels = info.labels_.HostVector();
   auto& weights = info.weights_.HostVector();

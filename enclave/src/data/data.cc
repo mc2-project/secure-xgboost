@@ -292,7 +292,8 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
                        const size_t page_size) {
   std::string fname;
   std::string cache_file = "";
-  std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers;
+  std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers;
+  int partid, npart;
 
   for (int j = 0; j < num_uris; ++j) {
       const std::string uri = uris[j];
@@ -326,7 +327,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
       } else {
           fname = uri;
       }
-      int partid = 0, npart = 1;
+      partid = 0, npart = 1;
       if (load_row_split) {
           partid = rabit::GetRank();
           npart = rabit::GetWorldSize();
@@ -360,7 +361,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
         }
       }
 #ifdef __ENCLAVE__ // pass decryption key
-      std::unique_ptr<dmlc::Parser<uint32_t> > parser(
+      std::shared_ptr<dmlc::Parser<uint32_t> > parser(
               dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[j]));
 #else
       std::unique_ptr<dmlc::Parser<uint32_t> > parser(
@@ -369,7 +370,7 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
 
       parsers.push_back(std::move(parser));
   }
-  DMatrix* dmat = DMatrix::CreateMultiple(std::move(parsers), num_uris, cache_file, page_size);
+  DMatrix* dmat = DMatrix::CreateMultiple(parsers, num_uris, cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
                  << dmat->Info().num_nonzero_ << " entries loaded from " << std::accumulate(uris.begin(), uris.end(), std::string(", "));;
@@ -380,20 +381,23 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
 #ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
-  if (is_encrypted) {
-      int *indices = new int[npart];
-      memset(indices, 0, sizeof(indices));
-      indices[partid] = parser->total_rows_in_chunk;
-      rabit::Allreduce<rabit::op::Max>(indices, npart);
-      uint64_t sum = 0;
-      uint64_t sum_prev = 0;
-      for (int k = 0; k < npart; k++) {
-          if (k < partid)
-              sum_prev += indices[k];
-          sum += indices[k];
+  for (int i = 0; i < num_uris; ++i) {
+      dmlc::Parser<uint32_t>* parser = parsers[i].get();
+      if (is_encrypted) {
+          int *indices = new int[npart];
+          memset(indices, 0, sizeof(indices));
+          indices[partid] = parser->total_rows_in_chunk;
+          rabit::Allreduce<rabit::op::Max>(indices, npart);
+          uint64_t sum = 0;
+          uint64_t sum_prev = 0;
+          for (int k = 0; k < npart; k++) {
+              if (k < partid)
+                  sum_prev += indices[k];
+              sum += indices[k];
+          }
+          CHECK_EQ(parser->starting_row_index, sum_prev + 1);
+          CHECK_EQ(parser->total_rows_global, sum);
       }
-      CHECK_EQ(parser->starting_row_index, sum_prev + 1);
-      CHECK_EQ(parser->total_rows_global, sum);
   }
 #endif
 
@@ -463,13 +467,13 @@ DMatrix* DMatrix::Create(dmlc::Parser<uint32_t>* parser,
   }
 }
 
-DMatrix* DMatrix::CreateMultiple(std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers,
+DMatrix* DMatrix::CreateMultiple(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
         int num_parsers,
         const std::string& cache_prefix,
         const size_t page_size) {
     if (cache_prefix.length() == 0) {
         std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-        source->CopyFromMultiple(std::move(parsers), num_parsers);
+        source->CopyFromMultiple(parsers, num_parsers);
         return DMatrix::Create(std::move(source), cache_prefix);
     } else {
 #if DMLC_ENABLE_STD_THREAD
