@@ -91,14 +91,16 @@ def run(channel_addr, key_path, keypair):
     if not dtrain:
         print("Error creating dtrain")
         return
-    print("dtrain: " + dtrain)
+    print("dtrain: " + dtrain.handle.value.decode("utf-8"))
 
     print("Creating test matrix")
     dtest = xgb.DMatrix(HOME_DIR +  "demo/python/remote-control/client/test.enc", encrypted=True)
     if not dtest:
         print("Error creating dtest")
         return
-    print("dtest: " + dtest)
+    print("dtest: " + dtest.handle.value.decode("utf-8"))
+
+    return
 
     print("Beginning Training")
 
@@ -142,7 +144,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     channel_addr = str(args.ip_addr) + ":50051" 
-    os.environ['CHANNEL_ADDR'] = channel_addr
+    os.environ["RA_CHANNEL_ADDR"] = channel_addr
 
     logging.basicConfig()
     run(channel_addr, str(args.key), str(args.keypair))

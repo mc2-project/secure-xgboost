@@ -408,7 +408,7 @@ class DMatrix(object):
             uses maximum threads available on the system.
         """
         # check if RPC call is needed (client provoked initialization)
-        channel_addr = os.getenv("CHANNEL_ADDR")
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
@@ -421,6 +421,8 @@ class DMatrix(object):
                         feature_names=feature_names, \
                         feature_types=feature_types, \
                         nthread=nthread))
+            self.handle = ctypes.c_char_p()
+            self.handle.value = bytes(response.name, "utf-8")
             return
  
         # force into void_p, mac need to pass things in as void_p
@@ -449,7 +451,7 @@ class DMatrix(object):
                           DeprecationWarning)
 
         if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_void_p() # self.handle will be name of DMatrix on server-side (pass this to client)
+            handle = ctypes.c_char_p() # self.handle will be name of DMatrix on server-side (pass this to client)
             if encrypted:
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
                     ctypes.c_int(silent),
@@ -562,13 +564,13 @@ class DMatrix(object):
         """
         Initialize data from a datatable Frame.
         """
-        ptrs = (ctypes.c_void_p * data.ncols)()
+        ptrs = (ctypes.c_char_p * data.ncols)()
         if hasattr(data, "internal") and hasattr(data.internal, "column"):
             # datatable>0.8.0
             for icol in range(data.ncols):
                 col = data.internal.column(icol)
                 ptr = col.data_pointer
-                ptrs[icol] = ctypes.c_void_p(ptr)
+                ptrs[icol] = ctypes.c_char_p(ptr)
         else:
             # datatable<=0.8.0
             from datatable.internal import frame_column_data_r  # pylint: disable=no-name-in-module,import-error

@@ -127,9 +127,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     silent=silent, \
                     feature_names=feature_names, \
                     feature_types=feature_types, \
-                    nthread=nthread, \
-                    channel_addr=None) 
-            return remote_attestation_pb2.Name(name=dmatrix.handle)
+                    nthread=nthread)
+            return remote_attestation_pb2.Name(name=dmatrix.handle.value)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
