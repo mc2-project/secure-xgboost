@@ -374,7 +374,7 @@ class DMatrix(object):
     def __init__(self, data, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
-                 nthread=None, channel_addr=None):
+                 nthread=None): 
         """
         Parameters
         ----------
@@ -408,9 +408,9 @@ class DMatrix(object):
             uses maximum threads available on the system.
         """
         # check if RPC call is needed (client provoked initialization)
-        self.channel_addr = channel_addr
-        if self.channel_addr:
-            with grpc.insecure_channel(self.channel_addr) as channel:
+        channel_addr = os.getenv("CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
                 response = stub.SendDMatrixAttrs(remote_attestation_pb2.DMatrixAttrs(data=data, \
                         encrypted=encrypted, \
@@ -421,7 +421,6 @@ class DMatrix(object):
                         feature_names=feature_names, \
                         feature_types=feature_types, \
                         nthread=nthread))
-            self.name = response.name
             return
  
         # force into void_p, mac need to pass things in as void_p
@@ -450,7 +449,7 @@ class DMatrix(object):
                           DeprecationWarning)
 
         if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_void_p()
+            handle = ctypes.c_void_p() # self.handle will be name of DMatrix on server-side (pass this to client)
             if encrypted:
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
                     ctypes.c_int(silent),

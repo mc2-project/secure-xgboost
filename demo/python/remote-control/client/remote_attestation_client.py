@@ -62,7 +62,9 @@ def run(channel_addr, key_path, keypair):
     # Send data key to the server
     response = rpc_server.send_data_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
     print("Symmetric key for data sent to server")
-
+    # TODO: do this instead 
+    # response = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
+ 
     # Signal start
     """
     with grpc.insecure_channel(channel_addr) as channel:
@@ -85,16 +87,14 @@ def run(channel_addr, key_path, keypair):
     """
 
     print("Creating training matrix")
-    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True, \
-            channel_addr=channel_addr).name # .name is used to index into the correct dmatrix on server-side
+    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
     if not dtrain:
         print("Error creating dtrain")
         return
     print("dtrain: " + dtrain)
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR +  "demo/python/remote-control/client/test.enc", encrypted=True, \
-            channel_addr=channel_addr).name
+    dtest = xgb.DMatrix(HOME_DIR +  "demo/python/remote-control/client/test.enc", encrypted=True)
     if not dtest:
         print("Error creating dtest")
         return
@@ -142,6 +142,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     channel_addr = str(args.ip_addr) + ":50051" 
+    os.environ['CHANNEL_ADDR'] = channel_addr
 
     logging.basicConfig()
     run(channel_addr, str(args.key), str(args.keypair))
