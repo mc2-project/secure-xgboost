@@ -280,20 +280,18 @@ DMatrix* DMatrix::Load(const std::string& uri,
   return dmat;
 }
 
-DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
-                       int num_uris,
+DMatrix* DMatrix::Load(std::vector<const std::string>& uris,
                        bool silent,
                        bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
                        bool is_encrypted,
                        char* keys[],
-#endif
                        const std::string& file_format,
                        const size_t page_size) {
   std::string fname;
   std::string cache_file = "";
   std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers;
   int partid, npart;
+  int num_uris = uris.size();
 
   for (int j = 0; j < num_uris; ++j) {
       const std::string uri = uris[j];
@@ -360,17 +358,12 @@ DMatrix* DMatrix::LoadMultiple(std::vector<const std::string>& uris,
           }
         }
       }
-#ifdef __ENCLAVE__ // pass decryption key
       std::shared_ptr<dmlc::Parser<uint32_t> > parser(
               dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[j]));
-#else
-      std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-              dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));
-#endif
 
       parsers.push_back(std::move(parser));
   }
-  DMatrix* dmat = DMatrix::CreateMultiple(parsers, num_uris, cache_file, page_size);
+  DMatrix* dmat = DMatrix::Create(parsers, cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
                  << dmat->Info().num_nonzero_ << " entries loaded from " << std::accumulate(uris.begin(), uris.end(), std::string(", "));;
@@ -467,13 +460,13 @@ DMatrix* DMatrix::Create(dmlc::Parser<uint32_t>* parser,
   }
 }
 
-DMatrix* DMatrix::CreateMultiple(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
-        int num_parsers,
+DMatrix* DMatrix::Create(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
         const std::string& cache_prefix,
         const size_t page_size) {
     if (cache_prefix.length() == 0) {
         std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
-        source->CopyFromMultiple(parsers, num_parsers);
+        int num_parsers = parsers.size();
+        source->CopyFrom(parsers, num_parsers);
         return DMatrix::Create(std::move(source), cache_prefix);
     } else {
 #if DMLC_ENABLE_STD_THREAD

@@ -36,25 +36,24 @@ int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle
   return XGDMatrixCreateFromFile(fname, silent, out);
 }
 
-int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], bst_ulong num_files, int silent, DMatrixHandle *out, char* usernames[]) {
+int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out) {
   LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
-  // FIXME: check fnames, usernames ptrs
   char* filenames[num_files];
   char* usrnames[num_files];
   for (int i = 0; i < num_files; i++) {
       const char* fname = fnames[i];
-      size_t nlen = strlen(fname) + 1;
+      size_t nlen = fname_lengths[i];
       check_host_buffer(fname, nlen);
       filenames[i] = strndup(fname, nlen);
       filenames[i][nlen] = '\0';
 
       const char* uname = usernames[i];
-      size_t namelen = strlen(uname) + 1;
+      size_t namelen = username_lengths[i];
       check_host_buffer(uname, namelen);
       usrnames[i] = strndup(uname, namelen);
       usrnames[i][namelen] = '\0';
   }
-  return XGDMatrixCreateFromEncryptedFile((const char**) filenames, num_files, silent, out, usrnames);
+  return XGDMatrixCreateFromEncryptedFile((const char**) filenames, usrnames, num_files, silent, out);
 }
 
 int enclave_XGBoosterCreate(const DMatrixHandle dmats[], bst_ulong len, BoosterHandle* out) {

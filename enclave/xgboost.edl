@@ -12,10 +12,12 @@ enclave {
 
         public int enclave_XGDMatrixCreateFromEncryptedFile(
                 [in, count=num_files] const char **fnames,
+                [in, count=num_files] size_t* fname_lengths,
+                [in, count=num_files] char** usernames,
+                [in, count=num_files] size_t* username_lengths,
                 bst_ulong num_files,
                 int silent,
-                [out] DMatrixHandle *out,
-                [in, count=num_files] char** usernames);
+                [out] DMatrixHandle *out);
 
         public int enclave_XGBoosterCreate(
                 [in, count=len] const DMatrixHandle* dmats, 

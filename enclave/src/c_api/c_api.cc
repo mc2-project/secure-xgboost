@@ -497,10 +497,10 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
 }
 
 int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
+        char* usernames[],
         xgboost::bst_ulong num_files,
         int silent,
-        DMatrixHandle *out,
-        char* usernames[] ) {
+        DMatrixHandle *out) {
     API_BEGIN();
     LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
@@ -509,7 +509,6 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
             << "will split data among workers";
         load_row_split = true;
     }
-#ifdef __ENCLAVE__ // pass decryption key
     // FIXME consistently use uint8_t* for key bytes
     char* keys[num_files];
     std::vector<const std::string> fnames_vector;
@@ -520,13 +519,10 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         memcpy(keys[i], key, CIPHER_KEY_SIZE);
         fnames_vector.push_back(std::string(fnames[i]));
     }
-    *out = new std::shared_ptr<DMatrix>(DMatrix::LoadMultiple(fnames_vector, num_files, silent != 0, load_row_split, true, keys));
+    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames_vector, silent != 0, load_row_split, true, keys));
     for (int i = 0; i < num_files; ++i) {
         free(keys[i]);
     }
-#else
-    *out = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames, silent != 0, load_row_split));
-#endif
     API_END();
 }
 

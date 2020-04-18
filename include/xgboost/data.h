@@ -462,14 +462,11 @@ class DMatrix {
                        const std::string& file_format = "auto",
                        const size_t page_size = kPageSize);
 
-  static DMatrix* LoadMultiple(std::vector<const std::string>& uris,
-          int num_uris,
+  static DMatrix* Load(std::vector<const std::string>& uris,
           bool silent,
           bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
           bool is_encrypted,
           char* keys[],
-#endif
           const std::string& file_format = "auto",
           const size_t page_size = kPageSize); 
   /*!
@@ -498,8 +495,7 @@ class DMatrix {
                          const std::string& cache_prefix = "",
                          const size_t page_size = kPageSize);
 
-  static DMatrix* CreateMultiple(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
-          int num_parsers,
+  static DMatrix* Create(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
           const std::string& cache_prefix = "",
           const size_t page_size = kPageSize);
 

@@ -451,10 +451,10 @@ class DMatrix(object):
                 filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
                 usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                    usrs,
                     c_bst_ulong(len(data)),
                     ctypes.c_int(silent),
-                    ctypes.byref(handle),
-                    usrs))
+                    ctypes.byref(handle)))
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
