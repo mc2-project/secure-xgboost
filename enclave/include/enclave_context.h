@@ -124,7 +124,7 @@ class EnclaveContext {
 
     void get_client_key(uint8_t* key) {
       if (client_key_is_set) {
-          memcpy(key, client_key, CIPHER_KEY_SIZE);
+        memcpy(key, client_key, CIPHER_KEY_SIZE);
       } else {
         LOG(FATAL) << "Client key not found";
       }
