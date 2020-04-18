@@ -1,7 +1,0 @@
-[submodule "dmlc-core"]
-	path = host/dmlc-core
-	url = https://github.com/mc2-project/dmlc-core.git
-[submodule "host/dmlc-core"]
-	path = host/dmlc-core
-	url = https://github.com/mc2-project/dmlc-core.git
-	branch = refactor
