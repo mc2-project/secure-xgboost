@@ -454,8 +454,7 @@ class DMatrix {
   static DMatrix* Load(const std::string& uri,
                        bool silent,
                        bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
-                       // TODO(rishabh): add support for unencrypted files
+#ifdef __ENCLAVE__  // pass decryption key
                        bool is_encrypted,
                        char* key,
 #endif

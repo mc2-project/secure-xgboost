@@ -51,7 +51,6 @@ struct CSVParserParam : public Parameter<CSVParserParam> {
 template <typename IndexType, typename DType = real_t>
 class CSVParser : public TextParserBase<IndexType, DType> {
  public:
-#ifdef __ENCLAVE__ // Init with encryption key
    explicit CSVParser(InputSplit *source,
        const std::map<std::string, std::string>& args,
        int nthread,
@@ -64,25 +63,11 @@ class CSVParser : public TextParserBase<IndexType, DType> {
            || param_.label_column < 0)
          << "Must have distinct columns for labels and instance weights";
      }
-#else
-  explicit CSVParser(InputSplit *source,
-                     const std::map<std::string, std::string>& args,
-                     int nthread)
-      : TextParserBase<IndexType, DType>(source, nthread) {
-    param_.Init(args);
-    CHECK_EQ(param_.format, "csv");
-    CHECK(param_.label_column != param_.weight_column
-          || param_.label_column < 0)
-      << "Must have distinct columns for labels and instance weights";
-  }
-#endif
 
  protected:
-#ifdef __ENCLAVE__ // Parse blocks in encrypted files
   virtual void ParseEncryptedBlock(const char *begin,
           const char *end,
           RowBlockContainer<IndexType, DType> *out);
-#endif
   virtual void ParseBlock(const char *begin,
                           const char *end,
                           RowBlockContainer<IndexType, DType> *out);
@@ -91,7 +76,6 @@ class CSVParser : public TextParserBase<IndexType, DType> {
   CSVParserParam param_;
 };
 
-#ifdef __ENCLAVE__ // Decrypt and parse file
 template <typename IndexType, typename DType>
 void CSVParser<IndexType, DType>::
 ParseEncryptedBlock(const char *begin,
@@ -173,7 +157,7 @@ ParseEncryptedBlock(const char *begin,
   CHECK(out->label.size() + 1 == out->offset.size());
   CHECK(out->weight.size() == 0 || out->weight.size() + 1 == out->offset.size());
 }
-#endif // __ENCLAVE__
+
 template <typename IndexType, typename DType>
 void CSVParser<IndexType, DType>::
 ParseBlock(const char *begin,

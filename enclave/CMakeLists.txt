@@ -88,7 +88,6 @@ set_target_properties(xgboost_enclave PROPERTIES
   CXX_STANDARD_REQUIRED ON)
 target_compile_definitions(xgboost_enclave
   PRIVATE
-  -D__SGX__
   -D__ENCLAVE__
   -DDMLC_CORE_USE_CMAKE
   OE_API_VERSION=2

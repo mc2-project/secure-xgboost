@@ -277,25 +277,6 @@ int enclave_get_remote_report_with_pubkey(
   return get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
-int enclave_verify_remote_report_and_set_pubkey(
-        uint8_t* pem_key,
-        size_t key_size,
-        uint8_t* remote_report,
-        size_t remote_report_size) {
-  LOG(DEBUG) << "Ecall: verify_remote_report_and_set_pubkey";
-  return verify_remote_report_and_set_pubkey(pem_key, key_size, remote_report, remote_report_size);
-}
-
-//int enclave_add_client_key(
-//    char* fname,
-//    uint8_t* data,
-//    size_t data_len,
-//    uint8_t* signature,
-//    size_t sig_len) {
-//  LOG(DEBUG) << "Ecall: add_client_key";
-//  return add_client_key(fname, data, data_len, signature, sig_len);
-//}
-
 int enclave_add_client_key(
         uint8_t* data,
         size_t data_len,
@@ -336,9 +317,4 @@ int enclave_RabitGetRank() {
 int enclave_RabitIsDistributed() {
   LOG(DEBUG) << "Ecall: RabitIsDistributed";
   return RabitIsDistributed();
-}
-
-void enclave_RabitTrackerPrint(const char *msg) {
-  LOG(DEBUG) << "Ecall: TrackerPrint";
-  RabitTrackerPrint(msg);
 }

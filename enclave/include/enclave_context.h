@@ -122,11 +122,12 @@ class EnclaveContext {
     //  }
     //}
 
-    bool get_client_key(uint8_t* key) {
-      if (client_key_is_set)
-          memcpy(key, client_key, CIPHER_KEY_SIZE);
-      else
-          memset(key, 0, CIPHER_KEY_SIZE);
+    void get_client_key(uint8_t* key) {
+      if (client_key_is_set) {
+        memcpy(key, client_key, CIPHER_KEY_SIZE);
+      } else {
+        LOG(FATAL) << "Client key not found";
+      }
     }
 
     // FIXME verify client identity using root CA

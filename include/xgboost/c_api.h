@@ -57,23 +57,14 @@ if (!oe_is_outside_enclave((ptr), size)) {                \
 // manually define unsigned long
 typedef uint64_t bst_ulong;  // NOLINT(*)
 
-//#ifdef __ENCLAVE__
 // FIXME added this here, but perhaps not necessary
 typedef float bst_float;  // NOLINT(*)
-//#endif
 
 
-#ifdef __SGX__
 /*! \brief handle to DMatrix */
 typedef char* DMatrixHandle;  // NOLINT(*)
 /*! \brief handle to Booster */
 typedef char* BoosterHandle;  // NOLINT(*)
-#else
-/*! \brief handle to DMatrix */
-typedef void *DMatrixHandle;  // NOLINT(*)
-/*! \brief handle to Booster */
-typedef void *BoosterHandle;  // NOLINT(*)
-#endif
 /*! \brief handle to a data iterator */
 typedef void *DataIterHandle;  // NOLINT(*)
 /*! \brief handle to a internal data holder. */
@@ -146,7 +137,7 @@ XGB_DLL const char *XGBGetLastError(void);
  */
 XGB_DLL int XGBRegisterLogCallback(void (*callback)(const char*));
 
-#if defined(__SGX__) && defined(__HOST__)
+#if defined(__HOST__)
 XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
 #endif
 
@@ -161,7 +152,6 @@ XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
                                     int silent,
                                     DMatrixHandle *out); 
 
-#if defined(__SGX__)
 /*!
  * \brief load a data matrix from an encrypted file
  * \param fname the name of the encrypted file
@@ -172,7 +162,6 @@ XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
 XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fname,
         int silent,
         DMatrixHandle *out);
-#endif
 
 /*!
  * \brief Create a DMatrix from a data iterator.
@@ -461,11 +450,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              int option_mask,
                              unsigned ntree_limit,
                              bst_ulong *out_len,
-#ifdef __SGX__
                              uint8_t **out_result);
-#else
-                             const float **out_result);
-#endif
 
 /*!
  * \brief load model from existing file
@@ -631,7 +616,6 @@ XGB_DLL int XGBoosterLoadRabitCheckpoint(
  */
 XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
-#if defined(__SGX__) 
 XGB_DLL int get_remote_report_with_pubkey(
     uint8_t** pem_key,
     size_t* key_size,
@@ -686,15 +670,14 @@ XGB_DLL int decrypt_file_with_keybuf(
     char* fname,
     char* e_fname,
     char* key);
-#endif // __SGX__ && __ENCLAVE__
 
-#if defined(__SGX__) && defined(__HOST__)
+#if defined(__HOST__)
 // Ocalls
 int ocall_rabit__GetRank();
 
 int ocall_rabit__GetWorldSize();
 
 int ocall_rabit__IsDistributed();
-#endif // __SGX__ && __HOST__
+#endif  // __HOST__
 
 #endif  // XGBOOST_C_API_H_
