@@ -379,10 +379,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fname,
     }
     // FIXME consistently use uint8_t* for key bytes
     char key[CIPHER_KEY_SIZE];
-    if (!EnclaveContext::getInstance().get_client_key((uint8_t*) key)) {
-      LOG(INFO) << "No client key found";
-      return -1;
-    }
+    EnclaveContext::getInstance().get_client_key((uint8_t*) key);
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, true, key));
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat);
     *out = oe_host_strndup(out_str, strlen(out_str));
@@ -1216,11 +1213,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
       (option_mask & 16) != 0);
   preds = tmp_preds.HostVector();
   unsigned char key[CIPHER_KEY_SIZE];
-  if (!EnclaveContext::getInstance().get_client_key((uint8_t*) key)) {
-    LOG(INFO) << "No client key found";
-    return -1;
-  }
-  //EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
 
   int preds_len = preds.size()*sizeof(float);
   size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + preds_len;
@@ -1282,11 +1275,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
   unsigned char key[CIPHER_KEY_SIZE];
-  if (!EnclaveContext::getInstance().get_client_key((uint8_t*) key)) {
-    LOG(INFO) << "No client key found";
-    return -1;
-  }
-  //EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
 
   encrypt_symm(
       key,
@@ -1317,11 +1306,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
   unsigned char* data = tag + CIPHER_TAG_SIZE;
   unsigned char* output = (unsigned char*) malloc (len);
   unsigned char key[CIPHER_KEY_SIZE];
-  if (!EnclaveContext::getInstance().get_client_key((uint8_t*) key)) {
-    LOG(INFO) << "No client key found";
-    return -1;
-  }
-  //EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
 
   decrypt_symm(
       key,
@@ -1362,11 +1347,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
   unsigned char key[CIPHER_KEY_SIZE];
-  if (!EnclaveContext::getInstance().get_client_key((uint8_t*) key)) {
-    LOG(INFO) << "No client key found";
-    return -1;
-  }
-  //EnclaveContext::getInstance().get_client_key((uint8_t*)key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key);
 
   encrypt_symm(
       key,
@@ -1409,11 +1390,7 @@ inline void XGBoostDumpModelImpl(
   unsigned char iv[CIPHER_IV_SIZE];
   unsigned char tag[CIPHER_TAG_SIZE];
   unsigned char key[CIPHER_KEY_SIZE];
-  if (!EnclaveContext::getInstance().get_client_key((uint8_t*) key)) {
-    LOG(INFO) << "No client key found";
-    return;
-  }
-  //EnclaveContext::getInstance().get_client_key((uint8_t*) key);
+  EnclaveContext::getInstance().get_client_key((uint8_t*) key);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
     encrypted = (unsigned char*) malloc(length * sizeof(char)); 
