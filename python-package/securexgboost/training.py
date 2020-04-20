@@ -55,7 +55,6 @@ def _train_internal(params, dtrain,
     #  start_iteration = int(version / 2)
     #  nboost += start_iteration
 
-    # FIXME: This code will only work for single node
     version = 0
     start_iteration = 0
     rank = rabit.get_rank()
