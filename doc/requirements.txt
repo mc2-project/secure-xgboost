@@ -1,7 +1,7 @@
-sphinx
+sphinx==2.0.1
 mock
 guzzle_sphinx_theme
-breathe
+breathe>=4.12.0
 sh>=1.12.14
 matplotlib>=2.1
 graphviz
