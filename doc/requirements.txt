@@ -1,4 +1,4 @@
-sphinx==2.0.1
+sphinx>=3.0.1
 mock
 guzzle_sphinx_theme
 breathe>=4.12.0
