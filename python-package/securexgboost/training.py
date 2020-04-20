@@ -5,9 +5,10 @@
 from __future__ import absolute_import
 
 import warnings
-import numpy as np
-from .core import Booster, STRING_TYPES, XGBoostError, CallbackEnv, EarlyStopException
-from .compat import (SKLEARN_INSTALLED, XGBStratifiedKFold)
+#  import numpy as np
+from .core import Booster, STRING_TYPES, CallbackEnv, EarlyStopException
+#  from .core import Booster, STRING_TYPES, XGBoostError, CallbackEnv, EarlyStopException
+#  from .compat import (SKLEARN_INSTALLED, XGBStratifiedKFold)
 from . import rabit
 from . import callback
 
@@ -15,7 +16,7 @@ from . import callback
 def _train_internal(params, dtrain,
                     num_boost_round=10, evals=(),
                     obj=None, feval=None,
-                    xgb_model=None, callbacks=None):
+                    callbacks=None):
     """internal training function"""
     callbacks = [] if callbacks is None else callbacks
     evals = list(evals)
@@ -55,10 +56,9 @@ def _train_internal(params, dtrain,
     #  start_iteration = int(version / 2)
     #  nboost += start_iteration
 
-    # FIXME: This code will only work for single node
     version = 0
     start_iteration = 0
-    rank = 0
+    rank = rabit.get_rank()
 
     callbacks_before_iter = [
         cb for cb in callbacks if cb.__dict__.get('before_iteration', False)]
@@ -219,7 +219,7 @@ def train(params, dtrain, num_boost_round=10, evals=(), early_stopping_rounds=No
  #         """"Evaluate the CVPack for one iteration."""
  #         return self.bst.eval_set(self.watchlist, iteration, feval)
  #
- # 
+ #
  # def mknfold(dall, nfold, param, seed, evals=(), fpreproc=None, stratified=False,
  #             folds=None, shuffle=True):
  #     """
