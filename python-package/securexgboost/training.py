@@ -58,7 +58,7 @@ def _train_internal(params, dtrain,
     # FIXME: This code will only work for single node
     version = 0
     start_iteration = 0
-    rank = 0
+    rank = rabit.get_rank()
 
     callbacks_before_iter = [
         cb for cb in callbacks if cb.__dict__.get('before_iteration', False)]
