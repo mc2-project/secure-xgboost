@@ -10,7 +10,7 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-
+#include "mbedtls/pk_internal.h"
 
 class EnclaveContext {
   // FIXME Embed root CA for clients
@@ -34,7 +34,7 @@ class EnclaveContext {
     std::unordered_map<std::string, std::vector<uint8_t>> client_public_keys;
 
     //TODO undo/modified hard coding all the expected users
-    string users[2] = {"user1", "user2"};
+    std::string users[2] = {"user1", "user2"};
 
     EnclaveContext() {
       generate_public_key();
@@ -90,7 +90,7 @@ class EnclaveContext {
       }
     }
 
-    bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, string username){
+    bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
           mbedtls_pk_context _pk_context;
 
       unsigned char hash[32];
@@ -102,9 +102,9 @@ class EnclaveContext {
         return false;
       }
 
-      uint8_t* pkey = &client_public_keys[username][0];
+      char* pkey = (char *)(&((client_public_keys[CharPtrToString(username)])[0]));
 
-      if((ret = mbedtls_pk_parse_public_key(&_pk_context, (unsigned char*) pkey, strlen(key) + 1)) != 0) {
+      if((ret = mbedtls_pk_parse_public_key(&_pk_context, (const unsigned char*) pkey, strlen(pkey) + 1)) != 0) {
         LOG(INFO) << "verification failed - Could not read key";
         LOG(INFO) << "verification failed - mbedtls_pk_parse_public_keyfile returned" << ret;
         return false;
@@ -372,7 +372,9 @@ class EnclaveContext {
 
       // storing user public key
       // TODO verify that user certificate's public key has the same length as the secure enclave public key
-      std::vector<uint8_t> user_public_key((uint8_t *)(user_cert.pk->pk_info->key), (uint8_t *)(user_cert.pk->pk_info->key) + CIPHER_PK_SIZE);
+      mbedtls_rsa_alt_context * rsa_info = (mbedtls_rsa_alt_context *) &(user_cert.pk.pk_info);
+      uint8_t * keypointer = (uint8_t*) rsa_info->key;
+      std::vector<uint8_t> user_public_key(keypointer, keypointer + CIPHER_PK_SIZE);
       client_public_keys.insert({user_nam, user_public_key});
 
 
