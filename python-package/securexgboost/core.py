@@ -421,16 +421,6 @@ class User(object):
 
         return signature, sig_len_as_int
 
-
-def Set_user(user_name):
-    """
-    Parameters
-    ----------
-    user_name : string
-        user you want to switch to
-    """
-    globals()["current_user"] = user_name
-
 class DMatrix(object):
     """Data Matrix used in XGBoost.
 
@@ -449,7 +439,7 @@ class DMatrix(object):
         """
         Parameters
         ----------
-        data_dict : dictionary 
+        data_dict : dictionary
             Keys: Usernames
             Values: Path to training data of corresponding user
         label : list or numpy 1-D array, optional
@@ -500,7 +490,7 @@ class DMatrix(object):
         #  data, feature_names, feature_types = _maybe_pandas_data(data,
                                                                 #  feature_names,
                                                                 #  feature_types)
-#  
+#
         #  data, feature_names, feature_types = _maybe_dt_data(data,
                                                             #  feature_names,
                                                             #  feature_types)
