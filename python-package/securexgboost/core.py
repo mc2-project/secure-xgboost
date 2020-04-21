@@ -1038,7 +1038,7 @@ class CryptoUtils(object):
         # FIXME what do we need here?
         pass
 
-    def generate_client_key(self, path_to_key):
+    def generate_client_key(path_to_key):
         """
         Generate a new key and save it to `path_to_key`
 
@@ -1054,7 +1054,7 @@ class CryptoUtils(object):
         with open(path_to_key, "wb") as keyfile:
             keyfile.write(key)
 
-    def encrypt_file(self, input_file, output_file, key_file):
+    def encrypt_file(input_file, output_file, key_file):
         """
         Encrypt a file
 
@@ -1084,7 +1084,7 @@ class CryptoUtils(object):
 
         _check_call(_LIB.encrypt_file(input_path, output_path, key_path))
 
-    def encrypt_data_with_pk(self, data, data_len, pem_key, key_size):
+    def encrypt_data_with_pk(data, data_len, pem_key, key_size):
         """
         Parameters
         ----------
@@ -1114,7 +1114,7 @@ class CryptoUtils(object):
         _check_call(_LIB.encrypt_data_with_pk(data,
                                               data_len,
                                               pem_key,
-                                              key_size,
+                                              pem_key_len,
                                               encrypted_data,
                                               ctypes.byref(encrypted_data_size)))
 
@@ -1124,7 +1124,7 @@ class CryptoUtils(object):
 
         return encrypted_data, encrypted_data_size_as_int
 
-    def sign_data(self, keyfile, data, data_size):
+    def sign_data(keyfile, data, data_size):
         """
         Parameters
         ----------
@@ -1157,7 +1157,7 @@ class CryptoUtils(object):
 
         return signature, sig_len_as_int
 
-    def add_client_key(self, data, data_len, signature, sig_len):
+    def add_client_key(data, data_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
 
@@ -1186,7 +1186,7 @@ class CryptoUtils(object):
         # Add client key
         _LIB.add_client_key(data, data_len, signature, sig_len)
 
-    def decrypt_predictions(self, key, encrypted_preds, num_preds):
+    def decrypt_predictions(key, encrypted_preds, num_preds):
         """
         Decrypt encrypted predictions
 

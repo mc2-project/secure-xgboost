@@ -88,8 +88,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         signature = request.signature
         sig_len = request.sig_len
 
-        crypto_utils = xgb.CryptoUtils()
-        result = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
+        result = xgb.CryptoUtils.add_client_key(enc_sym_key, key_size, signature, sig_len)
 
         return remote_attestation_pb2.Status(status=result)
 

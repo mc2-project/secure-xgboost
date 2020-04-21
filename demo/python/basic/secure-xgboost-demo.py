@@ -6,14 +6,13 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
-crypto = xgb.CryptoUtils()
 
 # Remote Attestation
 print("Remote attestation")
 enclave.get_remote_report_with_pubkey()
 # NOTE: Verification will fail in simulation mode
 # Comment out this line for testing the code in simulation mode
-enclave.verify_remote_report_and_set_pubkey()
+#  enclave.verify_remote_report_and_set_pubkey()
 
 print("Creating training matrix")
 dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
@@ -47,7 +46,7 @@ sym_key = key_file.read() # The key will be type bytes
 key_file.close()
 
 # Decrypt predictions
-print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+print(xgb.CryptoUtils.decrypt_predictions(sym_key, predictions, num_preds))
 
 # Get fscores of model
 print("\n\nModel Feature Importance: ")

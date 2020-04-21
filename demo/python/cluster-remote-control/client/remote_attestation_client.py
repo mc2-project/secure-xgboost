@@ -48,14 +48,12 @@ def run(channel_addrs, key_path, keypair):
         sym_key = key_file.read() # The key will be type bytes
         key_file.close()
 
-        crypto_utils = xgb.CryptoUtils()
-
         # Encrypt symmetric key
-        enc_sym_key, enc_sym_key_size = crypto_utils.encrypt_data_with_pk(sym_key, len(sym_key), pem_key, key_size)
+        enc_sym_key, enc_sym_key_size = xgb.CryptoUtils.encrypt_data_with_pk(sym_key, len(sym_key), pem_key, key_size)
         print("Encrypted symmetric key")
 
         # Sign encrypted symmetric key
-        sig, sig_len = crypto_utils.sign_data(keypair, enc_sym_key, enc_sym_key_size) 
+        sig, sig_len = xgb.CryptoUtils.sign_data(keypair, enc_sym_key, enc_sym_key_size) 
         print("Signed ciphertext")
 
         # Send data key to the server

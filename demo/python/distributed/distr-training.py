@@ -59,9 +59,7 @@ key_file = open("../key_zeros.txt", 'rb')
 sym_key = key_file.read() # The key will be type bytes
 key_file.close()
 
-crypto = xgb.CryptoUtils()
-
 # Decrypt predictions
-print(crypto.decrypt_predictions(sym_key, predictions, num_preds)[:20])
+print(xgb.CryptoUtils.decrypt_predictions(sym_key, predictions, num_preds)[:20])
 
 xgb.rabit.finalize()
