@@ -1034,10 +1034,7 @@ class CryptoUtils(object):
     """
     Crypto utils class
     """
-    def __init__(self):
-        # FIXME what do we need here?
-        pass
-
+    @staticmethod
     def generate_client_key(path_to_key):
         """
         Generate a new key and save it to `path_to_key`
@@ -1054,6 +1051,7 @@ class CryptoUtils(object):
         with open(path_to_key, "wb") as keyfile:
             keyfile.write(key)
 
+    @staticmethod
     def encrypt_file(input_file, output_file, key_file):
         """
         Encrypt a file
@@ -1084,6 +1082,7 @@ class CryptoUtils(object):
 
         _check_call(_LIB.encrypt_file(input_path, output_path, key_path))
 
+    @staticmethod
     def encrypt_data_with_pk(data, data_len, pem_key, key_size):
         """
         Parameters
@@ -1124,6 +1123,7 @@ class CryptoUtils(object):
 
         return encrypted_data, encrypted_data_size_as_int
 
+    @staticmethod
     def sign_data(keyfile, data, data_size):
         """
         Parameters
@@ -1157,6 +1157,7 @@ class CryptoUtils(object):
 
         return signature, sig_len_as_int
 
+    @staticmethod
     def add_client_key(data, data_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
@@ -1186,6 +1187,7 @@ class CryptoUtils(object):
         # Add client key
         _LIB.add_client_key(data, data_len, signature, sig_len)
 
+    @staticmethod
     def decrypt_predictions(key, encrypted_preds, num_preds):
         """
         Decrypt encrypted predictions
