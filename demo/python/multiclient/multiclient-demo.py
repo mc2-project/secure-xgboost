@@ -21,8 +21,9 @@ enclave_pem_key, enclave_key_size, remote_report, remote_report_size = enclave.g
 ######################
 
 # User 1 setup
-xgb.set_user("user1")
-user_name = "user1"
+user1 = xgb.User("user1","userkeys/private_user_1.pem", "user1.crt")
+user2 = xgb.User("user2","userkeys/private_user_2.pem", "user2.crt")
+user1.set_user()
 
 # Define paths for user1
 KEY_FILE_1 = HOME_DIR + "demo/python/multiclient/key1.txt"
@@ -47,7 +48,7 @@ enc_sym_key, enc_sym_key_size = crypto.encrypt_data_with_pk(sym_key_1, len(sym_k
 
 sig, sig_size = crypto.sign_data("userkeys/private_user_1.pem", enc_sym_key, enc_sym_key_size)
 
-with open("{0}.crt".format(user_name), "r") as cert_file:
+with open(user1.certificate, "r") as cert_file:
     user_certificate = cert_file.read()
 
 # adding the client 1's key with user 1's certificate
@@ -61,8 +62,7 @@ crypto.add_client_key_with_certificate(user_certificate,
 ######################
 
 # User 2 setup
-xgb.set_user("user2")
-user_name = "user2"
+user2.set_user()
 
 KEY_FILE_2 = HOME_DIR + "demo/python/multiclient/key2.txt"
 training_data_2 = HOME_DIR + "demo/data/2_2agaricus.txt.train"
@@ -84,7 +84,7 @@ enc_sym_key, enc_sym_key_size = crypto.encrypt_data_with_pk(sym_key_2, len(sym_k
 
 sig, sig_size = crypto.sign_data("userkeys/private_user_2.pem", enc_sym_key, enc_sym_key_size)
 
-with open("{0}.crt".format(user_name), "r") as cert_file:
+with open(user2.certificate, "r") as cert_file:
     user_certificate = cert_file.read()
 
 crypto.add_client_key_with_certificate(user_certificate,
@@ -117,12 +117,12 @@ num_rounds = 10
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest1, "u1_test"), (dtest2, "u2_test")])
 
 # Get predictions using user 1's test data
-xgb.set_user("user1")
+user1.set_user()
 enc_preds, num_preds = booster.predict(dtest1)
 user1_preds = crypto.decrypt_predictions(sym_key_1, enc_preds, num_preds)
 
 # Get predictions using user 2's test data
-xgb.set_user("user2")
+user2.set_user()
 u2_enc_preds, u2_num_preds = booster.predict(dtest2)
 user2_preds = crypto.decrypt_predictions(sym_key_2, u2_enc_preds, u2_num_preds)
 
