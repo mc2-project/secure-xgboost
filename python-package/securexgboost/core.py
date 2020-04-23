@@ -1489,8 +1489,17 @@ class Booster(object):
             params = params.items()
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
+        
+        if "current_user" in globals():
+            user = globals()["current_user"]
+        else:
+            raise ValueError("Please set your user with User.set_user function")
+
         for key, val in params:
-            _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
+            sig, sig_len = user.sign_statement(key+","+str(val))
+            _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), sig, sig_len);
+            ## send it with signatures 
+            # _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1681,9 +1690,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1750,9 +1759,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
             _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -1770,9 +1779,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
@@ -1799,9 +1808,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the user.set_user method or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
