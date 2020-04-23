@@ -70,6 +70,12 @@ int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char
   return XGBoosterSetParam(handle, name, value);
 }
 
+int enclave_XGBoosterSetParamWithSig(BoosterHandle handle, const char* name, const char* value, const char* username, uint8_t *signature, size_t sig_len){
+  LOG(DEBUG) << "Ecall: XGBoosterSetParamWithSig";
+  check_enclave_ptr(handle);
+  return XGBoosterSetParamWithSig(handle, name, value, username, signature, sig_len); 
+}
+
 int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain) {
   LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
   check_enclave_ptr(handle);

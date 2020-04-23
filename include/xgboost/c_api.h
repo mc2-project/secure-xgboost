@@ -393,6 +393,14 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
  */
 XGB_DLL int XGBoosterFree(BoosterHandle handle);
 
+XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
+                                    const char *name,
+                                    const char *value,
+                                    const char *username,
+                                    uint8_t *signature,
+                                    size_t sig_len);
+
+
 /*!
  * \brief set parameters
  * \param handle handle
