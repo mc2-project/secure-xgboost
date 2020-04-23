@@ -35,7 +35,7 @@ enclave {
                 [in, string] const char *value,
                 [in, string] const char *username,
                 [in, count=sig_len] uint8_t *signature,
-                unsigned int sig_len);
+                size_t sig_len);
 
         public int enclave_XGBoosterUpdateOneIter(
                 BoosterHandle handle,

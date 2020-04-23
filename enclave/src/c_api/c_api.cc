@@ -1174,7 +1174,7 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle) {
   API_END();
 }
 
-XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handlem
+XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
                                     const char *name,
                                     const char *value,
                                     const char *username,
@@ -1190,7 +1190,7 @@ XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handlem
     data[strlen(name)] = (uint8_t) ',';
     memcpy((uint8_t *)data+strlen(name)+1,value,strlen(value));
     data[data_len] = 0; 
-    bool verified = EnclaveContext::getInstance().verifySignatureWIthUserName(data, data_len, signature, sig_len, username);
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName(data, data_len, signature, sig_len, (char *)username);
     // TODO Add Multi User Verification + Add Verification for a list of signatures 
     if(verified){
         static_cast<Booster*>(handle)->SetParam(name,value);

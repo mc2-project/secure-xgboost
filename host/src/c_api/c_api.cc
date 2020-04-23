@@ -24,7 +24,7 @@
 #include <xgboost/common/group_data.h>
 
 #include <openenclave/host.h>
-#include "gboost_u.h"
+#include "xgboost_u.h"
 #include <enclave/crypto.h>
 #include <enclave/attestation.h>
 #include <enclave/enclave.h>
@@ -905,7 +905,7 @@ XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
                                     const char *value,
                                     const char *username,
                                     uint8_t *signature,
-                                    size-t sig_len){
+                                    size_t sig_len){
     safe_ecall(enclave_XGBoosterSetParamWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value, username, signature, sig_len));
 }
 
