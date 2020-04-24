@@ -468,7 +468,7 @@ class DMatrix(object):
                           #  DeprecationWarning)
 
         if isinstance(data, list):
-            handle = ctypes.c_void_p()
+            handle = ctypes.c_char_p()
             if encrypted:
                 filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
                 usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
@@ -1016,7 +1016,26 @@ class Enclave(object):
     def get_remote_report_with_pubkey(self):
         """
         Get remote attestation report and public key of enclave
+
+        If called by client, returns:
+        pem_key : proto
+        key_size : int
+        remote_report : proto
+        remote_report_size : int
         """
+        channel_addr = os.environ.get("RA_CHANNEL_ADDR")
+        print("CHannel addr: ", channel_addr)
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_get_remote_report_with_pubkey(remote_attestation_pb2.Status(status=1))
+                pem_key = response.pem_key
+                key_size = response.key_size
+                remote_report = response.remote_report
+                remote_report_size = response.remote_report_size
+                
+                return pem_key, key_size, remote_report, remote_report_size
+
         _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
 
     def verify_remote_report_and_set_pubkey(self):
@@ -1235,6 +1254,23 @@ class CryptoUtils(object):
         sig_len : int
             length of signature
         """
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+
+        # If we're on the client
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_add_client_key_with_certificate(remote_attestation_pb2.DataMetadata(
+                    certificate=certificate,
+                    enc_sym_key=data,
+                    key_size=data_len,
+                    signature=signature,
+                    sig_len=sig_len))
+
+                return response.status
+
+        # Else we're on the server
+
         # length needed to call cert parse later
         cert_len = len(certificate) + 1
         # Cast certificate to a char*
