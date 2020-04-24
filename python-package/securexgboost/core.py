@@ -16,6 +16,10 @@ import re
 import sys
 import warnings
 
+import grpc
+import remote_attestation_pb2
+import remote_attestation_pb2_grpc
+
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
 import scipy.sparse
@@ -370,7 +374,7 @@ class DMatrix(object):
     def __init__(self, data, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
-                 nthread=None):
+                 nthread=None): 
         """
         Parameters
         ----------
@@ -403,6 +407,24 @@ class DMatrix(object):
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
         """
+        # check if RPC call is needed (client provoked initialization)
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.SendDMatrixAttrs(remote_attestation_pb2.DMatrixAttrs(data=data, \
+                        encrypted=encrypted, \
+                        label=label, \
+                        missing=missing, \
+                        weight=weight, \
+                        silent=silent, \
+                        feature_names=feature_names, \
+                        feature_types=feature_types, \
+                        nthread=nthread))
+            self.handle = ctypes.c_char_p()
+            self.handle.value = bytes(response.name, "utf-8")
+            return
+ 
         # force into void_p, mac need to pass things in as void_p
         if data is None:
             self.handle = None
@@ -429,7 +451,7 @@ class DMatrix(object):
                           DeprecationWarning)
 
         if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_char_p()
+            handle = ctypes.c_char_p() # self.handle will be name of DMatrix on server-side (pass this to client)
             if encrypted:
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
                     ctypes.c_int(silent),
@@ -542,13 +564,13 @@ class DMatrix(object):
         """
         Initialize data from a datatable Frame.
         """
-        ptrs = (ctypes.c_void_p * data.ncols)()
+        ptrs = (ctypes.c_char_p * data.ncols)()
         if hasattr(data, "internal") and hasattr(data.internal, "column"):
             # datatable>0.8.0
             for icol in range(data.ncols):
                 col = data.internal.column(icol)
                 ptr = col.data_pointer
-                ptrs[icol] = ctypes.c_void_p(ptr)
+                ptrs[icol] = ctypes.c_char_p(ptr)
         else:
             # datatable<=0.8.0
             from datatable.internal import frame_column_data_r  # pylint: disable=no-name-in-module,import-error
@@ -1228,7 +1250,19 @@ class Booster(object):
         model_file : string
             Path to the model file.
         """
-
+        # check if RPC call is needed (client provoked initialization)
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(data=data, \
+                        params=params, \
+                        cache=cache, \
+                        model_file=model_file))
+            self.handle = ctypes.c_char_p()
+            self.handle.value = bytes(response.name, "utf-8")
+            return
+ 
         for d in cache:
             if not isinstance(d, DMatrix):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
@@ -2040,3 +2074,23 @@ class Booster(object):
             sys.stderr.write(
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
+
+class RPCServer:
+    def __init__(self, channel_addr):
+        self.channel_addr = channel_addr
+
+    def get_remote_report(self):
+        with grpc.insecure_channel(self.channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+        return response
+ 
+    def send_data_key(self, enc_sym_key, enc_sym_key_size, sig, sig_len):
+        with grpc.insecure_channel(self.channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, \
+                    key_size=enc_sym_key_size, \
+                    signature=sig, \
+                    sig_len=sig_len))
+        return response
+ 

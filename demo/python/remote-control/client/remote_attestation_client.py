@@ -14,6 +14,9 @@ import argparse
 import os
 from rpc_utils import *
 
+DIR = os.path.dirname(os.path.realpath(__file__))
+HOME_DIR = DIR + "/../../../../"
+
 def run(channel_addr, key_path, keypair):
     """
     The client will make 4 calls to the server that will run computation
@@ -22,10 +25,12 @@ def run(channel_addr, key_path, keypair):
     2. A call to send the symmetric key used to encrypt the data to the server.
     3. A call to commence computation.
     """
+
+    # Initialized the RPC API
+    rpc_server = xgb.RPCServer(channel_addr)
+
     # Get remote report from enclave
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-        response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+    response = rpc_server.get_remote_report()
 
     pem_key = response.pem_key
     key_size = response.key_size
@@ -36,7 +41,7 @@ def run(channel_addr, key_path, keypair):
     # Verify report
     enclave_reference = xgb.Enclave(create_enclave=False)
     enclave_reference.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
-    enclave_reference.verify_remote_report_and_set_pubkey()
+    # enclave_reference.verify_remote_report_and_set_pubkey()
     print("Report successfully verified")
 
     # Encrypt and sign symmetric key used to encrypt data
@@ -55,13 +60,13 @@ def run(channel_addr, key_path, keypair):
     print("Signed ciphertext")
 
     # Send data key to the server
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-
-        response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, key_size=enc_sym_key_size, signature=sig, sig_len=sig_len))
-        print("Symmetric key for data sent to server")
-
+    response = rpc_server.send_data_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
+    print("Symmetric key for data sent to server")
+    # TODO: do this instead 
+    # response = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
+ 
     # Signal start
+    """
     with grpc.insecure_channel(channel_addr) as channel:
         stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
         print("Waiting for training to finish...")
@@ -79,7 +84,57 @@ def run(channel_addr, key_path, keypair):
             print("Predictions: ", preds)
         else:
             print("Training failed")
+    """
 
+    print("Creating training matrix")
+    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
+    if not dtrain:
+        print("Error creating dtrain")
+        return
+    print("dtrain: " + dtrain.handle.value.decode("utf-8"))
+
+    print("Creating test matrix")
+    dtest = xgb.DMatrix(HOME_DIR +  "demo/python/remote-control/client/test.enc", encrypted=True)
+    if not dtest:
+        print("Error creating dtest")
+        return
+    print("dtest: " + dtest.handle.value.decode("utf-8"))
+
+    return
+
+    print("Beginning Training")
+
+    # Set training parameters
+    params = {
+            "tree_method": "hist",
+            "n_gpus": "0",
+            "objective": "binary:logistic",
+            "min_child_weight": "1",
+            "gamma": "0.1",
+            "max_depth": "3",
+            "verbosity": "0" 
+    }
+
+    # TODO: Start off here
+    # Train and evaluate
+    num_rounds = 5 
+    booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+
+    # Get encrypted predictions
+    print("\n\nModel Predictions: ")
+    predictions, num_preds = booster.predict(dtest)
+
+    key_file = open(HOME_DIR +  "demo/python/" + "key_zeros.txt", 'rb')
+    sym_key = key_file.read() # The key will be type bytes
+    key_file.close()
+
+    # Decrypt predictions
+    print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+
+    # Get fscores of model
+    print("\n\nModel Feature Importance: ")
+    print(booster.get_fscore(sym_key))
+     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--ip-addr", help="server IP address", required=True)
@@ -89,6 +144,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     channel_addr = str(args.ip_addr) + ":50051" 
+    os.environ["RA_CHANNEL_ADDR"] = channel_addr
 
     logging.basicConfig()
     run(channel_addr, str(args.key), str(args.keypair))
