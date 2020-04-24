@@ -1024,7 +1024,6 @@ class Enclave(object):
         remote_report_size : int
         """
         channel_addr = os.environ.get("RA_CHANNEL_ADDR")
-        print("CHannel addr: ", channel_addr)
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
