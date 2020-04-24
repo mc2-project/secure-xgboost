@@ -26,7 +26,7 @@ user_name = "user1"
 
 # Define paths for user1
 KEY_FILE_1 = HOME_DIR + "demo/python/multiclient/key1.txt"
-training_data_1 = HOME_DIR + "demo/data/1_2agaricus.txt.train"
+training_data_1 = HOME_DIR + "demo/data/agaricus.txt.train"
 train_enc_1 = HOME_DIR + "demo/python/multiclient/train1.enc"
 test_data = HOME_DIR + "demo/data/agaricus.txt.test"
 test_enc_1 = HOME_DIR + "demo/python/multiclient/test1.enc"
@@ -65,7 +65,7 @@ xgb.set_user("user2")
 user_name = "user2"
 
 KEY_FILE_2 = HOME_DIR + "demo/python/multiclient/key2.txt"
-training_data_2 = HOME_DIR + "demo/data/2_2agaricus.txt.train"
+training_data_2 = HOME_DIR + "demo/data/agaricus.txt.train"
 train_enc_2 = HOME_DIR + "demo/python/multiclient/train2.enc"
 test_enc_2 = HOME_DIR + "demo/python/multiclient/test2.enc"
 

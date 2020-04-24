@@ -419,7 +419,7 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.SendDMatrixAttrs(remote_attestation_pb2.DMatrixAttrs(data=data, \
+                response = stub.SendDMatrixAttrs(remote_attestation_pb2.DMatrixAttrs(data_dict=data_dict, \
                         encrypted=encrypted, \
                         label=label, \
                         missing=missing, \
@@ -455,7 +455,7 @@ class DMatrix(object):
         #  data, feature_names, feature_types = _maybe_pandas_data(data,
                                                                 #  feature_names,
                                                                 #  feature_types)
-#  
+  
         #  data, feature_names, feature_types = _maybe_dt_data(data,
                                                             #  feature_names,
                                                             #  feature_types)
@@ -468,7 +468,7 @@ class DMatrix(object):
                           #  DeprecationWarning)
 
         if isinstance(data, list):
-            handle = ctypes.c_void_p()
+            handle = ctypes.c_char_p()
             if encrypted:
                 filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
                 usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
@@ -1017,6 +1017,20 @@ class Enclave(object):
         """
         Get remote attestation report and public key of enclave
         """
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+            pem_key = response.pem_key
+            key_size = response.key_size
+            remote_report = response.remote_report
+            remote_report_size = response.remote_report_size
+
+            self.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+
+            return
+
         _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
 
     def verify_remote_report_and_set_pubkey(self):
@@ -1204,6 +1218,16 @@ class CryptoUtils(object):
         sig_len : int
             length of signature
         """
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=data, \
+                        key_size=data_len, \
+                        signature=signature, \
+                        sig_len=sig_len))
+            return
+
         # # Cast fname to a char*
         # fname = ctypes.c_char_p(str.encode(fname))
 
@@ -1317,11 +1341,13 @@ class Booster(object):
             self.handle.value = bytes(response.name, "utf-8")
             return
  
-        for d in cache:
-            if not isinstance(d, DMatrix):
-                raise TypeError('invalid cache item: {}'.format(type(d).__name__))
-            self._validate_features(d)
-        dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
+        # FIXME disabling this because we only pass handle names across RPC
+        # for d in cache:
+        #     if not isinstance(d, DMatrix):
+        #         raise TypeError('invalid cache item: {}'.format(type(d).__name__))
+        #     self._validate_features(d)
+        # dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
+        dmats = c_array(ctypes.c_char_p, [d.encode('utf-8') for d in cache])
         self.handle = ctypes.c_char_p()
 
         _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
@@ -2160,22 +2186,22 @@ class Booster(object):
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
 
-class RPCServer:
-    def __init__(self, channel_addr):
-        self.channel_addr = channel_addr
-
-    def get_remote_report(self):
-        with grpc.insecure_channel(self.channel_addr) as channel:
-            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-            response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
-        return response
- 
-    def send_data_key(self, enc_sym_key, enc_sym_key_size, sig, sig_len):
-        with grpc.insecure_channel(self.channel_addr) as channel:
-            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-            response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, \
-                    key_size=enc_sym_key_size, \
-                    signature=sig, \
-                    sig_len=sig_len))
-        return response
+# class RPCServer:
+#     def __init__(self, channel_addr):
+#         self.channel_addr = channel_addr
+# 
+#     def get_remote_report(self):
+#         with grpc.insecure_channel(self.channel_addr) as channel:
+#             stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+#             response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+#         return response
+#  
+#     def send_data_key(self, enc_sym_key, enc_sym_key_size, sig, sig_len):
+#         with grpc.insecure_channel(self.channel_addr) as channel:
+#             stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+#             response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, \
+#                     key_size=enc_sym_key_size, \
+#                     signature=sig, \
+#                     sig_len=sig_len))
+#         return response
  

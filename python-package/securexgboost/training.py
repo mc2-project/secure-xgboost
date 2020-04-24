@@ -4,6 +4,10 @@
 """Training Library containing training routines."""
 from __future__ import absolute_import
 
+import os
+import grpc
+import remote_attestation_pb2
+import remote_attestation_pb2_grpc
 import warnings
 import numpy as np
 from .core import Booster, STRING_TYPES, XGBoostError, CallbackEnv, EarlyStopException
@@ -175,6 +179,21 @@ def train(params, dtrain, num_boost_round=10, evals=(), early_stopping_rounds=No
     -------
     Booster : a trained booster model
     """
+    channel_addr = os.getenv("RA_CHANNEL_ADDR")
+    if channel_addr:
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+            print("Waiting for training to finish...")
+            response = stub.Train(remote_attestation_pb2.TrainParams(params=params, \
+                    dtrain=dtrain.handle.value, \
+                    num_boost_round=num_boost_round, \
+                    evals=list(map(lambda x: remote_attestation_pb2.Pair(x=x[0].handle.value, y=x[1]), evals)), \
+                    early_stopping_rounds=early_stopping_rounds))
+            self.handle = ctypes.c_char_p()
+            self.handle.value = bytes(response.name, "utf-8")
+        return
+
+
     callbacks = [] if callbacks is None else callbacks
 
     # Most of legacy advanced options becomes callbacks

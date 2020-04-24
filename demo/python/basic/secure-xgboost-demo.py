@@ -1,6 +1,7 @@
 import securexgboost as xgb
 import os
 
+xgb.set_user("user1")
 print("Creating enclave")
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
@@ -15,7 +16,7 @@ print("Remote attestation")
 enclave.get_remote_report_with_pubkey()
 # NOTE: Verification will fail in simulation mode
 # Comment out this line for testing the code in simulation mode
-enclave.verify_remote_report_and_set_pubkey()
+# enclave.verify_remote_report_and_set_pubkey()
 
 print("Send private key to enclave")
 enclave_pem_key, enclave_key_size, _, _ = enclave.get_report_attrs()
@@ -31,10 +32,10 @@ sig, sig_size = crypto.sign_data(PUB_KEY_FILE, enc_sym_key, enc_sym_key_size)
 crypto.add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_size)
 
 print("Creating training matrix")
-dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
+dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
 
 print("Creating test matrix")
-dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
+dtest = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True) 
 
 print("Beginning Training")
 

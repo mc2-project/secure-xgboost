@@ -27,23 +27,25 @@ def run(channel_addr, key_path, keypair):
     """
 
     # Initialized the RPC API
-    rpc_server = xgb.RPCServer(channel_addr)
+    # rpc_server = xgb.RPCServer(channel_addr)
 
     # Get remote report from enclave
-    response = rpc_server.get_remote_report()
+    # response = rpc_server.get_remote_report()
 
-    pem_key = response.pem_key
-    key_size = response.key_size
-    remote_report = response.remote_report
-    remote_report_size = response.remote_report_size
-    print("Report received from remote enclave")
+    # pem_key = response.pem_key
+    # key_size = response.key_size
+    # remote_report = response.remote_report
+    # remote_report_size = response.remote_report_size
+    # print("Report received from remote enclave")
 
     # Verify report
     enclave_reference = xgb.Enclave(create_enclave=False)
-    enclave_reference.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+    enclave_reference.get_remote_report_with_pubkey()
+    # enclave_reference.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
     # enclave_reference.verify_remote_report_and_set_pubkey()
     print("Report successfully verified")
 
+    pem_key, key_size, _, _ = enclave_reference.get_report_attrs()
     # Encrypt and sign symmetric key used to encrypt data
     key_file = open(key_path, 'rb')
     sym_key = key_file.read() # The key will be type bytes
@@ -60,7 +62,8 @@ def run(channel_addr, key_path, keypair):
     print("Signed ciphertext")
 
     # Send data key to the server
-    response = rpc_server.send_data_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
+    crypto_utils.add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
+    # response = rpc_server.send_data_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
     print("Symmetric key for data sent to server")
     # TODO: do this instead 
     # response = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
@@ -87,20 +90,20 @@ def run(channel_addr, key_path, keypair):
     """
 
     print("Creating training matrix")
-    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
+    dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
     if not dtrain:
         print("Error creating dtrain")
         return
     print("dtrain: " + dtrain.handle.value.decode("utf-8"))
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR +  "demo/python/remote-control/client/test.enc", encrypted=True)
+    dtest = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
     if not dtest:
         print("Error creating dtest")
         return
     print("dtest: " + dtest.handle.value.decode("utf-8"))
 
-    return
+    # return
 
     print("Beginning Training")
 
@@ -119,6 +122,8 @@ def run(channel_addr, key_path, keypair):
     # Train and evaluate
     num_rounds = 5 
     booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+
+    print("booster: " + booster.handle.value.decode("utf-8"))
 
     # Get encrypted predictions
     print("\n\nModel Predictions: ")

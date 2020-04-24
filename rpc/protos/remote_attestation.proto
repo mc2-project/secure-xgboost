@@ -56,6 +56,11 @@ service RemoteAttestation {
 
   // A simple RPC.
   //
+  // Signal to RPC server that the client is ready
+  rpc Train(TrainParams) returns (Name) {}
+
+  // A simple RPC.
+  //
   // Signal to RPC server that the client is ready for distributed training
   rpc SignalStartCluster(ClusterParams) returns (Status) {}
 }
@@ -106,7 +111,7 @@ message DataMetadata {
 
 // Wrapper for the constructor of a DMatrix
 message DMatrixAttrs {
-  string data = 1;
+  map<string, string> data_dict = 1;
   bool encrypted = 2;
   repeated string label = 3;
   float missing = 4;
@@ -124,6 +129,21 @@ message BoosterAttrs {
   string model_file = 3;
 }
 
+// Params for training
+message TrainParams {
+    map<string, string> params = 1;
+    string dtrain = 2;
+    uint32 num_boost_round = 3;
+    repeated Pair evals = 4;
+    uint32 early_stopping_rounds = 5;
+}
+
+// Wrapper for pair of strings
+message Pair {
+    // Name that the server assigned the handle
+    string x = 1;
+    string y = 2;
+}
 
 // Wrapper
 message Name {
