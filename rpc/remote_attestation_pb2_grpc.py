@@ -19,8 +19,18 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.Status.SerializeToString,
         response_deserializer=remote__attestation__pb2.Report.FromString,
         )
+    self.rpc_get_remote_report_with_pubkey = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_get_remote_report_with_pubkey',
+        request_serializer=remote__attestation__pb2.Status.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Report.FromString,
+        )
     self.SendKey = channel.unary_unary(
         '/remote_attestation.RemoteAttestation/SendKey',
+        request_serializer=remote__attestation__pb2.DataMetadata.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Status.FromString,
+        )
+    self.rpc_add_client_key_with_certificate = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_add_client_key_with_certificate',
         request_serializer=remote__attestation__pb2.DataMetadata.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
         )
@@ -66,11 +76,27 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def rpc_get_remote_report_with_pubkey(self, request, context):
+    """FIXME: This service will replace the above
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def SendKey(self, request, context):
     """A simple RPC.
 
+    Send symmetric key encrypted with enclave public key, signature
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_add_client_key_with_certificate(self, request, context):
+    """A simple RPC.
+
     Send symmetric key encrypted with enclave public key, signature,
-    and name of file encrypted with symmetric key to server
+    certificate
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -131,8 +157,18 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           request_deserializer=remote__attestation__pb2.Status.FromString,
           response_serializer=remote__attestation__pb2.Report.SerializeToString,
       ),
+      'rpc_get_remote_report_with_pubkey': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_get_remote_report_with_pubkey,
+          request_deserializer=remote__attestation__pb2.Status.FromString,
+          response_serializer=remote__attestation__pb2.Report.SerializeToString,
+      ),
       'SendKey': grpc.unary_unary_rpc_method_handler(
           servicer.SendKey,
+          request_deserializer=remote__attestation__pb2.DataMetadata.FromString,
+          response_serializer=remote__attestation__pb2.Status.SerializeToString,
+      ),
+      'rpc_add_client_key_with_certificate': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_add_client_key_with_certificate,
           request_deserializer=remote__attestation__pb2.DataMetadata.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),

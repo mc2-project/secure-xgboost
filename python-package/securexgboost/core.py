@@ -1016,6 +1016,12 @@ class Enclave(object):
     def get_remote_report_with_pubkey(self):
         """
         Get remote attestation report and public key of enclave
+
+        If called by client, returns:
+        pem_key : proto
+        key_size : int
+        remote_report : proto
+        remote_report_size : int
         """
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
@@ -1029,7 +1035,7 @@ class Enclave(object):
 
             self.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
 
-            return
+            return pem_key, key_size, remote_report, remote_report_size
 
         _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
 
@@ -1259,6 +1265,23 @@ class CryptoUtils(object):
         sig_len : int
             length of signature
         """
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+
+        # If we're on the client
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_add_client_key_with_certificate(remote_attestation_pb2.DataMetadata(
+                    certificate=certificate,
+                    enc_sym_key=data,
+                    key_size=data_len,
+                    signature=signature,
+                    sig_len=sig_len))
+
+                return response.status
+
+        # Else we're on the server
+
         # length needed to call cert parse later
         cert_len = len(certificate) + 1
         # Cast certificate to a char*

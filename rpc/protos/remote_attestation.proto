@@ -31,11 +31,19 @@ service RemoteAttestation {
   // Status is a just a dummy argument and won't be used by the server
   rpc GetAttestation(Status) returns (Report) {}
 
+  // FIXME: This service will replace the above
+  rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
+
+  // A simple RPC.
+  //
+  // Send symmetric key encrypted with enclave public key, signature
+  rpc SendKey(DataMetadata) returns (Status) {}
+
   // A simple RPC.
   //
   // Send symmetric key encrypted with enclave public key, signature,
-  // and name of file encrypted with symmetric key to server
-  rpc SendKey(DataMetadata) returns (Status) {}
+  // certificate
+  rpc rpc_add_client_key_with_certificate(DataMetadata) returns (Status) {}
 
   // A simple RPC.
   //
@@ -107,6 +115,9 @@ message DataMetadata {
 
   // Length of signature
   uint32 sig_len = 4;
+
+  // Certificate
+  string certificate = 5;
 }
 
 // Wrapper for the constructor of a DMatrix

@@ -33,16 +33,14 @@ def xgb_load_train_predict():
     """
     This code will have been agreed upon by all parties before being run.
     """
-    print("Creating training matrix")
-    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
+    # FIXME: this shouldn't be hardcoded
+    train_enc_1 = HOME_DIR + "demo/python/multiclient-rpc/data/c1_train.enc"
+    train_enc_2 = HOME_DIR + "demo/python/multiclient-rpc/data/c2_train.enc"
+    dtrain = xgb.DMatrix({"user1": train_enc_1, "user2": train_enc_2}, encrypted=True)
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/test.enc", encrypted=True) 
-
-    print("Creating Booster")
-    booster = xgb.Booster(cache=(dtrain, dtest))
-
-    print("Beginning Training")
+    test_enc = HOME_DIR + "demo/python/multiclient-rpc/data/test.enc"
+    dtest = xgb.DMatrix({"user2": test_enc}, encrypted=True) 
 
     # Set training parameters
     params = {
@@ -54,16 +52,12 @@ def xgb_load_train_predict():
             "max_depth": "3",
             "verbosity": "1" 
     }
-    booster.set_param(params)
-    print("All parameters set")
 
-    # Train and evaluate
-    n_trees = 10
-    for i in range(n_trees):
-        booster.update(dtrain, i)
-        print(booster.eval_set([(dtrain, "train"), (dtest, "test")], i))
+    # Train
+    num_rounds = 10
+    booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "u2_test")])
 
-    enc_preds, num_preds = booster.predict(dtest)
+    enc_preds, num_preds = booster.predict(dtest, username="user2")
     return enc_preds, num_preds
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
@@ -130,8 +124,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         Receives the path of a dmatrix from the client and creates the dmatrix on the server side
         """
-        # print("Received request to create DMatrix with path: " + request.data_dict)
-        data_dict = request.data_dict
+        print("Received request to create DMatrix with path: " + request.data)
+        data = request.data
         encrypted = request.encrypted 
         label = list(request.label)
         if not len(label):
@@ -149,7 +143,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             feature_types = None
         nthread = request.nthread
         try:
-            dmatrix = xgb.DMatrix(data_dict=data_dict, \
+            dmatrix = xgb.DMatrix(data=data, \
                     encrypted=encrypted, \
                     label=label, \
                     missing=missing, \
@@ -191,35 +185,6 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
             return remote_attestation_pb2.Name(name=None)
 
-    def Train(self, request, context):
-        """
-        Start training
-        """
-        # FIXME more params
-        print("Beginning Training")
-        params = request.params
-        print(params)
-        dtrain = request.dtrain
-        print(dtrain)
-        num_boost_round = request.num_boost_round
-        print(num_boost_round)
-        evals = list(map(lambda x: (x.x, x.y), request.evals))
-        print(evals)
-        early_stopping_rounds = request.early_stopping_rounds
-        print(early_stopping_rounds)
-
-        try:
-            booster = xgb.train(params=params, dtrain=dtrain, num_boost_round=num_boost_round, evals=evals)
-            return remote_attestation_pb2.Name(name=booster.handle.value)
-        except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_attestation_pb2.Name(name=None)
-
-
     def SignalStart(self, request, context):
         """
         Signal to RPC server that client is ready to start
@@ -241,7 +206,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
