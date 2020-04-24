@@ -359,6 +359,14 @@ def _maybe_dt_array(array):
 
     return array
 
+def set_user(user_name):
+    """
+    Parameters
+    ----------
+    user_name : string
+        user you want to switch to
+    """
+    globals()["current_user"] = user_name
 
 class DMatrix(object):
     """Data Matrix used in XGBoost.
@@ -371,17 +379,16 @@ class DMatrix(object):
     _feature_names = None  # for previous version's pickle
     _feature_types = None
 
-    def __init__(self, data, encrypted=False, label=None, missing=None,
+    def __init__(self, data_dict, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
                  nthread=None): 
         """
         Parameters
         ----------
-        data : string/numpy.array/scipy.sparse/pd.DataFrame/dt.Frame
-            Data source of DMatrix.
-            When data is string type, it represents the path libsvm format txt file,
-            or binary file that xgboost can read from.
+        data_dict : dictionary 
+            Keys: Usernames
+            Values: Path to training data of corresponding user
         label : list or numpy 1-D array, optional
             Label of the training data.
         missing : float, optional
@@ -425,6 +432,16 @@ class DMatrix(object):
             self.handle.value = bytes(response.name, "utf-8")
             return
  
+        # check the global variable for current_user
+        #  if usernames is None and "current_user" in globals():
+            #  username = globals()["current_user"]
+
+        usernames, data = [], []
+
+        for user, path in data_dict.items():
+            usernames.append(user)
+            data.append(path)
+
         # force into void_p, mac need to pass things in as void_p
         if data is None:
             self.handle = None
@@ -435,25 +452,29 @@ class DMatrix(object):
                 self._feature_types = feature_types
             return
 
-        data, feature_names, feature_types = _maybe_pandas_data(data,
-                                                                feature_names,
-                                                                feature_types)
-
-        data, feature_names, feature_types = _maybe_dt_data(data,
-                                                            feature_names,
-                                                            feature_types)
+        #  data, feature_names, feature_types = _maybe_pandas_data(data,
+                                                                #  feature_names,
+                                                                #  feature_types)
+#  
+        #  data, feature_names, feature_types = _maybe_dt_data(data,
+                                                            #  feature_names,
+                                                            #  feature_types)
         label = _maybe_pandas_label(label)
         label = _maybe_dt_array(label)
         weight = _maybe_dt_array(weight)
 
-        if isinstance(data, list):
-            warnings.warn('Initializing DMatrix from List is deprecated.',
-                          DeprecationWarning)
+        #  if isinstance(data, list):
+            #  warnings.warn('Initializing DMatrix from List is deprecated.',
+                          #  DeprecationWarning)
 
-        if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_char_p() # self.handle will be name of DMatrix on server-side (pass this to client)
+        if isinstance(data, list):
+            handle = ctypes.c_void_p()
             if encrypted:
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
+                filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
+                usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
+                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                    usrs,
+                    c_bst_ulong(len(data)),
                     ctypes.c_int(silent),
                     ctypes.byref(handle)))
             else:
@@ -461,14 +482,14 @@ class DMatrix(object):
                     ctypes.c_int(silent),
                     ctypes.byref(handle)))
             self.handle = handle
-        elif isinstance(data, scipy.sparse.csr_matrix):
-            self._init_from_csr(data)
-        elif isinstance(data, scipy.sparse.csc_matrix):
-            self._init_from_csc(data)
-        elif isinstance(data, np.ndarray):
-            self._init_from_npy2d(data, missing, nthread)
-        elif isinstance(data, DataTable):
-            self._init_from_dt(data, nthread)
+        #  elif isinstance(data, scipy.sparse.csr_matrix):
+            #  self._init_from_csr(data)
+        #  elif isinstance(data, scipy.sparse.csc_matrix):
+            #  self._init_from_csc(data)
+        #  elif isinstance(data, np.ndarray):
+            #  self._init_from_npy2d(data, missing, nthread)
+        #  elif isinstance(data, DataTable):
+            #  self._init_from_dt(data, nthread)
         else:
             try:
                 csr = scipy.sparse.csr_matrix(data)
@@ -615,7 +636,7 @@ class DMatrix(object):
                                                c_str(field),
                                                ctypes.byref(length),
                                                ctypes.byref(ret)))
-                                  
+
         return ctypes2numpy(ret, length.value, np.float32)
 
     def get_uint_info(self, field):
@@ -714,7 +735,7 @@ class DMatrix(object):
     #  def save_binary(self, fname, silent=True):
         #  """Save DMatrix to an XGBoost buffer.  Saved binary can be later loaded
         #  by providing the path to :py:func:`xgboost.DMatrix` as input.
-#  
+#
         #  Parameters
         #  ----------
         #  fname : string
@@ -800,7 +821,7 @@ class DMatrix(object):
 
     #  def set_group(self, group):
         #  """Set group size of DMatrix (used for ranking).
-#  
+#
         #  Parameters
         #  ----------
         #  group : array like
@@ -836,7 +857,7 @@ class DMatrix(object):
         base_margin : float
         """
         return self.get_float_info('base_margin')
-#  
+#
     def num_row(self):
         """Get the number of rows in the DMatrix.
 
@@ -863,12 +884,12 @@ class DMatrix(object):
 
     #  def slice(self, rindex):
         #  """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
-#  
+#
         #  Parameters
         #  ----------
         #  rindex : list
             #  List of indices to be selected.
-#  
+#
         #  Returns
         #  -------
         #  res : DMatrix
@@ -1013,7 +1034,7 @@ class Enclave(object):
         pem_key_ndarray = proto_to_ndarray(pem_key)
         self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.key_size = ctypes.c_size_t(key_size)
- 
+
         remote_report_ndarray = proto_to_ndarray(remote_report)
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.remote_report_size = ctypes.c_size_t(remote_report_size)
@@ -1026,7 +1047,7 @@ class Enclave(object):
 
         Must be called after get_remote_report_with_pubkey() is called
 
-        Returns 
+        Returns
         -------
         pem_key : proto.NDArray
         key_size : int
@@ -1042,7 +1063,7 @@ class Enclave(object):
         remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint32)
         remote_report = ndarray_to_proto(remote_report)
         remote_report_size = self.remote_report_size.value
-        
+
         return pem_key, key_size, remote_report, remote_report_size
 
 
@@ -1092,7 +1113,7 @@ class CryptoUtils(object):
         input_file_bytes = input_file.encode('utf-8')
         output_file_bytes = output_file.encode('utf-8')
         key_file_bytes = key_file.encode('utf-8')
-        
+
         # Convert to proper ctypes
         input_path = ctypes.c_char_p(input_file_bytes)
         output_path = ctypes.c_char_p(output_file_bytes)
@@ -1104,14 +1125,14 @@ class CryptoUtils(object):
         """
         Parameters
         ----------
-        data : byte array  
+        data : byte array
         data_len : int
-        pem_key : proto 
+        pem_key : proto
         key_size : int
 
         Returns
         -------
-        encrypted_data : proto.NDArray 
+        encrypted_data : proto.NDArray
         encrypted_data_size_as_int : int
         """
         # Cast data to char*
@@ -1139,22 +1160,22 @@ class CryptoUtils(object):
         """
         Parameters
         ----------
-        keyfile : str 
-        data : proto.NDArray 
-        data_size : int 
+        keyfile : str
+        data : proto.NDArray
+        data_size : int
 
         Returns
         -------
-        signature : proto.NDArray 
+        signature : proto.NDArray
         sig_len_as_int : int
         """
-        # Cast the keyfile to a char* 
-        keyfile = ctypes.c_char_p(str.encode(keyfile)) 
+        # Cast the keyfile to a char*
+        keyfile = ctypes.c_char_p(str.encode(keyfile))
 
         # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
         data = proto_to_pointer(data)
         data_size = ctypes.c_size_t(data_size)
-        
+
         # Allocate memory to store the signature and sig_len
         signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         sig_len = ctypes.c_size_t(1024)
@@ -1171,11 +1192,11 @@ class CryptoUtils(object):
     def add_client_key(self, data, data_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
-        
+
         Parameters
         ----------
         data : proto.NDArray
-            key used to encrypt client files 
+            key used to encrypt client files
         data_len : int
             length of data
         signature : proto.NDArray
@@ -1196,6 +1217,39 @@ class CryptoUtils(object):
 
         # Add client key
         _LIB.add_client_key(data, data_len, signature, sig_len)
+
+    def add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
+        """
+        Add client symmetric key used to encrypt file fname
+
+        Parameters
+        ----------
+        certificate : a string
+            content of the user certificate
+        data : proto.NDArray
+            key used to encrypt client files
+        data_len : int
+            length of data
+        signature : proto.NDArray
+            signature over data, signed with client private key
+        sig_len : int
+            length of signature
+        """
+        # length needed to call cert parse later
+        cert_len = len(certificate) + 1
+        # Cast certificate to a char*
+        certificate = ctypes.c_char_p(str.encode(certificate))
+
+        # Cast data : proto.NDArray to pointer to pass into C++ add_client_key()
+        data = proto_to_pointer(data)
+        data_len = ctypes.c_size_t(data_len)
+
+        # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
+        signature = proto_to_pointer(signature)
+        sig_len = ctypes.c_size_t(sig_len)
+
+        # Add client key
+        _LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len)
 
     def decrypt_predictions(self, key, encrypted_preds, num_preds):
         """
@@ -1319,7 +1373,7 @@ class Booster(object):
 
     #  def copy(self):
         #  """Copy the booster object.
-#  
+#
         #  Returns
         #  -------
         #  booster: `Booster`
@@ -1329,7 +1383,7 @@ class Booster(object):
 
     #  def load_rabit_checkpoint(self):
         #  """Initialize the model by load from rabit checkpoint.
-#  
+#
         #  Returns
         #  -------
         #  version: integer
@@ -1367,7 +1421,7 @@ class Booster(object):
 
     #  def attributes(self):
         #  """Get attributes stored in the Booster as a dictionary.
-#  
+#
         #  Returns
         #  -------
         #  result : dictionary of  attribute_name: attribute_value pairs of strings.
@@ -1384,7 +1438,7 @@ class Booster(object):
 
     #  def set_attr(self, **kwargs):
         #  """Set the attribute of the Booster.
-#  
+#
         #  Parameters
         #  ----------
         #  **kwargs
@@ -1499,7 +1553,7 @@ class Booster(object):
                                               dmats, evnames,
                                               c_bst_ulong(len(evals)),
                                               ctypes.byref(msg)))
-                                       
+
         res = msg.value.decode()
         if feval is not None:
             for dmat, evname in evals:
@@ -1536,7 +1590,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True):
+                validate_features=True, username=None):
         """
         Predict with data.
 
@@ -1594,11 +1648,19 @@ class Booster(object):
             When this is True, validate that the Booster's and data's feature_names are identical.
             Otherwise, it is assumed that the feature_names are the same.
 
+        username: string
+            Use the name to find the encryption key used for prediction result
+
         Returns
         -------
         prediction : numpy array
         num_preds: number of predictions
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1620,16 +1682,17 @@ class Booster(object):
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
-                                          ctypes.byref(preds)))
-                         
+                                          ctypes.byref(preds),
+                                          c_str(username)))
+
         #  preds = ctypes2numpy(preds, length.value, np.float32)
         #  if pred_leaf:
         #      preds = preds.astype(np.int32)
-        #  
+        #
         #  nrow = data.num_row()
         #  if preds.size != nrow and preds.size % nrow == 0:
         #      chunk_size = int(preds.size / nrow)
-        #  
+        #
         #      if pred_interactions:
         #          ngroup = int(chunk_size / ((data.num_col() + 1) * (data.num_col() + 1)))
         #          if ngroup == 1:
@@ -1646,7 +1709,7 @@ class Booster(object):
         #          preds = preds.reshape(nrow, chunk_size)
         return preds, length.value
 
-    def save_model(self, fname):
+    def save_model(self, fname, username=None):
         """
         Save the model to a file.
 
@@ -1659,28 +1722,43 @@ class Booster(object):
         ----------
         fname : string
             Output file name
+        username: string
+            Used to encrypt the file
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
-            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname)))
+            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
             raise TypeError("fname must be a string")
 
-    def save_raw(self):
+    def save_raw(self, username=None):
         """
         Save the model to a in memory buffer representation
 
+        username: string
+            usred to encrypt this file
         Returns
         -------
         a in memory buffer representation of the model
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
                                               ctypes.byref(length),
-                                              ctypes.byref(cptr)))
+                                              ctypes.byref(cptr),
+                                              c_str(username)))
         return ctypes2buffer(cptr, length.value)
 
-    def load_model(self, fname):
+    def load_model(self, fname, username=None):
         """
         Load the model from a file.
 
@@ -1693,15 +1771,22 @@ class Booster(object):
         ----------
         fname : string or a memory buffer
             Input file name or memory buffer(see also save_raw)
+        username: string
+            Used to find the encryption key
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname)))
+            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
             buf = fname
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length))
+            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
@@ -1794,7 +1879,7 @@ class Booster(object):
         """
         _check_call(_LIB.decrypt_dump(key, sarr, length))
 
- 
+
     def get_fscore(self, key, fmap=''):
         """Get feature importance of each feature.
 
@@ -1816,7 +1901,7 @@ class Booster(object):
         """
 
         return self.get_score(key, fmap, importance_type='weight')
- 
+
     def get_score(self, key, fmap='', importance_type='weight'):
         """Get feature importance of each feature.
         Importance type can be defined as:
