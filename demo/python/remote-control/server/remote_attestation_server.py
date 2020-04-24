@@ -137,6 +137,30 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
             return remote_attestation_pb2.Name(name=None)
 
+
+    def SendBoosterAttrs(self, request, context):
+        """
+        Receives the path of a dmatrix from the client and creates the dmatrix on the server side
+        """
+        print("Received request to create Booster with params: " + request.params)
+        params = request
+        if not len(params):
+            params = None
+        cache = request.cache
+        model_file = request.model_file
+        try:
+            dmatrix = xgb.Booster(params=params, \
+                    cache=cache, \
+                    model_file=model_file)
+            return remote_attestation_pb2.Name(name=dmatrix.handle.value.decode("utf-8"))
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Name(name=None)
+
     def SignalStart(self, request, context):
         """
         Signal to RPC server that client is ready to start

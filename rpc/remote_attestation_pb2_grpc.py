@@ -29,6 +29,11 @@ class RemoteAttestationStub(object):
                 request_serializer=remote__attestation__pb2.DMatrixAttrs.SerializeToString,
                 response_deserializer=remote__attestation__pb2.Name.FromString,
                 )
+        self.SendBoosterAttrs = channel.unary_unary(
+                '/remote_attestation.RemoteAttestation/SendBoosterAttrs',
+                request_serializer=remote__attestation__pb2.BoosterAttrs.SerializeToString,
+                response_deserializer=remote__attestation__pb2.Name.FromString,
+                )
         self.SignalStart = channel.unary_unary(
                 '/remote_attestation.RemoteAttestation/SignalStart',
                 request_serializer=remote__attestation__pb2.Status.SerializeToString,
@@ -69,7 +74,18 @@ class RemoteAttestationServicer(object):
     def SendDMatrixAttrs(self, request, context):
         """A simple RPC.
 
-        Send path of a DMatrix to the server for loading 
+        Send params of a DMatrix to the server for initialization
+        Returns the name of the DMatrix assigned to this booster
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendBoosterAttrs(self, request, context):
+        """A simple RPC.
+
+        Send params of a Booster to the server for initialization 
+        Returns the name of the handle assigned to this booster
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -109,6 +125,11 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
             'SendDMatrixAttrs': grpc.unary_unary_rpc_method_handler(
                     servicer.SendDMatrixAttrs,
                     request_deserializer=remote__attestation__pb2.DMatrixAttrs.FromString,
+                    response_serializer=remote__attestation__pb2.Name.SerializeToString,
+            ),
+            'SendBoosterAttrs': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendBoosterAttrs,
+                    request_deserializer=remote__attestation__pb2.BoosterAttrs.FromString,
                     response_serializer=remote__attestation__pb2.Name.SerializeToString,
             ),
             'SignalStart': grpc.unary_unary_rpc_method_handler(
@@ -176,6 +197,22 @@ class RemoteAttestation(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/remote_attestation.RemoteAttestation/SendDMatrixAttrs',
             remote__attestation__pb2.DMatrixAttrs.SerializeToString,
+            remote__attestation__pb2.Name.FromString,
+            options, channel_credentials,
+            call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def SendBoosterAttrs(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/remote_attestation.RemoteAttestation/SendBoosterAttrs',
+            remote__attestation__pb2.BoosterAttrs.SerializeToString,
             remote__attestation__pb2.Name.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

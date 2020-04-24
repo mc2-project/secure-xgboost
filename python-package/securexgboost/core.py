@@ -1250,7 +1250,19 @@ class Booster(object):
         model_file : string
             Path to the model file.
         """
-
+        # check if RPC call is needed (client provoked initialization)
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(data=data, \
+                        params=params, \
+                        cache=cache, \
+                        model_file=model_file))
+            self.handle = ctypes.c_char_p()
+            self.handle.value = bytes(response.name, "utf-8")
+            return
+ 
         for d in cache:
             if not isinstance(d, DMatrix):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))

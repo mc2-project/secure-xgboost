@@ -39,8 +39,15 @@ service RemoteAttestation {
 
   // A simple RPC.
   //
-  // Send path of a DMatrix to the server for loading 
+  // Send params of a DMatrix to the server for initialization
+  // Returns the name of the DMatrix assigned to this booster
   rpc SendDMatrixAttrs(DMatrixAttrs) returns (Name) {}
+
+  // A simple RPC.
+  //
+  // Send params of a Booster to the server for initialization 
+  // Returns the name of the handle assigned to this booster
+  rpc SendBoosterAttrs(BoosterAttrs) returns (Name) {}
 
   // A simple RPC.
   //
@@ -109,6 +116,14 @@ message DMatrixAttrs {
   repeated string feature_types = 8;
   uint32 nthread = 9;
 }
+
+// Wrapper for the constructor of a Booster
+message BoosterAttrs {
+  map<string, string> tup = 1;
+  repeated string cache = 2;
+  string model_file = 3;
+}
+
 
 // Wrapper
 message Name {
