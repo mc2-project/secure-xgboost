@@ -612,10 +612,11 @@ class DMatrix(object):
             nthread))
         self.handle = handle
 
-    def __del__(self):
-        if hasattr(self, "handle") and self.handle is not None:
-            _check_call(_LIB.XGDMatrixFree(self.handle))
-            self.handle = None
+    # FIXME free matrix after use using RPC
+    # def __del__(self):
+    #     if hasattr(self, "handle") and self.handle is not None:
+    #         _check_call(_LIB.XGDMatrixFree(self.handle))
+    #         self.handle = None
 
     def get_float_info(self, field):
         """Get float property from the DMatrix.
@@ -1316,7 +1317,7 @@ class Booster(object):
 
     feature_names = None
 
-    def __init__(self, params=None, cache=(), model_file=None):
+    def __init__(self, params=None, cache=(), model_file=None, handle=None):
         # pylint: disable=invalid-name
         """
         Parameters
@@ -1333,8 +1334,7 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(data=data, \
-                        params=params, \
+                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(params=params, \
                         cache=cache, \
                         model_file=model_file))
             self.handle = ctypes.c_char_p()
@@ -1347,24 +1347,31 @@ class Booster(object):
         #         raise TypeError('invalid cache item: {}'.format(type(d).__name__))
         #     self._validate_features(d)
         # dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
-        dmats = c_array(ctypes.c_char_p, [d.encode('utf-8') for d in cache])
-        self.handle = ctypes.c_char_p()
 
-        _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
-                                         ctypes.byref(self.handle)))
-        self.set_param({'seed': 0})
-        self.set_param(params or {})
-        if (params is not None) and ('booster' in params):
-            self.booster = params['booster']
+        # FIXME added this condition so we can create a fake booster object at the RPC server
+        if handle is not None:
+            self.handle = ctypes.c_char_p()
+            self.handle.value = bytes(handle, "utf-8")
         else:
-            self.booster = 'gbtree'
-        if model_file is not None:
-            self.load_model(model_file)
+            dmats = c_array(ctypes.c_char_p, [d.encode('utf-8') for d in cache])
+            self.handle = ctypes.c_char_p()
 
-    def __del__(self):
-        if self.handle is not None:
-            _check_call(_LIB.XGBoosterFree(self.handle))
-            self.handle = None
+            _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
+                                             ctypes.byref(self.handle)))
+            self.set_param({'seed': 0})
+            self.set_param(params or {})
+            if (params is not None) and ('booster' in params):
+                self.booster = params['booster']
+            else:
+                self.booster = 'gbtree'
+            if model_file is not None:
+                self.load_model(model_file)
+
+    # FIXME del using RPC
+    # def __del__(self):
+    #     if self.handle is not None:
+    #         _check_call(_LIB.XGBoosterFree(self.handle))
+    #         self.handle = None
 
     def __getstate__(self):
         # can't pickle ctypes pointers
@@ -1509,17 +1516,31 @@ class Booster(object):
             Customized objective function.
 
         """
-        if not isinstance(dtrain, DMatrix):
-            raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
-        self._validate_features(dtrain)
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                print("Waiting for training to finish...")
+                response = stub.BoosterUpdate(remote_attestation_pb2.BoosterUpdateParams(handle=self.handle.value, dtrain=dtrain.handle.value, iteration=iteration))
+                print("Training done")
+                return response
 
-        if fobj is None:
-            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
-                                                    dtrain.handle))
-        else:
-            pred = self.predict(dtrain)
-            grad, hess = fobj(pred, dtrain)
-            self.boost(dtrain, grad, hess)
+
+        dtrain_handle = ctypes.c_char_p()
+        dtrain_handle.value = bytes(dtrain, 'utf-8')
+        _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain_handle))
+        # FIXME disabling this because we only pass handle names across RPC
+        # if not isinstance(dtrain, DMatrix):
+        #     raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
+        # self._validate_features(dtrain)
+        # 
+        # if fobj is None:
+        #     _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
+        #                                             dtrain.handle))
+        # else:
+        #     pred = self.predict(dtrain)
+        #     grad, hess = fobj(pred, dtrain)
+        #     self.boost(dtrain, grad, hess)
 
     def boost(self, dtrain, grad, hess):
         """Boost the booster for one iteration, with customized gradient
@@ -1682,6 +1703,27 @@ class Booster(object):
         prediction : numpy array
         num_preds: number of predictions
         """
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.Predict(remote_attestation_pb2.PredictParams(handle=self.handle.value,
+                    data=data.handle.value,
+                    output_margin=output_margin,
+                    ntree_limit=ntree_limit,
+                    pred_leaf=pred_leaf,
+                    pred_contribs=pred_contribs,
+                    approx_contribs=approx_contribs,
+                    pred_interactions=pred_interactions,
+                    validate_features=validate_features,
+                    username=username))
+
+                enc_preds_serialized = response.predictions
+                num_preds = response.num_preds
+
+                enc_preds = proto_to_pointer(enc_preds_serialized)
+                return enc_preds, num_preds
+
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
@@ -1699,12 +1741,16 @@ class Booster(object):
         if pred_interactions:
             option_mask |= 0x10
 
-        if validate_features:
-            self._validate_features(data)
+        # FIXME disabling this because we only pass alias
+        # if validate_features:
+        #     self._validate_features(data)
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
-        _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
+        dmat_handle = ctypes.c_char_p()
+        dmat_handle.value = bytes(data, 'utf-8')
+        _check_call(_LIB.XGBoosterPredict(self.handle,
+                                          dmat_handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),

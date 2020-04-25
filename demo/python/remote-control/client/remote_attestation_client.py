@@ -61,6 +61,7 @@ def run(channel_addr, key_path, keypair):
     sig, sig_len = crypto_utils.sign_data(keypair, enc_sym_key, enc_sym_key_size) 
     print("Signed ciphertext")
 
+    # FIXME add with cert
     # Send data key to the server
     crypto_utils.add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
     # response = rpc_server.send_data_key(enc_sym_key, enc_sym_key_size, sig, sig_len)
@@ -68,27 +69,6 @@ def run(channel_addr, key_path, keypair):
     # TODO: do this instead 
     # response = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
  
-    # Signal start
-    """
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-        print("Waiting for training to finish...")
-        response = stub.SignalStart(remote_attestation_pb2.Status(status=1))
-
-        if response.status == 1:
-            print("Training succeeded! Decrypting predictions...")
-           
-            enc_preds_serialized = response.predictions
-            num_preds = response.num_preds
-
-            enc_preds = proto_to_pointer(enc_preds_serialized)
-            preds = crypto_utils.decrypt_predictions(sym_key, enc_preds, num_preds)
-
-            print("Predictions: ", preds)
-        else:
-            print("Training failed")
-    """
-
     print("Creating training matrix")
     dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
     if not dtrain:
@@ -121,24 +101,47 @@ def run(channel_addr, key_path, keypair):
     # TODO: Start off here
     # Train and evaluate
     num_rounds = 5 
-    booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+    booster = xgb.train(params, dtrain, num_rounds)
 
     print("booster: " + booster.handle.value.decode("utf-8"))
+
+    # Signal start
+    """
+    with grpc.insecure_channel(channel_addr) as channel:
+        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+        print("Waiting for training to finish...")
+        response = stub.SignalStart(remote_attestation_pb2.Status(status=1))
+
+        if response.status == 1:
+            print("Training succeeded! Decrypting predictions...")
+
+            enc_preds_serialized = response.predictions
+            num_preds = response.num_preds
+
+            enc_preds = proto_to_pointer(enc_preds_serialized)
+            preds = crypto_utils.decrypt_predictions(sym_key, enc_preds, num_preds)
+
+            print("Predictions: ", preds)
+        else:
+            print("Training failed")
+    """
+
 
     # Get encrypted predictions
     print("\n\nModel Predictions: ")
     predictions, num_preds = booster.predict(dtest)
 
-    key_file = open(HOME_DIR +  "demo/python/" + "key_zeros.txt", 'rb')
+    key_file = open(key_path, 'rb')
     sym_key = key_file.read() # The key will be type bytes
     key_file.close()
 
     # Decrypt predictions
-    print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+    print(crypto_utils.decrypt_predictions(sym_key, predictions, num_preds))
 
+    # FIXME implement this
     # Get fscores of model
-    print("\n\nModel Feature Importance: ")
-    print(booster.get_fscore(sym_key))
+    # print("\n\nModel Feature Importance: ")
+    # print(booster.get_fscore(sym_key))
      
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

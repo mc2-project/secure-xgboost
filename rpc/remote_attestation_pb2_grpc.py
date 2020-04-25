@@ -39,15 +39,20 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.Status.SerializeToString,
         response_deserializer=remote__attestation__pb2.Predictions.FromString,
         )
-    self.Train = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/Train',
-        request_serializer=remote__attestation__pb2.TrainParams.SerializeToString,
-        response_deserializer=remote__attestation__pb2.Name.FromString,
+    self.BoosterUpdate = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/BoosterUpdate',
+        request_serializer=remote__attestation__pb2.BoosterUpdateParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Status.FromString,
         )
     self.SignalStartCluster = channel.unary_unary(
         '/remote_attestation.RemoteAttestation/SignalStartCluster',
         request_serializer=remote__attestation__pb2.ClusterParams.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
+        )
+    self.Predict = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/Predict',
+        request_serializer=remote__attestation__pb2.PredictParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Predictions.FromString,
         )
 
 
@@ -105,7 +110,7 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def Train(self, request, context):
+  def BoosterUpdate(self, request, context):
     """A simple RPC.
 
     Signal to RPC server that the client is ready
@@ -119,6 +124,13 @@ class RemoteAttestationServicer(object):
 
     Signal to RPC server that the client is ready for distributed training
     """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def Predict(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -151,15 +163,20 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           request_deserializer=remote__attestation__pb2.Status.FromString,
           response_serializer=remote__attestation__pb2.Predictions.SerializeToString,
       ),
-      'Train': grpc.unary_unary_rpc_method_handler(
-          servicer.Train,
-          request_deserializer=remote__attestation__pb2.TrainParams.FromString,
-          response_serializer=remote__attestation__pb2.Name.SerializeToString,
+      'BoosterUpdate': grpc.unary_unary_rpc_method_handler(
+          servicer.BoosterUpdate,
+          request_deserializer=remote__attestation__pb2.BoosterUpdateParams.FromString,
+          response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
       'SignalStartCluster': grpc.unary_unary_rpc_method_handler(
           servicer.SignalStartCluster,
           request_deserializer=remote__attestation__pb2.ClusterParams.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
+      ),
+      'Predict': grpc.unary_unary_rpc_method_handler(
+          servicer.Predict,
+          request_deserializer=remote__attestation__pb2.PredictParams.FromString,
+          response_serializer=remote__attestation__pb2.Predictions.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

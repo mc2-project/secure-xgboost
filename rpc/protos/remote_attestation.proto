@@ -57,12 +57,14 @@ service RemoteAttestation {
   // A simple RPC.
   //
   // Signal to RPC server that the client is ready
-  rpc Train(TrainParams) returns (Name) {}
+  rpc BoosterUpdate(BoosterUpdateParams) returns (Status) {}
 
   // A simple RPC.
   //
   // Signal to RPC server that the client is ready for distributed training
   rpc SignalStartCluster(ClusterParams) returns (Status) {}
+
+  rpc Predict(PredictParams) returns (Predictions) {}
 }
 
 // Current status of the node
@@ -124,18 +126,36 @@ message DMatrixAttrs {
 
 // Wrapper for the constructor of a Booster
 message BoosterAttrs {
-  map<string, string> tup = 1;
+  map<string, string> params = 1;
   repeated string cache = 2;
   string model_file = 3;
 }
 
 // Params for training
-message TrainParams {
-    map<string, string> params = 1;
+message BoosterUpdateParams {
+    string handle = 1;
     string dtrain = 2;
-    uint32 num_boost_round = 3;
-    repeated Pair evals = 4;
-    uint32 early_stopping_rounds = 5;
+    uint32 iteration = 3;
+}
+
+// Params for eval
+message BoosterEvalSetParams {
+    string handle = 1;
+    repeated Pair evals = 2;
+    uint32 iteration = 3;
+}
+
+message PredictParams {
+    string handle = 1;
+    string data = 2;
+    bool output_margin = 3;
+    uint32 ntree_limit = 4;
+    bool pred_leaf = 5;
+    bool pred_contribs = 6;
+    bool approx_contribs = 7;
+    bool pred_interactions = 8;
+    bool validate_features = 9;
+    string username = 10;
 }
 
 // Wrapper for pair of strings

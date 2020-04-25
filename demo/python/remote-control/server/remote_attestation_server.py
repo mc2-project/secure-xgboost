@@ -142,17 +142,38 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         Receives the path of a dmatrix from the client and creates the dmatrix on the server side
         """
-        print("Received request to create Booster with params: " + request.params)
-        params = request
+        print("Received request to create Booster with params: ", request.params)
+        print("Model file: ", request.model_file)
+        params = request.params
         if not len(params):
             params = None
         cache = request.cache
         model_file = request.model_file
+        if not len(model_file):
+            model_file = None
         try:
-            dmatrix = xgb.Booster(params=params, \
+            booster = xgb.Booster(params=params, \
                     cache=cache, \
                     model_file=model_file)
-            return remote_attestation_pb2.Name(name=dmatrix.handle.value.decode("utf-8"))
+            return remote_attestation_pb2.Name(name=booster.handle.value.decode("utf-8"))
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Name(name=None)
+
+    def BoosterUpdate(self, request, context):
+        """
+        Start training
+        """
+        print("Doing Booster update: ", request.handle)
+        try:
+            booster = xgb.Booster(handle=request.handle)
+            result = booster.update(request.dtrain, request.iteration)
+            # xgb.train(params=params, dtrain=dtrain, num_boost_round=num_boost_round, evals=evals)
+            return remote_attestation_pb2.Status(status=result)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
@@ -190,6 +211,32 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             return remote_attestation_pb2.Name(name=None)
 
 
+    def Predict(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        try:
+            booster = xgb.Booster(handle=request.handle)
+            enc_preds, num_preds = booster.predict(
+                    data=request.data,
+                    output_margin=request.output_margin,
+                    ntree_limit=request.ntree_limit,
+                    pred_leaf=request.pred_leaf,
+                    pred_contribs=request.pred_contribs,
+                    approx_contribs=request.approx_contribs,
+                    pred_interactions=request.pred_interactions,
+                    validate_features=request.validate_features,
+                    username=request.username)
+
+            # Serialize encrypted predictions
+            enc_preds_proto = pointer_to_proto(enc_preds, num_preds * 8)
+
+            return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=1)
+        except Exception as e:
+            print(e)
+            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
+
+
     def SignalStart(self, request, context):
         """
         Signal to RPC server that client is ready to start
@@ -211,7 +258,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()

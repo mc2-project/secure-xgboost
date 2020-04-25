@@ -8,7 +8,7 @@ HOME_DIR = DIR + "/../../../"
 SYM_KEY_FILE = DIR + "/../../data/key_zeros.txt"
 PUB_KEY_FILE = DIR + "/../../data/keypair.pem"
 
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity=3)
 crypto = xgb.CryptoUtils()
 
 # Remote Attestation
