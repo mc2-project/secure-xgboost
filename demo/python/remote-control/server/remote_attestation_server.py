@@ -26,25 +26,16 @@ import sys
 import traceback
 import numpy as np
 import securexgboost as xgb
+from securexgboost import RPCServer as server
+
+# c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
+c_bst_ulong = ctypes.c_uint64
 
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
 
-    # FIXME: this function is a duplicate of the one below to maintain backwards compatibility
-    def GetAttestation(self, request, context):
-        """
-        Calls get_remote_report_with_public_key()
-        """
-        # Get a reference to the existing enclave
-        enclave_reference = xgb.Enclave(create_enclave=False)
-
-        # Get report from enclave
-        enclave_reference.get_remote_report_with_pubkey()
-        pem_key, key_size, remote_report, remote_report_size = enclave_reference.get_report_attrs()
-
-        return remote_attestation_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
-
+    # FIXME implement the library call within class RPCServer
     def rpc_get_remote_report_with_pubkey(self, request, context):
         """
         Calls get_remote_report_with_public_key()
@@ -58,7 +49,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
         return remote_attestation_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
-    def SendKey(self, request, context):
+    # FIXME implement the library call within class RPCServer
+    def rpc_add_client_key(self, request, context):
         """
         Sends encrypted symmetric key, signature over key, and filename of data that was encrypted using the symmetric key
         """
@@ -73,6 +65,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
         return remote_attestation_pb2.Status(status=result)
 
+    # FIXME implement the library call within class RPCServer
     def rpc_add_client_key_with_certificate(self, request, context):
         """
         Calls CryptoUtils.add_client_key_with_certificate()
@@ -89,39 +82,13 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
         return remote_attestation_pb2.Status(status=result)
 
-    def SendDMatrixAttrs(self, request, context):
-        """
-        Receives the path of a dmatrix from the client and creates the dmatrix on the server side
-        """
-        # print("Received request to create DMatrix with path: " + request.data_dict)
-        data_dict = request.data_dict
-        encrypted = request.encrypted 
-        label = list(request.label)
-        if not len(label):
-            label = None
-        missing = request.missing
-        weight = list(request.weight)
-        if not len(weight):
-            weight = None
-        silent = request.silent
-        feature_names = list(request.feature_names)
-        if not len(feature_names):
-            feature_names = None
-        feature_types = list(request.feature_types)
-        if not len(feature_types):
-            feature_types = None
-        nthread = request.nthread
+    def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         try:
-            dmatrix = xgb.DMatrix(data_dict=data_dict, \
-                    encrypted=encrypted, \
-                    label=label, \
-                    missing=missing, \
-                    weight=weight, \
-                    silent=silent, \
-                    feature_names=feature_names, \
-                    feature_types=feature_types, \
-                    nthread=nthread)
-            return remote_attestation_pb2.Name(name=dmatrix.handle.value)
+            dmatrix_handle = server.XGDMatrixCreateFromEncryptedFile(
+                    filenames=request.filenames,
+                    usernames=request.usernames,
+                    silent=request.silent)
+            return remote_attestation_pb2.Name(name=dmatrix_handle)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
@@ -130,75 +97,72 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
             return remote_attestation_pb2.Name(name=None)
 
-
-    def SendBoosterAttrs(self, request, context):
-        """
-        Receives the path of a dmatrix from the client and creates the dmatrix on the server side
-        """
-        print("Received request to create Booster with params: ", request.params)
-        print("Model file: ", request.model_file)
-        params = request.params
-        if not len(params):
-            params = None
-        cache = request.cache
-        model_file = request.model_file
-        if not len(model_file):
-            model_file = None
+    def rpc_XGBoosterSetParam(self, request, context):
         try:
-            booster = xgb.Booster(params=params, \
-                    cache=cache, \
-                    model_file=model_file)
-            return remote_attestation_pb2.Name(name=booster.handle.value.decode("utf-8"))
+            server.XGBoosterSetParam(
+                    booster_handle=request.booster_handle,
+                    key=request.key,
+                    value=request.value)
+            return remote_attestation_pb2.Status(status=0)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
+            return remote_attestation_pb2.Status(status=-1)
+
+    def rpc_XGBoosterCreate(self, request, context):
+        try:
+            booster_handle = server.XGBoosterCreate(
+                            cache=request.cache,
+                            length=request.length)
+            return remote_attestation_pb2.Name(name=booster_handle)
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+    
             return remote_attestation_pb2.Name(name=None)
 
-    def BoosterUpdate(self, request, context):
+    def rpc_XGBoosterUpdateOneIter(self, request, context):
         """
         Start training
         """
-        print("Doing Booster update: ", request.handle)
         try:
-            booster = xgb.Booster(handle=request.handle)
-            result = booster.update(request.dtrain, request.iteration)
-            # xgb.train(params=params, dtrain=dtrain, num_boost_round=num_boost_round, evals=evals)
-            return remote_attestation_pb2.Status(status=result)
+            server.XGBoosterUpdateOneIter(request.booster_handle,
+                    request.dtrain_handle,
+                    request.iteration)
+            return remote_attestation_pb2.Status(status=0)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Name(name=None)
+            return remote_attestation_pb2.Status(status=-1)
 
-    def Predict(self, request, context):
+    def rpc_XGBoosterPredict(self, request, context):
         """
         Signal to RPC server that client is ready to start
         """
         try:
-            booster = xgb.Booster(handle=request.handle)
-            enc_preds, num_preds = booster.predict(
-                    data=request.data,
-                    output_margin=request.output_margin,
-                    ntree_limit=request.ntree_limit,
-                    pred_leaf=request.pred_leaf,
-                    pred_contribs=request.pred_contribs,
-                    approx_contribs=request.approx_contribs,
-                    pred_interactions=request.pred_interactions,
-                    validate_features=request.validate_features,
-                    username=request.username)
-
-            # Serialize encrypted predictions
+            enc_preds, num_preds = server.XGBoosterPredict(request.booster_handle,
+                    request.dmatrix_handle,
+                    request.option_mask,
+                    request.ntree_limit,
+                    request.username)
             enc_preds_proto = pointer_to_proto(enc_preds, num_preds * 8)
+            return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
 
-            return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=1)
         except Exception as e:
-            print(e)
-            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=-1)
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

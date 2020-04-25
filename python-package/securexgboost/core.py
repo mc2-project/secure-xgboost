@@ -178,6 +178,7 @@ def _check_call(ret):
     ret : int
         return value from API calls
     """
+    # FIXME rpc
     if ret != 0:
         raise XGBoostError(py_str(_LIB.XGBGetLastError()))
 
@@ -414,24 +415,6 @@ class DMatrix(object):
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
         """
-        # check if RPC call is needed (client provoked initialization)
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
-        if channel_addr:
-            with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.SendDMatrixAttrs(remote_attestation_pb2.DMatrixAttrs(data_dict=data_dict, \
-                        encrypted=encrypted, \
-                        label=label, \
-                        missing=missing, \
-                        weight=weight, \
-                        silent=silent, \
-                        feature_names=feature_names, \
-                        feature_types=feature_types, \
-                        nthread=nthread))
-            self.handle = ctypes.c_char_p()
-            self.handle.value = bytes(response.name, "utf-8")
-            return
- 
         # check the global variable for current_user
         #  if usernames is None and "current_user" in globals():
             #  username = globals()["current_user"]
@@ -470,14 +453,26 @@ class DMatrix(object):
         if isinstance(data, list):
             handle = ctypes.c_char_p()
             if encrypted:
-                filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
-                usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
-                    usrs,
-                    c_bst_ulong(len(data)),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+                channel_addr = os.getenv("RA_CHANNEL_ADDR")
+                if channel_addr:
+                    with grpc.insecure_channel(channel_addr) as channel:
+                        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                        response = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_attestation_pb2.DMatrixAttrs(
+                            filenames=data,
+                            usernames=usernames,
+                            silent=silent))
+                        handle = c_str(response.name)
+                else:
+ 
+                    filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
+                    usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
+                    _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                        usrs,
+                        c_bst_ulong(len(data)),
+                        ctypes.c_int(silent),
+                        ctypes.byref(handle)))
             else:
+                # FIXME implement RPC for this
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
                     ctypes.byref(handle)))
@@ -1229,10 +1224,11 @@ class CryptoUtils(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=data, \
-                        key_size=data_len, \
-                        signature=signature, \
-                        sig_len=sig_len))
+                response = stub.rpc_add_client_key(remote_attestation_pb2.DataMetadata(
+                                    enc_sym_key=data,
+                                    key_size=data_len,
+                                    signature=signature,
+                                    sig_len=sig_len))
             return
 
         # # Cast fname to a char*
@@ -1247,7 +1243,7 @@ class CryptoUtils(object):
         sig_len = ctypes.c_size_t(sig_len)
 
         # Add client key
-        _LIB.add_client_key(data, data_len, signature, sig_len)
+        _check_call(_LIB.add_client_key(data, data_len, signature, sig_len))
 
     def add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
         """
@@ -1340,7 +1336,7 @@ class Booster(object):
 
     feature_names = None
 
-    def __init__(self, params=None, cache=(), model_file=None, handle=None):
+    def __init__(self, params=None, cache=(), model_file=None):
         # pylint: disable=invalid-name
         """
         Parameters
@@ -1353,44 +1349,35 @@ class Booster(object):
             Path to the model file.
         """
         # check if RPC call is needed (client provoked initialization)
+ 
+        for d in cache:
+            if not isinstance(d, DMatrix):
+                raise TypeError('invalid cache item: {}'.format(type(d).__name__))
+        # FIXME disabling this for now
+        #     self._validate_features(d)
+
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
                 cache_handles = [d.handle.value for d in cache]
-                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(
-                                    params=params,
-                                    cache=cache_handles,
-                                    model_file=model_file))
-            self.handle = ctypes.c_char_p()
-            self.handle.value = bytes(response.name, "utf-8")
-            return
- 
-        # FIXME disabling this because we only pass handle names across RPC
-        # for d in cache:
-        #     if not isinstance(d, DMatrix):
-        #         raise TypeError('invalid cache item: {}'.format(type(d).__name__))
-        #     self._validate_features(d)
-        # dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
-
-        # FIXME added this condition so we can create a fake booster object at the RPC server
-        if handle is not None:
-            self.handle = ctypes.c_char_p()
-            self.handle.value = bytes(handle, "utf-8")
+                response = stub.rpc_XGBoosterCreate(remote_attestation_pb2.BoosterAttrs(
+                    cache=cache_handles,
+                    length=len(cache)))
+            self.handle = c_str(response.name)
         else:
-            dmats = c_array(ctypes.c_char_p, [d.encode('utf-8') for d in cache])
+            dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
             self.handle = ctypes.c_char_p()
-
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
                                              ctypes.byref(self.handle)))
-            self.set_param({'seed': 0})
-            self.set_param(params or {})
-            if (params is not None) and ('booster' in params):
-                self.booster = params['booster']
-            else:
-                self.booster = 'gbtree'
-            if model_file is not None:
-                self.load_model(model_file)
+        self.set_param({'seed': 0})
+        self.set_param(params or {})
+        if (params is not None) and ('booster' in params):
+            self.booster = params['booster']
+        else:
+            self.booster = 'gbtree'
+        if model_file is not None:
+            self.load_model(model_file)
 
     # FIXME del using RPC
     # def __del__(self):
@@ -1525,7 +1512,13 @@ class Booster(object):
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
         for key, val in params:
-            _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
+            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                    response = stub.rpc_XGBoosterSetParam(remote_attestation_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)))
+            else:
+                _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1545,15 +1538,10 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                print("Waiting for training to finish...")
-                response = stub.BoosterUpdate(remote_attestation_pb2.BoosterUpdateParams(handle=self.handle.value, dtrain=dtrain.handle.value, iteration=iteration))
-                print("Training done")
+                response = stub.rpc_XGBoosterUpdateOneIter(remote_attestation_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration))
                 return response
-
-
-        dtrain_handle = ctypes.c_char_p()
-        dtrain_handle.value = bytes(dtrain, 'utf-8')
-        _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain_handle))
+        else:
+            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
         # FIXME disabling this because we only pass handle names across RPC
         # if not isinstance(dtrain, DMatrix):
         #     raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
@@ -1728,26 +1716,26 @@ class Booster(object):
         prediction : numpy array
         num_preds: number of predictions
         """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
-        if channel_addr:
-            with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.Predict(remote_attestation_pb2.PredictParams(handle=self.handle.value,
-                    data=data.handle.value,
-                    output_margin=output_margin,
-                    ntree_limit=ntree_limit,
-                    pred_leaf=pred_leaf,
-                    pred_contribs=pred_contribs,
-                    approx_contribs=approx_contribs,
-                    pred_interactions=pred_interactions,
-                    validate_features=validate_features,
-                    username=username))
-
-                enc_preds_serialized = response.predictions
-                num_preds = response.num_preds
-
-                enc_preds = proto_to_pointer(enc_preds_serialized)
-                return enc_preds, num_preds
+        # channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        # if channel_addr:
+        #     with grpc.insecure_channel(channel_addr) as channel:
+        #         stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+        #         response = stub.Predict(remote_attestation_pb2.PredictParams(handle=self.handle.value,
+        #             data=data.handle.value,
+        #             output_margin=output_margin,
+        #             ntree_limit=ntree_limit,
+        #             pred_leaf=pred_leaf,
+        #             pred_contribs=pred_contribs,
+        #             approx_contribs=approx_contribs,
+        #             pred_interactions=pred_interactions,
+        #             validate_features=validate_features,
+        #             username=username))
+        # 
+        #         enc_preds_serialized = response.predictions
+        #         num_preds = response.num_preds
+        # 
+        #         enc_preds = proto_to_pointer(enc_preds_serialized)
+        #         return enc_preds, num_preds
 
         # check the global variable for current_user
         if username is None and "current_user" in globals():
@@ -1766,45 +1754,59 @@ class Booster(object):
         if pred_interactions:
             option_mask |= 0x10
 
-        # FIXME disabling this because we only pass alias
+        # FIXME disabling this for now (need to add RPC for num col)
         # if validate_features:
         #     self._validate_features(data)
 
-        length = c_bst_ulong()
-        preds = ctypes.POINTER(ctypes.c_uint8)()
-        dmat_handle = ctypes.c_char_p()
-        dmat_handle.value = bytes(data, 'utf-8')
-        _check_call(_LIB.XGBoosterPredict(self.handle,
-                                          dmat_handle,
-                                          ctypes.c_int(option_mask),
-                                          ctypes.c_uint(ntree_limit),
-                                          ctypes.byref(length),
-                                          ctypes.byref(preds),
-                                          c_str(username)))
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_XGBoosterPredict(remote_attestation_pb2.PredictParams(booster_handle=self.handle.value,
+                    dmatrix_handle=data.handle.value,
+                    option_mask=option_mask,
+                    ntree_limit=ntree_limit,
+                    username=username))
 
-        #  preds = ctypes2numpy(preds, length.value, np.float32)
-        #  if pred_leaf:
-        #      preds = preds.astype(np.int32)
-        #
-        #  nrow = data.num_row()
-        #  if preds.size != nrow and preds.size % nrow == 0:
-        #      chunk_size = int(preds.size / nrow)
-        #
-        #      if pred_interactions:
-        #          ngroup = int(chunk_size / ((data.num_col() + 1) * (data.num_col() + 1)))
-        #          if ngroup == 1:
-        #              preds = preds.reshape(nrow, data.num_col() + 1, data.num_col() + 1)
-        #          else:
-        #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1, data.num_col() + 1)
-        #      elif pred_contribs:
-        #          ngroup = int(chunk_size / (data.num_col() + 1))
-        #          if ngroup == 1:
-        #              preds = preds.reshape(nrow, data.num_col() + 1)
-        #          else:
-        #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
-        #      else:
-        #          preds = preds.reshape(nrow, chunk_size)
-        return preds, length.value
+                enc_preds_serialized = response.predictions
+                num_preds = response.num_preds
+
+                enc_preds = proto_to_pointer(enc_preds_serialized)
+                return enc_preds, num_preds
+        else:
+            length = c_bst_ulong()
+            preds = ctypes.POINTER(ctypes.c_uint8)()
+            _check_call(_LIB.XGBoosterPredict(self.handle,
+                                              data.handle,
+                                              ctypes.c_int(option_mask),
+                                              ctypes.c_uint(ntree_limit),
+                                              ctypes.byref(length),
+                                              ctypes.byref(preds),
+                                              c_str(username)))
+
+            #  preds = ctypes2numpy(preds, length.value, np.float32)
+            #  if pred_leaf:
+            #      preds = preds.astype(np.int32)
+            #
+            #  nrow = data.num_row()
+            #  if preds.size != nrow and preds.size % nrow == 0:
+            #      chunk_size = int(preds.size / nrow)
+            #
+            #      if pred_interactions:
+            #          ngroup = int(chunk_size / ((data.num_col() + 1) * (data.num_col() + 1)))
+            #          if ngroup == 1:
+            #              preds = preds.reshape(nrow, data.num_col() + 1, data.num_col() + 1)
+            #          else:
+            #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1, data.num_col() + 1)
+            #      elif pred_contribs:
+            #          ngroup = int(chunk_size / (data.num_col() + 1))
+            #          if ngroup == 1:
+            #              preds = preds.reshape(nrow, data.num_col() + 1)
+            #          else:
+            #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
+            #      else:
+            #          preds = preds.reshape(nrow, chunk_size)
+            return preds, length.value
 
     def save_model(self, fname, username=None):
         """
@@ -2192,10 +2194,14 @@ class Booster(object):
         Validate Booster and data's feature_names are identical.
         Set feature_names and feature_types from DMatrix
         """
+        print("In validating")
         if self.feature_names is None:
+            print("In none")
             self.feature_names = data.feature_names
             self.feature_types = data.feature_types
+            print("Done with none")
         else:
+            print("Not in none")
             # Booster can't accept data with different feature names
             if self.feature_names != data.feature_names:
                 dat_missing = set(self.feature_names) - set(data.feature_names)
@@ -2257,3 +2263,50 @@ class Booster(object):
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
 
+class RPCServer:
+
+    def XGBoosterPredict(booster_handle, dmatrix_handle, option_mask, ntree_limit, username):
+        length = c_bst_ulong()
+        preds = ctypes.POINTER(ctypes.c_uint8)()
+        bst_handle = c_str(booster_handle)
+        dmat_handle = c_str(dmatrix_handle)
+        _check_call(_LIB.XGBoosterPredict(
+            bst_handle,
+            dmat_handle,
+            ctypes.c_int(option_mask),
+            ctypes.c_uint(ntree_limit),
+            ctypes.byref(length),
+            ctypes.byref(preds),
+            c_str(username)))
+        return preds, length.value
+
+
+    def XGBoosterUpdateOneIter(booster_handle, dtrain_handle, iteration):
+        bst_handle = c_str(booster_handle)
+        dmat_handle = c_str(dtrain_handle)
+        _check_call(_LIB.XGBoosterUpdateOneIter(bst_handle, ctypes.c_int(iteration), dmat_handle))
+
+
+    def XGBoosterCreate(cache, length):
+        bst_handle = ctypes.c_char_p()
+        dmats = c_array(ctypes.c_char_p, [c_str(d) for d in cache])
+        _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(length), ctypes.byref(bst_handle)))
+        return bst_handle.value.decode('utf-8')
+
+
+    def XGBoosterSetParam(booster_handle, key, value):
+        bst_handle = c_str(booster_handle)
+        _check_call(_LIB.XGBoosterSetParam(bst_handle, c_str(key), c_str(value)))
+
+
+    def XGDMatrixCreateFromEncryptedFile(filenames, usernames, silent):
+        dmat_handle = ctypes.c_char_p()
+        files = c_array(ctypes.c_char_p, [c_str(path) for path in filenames])
+        usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
+        _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
+            files,
+            usrs,
+            c_bst_ulong(len(filenames)),
+            ctypes.c_int(silent),
+            ctypes.byref(dmat_handle)))
+        return dmat_handle.value.decode('utf-8')

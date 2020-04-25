@@ -25,27 +25,30 @@ service RemoteAttestation {
   rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
 
   // Send symmetric key encrypted with enclave public key, signature
-  rpc SendKey(DataMetadata) returns (Status) {}
+  rpc rpc_add_client_key(DataMetadata) returns (Status) {}
 
   // Send symmetric key encrypted with enclave public key, signature, certificate
   rpc rpc_add_client_key_with_certificate(DataMetadata) returns (Status) {}
 
   // Send params of a DMatrix to the server for initialization
   // Returns the name assigned to this DMatrix
-  rpc SendDMatrixAttrs(DMatrixAttrs) returns (Name) {}
+  rpc rpc_XGDMatrixCreateFromEncryptedFile(DMatrixAttrs) returns (Name) {}
 
   // Send params of a Booster to the server for initialization 
   // Returns the name assigned to this booster
-  rpc SendBoosterAttrs(BoosterAttrs) returns (Name) {}
+  rpc rpc_XGBoosterCreate(BoosterAttrs) returns (Name) {}
+
+  // Set booster parameters
+  rpc rpc_XGBoosterSetParam(BoosterParam) returns (Status) {}
 
   // Update the booster for one round
-  rpc BoosterUpdate(BoosterUpdateParams) returns (Status) {}
+  rpc rpc_XGBoosterUpdateOneIter(BoosterUpdateParams) returns (Status) {}
 
   // Signal to RPC server that the client is ready for distributed training
   rpc SignalStartCluster(ClusterParams) returns (Status) {}
 
   // Run predictions
-  rpc Predict(PredictParams) returns (Predictions) {}
+  rpc rpc_XGBoosterPredict(PredictParams) returns (Predictions) {}
 }
 
 // Current status of the node
@@ -97,28 +100,28 @@ message DataMetadata {
 
 // Params for the constructor of a DMatrix
 message DMatrixAttrs {
-  map<string, string> data_dict = 1;
-  bool encrypted = 2;
-  repeated string label = 3;
-  float missing = 4;
-  repeated string weight = 5;
-  bool silent = 6;
-  repeated string feature_names = 7;
-  repeated string feature_types = 8;
-  uint32 nthread = 9;
+  repeated string filenames = 1;
+  repeated string usernames = 2;
+  uint32 silent = 3;
 }
 
 // Params for the constructor of a Booster
 message BoosterAttrs {
-  map<string, string> params = 1;
-  repeated string cache = 2;
-  string model_file = 3;
+  repeated string cache = 1;
+  uint64 length = 2;
+}
+
+// Booster parameter
+message BoosterParam {
+    string booster_handle = 1;
+    string key = 2;
+    string value = 3;
 }
 
 // Params for training
 message BoosterUpdateParams {
-    string handle = 1;
-    string dtrain = 2;
+    string booster_handle = 1;
+    string dtrain_handle = 2;
     uint32 iteration = 3;
 }
 
@@ -131,16 +134,11 @@ message BoosterEvalSetParams {
 
 // Params for prediction
 message PredictParams {
-    string handle = 1;
-    string data = 2;
-    bool output_margin = 3;
+    string booster_handle = 1;
+    string dmatrix_handle = 2;
+    uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
-    bool pred_leaf = 5;
-    bool pred_contribs = 6;
-    bool approx_contribs = 7;
-    bool pred_interactions = 8;
-    bool validate_features = 9;
-    string username = 10;
+    string username = 5;
 }
 
 // Pair of strings

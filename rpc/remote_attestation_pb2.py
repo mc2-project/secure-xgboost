@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='remote_attestation',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x18remote_attestation.proto\x12\x12remote_attestation\x1a\rndarray.proto\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\x96\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"\x94\x02\n\x0c\x44MatrixAttrs\x12\x41\n\tdata_dict\x18\x01 \x03(\x0b\x32..remote_attestation.DMatrixAttrs.DataDictEntry\x12\x11\n\tencrypted\x18\x02 \x01(\x08\x12\r\n\x05label\x18\x03 \x03(\t\x12\x0f\n\x07missing\x18\x04 \x01(\x02\x12\x0e\n\x06weight\x18\x05 \x03(\t\x12\x0e\n\x06silent\x18\x06 \x01(\x08\x12\x15\n\rfeature_names\x18\x07 \x03(\t\x12\x15\n\rfeature_types\x18\x08 \x03(\t\x12\x0f\n\x07nthread\x18\t \x01(\r\x1a/\n\rDataDictEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"\x9e\x01\n\x0c\x42oosterAttrs\x12<\n\x06params\x18\x01 \x03(\x0b\x32,.remote_attestation.BoosterAttrs.ParamsEntry\x12\r\n\x05\x63\x61\x63he\x18\x02 \x03(\t\x12\x12\n\nmodel_file\x18\x03 \x01(\t\x1a-\n\x0bParamsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"H\n\x13\x42oosterUpdateParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\x0e\n\x06\x64train\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\"b\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\'\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x18.remote_attestation.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\"\xe4\x01\n\rPredictParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\x12\x15\n\routput_margin\x18\x03 \x01(\x08\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x11\n\tpred_leaf\x18\x05 \x01(\x08\x12\x15\n\rpred_contribs\x18\x06 \x01(\x08\x12\x17\n\x0f\x61pprox_contribs\x18\x07 \x01(\x08\x12\x19\n\x11pred_interactions\x18\x08 \x01(\x08\x12\x19\n\x11validate_features\x18\t \x01(\x08\x12\x10\n\x08username\x18\n \x01(\t\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"a\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x0e\n\x06status\x18\x03 \x01(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\x94\x06\n\x11RemoteAttestation\x12J\n\x0eGetAttestation\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12]\n!rpc_get_remote_report_with_pubkey\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12I\n\x07SendKey\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x65\n#rpc_add_client_key_with_certificate\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12P\n\x10SendDMatrixAttrs\x12 .remote_attestation.DMatrixAttrs\x1a\x18.remote_attestation.Name\"\x00\x12P\n\x10SendBoosterAttrs\x12 .remote_attestation.BoosterAttrs\x1a\x18.remote_attestation.Name\"\x00\x12V\n\rBoosterUpdate\x12\'.remote_attestation.BoosterUpdateParams\x1a\x1a.remote_attestation.Status\"\x00\x12U\n\x12SignalStartCluster\x12!.remote_attestation.ClusterParams\x1a\x1a.remote_attestation.Status\"\x00\x12O\n\x07Predict\x12!.remote_attestation.PredictParams\x1a\x1f.remote_attestation.Predictions\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x18remote_attestation.proto\x12\x12remote_attestation\x1a\rndarray.proto\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\x96\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"D\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\"-\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\"B\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"W\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\"b\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\'\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x18.remote_attestation.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\"{\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08username\x18\x05 \x01(\t\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"a\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x0e\n\x06status\x18\x03 \x01(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\xdd\x06\n\x11RemoteAttestation\x12]\n!rpc_get_remote_report_with_pubkey\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12T\n\x12rpc_add_client_key\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x65\n#rpc_add_client_key_with_certificate\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x64\n$rpc_XGDMatrixCreateFromEncryptedFile\x12 .remote_attestation.DMatrixAttrs\x1a\x18.remote_attestation.Name\"\x00\x12S\n\x13rpc_XGBoosterCreate\x12 .remote_attestation.BoosterAttrs\x1a\x18.remote_attestation.Name\"\x00\x12W\n\x15rpc_XGBoosterSetParam\x12 .remote_attestation.BoosterParam\x1a\x1a.remote_attestation.Status\"\x00\x12\x63\n\x1arpc_XGBoosterUpdateOneIter\x12\'.remote_attestation.BoosterUpdateParams\x1a\x1a.remote_attestation.Status\"\x00\x12U\n\x12SignalStartCluster\x12!.remote_attestation.ClusterParams\x1a\x1a.remote_attestation.Status\"\x00\x12\\\n\x14rpc_XGBoosterPredict\x12!.remote_attestation.PredictParams\x1a\x1f.remote_attestation.Predictions\"\x00\x62\x06proto3'
   ,
   dependencies=[ndarray__pb2.DESCRIPTOR,])
 
@@ -175,43 +175,6 @@ _DATAMETADATA = _descriptor.Descriptor(
 )
 
 
-_DMATRIXATTRS_DATADICTENTRY = _descriptor.Descriptor(
-  name='DataDictEntry',
-  full_name='remote_attestation.DMatrixAttrs.DataDictEntry',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='key', full_name='remote_attestation.DMatrixAttrs.DataDictEntry.key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='remote_attestation.DMatrixAttrs.DataDictEntry.value', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=b'8\001',
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=660,
-  serialized_end=707,
-)
-
 _DMATRIXATTRS = _descriptor.Descriptor(
   name='DMatrixAttrs',
   full_name='remote_attestation.DMatrixAttrs',
@@ -220,103 +183,23 @@ _DMATRIXATTRS = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='data_dict', full_name='remote_attestation.DMatrixAttrs.data_dict', index=0,
-      number=1, type=11, cpp_type=10, label=3,
+      name='filenames', full_name='remote_attestation.DMatrixAttrs.filenames', index=0,
+      number=1, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='encrypted', full_name='remote_attestation.DMatrixAttrs.encrypted', index=1,
-      number=2, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='label', full_name='remote_attestation.DMatrixAttrs.label', index=2,
-      number=3, type=9, cpp_type=9, label=3,
+      name='usernames', full_name='remote_attestation.DMatrixAttrs.usernames', index=1,
+      number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='missing', full_name='remote_attestation.DMatrixAttrs.missing', index=3,
-      number=4, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='weight', full_name='remote_attestation.DMatrixAttrs.weight', index=4,
-      number=5, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='silent', full_name='remote_attestation.DMatrixAttrs.silent', index=5,
-      number=6, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='feature_names', full_name='remote_attestation.DMatrixAttrs.feature_names', index=6,
-      number=7, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='feature_types', full_name='remote_attestation.DMatrixAttrs.feature_types', index=7,
-      number=8, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='nthread', full_name='remote_attestation.DMatrixAttrs.nthread', index=8,
-      number=9, type=13, cpp_type=3, label=1,
+      name='silent', full_name='remote_attestation.DMatrixAttrs.silent', index=2,
+      number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[_DMATRIXATTRS_DATADICTENTRY, ],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=431,
-  serialized_end=707,
-)
-
-
-_BOOSTERATTRS_PARAMSENTRY = _descriptor.Descriptor(
-  name='ParamsEntry',
-  full_name='remote_attestation.BoosterAttrs.ParamsEntry',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='key', full_name='remote_attestation.BoosterAttrs.ParamsEntry.key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='remote_attestation.BoosterAttrs.ParamsEntry.value', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -326,15 +209,16 @@ _BOOSTERATTRS_PARAMSENTRY = _descriptor.Descriptor(
   nested_types=[],
   enum_types=[
   ],
-  serialized_options=b'8\001',
+  serialized_options=None,
   is_extendable=False,
   syntax='proto3',
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=823,
-  serialized_end=868,
+  serialized_start=430,
+  serialized_end=498,
 )
+
 
 _BOOSTERATTRS = _descriptor.Descriptor(
   name='BoosterAttrs',
@@ -344,30 +228,23 @@ _BOOSTERATTRS = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='params', full_name='remote_attestation.BoosterAttrs.params', index=0,
-      number=1, type=11, cpp_type=10, label=3,
+      name='cache', full_name='remote_attestation.BoosterAttrs.cache', index=0,
+      number=1, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='cache', full_name='remote_attestation.BoosterAttrs.cache', index=1,
-      number=2, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='model_file', full_name='remote_attestation.BoosterAttrs.model_file', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      name='length', full_name='remote_attestation.BoosterAttrs.length', index=1,
+      number=2, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
-  nested_types=[_BOOSTERATTRS_PARAMSENTRY, ],
+  nested_types=[],
   enum_types=[
   ],
   serialized_options=None,
@@ -376,8 +253,53 @@ _BOOSTERATTRS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=710,
-  serialized_end=868,
+  serialized_start=500,
+  serialized_end=545,
+)
+
+
+_BOOSTERPARAM = _descriptor.Descriptor(
+  name='BoosterParam',
+  full_name='remote_attestation.BoosterParam',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='booster_handle', full_name='remote_attestation.BoosterParam.booster_handle', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='key', full_name='remote_attestation.BoosterParam.key', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='remote_attestation.BoosterParam.value', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=547,
+  serialized_end=613,
 )
 
 
@@ -389,14 +311,14 @@ _BOOSTERUPDATEPARAMS = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='handle', full_name='remote_attestation.BoosterUpdateParams.handle', index=0,
+      name='booster_handle', full_name='remote_attestation.BoosterUpdateParams.booster_handle', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='dtrain', full_name='remote_attestation.BoosterUpdateParams.dtrain', index=1,
+      name='dtrain_handle', full_name='remote_attestation.BoosterUpdateParams.dtrain_handle', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -421,8 +343,8 @@ _BOOSTERUPDATEPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=870,
-  serialized_end=942,
+  serialized_start=615,
+  serialized_end=702,
 )
 
 
@@ -466,8 +388,8 @@ _BOOSTEREVALSETPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=944,
-  serialized_end=1042,
+  serialized_start=704,
+  serialized_end=802,
 )
 
 
@@ -479,23 +401,23 @@ _PREDICTPARAMS = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='handle', full_name='remote_attestation.PredictParams.handle', index=0,
+      name='booster_handle', full_name='remote_attestation.PredictParams.booster_handle', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='data', full_name='remote_attestation.PredictParams.data', index=1,
+      name='dmatrix_handle', full_name='remote_attestation.PredictParams.dmatrix_handle', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='output_margin', full_name='remote_attestation.PredictParams.output_margin', index=2,
-      number=3, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
+      name='option_mask', full_name='remote_attestation.PredictParams.option_mask', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
@@ -507,43 +429,8 @@ _PREDICTPARAMS = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='pred_leaf', full_name='remote_attestation.PredictParams.pred_leaf', index=4,
-      number=5, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='pred_contribs', full_name='remote_attestation.PredictParams.pred_contribs', index=5,
-      number=6, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='approx_contribs', full_name='remote_attestation.PredictParams.approx_contribs', index=6,
-      number=7, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='pred_interactions', full_name='remote_attestation.PredictParams.pred_interactions', index=7,
-      number=8, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='validate_features', full_name='remote_attestation.PredictParams.validate_features', index=8,
-      number=9, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote_attestation.PredictParams.username', index=9,
-      number=10, type=9, cpp_type=9, label=1,
+      name='username', full_name='remote_attestation.PredictParams.username', index=4,
+      number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -560,8 +447,8 @@ _PREDICTPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1045,
-  serialized_end=1273,
+  serialized_start=804,
+  serialized_end=927,
 )
 
 
@@ -598,8 +485,8 @@ _PAIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1275,
-  serialized_end=1303,
+  serialized_start=929,
+  serialized_end=957,
 )
 
 
@@ -629,8 +516,8 @@ _NAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1305,
-  serialized_end=1325,
+  serialized_start=959,
+  serialized_end=979,
 )
 
 
@@ -674,8 +561,8 @@ _PREDICTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1327,
-  serialized_end=1424,
+  serialized_start=981,
+  serialized_end=1078,
 )
 
 
@@ -705,18 +592,14 @@ _CLUSTERPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1426,
-  serialized_end=1462,
+  serialized_start=1080,
+  serialized_end=1116,
 )
 
 _REPORT.fields_by_name['pem_key'].message_type = ndarray__pb2._NDARRAY
 _REPORT.fields_by_name['remote_report'].message_type = ndarray__pb2._NDARRAY
 _DATAMETADATA.fields_by_name['enc_sym_key'].message_type = ndarray__pb2._NDARRAY
 _DATAMETADATA.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
-_DMATRIXATTRS_DATADICTENTRY.containing_type = _DMATRIXATTRS
-_DMATRIXATTRS.fields_by_name['data_dict'].message_type = _DMATRIXATTRS_DATADICTENTRY
-_BOOSTERATTRS_PARAMSENTRY.containing_type = _BOOSTERATTRS
-_BOOSTERATTRS.fields_by_name['params'].message_type = _BOOSTERATTRS_PARAMSENTRY
 _BOOSTEREVALSETPARAMS.fields_by_name['evals'].message_type = _PAIR
 _PREDICTIONS.fields_by_name['predictions'].message_type = ndarray__pb2._NDARRAY
 DESCRIPTOR.message_types_by_name['Status'] = _STATUS
@@ -724,6 +607,7 @@ DESCRIPTOR.message_types_by_name['Report'] = _REPORT
 DESCRIPTOR.message_types_by_name['DataMetadata'] = _DATAMETADATA
 DESCRIPTOR.message_types_by_name['DMatrixAttrs'] = _DMATRIXATTRS
 DESCRIPTOR.message_types_by_name['BoosterAttrs'] = _BOOSTERATTRS
+DESCRIPTOR.message_types_by_name['BoosterParam'] = _BOOSTERPARAM
 DESCRIPTOR.message_types_by_name['BoosterUpdateParams'] = _BOOSTERUPDATEPARAMS
 DESCRIPTOR.message_types_by_name['BoosterEvalSetParams'] = _BOOSTEREVALSETPARAMS
 DESCRIPTOR.message_types_by_name['PredictParams'] = _PREDICTPARAMS
@@ -755,34 +639,25 @@ DataMetadata = _reflection.GeneratedProtocolMessageType('DataMetadata', (_messag
 _sym_db.RegisterMessage(DataMetadata)
 
 DMatrixAttrs = _reflection.GeneratedProtocolMessageType('DMatrixAttrs', (_message.Message,), {
-
-  'DataDictEntry' : _reflection.GeneratedProtocolMessageType('DataDictEntry', (_message.Message,), {
-    'DESCRIPTOR' : _DMATRIXATTRS_DATADICTENTRY,
-    '__module__' : 'remote_attestation_pb2'
-    # @@protoc_insertion_point(class_scope:remote_attestation.DMatrixAttrs.DataDictEntry)
-    })
-  ,
   'DESCRIPTOR' : _DMATRIXATTRS,
   '__module__' : 'remote_attestation_pb2'
   # @@protoc_insertion_point(class_scope:remote_attestation.DMatrixAttrs)
   })
 _sym_db.RegisterMessage(DMatrixAttrs)
-_sym_db.RegisterMessage(DMatrixAttrs.DataDictEntry)
 
 BoosterAttrs = _reflection.GeneratedProtocolMessageType('BoosterAttrs', (_message.Message,), {
-
-  'ParamsEntry' : _reflection.GeneratedProtocolMessageType('ParamsEntry', (_message.Message,), {
-    'DESCRIPTOR' : _BOOSTERATTRS_PARAMSENTRY,
-    '__module__' : 'remote_attestation_pb2'
-    # @@protoc_insertion_point(class_scope:remote_attestation.BoosterAttrs.ParamsEntry)
-    })
-  ,
   'DESCRIPTOR' : _BOOSTERATTRS,
   '__module__' : 'remote_attestation_pb2'
   # @@protoc_insertion_point(class_scope:remote_attestation.BoosterAttrs)
   })
 _sym_db.RegisterMessage(BoosterAttrs)
-_sym_db.RegisterMessage(BoosterAttrs.ParamsEntry)
+
+BoosterParam = _reflection.GeneratedProtocolMessageType('BoosterParam', (_message.Message,), {
+  'DESCRIPTOR' : _BOOSTERPARAM,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.BoosterParam)
+  })
+_sym_db.RegisterMessage(BoosterParam)
 
 BoosterUpdateParams = _reflection.GeneratedProtocolMessageType('BoosterUpdateParams', (_message.Message,), {
   'DESCRIPTOR' : _BOOSTERUPDATEPARAMS,
@@ -834,8 +709,6 @@ ClusterParams = _reflection.GeneratedProtocolMessageType('ClusterParams', (_mess
 _sym_db.RegisterMessage(ClusterParams)
 
 
-_DMATRIXATTRS_DATADICTENTRY._options = None
-_BOOSTERATTRS_PARAMSENTRY._options = None
 
 _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
   name='RemoteAttestation',
@@ -843,12 +716,12 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=1465,
-  serialized_end=2253,
+  serialized_start=1119,
+  serialized_end=1980,
   methods=[
   _descriptor.MethodDescriptor(
-    name='GetAttestation',
-    full_name='remote_attestation.RemoteAttestation.GetAttestation',
+    name='rpc_get_remote_report_with_pubkey',
+    full_name='remote_attestation.RemoteAttestation.rpc_get_remote_report_with_pubkey',
     index=0,
     containing_service=None,
     input_type=_STATUS,
@@ -856,18 +729,9 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='rpc_get_remote_report_with_pubkey',
-    full_name='remote_attestation.RemoteAttestation.rpc_get_remote_report_with_pubkey',
+    name='rpc_add_client_key',
+    full_name='remote_attestation.RemoteAttestation.rpc_add_client_key',
     index=1,
-    containing_service=None,
-    input_type=_STATUS,
-    output_type=_REPORT,
-    serialized_options=None,
-  ),
-  _descriptor.MethodDescriptor(
-    name='SendKey',
-    full_name='remote_attestation.RemoteAttestation.SendKey',
-    index=2,
     containing_service=None,
     input_type=_DATAMETADATA,
     output_type=_STATUS,
@@ -876,33 +740,42 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='rpc_add_client_key_with_certificate',
     full_name='remote_attestation.RemoteAttestation.rpc_add_client_key_with_certificate',
-    index=3,
+    index=2,
     containing_service=None,
     input_type=_DATAMETADATA,
     output_type=_STATUS,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='SendDMatrixAttrs',
-    full_name='remote_attestation.RemoteAttestation.SendDMatrixAttrs',
-    index=4,
+    name='rpc_XGDMatrixCreateFromEncryptedFile',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGDMatrixCreateFromEncryptedFile',
+    index=3,
     containing_service=None,
     input_type=_DMATRIXATTRS,
     output_type=_NAME,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='SendBoosterAttrs',
-    full_name='remote_attestation.RemoteAttestation.SendBoosterAttrs',
-    index=5,
+    name='rpc_XGBoosterCreate',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterCreate',
+    index=4,
     containing_service=None,
     input_type=_BOOSTERATTRS,
     output_type=_NAME,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='BoosterUpdate',
-    full_name='remote_attestation.RemoteAttestation.BoosterUpdate',
+    name='rpc_XGBoosterSetParam',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterSetParam',
+    index=5,
+    containing_service=None,
+    input_type=_BOOSTERPARAM,
+    output_type=_STATUS,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGBoosterUpdateOneIter',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterUpdateOneIter',
     index=6,
     containing_service=None,
     input_type=_BOOSTERUPDATEPARAMS,
@@ -919,8 +792,8 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='Predict',
-    full_name='remote_attestation.RemoteAttestation.Predict',
+    name='rpc_XGBoosterPredict',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterPredict',
     index=8,
     containing_service=None,
     input_type=_PREDICTPARAMS,

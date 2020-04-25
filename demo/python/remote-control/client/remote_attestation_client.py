@@ -25,6 +25,7 @@ def run(channel_addr, key_path, keypair):
     2. A call to send the symmetric key used to encrypt the data to the server.
     3. A call to commence computation.
     """
+    xgb.set_user("user1")
 
     # Initialized the RPC API
     # rpc_server = xgb.RPCServer(channel_addr)

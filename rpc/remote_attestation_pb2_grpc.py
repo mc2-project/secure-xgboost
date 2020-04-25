@@ -14,18 +14,13 @@ class RemoteAttestationStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.GetAttestation = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/GetAttestation',
-        request_serializer=remote__attestation__pb2.Status.SerializeToString,
-        response_deserializer=remote__attestation__pb2.Report.FromString,
-        )
     self.rpc_get_remote_report_with_pubkey = channel.unary_unary(
         '/remote_attestation.RemoteAttestation/rpc_get_remote_report_with_pubkey',
         request_serializer=remote__attestation__pb2.Status.SerializeToString,
         response_deserializer=remote__attestation__pb2.Report.FromString,
         )
-    self.SendKey = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/SendKey',
+    self.rpc_add_client_key = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_add_client_key',
         request_serializer=remote__attestation__pb2.DataMetadata.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
         )
@@ -34,18 +29,23 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.DataMetadata.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
         )
-    self.SendDMatrixAttrs = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/SendDMatrixAttrs',
+    self.rpc_XGDMatrixCreateFromEncryptedFile = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGDMatrixCreateFromEncryptedFile',
         request_serializer=remote__attestation__pb2.DMatrixAttrs.SerializeToString,
         response_deserializer=remote__attestation__pb2.Name.FromString,
         )
-    self.SendBoosterAttrs = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/SendBoosterAttrs',
+    self.rpc_XGBoosterCreate = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterCreate',
         request_serializer=remote__attestation__pb2.BoosterAttrs.SerializeToString,
         response_deserializer=remote__attestation__pb2.Name.FromString,
         )
-    self.BoosterUpdate = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/BoosterUpdate',
+    self.rpc_XGBoosterSetParam = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterSetParam',
+        request_serializer=remote__attestation__pb2.BoosterParam.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Status.FromString,
+        )
+    self.rpc_XGBoosterUpdateOneIter = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterUpdateOneIter',
         request_serializer=remote__attestation__pb2.BoosterUpdateParams.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
         )
@@ -54,8 +54,8 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.ClusterParams.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
         )
-    self.Predict = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/Predict',
+    self.rpc_XGBoosterPredict = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterPredict',
         request_serializer=remote__attestation__pb2.PredictParams.SerializeToString,
         response_deserializer=remote__attestation__pb2.Predictions.FromString,
         )
@@ -65,7 +65,7 @@ class RemoteAttestationServicer(object):
   """Interface exported by the server.
   """
 
-  def GetAttestation(self, request, context):
+  def rpc_get_remote_report_with_pubkey(self, request, context):
     """Get attestation report
     Status is a just a dummy argument and won't be used by the server
     """
@@ -73,14 +73,7 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def rpc_get_remote_report_with_pubkey(self, request, context):
-    """FIXME: This service will replace the above
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def SendKey(self, request, context):
+  def rpc_add_client_key(self, request, context):
     """Send symmetric key encrypted with enclave public key, signature
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -88,14 +81,13 @@ class RemoteAttestationServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def rpc_add_client_key_with_certificate(self, request, context):
-    """Send symmetric key encrypted with enclave public key, signature,
-    certificate
+    """Send symmetric key encrypted with enclave public key, signature, certificate
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def SendDMatrixAttrs(self, request, context):
+  def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
     """Send params of a DMatrix to the server for initialization
     Returns the name assigned to this DMatrix
     """
@@ -103,7 +95,7 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def SendBoosterAttrs(self, request, context):
+  def rpc_XGBoosterCreate(self, request, context):
     """Send params of a Booster to the server for initialization 
     Returns the name assigned to this booster
     """
@@ -111,8 +103,18 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def BoosterUpdate(self, request, context):
+  def rpc_XGBoosterSetParam(self, request, context):
+    """Set booster parameters
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGBoosterUpdateOneIter(self, request, context):
     """Update the booster for one round
+    rpc BoosterUpdate(BoosterUpdateParams) returns (Status) {}
+
+    Update the booster for one round
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -125,8 +127,11 @@ class RemoteAttestationServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def Predict(self, request, context):
+  def rpc_XGBoosterPredict(self, request, context):
     """Run predictions
+    rpc Predict(PredictParams) returns (Predictions) {}
+
+    Run predictions
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -135,18 +140,13 @@ class RemoteAttestationServicer(object):
 
 def add_RemoteAttestationServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'GetAttestation': grpc.unary_unary_rpc_method_handler(
-          servicer.GetAttestation,
-          request_deserializer=remote__attestation__pb2.Status.FromString,
-          response_serializer=remote__attestation__pb2.Report.SerializeToString,
-      ),
       'rpc_get_remote_report_with_pubkey': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_get_remote_report_with_pubkey,
           request_deserializer=remote__attestation__pb2.Status.FromString,
           response_serializer=remote__attestation__pb2.Report.SerializeToString,
       ),
-      'SendKey': grpc.unary_unary_rpc_method_handler(
-          servicer.SendKey,
+      'rpc_add_client_key': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_add_client_key,
           request_deserializer=remote__attestation__pb2.DataMetadata.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
@@ -155,18 +155,23 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           request_deserializer=remote__attestation__pb2.DataMetadata.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
-      'SendDMatrixAttrs': grpc.unary_unary_rpc_method_handler(
-          servicer.SendDMatrixAttrs,
+      'rpc_XGDMatrixCreateFromEncryptedFile': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGDMatrixCreateFromEncryptedFile,
           request_deserializer=remote__attestation__pb2.DMatrixAttrs.FromString,
           response_serializer=remote__attestation__pb2.Name.SerializeToString,
       ),
-      'SendBoosterAttrs': grpc.unary_unary_rpc_method_handler(
-          servicer.SendBoosterAttrs,
+      'rpc_XGBoosterCreate': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterCreate,
           request_deserializer=remote__attestation__pb2.BoosterAttrs.FromString,
           response_serializer=remote__attestation__pb2.Name.SerializeToString,
       ),
-      'BoosterUpdate': grpc.unary_unary_rpc_method_handler(
-          servicer.BoosterUpdate,
+      'rpc_XGBoosterSetParam': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterSetParam,
+          request_deserializer=remote__attestation__pb2.BoosterParam.FromString,
+          response_serializer=remote__attestation__pb2.Status.SerializeToString,
+      ),
+      'rpc_XGBoosterUpdateOneIter': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterUpdateOneIter,
           request_deserializer=remote__attestation__pb2.BoosterUpdateParams.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
@@ -175,8 +180,8 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           request_deserializer=remote__attestation__pb2.ClusterParams.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
-      'Predict': grpc.unary_unary_rpc_method_handler(
-          servicer.Predict,
+      'rpc_XGBoosterPredict': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterPredict,
           request_deserializer=remote__attestation__pb2.PredictParams.FromString,
           response_serializer=remote__attestation__pb2.Predictions.SerializeToString,
       ),
