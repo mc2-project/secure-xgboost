@@ -85,7 +85,6 @@ class EnclaveContext {
       dmatrix_map[str] = dmatrix;
       DMatrixHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added dmatrix " << handle;
-      LOG(DEBUG) << "Map pointer " << &dmatrix_map;
       print_dmatrix_map();
       return handle;
     }

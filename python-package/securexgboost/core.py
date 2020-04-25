@@ -1028,7 +1028,7 @@ class Enclave(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
+                response = stub.rpc_get_remote_report_with_pubkey(remote_attestation_pb2.Status(status=1))
             pem_key = response.pem_key
             key_size = response.key_size
             remote_report = response.remote_report
@@ -1357,9 +1357,11 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(params=params, \
-                        cache=cache, \
-                        model_file=model_file))
+                cache_handles = [d.handle.value for d in cache]
+                response = stub.SendBoosterAttrs(remote_attestation_pb2.BoosterAttrs(
+                                    params=params,
+                                    cache=cache_handles,
+                                    model_file=model_file))
             self.handle = ctypes.c_char_p()
             self.handle.value = bytes(response.name, "utf-8")
             return
@@ -2255,22 +2257,3 @@ class Booster(object):
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
 
-# class RPCServer:
-#     def __init__(self, channel_addr):
-#         self.channel_addr = channel_addr
-# 
-#     def get_remote_report(self):
-#         with grpc.insecure_channel(self.channel_addr) as channel:
-#             stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-#             response = stub.GetAttestation(remote_attestation_pb2.Status(status=1))
-#         return response
-#  
-#     def send_data_key(self, enc_sym_key, enc_sym_key_size, sig, sig_len):
-#         with grpc.insecure_channel(self.channel_addr) as channel:
-#             stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-#             response = stub.SendKey(remote_attestation_pb2.DataMetadata(enc_sym_key=enc_sym_key, \
-#                     key_size=enc_sym_key_size, \
-#                     signature=sig, \
-#                     sig_len=sig_len))
-#         return response
- 

@@ -29,43 +29,6 @@ import securexgboost as xgb
 
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
-def xgb_load_train_predict():
-    """
-    This code will have been agreed upon by all parties before being run.
-    """
-    print("Creating training matrix")
-    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
-
-    print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/test.enc", encrypted=True) 
-
-    print("Creating Booster")
-    booster = xgb.Booster(cache=(dtrain, dtest))
-
-    print("Beginning Training")
-
-    # Set training parameters
-    params = {
-            "tree_method": "hist",
-            "n_gpus": "0",
-            "objective": "binary:logistic",
-            "min_child_weight": "1",
-            "gamma": "0.1",
-            "max_depth": "3",
-            "verbosity": "1" 
-    }
-    booster.set_param(params)
-    print("All parameters set")
-
-    # Train and evaluate
-    n_trees = 10
-    for i in range(n_trees):
-        booster.update(dtrain, i)
-        print(booster.eval_set([(dtrain, "train"), (dtest, "test")], i))
-
-    enc_preds, num_preds = booster.predict(dtest)
-    return enc_preds, num_preds
-
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
 
     # FIXME: this function is a duplicate of the one below to maintain backwards compatibility
@@ -212,35 +175,6 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
             return remote_attestation_pb2.Name(name=None)
 
-    def Train(self, request, context):
-        """
-        Start training
-        """
-        # FIXME more params
-        print("Beginning Training")
-        params = request.params
-        print(params)
-        dtrain = request.dtrain
-        print(dtrain)
-        num_boost_round = request.num_boost_round
-        print(num_boost_round)
-        evals = list(map(lambda x: (x.x, x.y), request.evals))
-        print(evals)
-        early_stopping_rounds = request.early_stopping_rounds
-        print(early_stopping_rounds)
-
-        try:
-            booster = xgb.train(params=params, dtrain=dtrain, num_boost_round=num_boost_round, evals=evals)
-            return remote_attestation_pb2.Name(name=booster.handle.value)
-        except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_attestation_pb2.Name(name=None)
-
-
     def Predict(self, request, context):
         """
         Signal to RPC server that client is ready to start
@@ -265,27 +199,6 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         except Exception as e:
             print(e)
             return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
-
-
-    def SignalStart(self, request, context):
-        """
-        Signal to RPC server that client is ready to start
-        """
-        signal = request.status
-        if signal == 1:
-            try:
-                enc_preds, num_preds = xgb_load_train_predict()
-
-                # Serialize encrypted predictions
-                enc_preds_proto = pointer_to_proto(enc_preds, num_preds * 8)
-
-                return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=1)
-            except Exception as e:
-                print(e)
-                return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
-        else:
-            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
-
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

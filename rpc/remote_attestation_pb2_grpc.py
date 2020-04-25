@@ -44,11 +44,6 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.BoosterAttrs.SerializeToString,
         response_deserializer=remote__attestation__pb2.Name.FromString,
         )
-    self.SignalStart = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/SignalStart',
-        request_serializer=remote__attestation__pb2.Status.SerializeToString,
-        response_deserializer=remote__attestation__pb2.Predictions.FromString,
-        )
     self.BoosterUpdate = channel.unary_unary(
         '/remote_attestation.RemoteAttestation/BoosterUpdate',
         request_serializer=remote__attestation__pb2.BoosterUpdateParams.SerializeToString,
@@ -71,10 +66,7 @@ class RemoteAttestationServicer(object):
   """
 
   def GetAttestation(self, request, context):
-    """A simple RPC.
-
-    Get attestation report
-
+    """Get attestation report
     Status is a just a dummy argument and won't be used by the server
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -89,18 +81,14 @@ class RemoteAttestationServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def SendKey(self, request, context):
-    """A simple RPC.
-
-    Send symmetric key encrypted with enclave public key, signature
+    """Send symmetric key encrypted with enclave public key, signature
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def rpc_add_client_key_with_certificate(self, request, context):
-    """A simple RPC.
-
-    Send symmetric key encrypted with enclave public key, signature,
+    """Send symmetric key encrypted with enclave public key, signature,
     certificate
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -108,55 +96,38 @@ class RemoteAttestationServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def SendDMatrixAttrs(self, request, context):
-    """A simple RPC.
-
-    Send params of a DMatrix to the server for initialization
-    Returns the name of the DMatrix assigned to this booster
+    """Send params of a DMatrix to the server for initialization
+    Returns the name assigned to this DMatrix
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def SendBoosterAttrs(self, request, context):
-    """A simple RPC.
-
-    Send params of a Booster to the server for initialization 
-    Returns the name of the handle assigned to this booster
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def SignalStart(self, request, context):
-    """A simple RPC.
-
-    Signal to RPC server that the client is ready
+    """Send params of a Booster to the server for initialization 
+    Returns the name assigned to this booster
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def BoosterUpdate(self, request, context):
-    """A simple RPC.
-
-    Signal to RPC server that the client is ready
+    """Update the booster for one round
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def SignalStartCluster(self, request, context):
-    """A simple RPC.
-
-    Signal to RPC server that the client is ready for distributed training
+    """Signal to RPC server that the client is ready for distributed training
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
   def Predict(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
+    """Run predictions
+    """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -193,11 +164,6 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           servicer.SendBoosterAttrs,
           request_deserializer=remote__attestation__pb2.BoosterAttrs.FromString,
           response_serializer=remote__attestation__pb2.Name.SerializeToString,
-      ),
-      'SignalStart': grpc.unary_unary_rpc_method_handler(
-          servicer.SignalStart,
-          request_deserializer=remote__attestation__pb2.Status.FromString,
-          response_serializer=remote__attestation__pb2.Predictions.SerializeToString,
       ),
       'BoosterUpdate': grpc.unary_unary_rpc_method_handler(
           servicer.BoosterUpdate,

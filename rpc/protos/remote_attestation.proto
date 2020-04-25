@@ -14,64 +14,37 @@
 
 syntax = "proto3";
 
-// option java_multiple_files = true;
-// option java_package = "io.grpc.examples.routeguide";
-// option java_outer_classname = "RemoteAttestationProto";
-// option objc_class_prefix = "RA";
 import "ndarray.proto";
 
 package remote_attestation;
 
 // Interface exported by the server.
 service RemoteAttestation {
-  // A simple RPC.
-  //
   // Get attestation report
-  // 
   // Status is a just a dummy argument and won't be used by the server
-  rpc GetAttestation(Status) returns (Report) {}
-
-  // FIXME: This service will replace the above
   rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
 
-  // A simple RPC.
-  //
   // Send symmetric key encrypted with enclave public key, signature
   rpc SendKey(DataMetadata) returns (Status) {}
 
-  // A simple RPC.
-  //
-  // Send symmetric key encrypted with enclave public key, signature,
-  // certificate
+  // Send symmetric key encrypted with enclave public key, signature, certificate
   rpc rpc_add_client_key_with_certificate(DataMetadata) returns (Status) {}
 
-  // A simple RPC.
-  //
   // Send params of a DMatrix to the server for initialization
-  // Returns the name of the DMatrix assigned to this booster
+  // Returns the name assigned to this DMatrix
   rpc SendDMatrixAttrs(DMatrixAttrs) returns (Name) {}
 
-  // A simple RPC.
-  //
   // Send params of a Booster to the server for initialization 
-  // Returns the name of the handle assigned to this booster
+  // Returns the name assigned to this booster
   rpc SendBoosterAttrs(BoosterAttrs) returns (Name) {}
 
-  // A simple RPC.
-  //
-  // Signal to RPC server that the client is ready
-  rpc SignalStart(Status) returns (Predictions) {}
-
-  // A simple RPC.
-  //
-  // Signal to RPC server that the client is ready
+  // Update the booster for one round
   rpc BoosterUpdate(BoosterUpdateParams) returns (Status) {}
 
-  // A simple RPC.
-  //
   // Signal to RPC server that the client is ready for distributed training
   rpc SignalStartCluster(ClusterParams) returns (Status) {}
 
+  // Run predictions
   rpc Predict(PredictParams) returns (Predictions) {}
 }
 
@@ -122,7 +95,7 @@ message DataMetadata {
   string certificate = 5;
 }
 
-// Wrapper for the constructor of a DMatrix
+// Params for the constructor of a DMatrix
 message DMatrixAttrs {
   map<string, string> data_dict = 1;
   bool encrypted = 2;
@@ -135,7 +108,7 @@ message DMatrixAttrs {
   uint32 nthread = 9;
 }
 
-// Wrapper for the constructor of a Booster
+// Params for the constructor of a Booster
 message BoosterAttrs {
   map<string, string> params = 1;
   repeated string cache = 2;
@@ -156,6 +129,7 @@ message BoosterEvalSetParams {
     uint32 iteration = 3;
 }
 
+// Params for prediction
 message PredictParams {
     string handle = 1;
     string data = 2;
@@ -169,14 +143,13 @@ message PredictParams {
     string username = 10;
 }
 
-// Wrapper for pair of strings
+// Pair of strings
 message Pair {
-    // Name that the server assigned the handle
     string x = 1;
     string y = 2;
 }
 
-// Wrapper
+// Object handle
 message Name {
   // Name that the server assigned the handle
   string name = 1;

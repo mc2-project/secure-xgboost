@@ -4,7 +4,6 @@
 """Training Library containing training routines."""
 from __future__ import absolute_import
 
-import ctypes
 import os
 import grpc
 import remote_attestation_pb2
@@ -34,7 +33,7 @@ def _train_internal(params, dtrain,
         for eval_metric in eval_metrics:
             params += [('eval_metric', eval_metric)]
 
-    bst = Booster(params, [dtrain.handle.value] + [d[0].handle.value for d in evals])
+    bst = Booster(params, [dtrain] + [d[0] for d in evals])
     nboost = 0
     num_parallel_tree = 1
 
