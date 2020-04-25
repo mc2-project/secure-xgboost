@@ -33,16 +33,14 @@ def xgb_load_train_predict():
     """
     This code will have been agreed upon by all parties before being run.
     """
-    print("Creating training matrix")
-    dtrain = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/train.enc", encrypted=True)
+    # FIXME: this shouldn't be hardcoded
+    train_enc_1 = HOME_DIR + "demo/python/multiclient-rpc/data/c1_train.enc"
+    train_enc_2 = HOME_DIR + "demo/python/multiclient-rpc/data/c2_train.enc"
+    dtrain = xgb.DMatrix({"user1": train_enc_1, "user2": train_enc_2}, encrypted=True)
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix(HOME_DIR + "demo/python/remote-control/client/test.enc", encrypted=True) 
-
-    print("Creating Booster")
-    booster = xgb.Booster(cache=(dtrain, dtest))
-
-    print("Beginning Training")
+    test_enc = HOME_DIR + "demo/python/multiclient-rpc/data/test.enc"
+    dtest = xgb.DMatrix({"user2": test_enc}, encrypted=True) 
 
     # Set training parameters
     params = {
@@ -54,16 +52,12 @@ def xgb_load_train_predict():
             "max_depth": "3",
             "verbosity": "1" 
     }
-    booster.set_param(params)
-    print("All parameters set")
 
-    # Train and evaluate
-    n_trees = 10
-    for i in range(n_trees):
-        booster.update(dtrain, i)
-        print(booster.eval_set([(dtrain, "train"), (dtest, "test")], i))
+    # Train
+    num_rounds = 10
+    booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "u2_test")])
 
-    enc_preds, num_preds = booster.predict(dtest)
+    enc_preds, num_preds = booster.predict(dtest, username="user2")
     return enc_preds, num_preds
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
@@ -130,8 +124,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         Receives the path of a dmatrix from the client and creates the dmatrix on the server side
         """
-        # print("Received request to create DMatrix with path: " + request.data_dict)
-        data_dict = request.data_dict
+        print("Received request to create DMatrix with path: " + request.data)
+        data = request.data
         encrypted = request.encrypted 
         label = list(request.label)
         if not len(label):
@@ -149,7 +143,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             feature_types = None
         nthread = request.nthread
         try:
-            dmatrix = xgb.DMatrix(data_dict=data_dict, \
+            dmatrix = xgb.DMatrix(data=data, \
                     encrypted=encrypted, \
                     label=label, \
                     missing=missing, \
@@ -172,20 +166,17 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         Receives the path of a dmatrix from the client and creates the dmatrix on the server side
         """
-        print("Received request to create Booster with params: ", request.params)
-        print("Model file: ", request.model_file)
-        params = request.params
+        print("Received request to create Booster with params: " + request.params)
+        params = request
         if not len(params):
             params = None
         cache = request.cache
         model_file = request.model_file
-        if not len(model_file):
-            model_file = None
         try:
-            booster = xgb.Booster(params=params, \
+            dmatrix = xgb.Booster(params=params, \
                     cache=cache, \
                     model_file=model_file)
-            return remote_attestation_pb2.Name(name=booster.handle.value.decode("utf-8"))
+            return remote_attestation_pb2.Name(name=dmatrix.handle.value.decode("utf-8"))
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
@@ -193,79 +184,6 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             traceback.print_tb(e[2])
 
             return remote_attestation_pb2.Name(name=None)
-
-    def BoosterUpdate(self, request, context):
-        """
-        Start training
-        """
-        print("Doing Booster update: ", request.handle)
-        try:
-            booster = xgb.Booster(handle=request.handle)
-            result = booster.update(request.dtrain, request.iteration)
-            # xgb.train(params=params, dtrain=dtrain, num_boost_round=num_boost_round, evals=evals)
-            return remote_attestation_pb2.Status(status=result)
-        except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_attestation_pb2.Name(name=None)
-
-    def Train(self, request, context):
-        """
-        Start training
-        """
-        # FIXME more params
-        print("Beginning Training")
-        params = request.params
-        print(params)
-        dtrain = request.dtrain
-        print(dtrain)
-        num_boost_round = request.num_boost_round
-        print(num_boost_round)
-        evals = list(map(lambda x: (x.x, x.y), request.evals))
-        print(evals)
-        early_stopping_rounds = request.early_stopping_rounds
-        print(early_stopping_rounds)
-
-        try:
-            booster = xgb.train(params=params, dtrain=dtrain, num_boost_round=num_boost_round, evals=evals)
-            return remote_attestation_pb2.Name(name=booster.handle.value)
-        except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_attestation_pb2.Name(name=None)
-
-
-    def Predict(self, request, context):
-        """
-        Signal to RPC server that client is ready to start
-        """
-        try:
-            booster = xgb.Booster(handle=request.handle)
-            enc_preds, num_preds = booster.predict(
-                    data=request.data,
-                    output_margin=request.output_margin,
-                    ntree_limit=request.ntree_limit,
-                    pred_leaf=request.pred_leaf,
-                    pred_contribs=request.pred_contribs,
-                    approx_contribs=request.approx_contribs,
-                    pred_interactions=request.pred_interactions,
-                    validate_features=request.validate_features,
-                    username=request.username)
-
-            # Serialize encrypted predictions
-            enc_preds_proto = pointer_to_proto(enc_preds, num_preds * 8)
-
-            return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=1)
-        except Exception as e:
-            print(e)
-            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=0)
-
 
     def SignalStart(self, request, context):
         """
