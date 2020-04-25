@@ -61,6 +61,7 @@ def _train_internal(params, dtrain,
 
     version = 0
     start_iteration = 0
+    # FIXME: rpc
     rank = rabit.get_rank()
 
     callbacks_before_iter = [
