@@ -49,15 +49,45 @@ class RemoteAttestationStub(object):
         request_serializer=remote__attestation__pb2.BoosterUpdateParams.SerializeToString,
         response_deserializer=remote__attestation__pb2.Status.FromString,
         )
-    self.SignalStartCluster = channel.unary_unary(
-        '/remote_attestation.RemoteAttestation/SignalStartCluster',
-        request_serializer=remote__attestation__pb2.ClusterParams.SerializeToString,
-        response_deserializer=remote__attestation__pb2.Status.FromString,
-        )
     self.rpc_XGBoosterPredict = channel.unary_unary(
         '/remote_attestation.RemoteAttestation/rpc_XGBoosterPredict',
         request_serializer=remote__attestation__pb2.PredictParams.SerializeToString,
         response_deserializer=remote__attestation__pb2.Predictions.FromString,
+        )
+    self.rpc_XGBoosterSaveModel = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterSaveModel',
+        request_serializer=remote__attestation__pb2.SaveModelParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Status.FromString,
+        )
+    self.rpc_XGBoosterLoadModel = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterLoadModel',
+        request_serializer=remote__attestation__pb2.LoadModelParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Status.FromString,
+        )
+    self.rpc_XGBoosterDumpModelEx = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterDumpModelEx',
+        request_serializer=remote__attestation__pb2.DumpModelParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Dump.FromString,
+        )
+    self.rpc_XGBoosterDumpModelExWithFeatures = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterDumpModelExWithFeatures',
+        request_serializer=remote__attestation__pb2.DumpModelWithFeaturesParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Dump.FromString,
+        )
+    self.rpc_XGBoosterGetModelRaw = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGBoosterGetModelRaw',
+        request_serializer=remote__attestation__pb2.ModelRawParams.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Dump.FromString,
+        )
+    self.rpc_XGDMatrixNumCol = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGDMatrixNumCol',
+        request_serializer=remote__attestation__pb2.Name.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Integer.FromString,
+        )
+    self.rpc_XGDMatrixNumRow = channel.unary_unary(
+        '/remote_attestation.RemoteAttestation/rpc_XGDMatrixNumRow',
+        request_serializer=remote__attestation__pb2.Name.SerializeToString,
+        response_deserializer=remote__attestation__pb2.Integer.FromString,
         )
 
 
@@ -112,16 +142,6 @@ class RemoteAttestationServicer(object):
 
   def rpc_XGBoosterUpdateOneIter(self, request, context):
     """Update the booster for one round
-    rpc BoosterUpdate(BoosterUpdateParams) returns (Status) {}
-
-    Update the booster for one round
-    """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def SignalStartCluster(self, request, context):
-    """Signal to RPC server that the client is ready for distributed training
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -129,9 +149,55 @@ class RemoteAttestationServicer(object):
 
   def rpc_XGBoosterPredict(self, request, context):
     """Run predictions
-    rpc Predict(PredictParams) returns (Predictions) {}
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
 
-    Run predictions
+  def rpc_XGBoosterSaveModel(self, request, context):
+    """Save model to a file on the server
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGBoosterLoadModel(self, request, context):
+    """Load model from file on the server
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGBoosterDumpModelEx(self, request, context):
+    """Dump model 
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGBoosterDumpModelExWithFeatures(self, request, context):
+    """Dump model with features
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGBoosterGetModelRaw(self, request, context):
+    """Save model to buffer
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGDMatrixNumCol(self, request, context):
+    """Get number of columns in the DMatrix
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_XGDMatrixNumRow(self, request, context):
+    """Get number of rows in the DMatrix
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -175,15 +241,45 @@ def add_RemoteAttestationServicer_to_server(servicer, server):
           request_deserializer=remote__attestation__pb2.BoosterUpdateParams.FromString,
           response_serializer=remote__attestation__pb2.Status.SerializeToString,
       ),
-      'SignalStartCluster': grpc.unary_unary_rpc_method_handler(
-          servicer.SignalStartCluster,
-          request_deserializer=remote__attestation__pb2.ClusterParams.FromString,
-          response_serializer=remote__attestation__pb2.Status.SerializeToString,
-      ),
       'rpc_XGBoosterPredict': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterPredict,
           request_deserializer=remote__attestation__pb2.PredictParams.FromString,
           response_serializer=remote__attestation__pb2.Predictions.SerializeToString,
+      ),
+      'rpc_XGBoosterSaveModel': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterSaveModel,
+          request_deserializer=remote__attestation__pb2.SaveModelParams.FromString,
+          response_serializer=remote__attestation__pb2.Status.SerializeToString,
+      ),
+      'rpc_XGBoosterLoadModel': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterLoadModel,
+          request_deserializer=remote__attestation__pb2.LoadModelParams.FromString,
+          response_serializer=remote__attestation__pb2.Status.SerializeToString,
+      ),
+      'rpc_XGBoosterDumpModelEx': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterDumpModelEx,
+          request_deserializer=remote__attestation__pb2.DumpModelParams.FromString,
+          response_serializer=remote__attestation__pb2.Dump.SerializeToString,
+      ),
+      'rpc_XGBoosterDumpModelExWithFeatures': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterDumpModelExWithFeatures,
+          request_deserializer=remote__attestation__pb2.DumpModelWithFeaturesParams.FromString,
+          response_serializer=remote__attestation__pb2.Dump.SerializeToString,
+      ),
+      'rpc_XGBoosterGetModelRaw': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGBoosterGetModelRaw,
+          request_deserializer=remote__attestation__pb2.ModelRawParams.FromString,
+          response_serializer=remote__attestation__pb2.Dump.SerializeToString,
+      ),
+      'rpc_XGDMatrixNumCol': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGDMatrixNumCol,
+          request_deserializer=remote__attestation__pb2.Name.FromString,
+          response_serializer=remote__attestation__pb2.Integer.SerializeToString,
+      ),
+      'rpc_XGDMatrixNumRow': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_XGDMatrixNumRow,
+          request_deserializer=remote__attestation__pb2.Name.FromString,
+          response_serializer=remote__attestation__pb2.Integer.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

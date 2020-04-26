@@ -473,6 +473,7 @@ class DMatrix(object):
                         ctypes.byref(handle)))
             else:
                 # FIXME implement RPC for this
+                # FIXME handle multiparty case
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
                     ctypes.byref(handle)))
@@ -607,11 +608,11 @@ class DMatrix(object):
             nthread))
         self.handle = handle
 
-    # FIXME free matrix after use using RPC
-    # def __del__(self):
-    #     if hasattr(self, "handle") and self.handle is not None:
-    #         _check_call(_LIB.XGDMatrixFree(self.handle))
-    #         self.handle = None
+    def __del__(self):
+        if hasattr(self, "handle") and self.handle is not None:
+            # FIXME free matrix after use using RPC
+            # _check_call(_LIB.XGDMatrixFree(self.handle))
+            self.handle = None
 
     def get_float_info(self, field):
         """Get float property from the DMatrix.
@@ -861,10 +862,17 @@ class DMatrix(object):
         -------
         number of rows : int
         """
-        ret = c_bst_ulong()
-        _check_call(_LIB.XGDMatrixNumRow(self.handle,
-                                         ctypes.byref(ret)))
-        return ret.value
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_XGDMatrixNumRow(remote_attestation_pb2.Name(
+                    name=self.handle.value))
+                return response.value
+        else:
+            ret = c_bst_ulong()
+            _check_call(_LIB.XGDMatrixNumRow(self.handle,
+                                             ctypes.byref(ret)))
+            return ret.value
 
     def num_col(self):
         """Get the number of columns (features) in the DMatrix.
@@ -873,10 +881,18 @@ class DMatrix(object):
         -------
         number of columns : int
         """
-        ret = c_bst_ulong()
-        _check_call(_LIB.XGDMatrixNumCol(self.handle,
-                                         ctypes.byref(ret)))
-        return ret.value
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_XGDMatrixNumCol(remote_attestation_pb2.Name(
+                    name=self.handle.value))
+                return response.value
+        else:
+            ret = c_bst_ulong()
+            _check_call(_LIB.XGDMatrixNumCol(self.handle,
+                                             ctypes.byref(ret)))
+            return ret.value
 
     #  def slice(self, rindex):
         #  """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
@@ -1353,8 +1369,7 @@ class Booster(object):
         for d in cache:
             if not isinstance(d, DMatrix):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
-        # FIXME disabling this for now
-        #     self._validate_features(d)
+            self._validate_features(d)
 
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
@@ -1379,11 +1394,11 @@ class Booster(object):
         if model_file is not None:
             self.load_model(model_file)
 
-    # FIXME del using RPC
-    # def __del__(self):
-    #     if self.handle is not None:
-    #         _check_call(_LIB.XGBoosterFree(self.handle))
-    #         self.handle = None
+    def __del__(self):
+        if self.handle is not None:
+            # FIXME free booster after use using RPC
+            # _check_call(_LIB.XGBoosterFree(self.handle))
+            self.handle = None
 
     def __getstate__(self):
         # can't pickle ctypes pointers
@@ -1542,18 +1557,17 @@ class Booster(object):
                 return response
         else:
             _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
-        # FIXME disabling this because we only pass handle names across RPC
-        # if not isinstance(dtrain, DMatrix):
-        #     raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
-        # self._validate_features(dtrain)
-        # 
-        # if fobj is None:
-        #     _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
-        #                                             dtrain.handle))
-        # else:
-        #     pred = self.predict(dtrain)
-        #     grad, hess = fobj(pred, dtrain)
-        #     self.boost(dtrain, grad, hess)
+        if not isinstance(dtrain, DMatrix):
+            raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
+        self._validate_features(dtrain)
+        
+        if fobj is None:
+            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
+                                                    dtrain.handle))
+        else:
+            pred = self.predict(dtrain)
+            grad, hess = fobj(pred, dtrain)
+            self.boost(dtrain, grad, hess)
 
     def boost(self, dtrain, grad, hess):
         """Boost the booster for one iteration, with customized gradient
@@ -1716,27 +1730,6 @@ class Booster(object):
         prediction : numpy array
         num_preds: number of predictions
         """
-        # channel_addr = os.getenv("RA_CHANNEL_ADDR")
-        # if channel_addr:
-        #     with grpc.insecure_channel(channel_addr) as channel:
-        #         stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-        #         response = stub.Predict(remote_attestation_pb2.PredictParams(handle=self.handle.value,
-        #             data=data.handle.value,
-        #             output_margin=output_margin,
-        #             ntree_limit=ntree_limit,
-        #             pred_leaf=pred_leaf,
-        #             pred_contribs=pred_contribs,
-        #             approx_contribs=approx_contribs,
-        #             pred_interactions=pred_interactions,
-        #             validate_features=validate_features,
-        #             username=username))
-        # 
-        #         enc_preds_serialized = response.predictions
-        #         num_preds = response.num_preds
-        # 
-        #         enc_preds = proto_to_pointer(enc_preds_serialized)
-        #         return enc_preds, num_preds
-
         # check the global variable for current_user
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
@@ -1754,9 +1747,8 @@ class Booster(object):
         if pred_interactions:
             option_mask |= 0x10
 
-        # FIXME disabling this for now (need to add RPC for num col)
-        # if validate_features:
-        #     self._validate_features(data)
+        if validate_features:
+            self._validate_features(data)
 
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
@@ -1830,7 +1822,16 @@ class Booster(object):
         if username is None:
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
-            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
+            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                    response = stub.rpc_XGBoosterSaveModel(remote_attestation_pb2.SaveModelParams(
+                        booster_handle=self.handle.value,
+                        filename=fname,
+                        username=username))
+            else:
+                _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
             raise TypeError("fname must be a string")
 
@@ -1851,10 +1852,22 @@ class Booster(object):
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
-        _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
-                                              ctypes.byref(length),
-                                              ctypes.byref(cptr),
-                                              c_str(username)))
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                response = stub.rpc_XGBoosterGetModelRaw(remote_attestation_pb2.ModelRawParams(
+                    booster_handle=self.handle.value,
+                    username=username))
+
+                length = response.length
+                cptr_serialized = response.sarr
+                cptr = proto_to_pointer(cptr_serialized)
+        else:
+            _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
+                                                  ctypes.byref(length),
+                                                  ctypes.byref(cptr),
+                                                  c_str(username)))
         return ctypes2buffer(cptr, length.value)
 
     def load_model(self, fname, username=None):
@@ -1880,7 +1893,16 @@ class Booster(object):
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                    response = stub.rpc_XGBoosterLoadModel(remote_attestation_pb2.LoadModelParams(
+                        booster_handle=self.handle.value,
+                        filenames=fname,
+                        usernames=usernames))
+            else:
+                _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
             buf = fname
             length = c_bst_ulong(len(buf))
@@ -1940,32 +1962,71 @@ class Booster(object):
         if self.feature_names is not None and fmap == '':
             flen = len(self.feature_names)
 
-            fname = from_pystr_to_cstr(self.feature_names)
 
-            if self.feature_types is None:
-                # use quantitative as default
-                # {'q': quantitative, 'i': indicator}
-                ftype = from_pystr_to_cstr(['q'] * flen)
+            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    fname = self.feature_names
+                    if self.feature_types is None:
+                        # use quantitative as default
+                        # {'q': quantitative, 'i': indicator}
+                        ftype = ['q'] * flen
+                    else:
+                        ftype = self.feature_types
+                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                    response = stub.XGBoosterDumpModelExWithFeatures(remote_attestation_pb2.DMatrixAttrs(
+                        booster_handle=self.handle.value,
+                        flen=flen,
+                        fname=fname,
+                        ftype=ftype,
+                        with_stats=with_stats,
+                        dump_format=dump_format))
+                    sarr_serialized = response.sarr
+                    length = response.length
+
+                    sarr = proto_to_pointer(sarr_serialized)
             else:
-                ftype = from_pystr_to_cstr(self.feature_types)
-            _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
-                self.handle,
-                ctypes.c_int(flen),
-                fname,
-                ftype,
-                ctypes.c_int(with_stats),
-                c_str(dump_format),
-                ctypes.byref(length),
-                ctypes.byref(sarr)))
+                fname = from_pystr_to_cstr(self.feature_names)
+
+                if self.feature_types is None:
+                    # use quantitative as default
+                    # {'q': quantitative, 'i': indicator}
+                    ftype = from_pystr_to_cstr(['q'] * flen)
+                else:
+                    ftype = from_pystr_to_cstr(self.feature_types)
+                _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+                    self.handle,
+                    ctypes.c_int(flen),
+                    fname,
+                    ftype,
+                    ctypes.c_int(with_stats),
+                    c_str(dump_format),
+                    ctypes.byref(length),
+                    ctypes.byref(sarr)))
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
-            _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
-                                                  c_str(fmap),
-                                                  ctypes.c_int(with_stats),
-                                                  c_str(dump_format),
-                                                  ctypes.byref(length),
-                                                  ctypes.byref(sarr)))
+
+            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                    response = stub.XGBoosterDumpModelEx(remote_attestation_pb2.DMatrixAttrs(
+                        booster_handle=self.handle.value,
+                        fmap=fmap,
+                        with_stats=with_stats,
+                        dump_format=dump_format))
+                    sarr_serialized = response.sarr
+                    length = response.length
+
+                    sarr = proto_to_pointer(sarr_serialized)
+            else:
+                _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
+                                                      c_str(fmap),
+                                                      ctypes.c_int(with_stats),
+                                                      c_str(dump_format),
+                                                      ctypes.byref(length),
+                                                      ctypes.byref(sarr)))
 
 
         key = ctypes.c_char_p(key)
@@ -2194,14 +2255,10 @@ class Booster(object):
         Validate Booster and data's feature_names are identical.
         Set feature_names and feature_types from DMatrix
         """
-        print("In validating")
         if self.feature_names is None:
-            print("In none")
             self.feature_names = data.feature_names
             self.feature_types = data.feature_types
-            print("Done with none")
         else:
-            print("Not in none")
             # Booster can't accept data with different feature names
             if self.feature_names != data.feature_names:
                 dat_missing = set(self.feature_names) - set(data.feature_names)
@@ -2268,11 +2325,9 @@ class RPCServer:
     def XGBoosterPredict(booster_handle, dmatrix_handle, option_mask, ntree_limit, username):
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
-        bst_handle = c_str(booster_handle)
-        dmat_handle = c_str(dmatrix_handle)
         _check_call(_LIB.XGBoosterPredict(
-            bst_handle,
-            dmat_handle,
+            c_str(booster_handle),
+            c_str(dmatrix_handle),
             ctypes.c_int(option_mask),
             ctypes.c_uint(ntree_limit),
             ctypes.byref(length),
@@ -2282,21 +2337,28 @@ class RPCServer:
 
 
     def XGBoosterUpdateOneIter(booster_handle, dtrain_handle, iteration):
-        bst_handle = c_str(booster_handle)
-        dmat_handle = c_str(dtrain_handle)
-        _check_call(_LIB.XGBoosterUpdateOneIter(bst_handle, ctypes.c_int(iteration), dmat_handle))
+        _check_call(_LIB.XGBoosterUpdateOneIter(
+            c_str(booster_handle),
+            ctypes.c_int(iteration),
+            c_str(dtrain_handle)))
 
 
     def XGBoosterCreate(cache, length):
         bst_handle = ctypes.c_char_p()
         dmats = c_array(ctypes.c_char_p, [c_str(d) for d in cache])
-        _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(length), ctypes.byref(bst_handle)))
+        _check_call(_LIB.XGBoosterCreate(
+            dmats,
+            c_bst_ulong(length),
+            ctypes.byref(bst_handle)))
         return bst_handle.value.decode('utf-8')
 
 
     def XGBoosterSetParam(booster_handle, key, value):
         bst_handle = c_str(booster_handle)
-        _check_call(_LIB.XGBoosterSetParam(bst_handle, c_str(key), c_str(value)))
+        _check_call(_LIB.XGBoosterSetParam(
+            c_str(booster_handle),
+            c_str(key),
+            c_str(value)))
 
 
     def XGDMatrixCreateFromEncryptedFile(filenames, usernames, silent):
@@ -2310,3 +2372,68 @@ class RPCServer:
             ctypes.c_int(silent),
             ctypes.byref(dmat_handle)))
         return dmat_handle.value.decode('utf-8')
+
+    # TODO test this
+    def XGBoosterSaveModel(booster_handle, filename, username):
+        _check_call(_LIB.XGBoosterSaveModel(
+            c_str(booster_handle),
+            c_str(filename),
+            c_str(username)))
+
+    # TODO test this
+    def XGBoosterLoadModel(booster_handle, filename, username):
+        _check_call(_LIB.XGBoosterLoadModel(
+            c_str(booster_handle),
+            c_str(filename),
+            c_str(username)))
+
+    # TODO test this
+    def XGBoosterDumpModelEx(booster_handle, fmap, with_stats, dump_format):
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_uint8)()
+        _check_call(_LIB.XGBoosterLoadModel(
+            c_str(booster_handle),
+            c_str(fmap),
+            ctypes.c_int(with_stats),
+            c_str(dump_format),
+            ctypes.byref(length),
+            ctypes.byref(sarr)))
+        return length.value, sarr
+
+    # TODO test this
+    def XGBoosterDumpModelExWithFeatures(booster_handle, flen, fname, ftype, with_stats, dump_format):
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_uint8)()
+        _check_call(_LIB.XGBoosterLoadModel(
+            c_str(booster_handle),
+            c_str(fmap),
+            ctypes.c_int(with_stats),
+            c_str(dump_format),
+            ctypes.byref(length),
+            ctypes.byref(sarr)))
+        return length.value, sarr
+
+    # TODO test this
+    def XGBoosterGetModelRaw(booster_handle, username):
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_uint8)()
+        _check_call(_LIB.XGBoosterGetModelRaw(
+            c_str(booster_handle),
+            c_str(username)))
+        return length.value, sarr
+
+    # TODO test this
+    def XGDMatrixNumCol(dmatrix_handle):
+        ret = c_bst_ulong()
+        _check_call(_LIB.XGDMatrixNumCol(
+            c_str(dmatrix_handle),
+            ctypes.byref(ret)))
+        return ret.value
+
+    # TODO test this
+    def XGDMatrixNumRow(dmatrix_handle):
+        ret = c_bst_ulong()
+        _check_call(_LIB.XGDMatrixNumRow(
+            c_str(dmatrix_handle),
+            ctypes.byref(ret)))
+        return ret.value

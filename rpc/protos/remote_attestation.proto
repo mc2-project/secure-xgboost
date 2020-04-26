@@ -44,11 +44,29 @@ service RemoteAttestation {
   // Update the booster for one round
   rpc rpc_XGBoosterUpdateOneIter(BoosterUpdateParams) returns (Status) {}
 
-  // Signal to RPC server that the client is ready for distributed training
-  rpc SignalStartCluster(ClusterParams) returns (Status) {}
-
   // Run predictions
   rpc rpc_XGBoosterPredict(PredictParams) returns (Predictions) {}
+
+  // Save model to a file on the server
+  rpc rpc_XGBoosterSaveModel(SaveModelParams) returns (Status) {}
+
+  // Load model from file on the server
+  rpc rpc_XGBoosterLoadModel(LoadModelParams) returns (Status) {}
+
+  // Dump model 
+  rpc rpc_XGBoosterDumpModelEx(DumpModelParams) returns (Dump) {}
+
+  // Dump model with features
+  rpc rpc_XGBoosterDumpModelExWithFeatures(DumpModelWithFeaturesParams) returns (Dump) {}
+
+  // Save model to buffer
+  rpc rpc_XGBoosterGetModelRaw(ModelRawParams) returns (Dump) {}
+
+  // Get number of columns in the DMatrix
+  rpc rpc_XGDMatrixNumCol(Name) returns (Integer) {}
+
+  // Get number of rows in the DMatrix
+  rpc rpc_XGDMatrixNumRow(Name) returns (Integer) {}
 }
 
 // Current status of the node
@@ -141,6 +159,51 @@ message PredictParams {
     string username = 5;
 }
 
+// Params for save model
+message SaveModelParams {
+    string booster_handle = 1;
+    string filename = 2;
+    string username = 3;
+}
+
+// Params for load model
+message LoadModelParams {
+    string booster_handle = 1;
+    string filename = 2;
+    string username = 3;
+}
+
+// Params for dump model
+message DumpModelParams {
+    string booster_handle = 1;
+    string fmap = 2;
+    uint32 with_stats = 3;
+    string dump_format = 4;
+}
+
+// Params for dump model with features
+message DumpModelWithFeaturesParams {
+    string booster_handle = 1;
+    uint32 flen = 2;
+    repeated string fname = 3;
+    repeated string ftype = 4;
+    uint32 with_stats = 5;
+    string dump_format = 6;
+}
+
+// Params for dump model
+message ModelRawParams {
+    string booster_handle = 1;
+    string username = 2;
+}
+
+// Model dump
+message Dump {
+    numproto.protobuf.NDArray sarr = 1;
+    uint64 length = 2;
+    uint32 status = 3;
+}
+
 // Pair of strings
 message Pair {
     string x = 1;
@@ -151,6 +214,11 @@ message Pair {
 message Name {
   // Name that the server assigned the handle
   string name = 1;
+}
+
+// Integer
+message Integer {
+    uint32 value = 1;
 }
 
 // Encrypted predictions served by enclave, to be decrypted at client

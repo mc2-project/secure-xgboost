@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='remote_attestation',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x18remote_attestation.proto\x12\x12remote_attestation\x1a\rndarray.proto\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\x96\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"D\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\"-\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\"B\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"W\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\"b\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\'\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x18.remote_attestation.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\"{\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08username\x18\x05 \x01(\t\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"a\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x0e\n\x06status\x18\x03 \x01(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\xdd\x06\n\x11RemoteAttestation\x12]\n!rpc_get_remote_report_with_pubkey\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12T\n\x12rpc_add_client_key\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x65\n#rpc_add_client_key_with_certificate\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x64\n$rpc_XGDMatrixCreateFromEncryptedFile\x12 .remote_attestation.DMatrixAttrs\x1a\x18.remote_attestation.Name\"\x00\x12S\n\x13rpc_XGBoosterCreate\x12 .remote_attestation.BoosterAttrs\x1a\x18.remote_attestation.Name\"\x00\x12W\n\x15rpc_XGBoosterSetParam\x12 .remote_attestation.BoosterParam\x1a\x1a.remote_attestation.Status\"\x00\x12\x63\n\x1arpc_XGBoosterUpdateOneIter\x12\'.remote_attestation.BoosterUpdateParams\x1a\x1a.remote_attestation.Status\"\x00\x12U\n\x12SignalStartCluster\x12!.remote_attestation.ClusterParams\x1a\x1a.remote_attestation.Status\"\x00\x12\\\n\x14rpc_XGBoosterPredict\x12!.remote_attestation.PredictParams\x1a\x1f.remote_attestation.Predictions\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x18remote_attestation.proto\x12\x12remote_attestation\x1a\rndarray.proto\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\x96\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"D\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\"-\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\"B\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"W\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\"b\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\'\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x18.remote_attestation.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\"{\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08username\x18\x05 \x01(\t\"M\n\x0fSaveModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\"M\n\x0fLoadModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\"`\n\x0f\x44umpModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66map\x18\x02 \x01(\t\x12\x12\n\nwith_stats\x18\x03 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x04 \x01(\t\"\x8a\x01\n\x1b\x44umpModelWithFeaturesParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66len\x18\x02 \x01(\r\x12\r\n\x05\x66name\x18\x03 \x03(\t\x12\r\n\x05\x66type\x18\x04 \x03(\t\x12\x12\n\nwith_stats\x18\x05 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x06 \x01(\t\":\n\x0eModelRawParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\"P\n\x04\x44ump\x12(\n\x04sarr\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x0e\n\x06status\x18\x03 \x01(\r\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x14\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x18\n\x07Integer\x12\r\n\x05value\x18\x01 \x01(\r\"a\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x0e\n\x06status\x18\x03 \x01(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\x8e\x0b\n\x11RemoteAttestation\x12]\n!rpc_get_remote_report_with_pubkey\x12\x1a.remote_attestation.Status\x1a\x1a.remote_attestation.Report\"\x00\x12T\n\x12rpc_add_client_key\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x65\n#rpc_add_client_key_with_certificate\x12 .remote_attestation.DataMetadata\x1a\x1a.remote_attestation.Status\"\x00\x12\x64\n$rpc_XGDMatrixCreateFromEncryptedFile\x12 .remote_attestation.DMatrixAttrs\x1a\x18.remote_attestation.Name\"\x00\x12S\n\x13rpc_XGBoosterCreate\x12 .remote_attestation.BoosterAttrs\x1a\x18.remote_attestation.Name\"\x00\x12W\n\x15rpc_XGBoosterSetParam\x12 .remote_attestation.BoosterParam\x1a\x1a.remote_attestation.Status\"\x00\x12\x63\n\x1arpc_XGBoosterUpdateOneIter\x12\'.remote_attestation.BoosterUpdateParams\x1a\x1a.remote_attestation.Status\"\x00\x12\\\n\x14rpc_XGBoosterPredict\x12!.remote_attestation.PredictParams\x1a\x1f.remote_attestation.Predictions\"\x00\x12[\n\x16rpc_XGBoosterSaveModel\x12#.remote_attestation.SaveModelParams\x1a\x1a.remote_attestation.Status\"\x00\x12[\n\x16rpc_XGBoosterLoadModel\x12#.remote_attestation.LoadModelParams\x1a\x1a.remote_attestation.Status\"\x00\x12[\n\x18rpc_XGBoosterDumpModelEx\x12#.remote_attestation.DumpModelParams\x1a\x18.remote_attestation.Dump\"\x00\x12s\n$rpc_XGBoosterDumpModelExWithFeatures\x12/.remote_attestation.DumpModelWithFeaturesParams\x1a\x18.remote_attestation.Dump\"\x00\x12Z\n\x18rpc_XGBoosterGetModelRaw\x12\".remote_attestation.ModelRawParams\x1a\x18.remote_attestation.Dump\"\x00\x12N\n\x13rpc_XGDMatrixNumCol\x12\x18.remote_attestation.Name\x1a\x1b.remote_attestation.Integer\"\x00\x12N\n\x13rpc_XGDMatrixNumRow\x12\x18.remote_attestation.Name\x1a\x1b.remote_attestation.Integer\"\x00\x62\x06proto3'
   ,
   dependencies=[ndarray__pb2.DESCRIPTOR,])
 
@@ -452,6 +452,297 @@ _PREDICTPARAMS = _descriptor.Descriptor(
 )
 
 
+_SAVEMODELPARAMS = _descriptor.Descriptor(
+  name='SaveModelParams',
+  full_name='remote_attestation.SaveModelParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='booster_handle', full_name='remote_attestation.SaveModelParams.booster_handle', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='filename', full_name='remote_attestation.SaveModelParams.filename', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='username', full_name='remote_attestation.SaveModelParams.username', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=929,
+  serialized_end=1006,
+)
+
+
+_LOADMODELPARAMS = _descriptor.Descriptor(
+  name='LoadModelParams',
+  full_name='remote_attestation.LoadModelParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='booster_handle', full_name='remote_attestation.LoadModelParams.booster_handle', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='filename', full_name='remote_attestation.LoadModelParams.filename', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='username', full_name='remote_attestation.LoadModelParams.username', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1008,
+  serialized_end=1085,
+)
+
+
+_DUMPMODELPARAMS = _descriptor.Descriptor(
+  name='DumpModelParams',
+  full_name='remote_attestation.DumpModelParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='booster_handle', full_name='remote_attestation.DumpModelParams.booster_handle', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='fmap', full_name='remote_attestation.DumpModelParams.fmap', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='with_stats', full_name='remote_attestation.DumpModelParams.with_stats', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='dump_format', full_name='remote_attestation.DumpModelParams.dump_format', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1087,
+  serialized_end=1183,
+)
+
+
+_DUMPMODELWITHFEATURESPARAMS = _descriptor.Descriptor(
+  name='DumpModelWithFeaturesParams',
+  full_name='remote_attestation.DumpModelWithFeaturesParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='booster_handle', full_name='remote_attestation.DumpModelWithFeaturesParams.booster_handle', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='flen', full_name='remote_attestation.DumpModelWithFeaturesParams.flen', index=1,
+      number=2, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='fname', full_name='remote_attestation.DumpModelWithFeaturesParams.fname', index=2,
+      number=3, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ftype', full_name='remote_attestation.DumpModelWithFeaturesParams.ftype', index=3,
+      number=4, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='with_stats', full_name='remote_attestation.DumpModelWithFeaturesParams.with_stats', index=4,
+      number=5, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='dump_format', full_name='remote_attestation.DumpModelWithFeaturesParams.dump_format', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1186,
+  serialized_end=1324,
+)
+
+
+_MODELRAWPARAMS = _descriptor.Descriptor(
+  name='ModelRawParams',
+  full_name='remote_attestation.ModelRawParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='booster_handle', full_name='remote_attestation.ModelRawParams.booster_handle', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='username', full_name='remote_attestation.ModelRawParams.username', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1326,
+  serialized_end=1384,
+)
+
+
+_DUMP = _descriptor.Descriptor(
+  name='Dump',
+  full_name='remote_attestation.Dump',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='sarr', full_name='remote_attestation.Dump.sarr', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='length', full_name='remote_attestation.Dump.length', index=1,
+      number=2, type=4, cpp_type=4, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='status', full_name='remote_attestation.Dump.status', index=2,
+      number=3, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1386,
+  serialized_end=1466,
+)
+
+
 _PAIR = _descriptor.Descriptor(
   name='Pair',
   full_name='remote_attestation.Pair',
@@ -485,8 +776,8 @@ _PAIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=929,
-  serialized_end=957,
+  serialized_start=1468,
+  serialized_end=1496,
 )
 
 
@@ -516,8 +807,39 @@ _NAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=959,
-  serialized_end=979,
+  serialized_start=1498,
+  serialized_end=1518,
+)
+
+
+_INTEGER = _descriptor.Descriptor(
+  name='Integer',
+  full_name='remote_attestation.Integer',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='value', full_name='remote_attestation.Integer.value', index=0,
+      number=1, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1520,
+  serialized_end=1544,
 )
 
 
@@ -561,8 +883,8 @@ _PREDICTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=981,
-  serialized_end=1078,
+  serialized_start=1546,
+  serialized_end=1643,
 )
 
 
@@ -592,8 +914,8 @@ _CLUSTERPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1080,
-  serialized_end=1116,
+  serialized_start=1645,
+  serialized_end=1681,
 )
 
 _REPORT.fields_by_name['pem_key'].message_type = ndarray__pb2._NDARRAY
@@ -601,6 +923,7 @@ _REPORT.fields_by_name['remote_report'].message_type = ndarray__pb2._NDARRAY
 _DATAMETADATA.fields_by_name['enc_sym_key'].message_type = ndarray__pb2._NDARRAY
 _DATAMETADATA.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _BOOSTEREVALSETPARAMS.fields_by_name['evals'].message_type = _PAIR
+_DUMP.fields_by_name['sarr'].message_type = ndarray__pb2._NDARRAY
 _PREDICTIONS.fields_by_name['predictions'].message_type = ndarray__pb2._NDARRAY
 DESCRIPTOR.message_types_by_name['Status'] = _STATUS
 DESCRIPTOR.message_types_by_name['Report'] = _REPORT
@@ -611,8 +934,15 @@ DESCRIPTOR.message_types_by_name['BoosterParam'] = _BOOSTERPARAM
 DESCRIPTOR.message_types_by_name['BoosterUpdateParams'] = _BOOSTERUPDATEPARAMS
 DESCRIPTOR.message_types_by_name['BoosterEvalSetParams'] = _BOOSTEREVALSETPARAMS
 DESCRIPTOR.message_types_by_name['PredictParams'] = _PREDICTPARAMS
+DESCRIPTOR.message_types_by_name['SaveModelParams'] = _SAVEMODELPARAMS
+DESCRIPTOR.message_types_by_name['LoadModelParams'] = _LOADMODELPARAMS
+DESCRIPTOR.message_types_by_name['DumpModelParams'] = _DUMPMODELPARAMS
+DESCRIPTOR.message_types_by_name['DumpModelWithFeaturesParams'] = _DUMPMODELWITHFEATURESPARAMS
+DESCRIPTOR.message_types_by_name['ModelRawParams'] = _MODELRAWPARAMS
+DESCRIPTOR.message_types_by_name['Dump'] = _DUMP
 DESCRIPTOR.message_types_by_name['Pair'] = _PAIR
 DESCRIPTOR.message_types_by_name['Name'] = _NAME
+DESCRIPTOR.message_types_by_name['Integer'] = _INTEGER
 DESCRIPTOR.message_types_by_name['Predictions'] = _PREDICTIONS
 DESCRIPTOR.message_types_by_name['ClusterParams'] = _CLUSTERPARAMS
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -680,6 +1010,48 @@ PredictParams = _reflection.GeneratedProtocolMessageType('PredictParams', (_mess
   })
 _sym_db.RegisterMessage(PredictParams)
 
+SaveModelParams = _reflection.GeneratedProtocolMessageType('SaveModelParams', (_message.Message,), {
+  'DESCRIPTOR' : _SAVEMODELPARAMS,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.SaveModelParams)
+  })
+_sym_db.RegisterMessage(SaveModelParams)
+
+LoadModelParams = _reflection.GeneratedProtocolMessageType('LoadModelParams', (_message.Message,), {
+  'DESCRIPTOR' : _LOADMODELPARAMS,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.LoadModelParams)
+  })
+_sym_db.RegisterMessage(LoadModelParams)
+
+DumpModelParams = _reflection.GeneratedProtocolMessageType('DumpModelParams', (_message.Message,), {
+  'DESCRIPTOR' : _DUMPMODELPARAMS,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.DumpModelParams)
+  })
+_sym_db.RegisterMessage(DumpModelParams)
+
+DumpModelWithFeaturesParams = _reflection.GeneratedProtocolMessageType('DumpModelWithFeaturesParams', (_message.Message,), {
+  'DESCRIPTOR' : _DUMPMODELWITHFEATURESPARAMS,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.DumpModelWithFeaturesParams)
+  })
+_sym_db.RegisterMessage(DumpModelWithFeaturesParams)
+
+ModelRawParams = _reflection.GeneratedProtocolMessageType('ModelRawParams', (_message.Message,), {
+  'DESCRIPTOR' : _MODELRAWPARAMS,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.ModelRawParams)
+  })
+_sym_db.RegisterMessage(ModelRawParams)
+
+Dump = _reflection.GeneratedProtocolMessageType('Dump', (_message.Message,), {
+  'DESCRIPTOR' : _DUMP,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.Dump)
+  })
+_sym_db.RegisterMessage(Dump)
+
 Pair = _reflection.GeneratedProtocolMessageType('Pair', (_message.Message,), {
   'DESCRIPTOR' : _PAIR,
   '__module__' : 'remote_attestation_pb2'
@@ -693,6 +1065,13 @@ Name = _reflection.GeneratedProtocolMessageType('Name', (_message.Message,), {
   # @@protoc_insertion_point(class_scope:remote_attestation.Name)
   })
 _sym_db.RegisterMessage(Name)
+
+Integer = _reflection.GeneratedProtocolMessageType('Integer', (_message.Message,), {
+  'DESCRIPTOR' : _INTEGER,
+  '__module__' : 'remote_attestation_pb2'
+  # @@protoc_insertion_point(class_scope:remote_attestation.Integer)
+  })
+_sym_db.RegisterMessage(Integer)
 
 Predictions = _reflection.GeneratedProtocolMessageType('Predictions', (_message.Message,), {
   'DESCRIPTOR' : _PREDICTIONS,
@@ -716,8 +1095,8 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=1119,
-  serialized_end=1980,
+  serialized_start=1684,
+  serialized_end=3106,
   methods=[
   _descriptor.MethodDescriptor(
     name='rpc_get_remote_report_with_pubkey',
@@ -783,21 +1162,75 @@ _REMOTEATTESTATION = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='SignalStartCluster',
-    full_name='remote_attestation.RemoteAttestation.SignalStartCluster',
+    name='rpc_XGBoosterPredict',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterPredict',
     index=7,
     containing_service=None,
-    input_type=_CLUSTERPARAMS,
+    input_type=_PREDICTPARAMS,
+    output_type=_PREDICTIONS,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGBoosterSaveModel',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterSaveModel',
+    index=8,
+    containing_service=None,
+    input_type=_SAVEMODELPARAMS,
     output_type=_STATUS,
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='rpc_XGBoosterPredict',
-    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterPredict',
-    index=8,
+    name='rpc_XGBoosterLoadModel',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterLoadModel',
+    index=9,
     containing_service=None,
-    input_type=_PREDICTPARAMS,
-    output_type=_PREDICTIONS,
+    input_type=_LOADMODELPARAMS,
+    output_type=_STATUS,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGBoosterDumpModelEx',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterDumpModelEx',
+    index=10,
+    containing_service=None,
+    input_type=_DUMPMODELPARAMS,
+    output_type=_DUMP,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGBoosterDumpModelExWithFeatures',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterDumpModelExWithFeatures',
+    index=11,
+    containing_service=None,
+    input_type=_DUMPMODELWITHFEATURESPARAMS,
+    output_type=_DUMP,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGBoosterGetModelRaw',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGBoosterGetModelRaw',
+    index=12,
+    containing_service=None,
+    input_type=_MODELRAWPARAMS,
+    output_type=_DUMP,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGDMatrixNumCol',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGDMatrixNumCol',
+    index=13,
+    containing_service=None,
+    input_type=_NAME,
+    output_type=_INTEGER,
+    serialized_options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='rpc_XGDMatrixNumRow',
+    full_name='remote_attestation.RemoteAttestation.rpc_XGDMatrixNumRow',
+    index=14,
+    containing_service=None,
+    input_type=_NAME,
+    output_type=_INTEGER,
     serialized_options=None,
   ),
 ])

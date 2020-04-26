@@ -164,6 +164,134 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
             return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=-1)
 
+    def rpc_XGBoosterSaveModel(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        try:
+            server.XGBoosterSaveModel(request.booster_handle,
+                    request.filename,
+                    request.username)
+            return remote_attestation_pb2.Status(status=0)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Status(status=-1)
+
+    def rpc_XGBoosterLoadModel(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        try:
+            server.XGBoosterLoadModel(request.booster_handle,
+                    request.filename,
+                    request.username)
+            return remote_attestation_pb2.Status(status=0)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Status(status=-1)
+
+    def rpc_XGBoosterDumpModelEx(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        try:
+            length, sarr = server.XGBoosterDumpModelEx(request.booster_handle,
+                    request.fmap,
+                    request.with_stats,
+                    request.dump_format)
+            sarr_proto = pointer_to_proto(sarr, length * 8)
+            return remote_attestation_pb2.Dump(sarr=sarr_proto, length=length, status=0)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Predictions(sarr=None, length=None, status=-1)
+
+    def rpc_XGBoosterDumpModelExWithFeatures(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        try:
+            length, sarr = server.XGBoosterDumpModelEx(request.booster_handle,
+                    request.flen,
+                    request.fname,
+                    request.ftype,
+                    request.with_stats,
+                    request.dump_format)
+            sarr_proto = pointer_to_proto(sarr, length * 8)
+            return remote_attestation_pb2.Dump(sarr=sarr_proto, length=length, status=0)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Predictions(sarr=None, length=None, status=-1)
+
+    def rpc_XGBoosterGetModelRaw(self, request, context):
+        """
+        Signal to RPC server that client is ready to start
+        """
+        try:
+            length, sarr = server.XGBoosterGetModelRaw(request.booster_handle,
+                    request.username)
+            sarr_proto = pointer_to_proto(sarr, length * 8)
+            return remote_attestation_pb2.Dump(sarr=sarr_proto, length=length, status=0)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Predictions(sarr=None, length=None, status=-1)
+
+    def rpc_XGDMatrixNumCol(self, request, context):
+        """
+        Get number of columns in DMatrix
+        """
+        try:
+            ret = server.XGDMatrixNumCol(request.name)
+            return remote_attestation_pb2.Integer(value=ret)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Integer(value=None)
+
+    def rpc_XGDMatrixNumRow(self, request, context):
+        """
+        Get number of columns in DMatrix
+        """
+        try:
+            ret = server.XGDMatrixNumRow(request.dmatrix_handle)
+            return remote_attestation_pb2.Integer(value=ret)
+
+        except Exception as e:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_attestation_pb2.Integer(value=None)
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(), server)

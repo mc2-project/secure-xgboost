@@ -106,27 +106,7 @@ def run(channel_addr, key_path, keypair):
 
     print("booster: " + booster.handle.value.decode("utf-8"))
 
-    # Signal start
-    """
-    with grpc.insecure_channel(channel_addr) as channel:
-        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-        print("Waiting for training to finish...")
-        response = stub.SignalStart(remote_attestation_pb2.Status(status=1))
-
-        if response.status == 1:
-            print("Training succeeded! Decrypting predictions...")
-
-            enc_preds_serialized = response.predictions
-            num_preds = response.num_preds
-
-            enc_preds = proto_to_pointer(enc_preds_serialized)
-            preds = crypto_utils.decrypt_predictions(sym_key, enc_preds, num_preds)
-
-            print("Predictions: ", preds)
-        else:
-            print("Training failed")
-    """
-
+    booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
 
     # Get encrypted predictions
     print("\n\nModel Predictions: ")
