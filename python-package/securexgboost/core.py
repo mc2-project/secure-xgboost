@@ -27,6 +27,7 @@ import scipy.sparse
 from .compat import (STRING_TYPES, PY3, DataFrame, MultiIndex, py_str,
                      PANDAS_INSTALLED, DataTable)
 from .libpath import find_lib_path
+from .crypto import encrypt_data_with_pk, sign_data
 
 
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
@@ -360,7 +361,8 @@ def _maybe_dt_array(array):
 
     return array
 
-def set_user(user_name):
+
+def init_user(user_name, sym_key_file, pub_key_file):
     """
     Parameters
     ----------
@@ -368,6 +370,14 @@ def set_user(user_name):
         user you want to switch to
     """
     globals()["current_user"] = user_name
+    with open(sym_key_file, "rb") as keyfile:
+        sym_key = keyfile.read()
+    globals()["current_user_sym_key"] = sym_key
+    # FIXME: Save buffer instead of file
+    # with open(pub_key_file, "r") as keyfile:
+    #     pub_key = keyfile.read()
+    globals()["current_user_pub_key"] = pub_key_file
+
 
 class DMatrix(object):
     """Data Matrix used in XGBoost.
@@ -380,7 +390,7 @@ class DMatrix(object):
     _feature_names = None  # for previous version's pickle
     _feature_types = None
 
-    def __init__(self, data_dict, encrypted=False, label=None, missing=None,
+    def __init__(self, data_dict, encrypted=True, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
                  nthread=None): 
@@ -1024,7 +1034,7 @@ class Enclave(object):
         self.remote_report = ctypes.POINTER(ctypes.c_uint)()
         self.remote_report_size = ctypes.c_size_t()
 
-    def get_remote_report_with_pubkey(self):
+    def get_report(self):
         """
         Get remote attestation report and public key of enclave
 
@@ -1044,19 +1054,21 @@ class Enclave(object):
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
-            self.set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+            self._set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
 
             return pem_key, key_size, remote_report, remote_report_size
 
         _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
 
-    def verify_remote_report_and_set_pubkey(self):
+    # TODO(rishabh): user-defined parameters for verification
+    # (e.g. mrsigner / mrenclave values)
+    def verify_report(self):
         """
         Verify the received attestation report and set the public key
         """
         _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
 
-    def set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
+    def _set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
         """
         Set the enclave public key and remote report
 
@@ -1070,7 +1082,7 @@ class Enclave(object):
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.remote_report_size = ctypes.c_size_t(remote_report_size)
 
-    def get_report_attrs(self):
+    def _get_report_attrs(self):
         """
         Get the enclave public key and remote report
 
@@ -1097,141 +1109,38 @@ class Enclave(object):
 
         return pem_key, key_size, remote_report, remote_report_size
 
-
-class CryptoUtils(object):
-    """
-    Crypto utils class
-    """
-    def __init__(self):
-        # FIXME what do we need here?
-        pass
-
-    def generate_client_key(self, path_to_key):
+    def add_key(self):
+        """Add private (symmetric) key to enclave
         """
-        Generate a new key and save it to `path_to_key`
 
-        Parameters
-        ----------
-        path_to_key : str
-            path to which key will be saved
-        """
-        KEY_BYTES = 32
+        enclave_pem_key, enclave_key_size, _, _ = self._get_report_attrs()
 
-        print("Generating client key...")
-        key = os.urandom(KEY_BYTES)
-        with open(path_to_key, "wb") as keyfile:
-            keyfile.write(key)
+        try:
+            sym_key = globals()["current_user_sym_key"]
+            pub_key = globals()["current_user_pub_key"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
 
-    def encrypt_file(self, input_file, output_file, key_file):
-        """
-        Encrypt a file
+        # Encrypt the symmetric key using the enclave's public key
+        enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), 
+                enclave_pem_key, enclave_key_size)
+        # Sign the encrypted symmetric key (so enclave can verify it came from the client)
+        sig, sig_size = sign_data(pub_key, enc_sym_key, enc_sym_key_size)
+        # Send the encrypted key to the enclave
+        self._add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_size)
 
-        Parameters
-        ----------
-        input_file : str
-            path to file to be encrypted
-        output_file : str
-            path to which encrypted file will be saved
-        key_file : str
-            path to key used to encrypt file
-        """
-        if not os.path.exists(input_file):
-            print("Error: File {} does not exist".format(input_file))
-            return
-
-        print("Encrypting file {}".format(input_file))
-
-        input_file_bytes = input_file.encode('utf-8')
-        output_file_bytes = output_file.encode('utf-8')
-        key_file_bytes = key_file.encode('utf-8')
-
-        # Convert to proper ctypes
-        input_path = ctypes.c_char_p(input_file_bytes)
-        output_path = ctypes.c_char_p(output_file_bytes)
-        key_path = ctypes.c_char_p(key_file_bytes)
-
-        _check_call(_LIB.encrypt_file(input_path, output_path, key_path))
-
-    def encrypt_data_with_pk(self, data, data_len, pem_key, key_size):
-        """
-        Parameters
-        ----------
-        data : byte array
-        data_len : int
-        pem_key : proto
-        key_size : int
-
-        Returns
-        -------
-        encrypted_data : proto.NDArray
-        encrypted_data_size_as_int : int
-        """
-        # Cast data to char*
-        data = ctypes.c_char_p(data)
-        data_len = ctypes.c_size_t(data_len)
-
-        # Cast proto to pointer to pass into C++ encrypt_data_with_pk()
-        pem_key = proto_to_pointer(pem_key)
-        pem_key_len = ctypes.c_size_t(key_size)
-
-        # Allocate memory that will be used to store the encrypted_data and encrypted_data_size
-        encrypted_data = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
-        encrypted_data_size = ctypes.c_size_t(1024)
-
-        # Encrypt the data with pk pem_key
-        _check_call(_LIB.encrypt_data_with_pk(data, data_len, pem_key, key_size, encrypted_data, ctypes.byref(encrypted_data_size)))
-
-        # Cast the encrypted data back to a proto.NDArray (for RPC purposes) and return it
-        encrypted_data_size_as_int = encrypted_data_size.value
-        encrypted_data = pointer_to_proto(encrypted_data, encrypted_data_size_as_int)
-
-        return encrypted_data, encrypted_data_size_as_int
-
-    def sign_data(self, keyfile, data, data_size):
-        """
-        Parameters
-        ----------
-        keyfile : str
-        data : proto.NDArray
-        data_size : int
-
-        Returns
-        -------
-        signature : proto.NDArray
-        sig_len_as_int : int
-        """
-        # Cast the keyfile to a char*
-        keyfile = ctypes.c_char_p(str.encode(keyfile))
-
-        # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
-        data = proto_to_pointer(data)
-        data_size = ctypes.c_size_t(data_size)
-
-        # Allocate memory to store the signature and sig_len
-        signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
-        sig_len = ctypes.c_size_t(1024)
-
-        # Sign data with key keyfile
-        _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
-
-        # Cast the signature and sig_len back to a gRPC serializable format
-        sig_len_as_int = sig_len.value
-        signature = pointer_to_proto(signature, sig_len_as_int)
-
-        return signature, sig_len_as_int
-
-    def add_client_key(self, data, data_len, signature, sig_len):
+    def _add_client_key(self, enc_sym_key, enc_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
 
         Parameters
         ----------
-        data : proto.NDArray
+        enc_sym_key : proto.NDArray
             key used to encrypt client files
-        data_len : int
-            length of data
+        enc_len : int
+            length of enc_sym_key
         signature : proto.NDArray
-            signature over data, signed with client private key
+            signature over enc_sym_key, signed with client private key
         sig_len : int
             length of signature
         """
@@ -1240,27 +1149,25 @@ class CryptoUtils(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
                 response = stub.rpc_add_client_key(remote_attestation_pb2.DataMetadata(
-                                    enc_sym_key=data,
-                                    key_size=data_len,
-                                    signature=signature,
-                                    sig_len=sig_len))
-            return
+                    enc_sym_key=enc_sym_key,
+                    key_size=enc_len,
+                    signature=signature,
+                    sig_len=sig_len))
+                return
+        else:
 
-        # # Cast fname to a char*
-        # fname = ctypes.c_char_p(str.encode(fname))
+            # Cast enc_sym_key : proto.NDArray to pointer to pass into C++ add_client_key()
+            enc_sym_key = proto_to_pointer(enc_sym_key)
+            enc_len = ctypes.c_size_t(enc_len)
 
-        # Cast data : proto.NDArray to pointer to pass into C++ add_client_key()
-        data = proto_to_pointer(data)
-        data_len = ctypes.c_size_t(data_len)
+            # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
+            signature = proto_to_pointer(signature)
+            sig_len = ctypes.c_size_t(sig_len)
 
-        # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
-        signature = proto_to_pointer(signature)
-        sig_len = ctypes.c_size_t(sig_len)
+            # Add client key
+            _check_call(_LIB.add_client_key(enc_sym_key, enc_len, signature, sig_len))
 
-        # Add client key
-        _check_call(_LIB.add_client_key(data, data_len, signature, sig_len))
-
-    def add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
+    def _add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
 
@@ -1309,36 +1216,6 @@ class CryptoUtils(object):
 
         # Add client key
         _LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len)
-
-    def decrypt_predictions(self, key, encrypted_preds, num_preds):
-        """
-        Decrypt encrypted predictions
-
-        Parameters
-        ----------
-        key : byte array
-            key used to encrypt client files
-        encrypted_preds : c_char_p
-            encrypted predictions
-        num_preds : int
-            number of predictions
-
-        Returns
-        -------
-        preds : numpy array
-            plaintext predictions
-        """
-        # Cast arguments to proper ctypes
-        c_char_p_key = ctypes.c_char_p(key)
-        size_t_num_preds = ctypes.c_size_t(num_preds)
-
-        preds = ctypes.POINTER(ctypes.c_float)()
-
-        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
-
-        # Convert c pointer to numpy array
-        preds = ctypes2numpy(preds, num_preds, np.float32)
-        return preds
 
 
 class Booster(object):
@@ -1663,7 +1540,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True, username=None):
+                validate_features=True, username=None, decrypt=True):
         """
         Predict with data.
 
@@ -1749,6 +1626,8 @@ class Booster(object):
         if validate_features:
             self._validate_features(data)
 
+        length = c_bst_ulong()
+        preds = ctypes.POINTER(ctypes.c_uint8)()
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
@@ -1760,13 +1639,10 @@ class Booster(object):
                     username=username))
 
                 enc_preds_serialized = response.predictions
-                num_preds = response.num_preds
+                length = response.num_preds
 
-                enc_preds = proto_to_pointer(enc_preds_serialized)
-                return enc_preds, num_preds
+                preds = proto_to_pointer(enc_preds_serialized)
         else:
-            length = c_bst_ulong()
-            preds = ctypes.POINTER(ctypes.c_uint8)()
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
                                               ctypes.c_int(option_mask),
@@ -1775,6 +1651,7 @@ class Booster(object):
                                               ctypes.byref(preds),
                                               c_str(username)))
 
+            # TODO(rishabh): implement this in decrypt_predictions
             #  preds = ctypes2numpy(preds, length.value, np.float32)
             #  if pred_leaf:
             #      preds = preds.astype(np.int32)
@@ -1797,7 +1674,46 @@ class Booster(object):
             #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
             #      else:
             #          preds = preds.reshape(nrow, chunk_size)
-            return preds, length.value
+        if decrypt:
+            return self.decrypt_predictions(preds, length.value)
+        return preds, length.value
+
+    # TODO(rishabh): change encrypted_preds to Python type from ctype
+    def decrypt_predictions(self, encrypted_preds, num_preds):
+        """
+        Decrypt encrypted predictions
+
+        Parameters
+        ----------
+        key : byte array
+            key used to encrypt client files
+        encrypted_preds : c_char_p
+            encrypted predictions
+        num_preds : int
+            number of predictions
+
+        Returns
+        -------
+        preds : numpy array
+            plaintext predictions
+        """
+        try:
+            sym_key = globals()["current_user_sym_key"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+
+        # Cast arguments to proper ctypes
+        c_char_p_key = ctypes.c_char_p(sym_key)
+        size_t_num_preds = ctypes.c_size_t(num_preds)
+
+        preds = ctypes.POINTER(ctypes.c_float)()
+
+        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
+
+        # Convert c pointer to numpy array
+        preds = ctypes2numpy(preds, num_preds, np.float32)
+        return preds, num_preds
+
 
     def save_model(self, fname, username=None):
         """
@@ -1928,7 +1844,7 @@ class Booster(object):
             need_close = True
         else:
             need_close = False
-        ret = self.get_dump(key, fmap, with_stats, dump_format)
+        ret = self.get_dump(fmap, with_stats, dump_format)
         if dump_format == 'json':
             fout.write('[\n')
             for i, _ in enumerate(ret):
@@ -1943,7 +1859,7 @@ class Booster(object):
         if need_close:
             fout.close()
 
-    def get_dump(self, key, fmap='', with_stats=False, dump_format="text"):
+    def get_dump(self, fmap='', with_stats=False, dump_format="text", decrypt=True):
         """
         Returns the model dump as a list of strings.
 
@@ -2024,18 +1940,22 @@ class Booster(object):
                                                       ctypes.byref(sarr)))
 
 
-        key = ctypes.c_char_p(key)
-        self.decrypt_dump(key, sarr, length)
+        if decrypt:
+            self.decrypt_dump(sarr, length)
         res = from_cstr_to_pystr(sarr, length)
         return res
 
-    def decrypt_dump(self, key, sarr, length):
-        """ Decrypt the models before returning from get_dump()
-        """
-        _check_call(_LIB.decrypt_dump(key, sarr, length))
+    def decrypt_dump(self, sarr, length):
+        """ Decrypt the models obtained from get_dump()
+        """ 
+        try:
+            sym_key = globals()["current_user_sym_key"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+        _check_call(_LIB.decrypt_dump(sym_key, sarr, length))
 
 
-    def get_fscore(self, key, fmap=''):
+    def get_fscore(self, fmap=''):
         """Get feature importance of each feature.
 
         .. note:: Feature importance is defined only for tree boosters
@@ -2055,9 +1975,9 @@ class Booster(object):
             The name of feature map file
         """
 
-        return self.get_score(key, fmap, importance_type='weight')
+        return self.get_score(fmap, importance_type='weight')
 
-    def get_score(self, key, fmap='', importance_type='weight'):
+    def get_score(self, fmap='', importance_type='weight'):
         """Get feature importance of each feature.
         Importance type can be defined as:
 
@@ -2093,7 +2013,7 @@ class Booster(object):
         # if it's weight, then omap stores the number of missing values
         if importance_type == 'weight':
             # do a simpler tree dump to save time
-            trees = self.get_dump(key, fmap, with_stats=False)
+            trees = self.get_dump(fmap, with_stats=False)
 
             fmap = {}
             for tree in trees:
@@ -2123,7 +2043,7 @@ class Booster(object):
             importance_type = 'cover'
             average_over_splits = False
 
-        trees = self.get_dump(key, fmap, with_stats=True)
+        trees = self.get_dump(fmap, with_stats=True)
 
         importance_type += '='
         fmap = {}
@@ -2160,7 +2080,7 @@ class Booster(object):
 
         return gmap
 
-    def trees_to_dataframe(self, key, fmap=''):
+    def trees_to_dataframe(self, fmap=''):
         """Parse a boosted tree model text dump into a pandas DataFrame structure.
 
         This feature is only defined when the decision tree model is chosen as base
@@ -2272,7 +2192,7 @@ class Booster(object):
                 raise ValueError(msg.format(self.feature_names,
                                             data.feature_names))
 
-    def get_split_value_histogram(self, key, feature, fmap='', bins=None, as_pandas=True):
+    def get_split_value_histogram(self, feature, fmap='', bins=None, as_pandas=True):
         """Get split value histogram of a feature
 
         Parameters
@@ -2294,7 +2214,7 @@ class Booster(object):
         a histogram of used splitting values for the specified feature
         either as numpy array or pandas DataFrame.
         """
-        xgdump = self.get_dump(key, fmap=fmap)
+        xgdump = self.get_dump(fmap=fmap)
         values = []
         regexp = re.compile(r"\[{0}<([\d.Ee+-]+)\]".format(feature))
         for i, _ in enumerate(xgdump):
@@ -2315,8 +2235,12 @@ class Booster(object):
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
 
-class RPCServer:
 
+##########################################
+# APIs invoked by RPC server
+##########################################
+
+class RPCServer:
     def XGBoosterPredict(booster_handle, dmatrix_handle, option_mask, ntree_limit, username):
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
@@ -2426,3 +2350,123 @@ class RPCServer:
             c_str(dmatrix_handle),
             ctypes.byref(ret)))
         return ret.value
+
+##########################################
+# Crypto APIs
+##########################################
+
+
+def generate_client_key(keyfile):
+    """
+    Generate a new key and save it to `path_to_key`
+
+    Parameters
+    ----------
+    path_to_key : str
+        path to which key will be saved
+    """
+    KEY_BYTES = 32
+
+    print("Generating client key...")
+    key = os.urandom(KEY_BYTES)
+    with open(keyfile, "wb") as _keyfile:
+        _keyfile.write(key)
+
+def encrypt_file(input_file, output_file, key_file):
+    """
+    Encrypt a file
+
+    Parameters
+    ----------
+    input_file : str
+        path to file to be encrypted
+    output_file : str
+        path to which encrypted file will be saved
+    key_file : str
+        path to key used to encrypt file
+    """
+    if not os.path.exists(input_file):
+        print("Error: File {} does not exist".format(input_file))
+        return
+
+    print("Encrypting file {}".format(input_file))
+
+    input_file_bytes = input_file.encode('utf-8')
+    output_file_bytes = output_file.encode('utf-8')
+    key_file_bytes = key_file.encode('utf-8')
+
+    # Convert to proper ctypes
+    input_path = ctypes.c_char_p(input_file_bytes)
+    output_path = ctypes.c_char_p(output_file_bytes)
+    key_path = ctypes.c_char_p(key_file_bytes)
+
+    _check_call(_LIB.encrypt_file(input_path, output_path, key_path))
+
+def encrypt_data_with_pk(data, data_len, pem_key, key_size):
+    """
+    Parameters
+    ----------
+    data : byte array
+    data_len : int
+    pem_key : proto
+    key_size : int
+
+    Returns
+    -------
+    encrypted_data : proto.NDArray
+    encrypted_data_size_as_int : int
+    """
+    # Cast data to char*
+    data = ctypes.c_char_p(data)
+    data_len = ctypes.c_size_t(data_len)
+
+    # Cast proto to pointer to pass into C++ encrypt_data_with_pk()
+    pem_key = proto_to_pointer(pem_key)
+    pem_key_len = ctypes.c_size_t(key_size)
+
+    # Allocate memory that will be used to store the encrypted_data and encrypted_data_size
+    encrypted_data = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+    encrypted_data_size = ctypes.c_size_t(1024)
+
+    # Encrypt the data with pk pem_key
+    _check_call(_LIB.encrypt_data_with_pk(data, data_len, pem_key, key_size, encrypted_data, ctypes.byref(encrypted_data_size)))
+
+    # Cast the encrypted data back to a proto.NDArray (for RPC purposes) and return it
+    encrypted_data_size_as_int = encrypted_data_size.value
+    encrypted_data = pointer_to_proto(encrypted_data, encrypted_data_size_as_int)
+
+    return encrypted_data, encrypted_data_size_as_int
+
+def sign_data(key, data, data_size):
+    """
+    Parameters
+    ----------
+    keyfile : str
+    data : proto.NDArray
+    data_size : int
+
+    Returns
+    -------
+    signature : proto.NDArray
+    sig_len_as_int : int
+    """
+    # Cast the keyfile to a char*
+    keyfile = ctypes.c_char_p(str.encode(key))
+
+    # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
+    data = proto_to_pointer(data)
+    data_size = ctypes.c_size_t(data_size)
+
+    # Allocate memory to store the signature and sig_len
+    signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+    sig_len = ctypes.c_size_t(1024)
+
+    # Sign data with key keyfile
+    _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
+
+    # Cast the signature and sig_len back to a gRPC serializable format
+    sig_len_as_int = sig_len.value
+    signature = pointer_to_proto(signature, sig_len_as_int)
+
+    return signature, sig_len_as_int
+
