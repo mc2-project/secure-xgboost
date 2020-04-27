@@ -199,7 +199,7 @@ message ModelRawParams {
 
 // Model dump
 message Dump {
-    numproto.protobuf.NDArray sarr = 1;
+    repeated string sarr = 1;
     uint64 length = 2;
     uint32 status = 3;
 }

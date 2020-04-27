@@ -463,9 +463,8 @@ class DMatrix(object):
                             silent=silent))
                         handle = c_str(response.name)
                 else:
- 
-                    filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
-                    usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
+                    filenames = from_pystr_to_cstr(data)
+                    usrs = from_pystr_to_cstr(usernames)
                     _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                         usrs,
                         c_bst_ulong(len(data)),
@@ -1835,6 +1834,7 @@ class Booster(object):
         else:
             raise TypeError("fname must be a string")
 
+    # FIXME do we need this API in RPC mode? If so, should we decrypt the results?
     def save_raw(self, username=None):
         """
         Save the model to a in memory buffer representation
@@ -1860,9 +1860,8 @@ class Booster(object):
                     booster_handle=self.handle.value,
                     username=username))
 
-                length = response.length
-                cptr_serialized = response.sarr
-                cptr = proto_to_pointer(cptr_serialized)
+                cptr = from_pystr_to_cstr(list(response.sarr))
+                length = c_bst_ulong(response.length)
         else:
             _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
                                                   ctypes.byref(length),
@@ -1974,17 +1973,15 @@ class Booster(object):
                     else:
                         ftype = self.feature_types
                     stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.XGBoosterDumpModelExWithFeatures(remote_attestation_pb2.DMatrixAttrs(
+                    response = stub.rpc_XGBoosterDumpModelExWithFeatures(remote_attestation_pb2.DumpModelWithFeaturesParams(
                         booster_handle=self.handle.value,
                         flen=flen,
                         fname=fname,
                         ftype=ftype,
                         with_stats=with_stats,
                         dump_format=dump_format))
-                    sarr_serialized = response.sarr
-                    length = response.length
-
-                    sarr = proto_to_pointer(sarr_serialized)
+                    sarr = from_pystr_to_cstr(list(response.sarr))
+                    length = c_bst_ulong(response.length)
             else:
                 fname = from_pystr_to_cstr(self.feature_names)
 
@@ -2011,15 +2008,13 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.XGBoosterDumpModelEx(remote_attestation_pb2.DMatrixAttrs(
+                    response = stub.rpc_XGBoosterDumpModelEx(remote_attestation_pb2.DumpModelParams(
                         booster_handle=self.handle.value,
                         fmap=fmap,
                         with_stats=with_stats,
                         dump_format=dump_format))
-                    sarr_serialized = response.sarr
-                    length = response.length
-
-                    sarr = proto_to_pointer(sarr_serialized)
+                    sarr = from_pystr_to_cstr(list(response.sarr))
+                    length = c_bst_ulong(response.length)
             else:
                 _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                       c_str(fmap),
@@ -2345,9 +2340,8 @@ class RPCServer:
 
     def XGBoosterCreate(cache, length):
         bst_handle = ctypes.c_char_p()
-        dmats = c_array(ctypes.c_char_p, [c_str(d) for d in cache])
         _check_call(_LIB.XGBoosterCreate(
-            dmats,
+            from_pystr_to_cstr(cache),
             c_bst_ulong(length),
             ctypes.byref(bst_handle)))
         return bst_handle.value.decode('utf-8')
@@ -2363,11 +2357,9 @@ class RPCServer:
 
     def XGDMatrixCreateFromEncryptedFile(filenames, usernames, silent):
         dmat_handle = ctypes.c_char_p()
-        files = c_array(ctypes.c_char_p, [c_str(path) for path in filenames])
-        usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
-            files,
-            usrs,
+            from_pystr_to_cstr(filenames),
+            from_pystr_to_cstr(usernames),
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
             ctypes.byref(dmat_handle)))
@@ -2388,37 +2380,38 @@ class RPCServer:
     # TODO test this
     def XGBoosterDumpModelEx(booster_handle, fmap, with_stats, dump_format):
         length = c_bst_ulong()
-        sarr = ctypes.POINTER(ctypes.c_uint8)()
-        _check_call(_LIB.XGBoosterLoadModel(
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
+        _check_call(_LIB.XGBoosterDumpModelEx(
             c_str(booster_handle),
             c_str(fmap),
             ctypes.c_int(with_stats),
             c_str(dump_format),
             ctypes.byref(length),
             ctypes.byref(sarr)))
-        return length.value, sarr
+        return length.value, from_cstr_to_pystr(sarr, length)
 
-    # TODO test this
     def XGBoosterDumpModelExWithFeatures(booster_handle, flen, fname, ftype, with_stats, dump_format):
         length = c_bst_ulong()
-        sarr = ctypes.POINTER(ctypes.c_uint8)()
-        _check_call(_LIB.XGBoosterLoadModel(
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
+        _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
             c_str(booster_handle),
-            c_str(fmap),
+            ctypes.c_int(flen),
+            from_pystr_to_cstr(list(fname)),
+            from_pystr_to_cstr(list(ftype)),
             ctypes.c_int(with_stats),
             c_str(dump_format),
             ctypes.byref(length),
             ctypes.byref(sarr)))
-        return length.value, sarr
+        return length.value, from_cstr_to_pystr(sarr, length)
 
     # TODO test this
     def XGBoosterGetModelRaw(booster_handle, username):
         length = c_bst_ulong()
-        sarr = ctypes.POINTER(ctypes.c_uint8)()
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
         _check_call(_LIB.XGBoosterGetModelRaw(
             c_str(booster_handle),
             c_str(username)))
-        return length.value, sarr
+        return length.value, from_cstr_to_pystr(sarr, length)
 
     def XGDMatrixNumCol(dmatrix_handle):
         ret = c_bst_ulong()

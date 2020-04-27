@@ -85,8 +85,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         try:
             dmatrix_handle = server.XGDMatrixCreateFromEncryptedFile(
-                    filenames=request.filenames,
-                    usernames=request.usernames,
+                    filenames=list(request.filenames),
+                    usernames=list(request.usernames),
                     silent=request.silent)
             return remote_attestation_pb2.Name(name=dmatrix_handle)
         except:
@@ -115,7 +115,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
     def rpc_XGBoosterCreate(self, request, context):
         try:
             booster_handle = server.XGBoosterCreate(
-                            cache=request.cache,
+                            cache=list(request.cache),
                             length=request.length)
             return remote_attestation_pb2.Name(name=booster_handle)
         except:
@@ -153,7 +153,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     request.option_mask,
                     request.ntree_limit,
                     request.username)
-            enc_preds_proto = pointer_to_proto(enc_preds, num_preds * 8)
+            enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
             return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
 
         except Exception as e:
@@ -209,8 +209,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     request.fmap,
                     request.with_stats,
                     request.dump_format)
-            sarr_proto = pointer_to_proto(sarr, length * 8)
-            return remote_attestation_pb2.Dump(sarr=sarr_proto, length=length, status=0)
+            return remote_attestation_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -218,21 +217,20 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Predictions(sarr=None, length=None, status=-1)
+            return remote_attestation_pb2.Dump(sarr=None, length=None, status=-1)
 
     def rpc_XGBoosterDumpModelExWithFeatures(self, request, context):
         """
         Signal to RPC server that client is ready to start
         """
         try:
-            length, sarr = server.XGBoosterDumpModelEx(request.booster_handle,
+            length, sarr = server.XGBoosterDumpModelExWithFeatures(request.booster_handle,
                     request.flen,
                     request.fname,
                     request.ftype,
                     request.with_stats,
                     request.dump_format)
-            sarr_proto = pointer_to_proto(sarr, length * 8)
-            return remote_attestation_pb2.Dump(sarr=sarr_proto, length=length, status=0)
+            return remote_attestation_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -240,7 +238,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Predictions(sarr=None, length=None, status=-1)
+            return remote_attestation_pb2.Dump(sarr=None, length=None, status=-1)
 
     def rpc_XGBoosterGetModelRaw(self, request, context):
         """
@@ -249,8 +247,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         try:
             length, sarr = server.XGBoosterGetModelRaw(request.booster_handle,
                     request.username)
-            sarr_proto = pointer_to_proto(sarr, length * 8)
-            return remote_attestation_pb2.Dump(sarr=sarr_proto, length=length, status=0)
+            return remote_attestation_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -258,7 +255,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Predictions(sarr=None, length=None, status=-1)
+            return remote_attestation_pb2.Dump(sarr=None, length=None, status=-1)
 
     def rpc_XGDMatrixNumCol(self, request, context):
         """

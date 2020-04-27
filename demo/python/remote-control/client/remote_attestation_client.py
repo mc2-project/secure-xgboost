@@ -99,7 +99,6 @@ def run(channel_addr, key_path, keypair):
             "verbosity": "0" 
     }
 
-    # TODO: Start off here
     # Train and evaluate
     num_rounds = 5 
     booster = xgb.train(params, dtrain, num_rounds)
@@ -122,10 +121,9 @@ def run(channel_addr, key_path, keypair):
     # Decrypt predictions
     print(crypto_utils.decrypt_predictions(sym_key, predictions, num_preds))
 
-    # FIXME implement this
     # Get fscores of model
-    # print("\n\nModel Feature Importance: ")
-    # print(booster.get_fscore(sym_key))
+    print("\n\nModel Feature Importance: ")
+    print(booster.get_fscore(sym_key))
      
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
