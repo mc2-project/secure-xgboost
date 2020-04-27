@@ -86,9 +86,15 @@ int main(int argc, char** argv) {
   // load the data
   DMatrixHandle dtrain, dtest;
   std::cout << "Loading train data\n";
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
+
+
+  const char* fnames1[1] = {fname1.c_str()};
+  const char* fnames2[1] = {fname2.c_str()};
+  char* unames[1] = {"user1"};
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames1, unames, 1, silent, &dtrain));
+  //safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname1.c_str(), silent, &dtrain));
   std::cout << "Loading test data\n";
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile((const char*)fname2.c_str(), silent, &dtest));
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames2, unames, 1, silent, &dtest));
   std::cout << "Data loaded" << std::endl;
 
   // create the booster
@@ -130,12 +136,12 @@ int main(int argc, char** argv) {
   
   // save model
   std::string fname(cwd + "/demo_model.model");
-  safe_xgboost(XGBoosterSaveModel(booster, fname.c_str()));
+  safe_xgboost(XGBoosterSaveModel(booster, fname.c_str(), "user1"));
   std::cout << "Saved model to demo_model.model" << std::endl;
   // load model
   booster = NULL;
   safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
-  safe_xgboost(XGBoosterLoadModel(booster, fname.c_str()));
+  safe_xgboost(XGBoosterLoadModel(booster, fname.c_str(), "user1"));
   std::cout << "Loaded model from demo_model.model" << std::endl;
 
   // predict
@@ -144,7 +150,7 @@ int main(int argc, char** argv) {
   float* out_result = NULL;
   int n_print = 10;
   
-  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result));
+  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result, "user1"));
   safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
   printf("n_pred: %d %x\n", out_len, out_result);
   printf("y_pred: ");
