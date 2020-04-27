@@ -1,7 +1,9 @@
 import securexgboost as xgb
 import os
 
-xgb.set_user("user1")
+username = "user1"
+xgb.set_user(username)
+
 print("Creating enclave")
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
@@ -32,10 +34,10 @@ sig, sig_size = crypto.sign_data(PUB_KEY_FILE, enc_sym_key, enc_sym_key_size)
 crypto.add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_size)
 
 print("Creating training matrix")
-dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
+dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
 
 print("Creating test matrix")
-dtest = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True) 
+dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
 
 print("Beginning Training")
 
@@ -53,6 +55,11 @@ params = {
 # Train and evaluate
 num_rounds = 5 
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
+
+booster.save_model(HOME_DIR + "/demo/python/basic/modelfile.model")
+
+booster = xgb.Booster(cache=[dtrain, dtest])
+booster.load_model(HOME_DIR + "/demo/python/basic/modelfile.model")
 
 # Get encrypted predictions
 print("\n\nModel Predictions: ")

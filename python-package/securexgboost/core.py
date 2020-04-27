@@ -1899,8 +1899,8 @@ class Booster(object):
                     stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
                     response = stub.rpc_XGBoosterLoadModel(remote_attestation_pb2.LoadModelParams(
                         booster_handle=self.handle.value,
-                        filenames=fname,
-                        usernames=usernames))
+                        filename=fname,
+                        username=username))
             else:
                 _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -2373,14 +2373,12 @@ class RPCServer:
             ctypes.byref(dmat_handle)))
         return dmat_handle.value.decode('utf-8')
 
-    # TODO test this
     def XGBoosterSaveModel(booster_handle, filename, username):
         _check_call(_LIB.XGBoosterSaveModel(
             c_str(booster_handle),
             c_str(filename),
             c_str(username)))
 
-    # TODO test this
     def XGBoosterLoadModel(booster_handle, filename, username):
         _check_call(_LIB.XGBoosterLoadModel(
             c_str(booster_handle),
@@ -2422,7 +2420,6 @@ class RPCServer:
             c_str(username)))
         return length.value, sarr
 
-    # TODO test this
     def XGDMatrixNumCol(dmatrix_handle):
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumCol(
@@ -2430,7 +2427,6 @@ class RPCServer:
             ctypes.byref(ret)))
         return ret.value
 
-    # TODO test this
     def XGDMatrixNumRow(dmatrix_handle):
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumRow(
