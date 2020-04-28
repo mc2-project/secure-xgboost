@@ -27,31 +27,27 @@ import os
 import sys
 import traceback
 import numpy as np
-import securexgboost as xgb
-from securexgboost import RPCServer as server
+from .core import RemoteAPI as server
 
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
-HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
-
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
-    # FIXME implement the library call within class RPCServer
+    def __init__(self, enclave):
+        self.enclave = enclave
+
+    # FIXME implement the library call within class RemoteAPI
     def rpc_get_remote_report_with_pubkey(self, request, context):
         """
         Calls get_remote_report_with_public_key()
         """
-        # Get a reference to the existing enclave
-        enclave_reference = xgb.Enclave(create_enclave=False)
-
         # Get report from enclave
-        enclave_reference.get_remote_report_with_pubkey()
-        pem_key, key_size, remote_report, remote_report_size = enclave_reference.get_report_attrs()
+        pem_key, key_size, remote_report, remote_report_size = self.enclave.get_report()
 
         return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
-    # FIXME implement the library call within class RPCServer
+    # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key(self, request, context):
         """
         Sends encrypted symmetric key, signature over key, and filename of data that was encrypted using the symmetric key
@@ -62,12 +58,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         signature = request.signature
         sig_len = request.sig_len
 
-        crypto_utils = xgb.CryptoUtils()
-        result = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
+        # Get a reference to the existing enclave
+        result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
 
         return remote_pb2.Status(status=result)
 
-    # FIXME implement the library call within class RPCServer
+    # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
         """
         Calls CryptoUtils.add_client_key_with_certificate()
@@ -79,8 +75,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         signature = request.signature
         sig_len = request.sig_len
 
-        crypto_utils = xgb.CryptoUtils()
-        result = crypto_utils.add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
+        # Get a reference to the existing enclave
+        result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
 
         return remote_pb2.Status(status=result)
 
@@ -291,14 +287,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Integer(value=None)
 
-def serve():
+def serve(enclave):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(), server)
+    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
 
-
-if __name__ == '__main__':
-    logging.basicConfig()
-    serve()
