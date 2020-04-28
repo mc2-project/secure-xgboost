@@ -102,10 +102,10 @@ def run(channel_addr, key_path, keypair):
 
     print("booster: " + booster.handle.value.decode("utf-8"))
 
-    #  booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
+    booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
 
-    #  booster = xgb.Booster(cache=[dtrain, dtest])
-    #  booster.load_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
+    booster = xgb.Booster(cache=[dtrain, dtest])
+    booster.load_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
 
     # Get encrypted predictions
     print("\n\nModel Predictions: ")
