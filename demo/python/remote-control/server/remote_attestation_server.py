@@ -35,17 +35,16 @@ HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
 class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
 
+    def __init__(self, enclave):
+        self.enclave = enclave
+
     # FIXME implement the library call within class RPCServer
     def rpc_get_remote_report_with_pubkey(self, request, context):
         """
         Calls get_remote_report_with_public_key()
         """
-        # Get a reference to the existing enclave
-        enclave_reference = xgb.Enclave(create_enclave=False)
-
         # Get report from enclave
-        enclave_reference.get_remote_report_with_pubkey()
-        pem_key, key_size, remote_report, remote_report_size = enclave_reference.get_report_attrs()
+        pem_key, key_size, remote_report, remote_report_size = self.enclave.get_report()
 
         return remote_attestation_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
@@ -60,8 +59,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         signature = request.signature
         sig_len = request.sig_len
 
-        crypto_utils = xgb.CryptoUtils()
-        result = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
+        # Get a reference to the existing enclave
+        result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
 
         return remote_attestation_pb2.Status(status=result)
 
@@ -77,8 +76,8 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         signature = request.signature
         sig_len = request.sig_len
 
-        crypto_utils = xgb.CryptoUtils()
-        result = crypto_utils.add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
+        # Get a reference to the existing enclave
+        result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
 
         return remote_attestation_pb2.Status(status=result)
 
@@ -289,9 +288,9 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
 
             return remote_attestation_pb2.Integer(value=None)
 
-def serve():
+def serve(enclave):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(), server)
+    remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(enclave), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()

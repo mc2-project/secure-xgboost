@@ -27,7 +27,6 @@ import scipy.sparse
 from .compat import (STRING_TYPES, PY3, DataFrame, MultiIndex, py_str,
                      PANDAS_INSTALLED, DataTable)
 from .libpath import find_lib_path
-from .crypto import encrypt_data_with_pk, sign_data
 
 
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
@@ -1022,12 +1021,20 @@ class DMatrix(object):
 
 
 class Enclave(object):
-    """An enclave.
-
-    A trusted execution environment used for secure XGBoost.
     """
-    def __init__(self, enclave_image=None, create_enclave=True, log_verbosity=0):
-        if create_enclave:
+    Object wrapper for an enclave: a trusted execution environment used by secure XGBoost.
+    """
+    def __init__(self, enclave_image=None, log_verbosity=0):
+        """
+        Parameters
+        ----------
+        enclave_image: str
+            Path to enclave binary
+        log_verbosity: int, optional
+            Verbosity level for enclave (for enclaves in debug mode)
+        """
+        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        if not channel_addr:
             _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
         self.pem_key = ctypes.POINTER(ctypes.c_uint)()
         self.key_size = ctypes.c_size_t()
@@ -1036,13 +1043,19 @@ class Enclave(object):
 
     def get_report(self):
         """
-        Get remote attestation report and public key of enclave
+        Get remote attestation report and public key of enclave.
+        The returned values are saved as instance attributes.
 
-        If called by client, returns:
+        Returns
+        -------
         pem_key : proto
+            Enclave's public key
         key_size : int
+            Size of the returned public key
         remote_report : proto
+            Enclave's attestation report
         remote_report_size : int
+            Size of the returned report
         """
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
@@ -1057,14 +1070,16 @@ class Enclave(object):
             self._set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
 
             return pem_key, key_size, remote_report, remote_report_size
-
-        _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+        else:
+            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+            return self._get_report_attrs()
 
     # TODO(rishabh): user-defined parameters for verification
     # (e.g. mrsigner / mrenclave values)
+    # TODO(rishabh): Handle verification failures
     def verify_report(self):
         """
-        Verify the received attestation report and set the public key
+        Verify the received attestation report and set the public key.
         """
         _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
 
@@ -1110,7 +1125,10 @@ class Enclave(object):
         return pem_key, key_size, remote_report, remote_report_size
 
     def add_key(self):
-        """Add private (symmetric) key to enclave
+        """
+        Add private (symmetric) key to enclave.
+        This function encrypts the user's symmetric key using the enclave's public key, and signs the ciphertext with the user's private key.
+        The signed message is sent to the enclave.
         """
 
         enclave_pem_key, enclave_key_size, _, _ = self._get_report_attrs()
@@ -1441,35 +1459,37 @@ class Booster(object):
             _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
                                                     dtrain.handle))
         else:
-            pred = self.predict(dtrain)
-            grad, hess = fobj(pred, dtrain)
-            self.boost(dtrain, grad, hess)
+            raise NotImplementedError("Custom objective functions not supported")
+            # TODO(rishabh): We do not support custom objectives currently
+            # pred = self.predict(dtrain)
+            # grad, hess = fobj(pred, dtrain)
+            # self.boost(dtrain, grad, hess)
 
-    def boost(self, dtrain, grad, hess):
-        """Boost the booster for one iteration, with customized gradient
-        statistics.  Like :func:`xgboost.core.Booster.update`, this
-        function should not be called directly by users.
-
-        Parameters
-        ----------
-        dtrain : DMatrix
-            The training DMatrix.
-        grad : list
-            The first order of gradient.
-        hess : list
-            The second order of gradient.
-
-        """
-        if len(grad) != len(hess):
-            raise ValueError('grad / hess length mismatch: {} / {}'.format(len(grad), len(hess)))
-        if not isinstance(dtrain, DMatrix):
-            raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
-        self._validate_features(dtrain)
-
-        _check_call(_LIB.XGBoosterBoostOneIter(self.handle, dtrain.handle,
-                                               c_array(ctypes.c_float, grad),
-                                               c_array(ctypes.c_float, hess),
-                                               c_bst_ulong(len(grad))))
+    # def boost(self, dtrain, grad, hess):
+    #     """Boost the booster for one iteration, with customized gradient
+    #     statistics.  Like :func:`xgboost.core.Booster.update`, this
+    #     function should not be called directly by users.
+    # 
+    #     Parameters
+    #     ----------
+    #     dtrain : DMatrix
+    #         The training DMatrix.
+    #     grad : list
+    #         The first order of gradient.
+    #     hess : list
+    #         The second order of gradient.
+    # 
+    #     """
+    #     if len(grad) != len(hess):
+    #         raise ValueError('grad / hess length mismatch: {} / {}'.format(len(grad), len(hess)))
+    #     if not isinstance(dtrain, DMatrix):
+    #         raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
+    #     self._validate_features(dtrain)
+    # 
+    #     _check_call(_LIB.XGBoosterBoostOneIter(self.handle, dtrain.handle,
+    #                                            c_array(ctypes.c_float, grad),
+    #                                            c_array(ctypes.c_float, hess),
+    #                                            c_bst_ulong(len(grad))))
 
     def eval_set(self, evals, iteration=0, feval=None):
         # pylint: disable=invalid-name
@@ -1601,6 +1621,9 @@ class Booster(object):
         username: string
             Use the name to find the encryption key used for prediction result
 
+        decrypt: bool
+            When this is True, the predictions received from the enclave are decrypted using the user's symmetric key
+
         Returns
         -------
         prediction : numpy array
@@ -1639,7 +1662,7 @@ class Booster(object):
                     username=username))
 
                 enc_preds_serialized = response.predictions
-                length = response.num_preds
+                length = c_bst_ulong(response.num_preds)
 
                 preds = proto_to_pointer(enc_preds_serialized)
         else:
@@ -1871,6 +1894,8 @@ class Booster(object):
             Controls whether the split statistics are output.
         dump_format : string, optional
             Format of model dump. Can be 'text' or 'json'.
+        decrypt: bool
+            When this is True, the model dump received from the enclave is decrypted using the user's symmetric key
         """
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
