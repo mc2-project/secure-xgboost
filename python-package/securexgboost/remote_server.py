@@ -66,7 +66,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
     # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
         """
-        Calls CryptoUtils.add_client_key_with_certificate()
+        Calls add_client_key_with_certificate()
         """
         # Get encrypted symmetric key, signature, and certificate from request
         certificate = request.certificate
@@ -81,6 +81,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         return remote_pb2.Status(status=result)
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
+        """
+        Create DMatrix from encrypted file
+        """
         try:
             dmatrix_handle = server.XGDMatrixCreateFromEncryptedFile(
                     filenames=list(request.filenames),
@@ -96,6 +99,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return remote_pb2.Name(name=None)
 
     def rpc_XGBoosterSetParam(self, request, context):
+        """
+        Set booster parameter
+        """
         try:
             server.XGBoosterSetParam(
                     booster_handle=request.booster_handle,
@@ -111,6 +117,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return remote_pb2.Status(status=-1)
 
     def rpc_XGBoosterCreate(self, request, context):
+        """
+        Create a booster
+        """
         try:
             booster_handle = server.XGBoosterCreate(
                             cache=list(request.cache),
@@ -126,7 +135,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterUpdateOneIter(self, request, context):
         """
-        Start training
+        Update model for one iteration
         """
         try:
             server.XGBoosterUpdateOneIter(request.booster_handle,
@@ -143,7 +152,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterPredict(self, request, context):
         """
-        Signal to RPC server that client is ready to start
+        Get encrypted predictions
         """
         try:
             enc_preds, num_preds = server.XGBoosterPredict(request.booster_handle,
@@ -164,7 +173,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterSaveModel(self, request, context):
         """
-        Signal to RPC server that client is ready to start
+        Save model to encrypted file
         """
         try:
             server.XGBoosterSaveModel(request.booster_handle,
@@ -182,7 +191,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterLoadModel(self, request, context):
         """
-        Signal to RPC server that client is ready to start
+        Load model from encrypted file
         """
         try:
             server.XGBoosterLoadModel(request.booster_handle,
@@ -200,7 +209,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterDumpModelEx(self, request, context):
         """
-        Signal to RPC server that client is ready to start
+        Get encrypted model dump
         """
         try:
             length, sarr = server.XGBoosterDumpModelEx(request.booster_handle,
@@ -219,7 +228,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterDumpModelExWithFeatures(self, request, context):
         """
-        Signal to RPC server that client is ready to start
+        Get encrypted model dump with features
         """
         try:
             length, sarr = server.XGBoosterDumpModelExWithFeatures(request.booster_handle,
@@ -240,7 +249,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGBoosterGetModelRaw(self, request, context):
         """
-        Signal to RPC server that client is ready to start
+        Get encrypted raw model dump
         """
         try:
             length, sarr = server.XGBoosterGetModelRaw(request.booster_handle,
@@ -273,7 +282,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def rpc_XGDMatrixNumRow(self, request, context):
         """
-        Get number of columns in DMatrix
+        Get number of rows in DMatrix
         """
         try:
             ret = server.XGDMatrixNumRow(request.dmatrix_handle)
