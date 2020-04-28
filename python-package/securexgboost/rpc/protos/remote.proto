@@ -16,10 +16,10 @@ syntax = "proto3";
 
 import "ndarray.proto";
 
-package remote_attestation;
+package remote;
 
 // Interface exported by the server.
-service RemoteAttestation {
+service Remote {
   // Get attestation report
   // Status is a just a dummy argument and won't be used by the server
   rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}

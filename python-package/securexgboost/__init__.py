@@ -11,6 +11,7 @@ import os
 from .core import DMatrix, Booster, Enclave, CryptoUtils, set_user, RPCServer
 from .training import train #, cv
 from . import rabit                   # noqa
+from .remote_server import serve
 try:
     from .sklearn import XGBModel, XGBClassifier, XGBRegressor, XGBRanker
     from .sklearn import XGBRFClassifier, XGBRFRegressor
@@ -23,7 +24,7 @@ with open(VERSION_FILE) as f:
     __version__ = f.read().strip()
 
 __all__ = ['DMatrix', 'Booster', 'Enclave', 'CryptoUtils', 
-           'train', 'cv', 'set_user', 
+           'train', 'cv', 'set_user', "serve" 
            'XGBModel', 'XGBClassifier', 'XGBRegressor', 'XGBRanker',
            'XGBRFClassifier', 'XGBRFRegressor',
            'plot_importance', 'plot_tree', 'to_graphviz']

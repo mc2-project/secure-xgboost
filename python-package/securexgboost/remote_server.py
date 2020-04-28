@@ -18,8 +18,10 @@ import logging
 
 import grpc
 
-import remote_attestation_pb2
-import remote_attestation_pb2_grpc
+#  import rpc.remote_pb2
+#  import rpc.remote_pb2_grpc
+from .rpc import remote_pb2
+from .rpc import remote_pb2_grpc
 from rpc_utils import *
 import os
 import sys
@@ -33,7 +35,7 @@ c_bst_ulong = ctypes.c_uint64
 
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
-class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationServicer):
+class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     # FIXME implement the library call within class RPCServer
     def rpc_get_remote_report_with_pubkey(self, request, context):
@@ -47,7 +49,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         enclave_reference.get_remote_report_with_pubkey()
         pem_key, key_size, remote_report, remote_report_size = enclave_reference.get_report_attrs()
 
-        return remote_attestation_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
+        return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
     # FIXME implement the library call within class RPCServer
     def rpc_add_client_key(self, request, context):
@@ -63,7 +65,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         crypto_utils = xgb.CryptoUtils()
         result = crypto_utils.add_client_key(enc_sym_key, key_size, signature, sig_len)
 
-        return remote_attestation_pb2.Status(status=result)
+        return remote_pb2.Status(status=result)
 
     # FIXME implement the library call within class RPCServer
     def rpc_add_client_key_with_certificate(self, request, context):
@@ -80,7 +82,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         crypto_utils = xgb.CryptoUtils()
         result = crypto_utils.add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
 
-        return remote_attestation_pb2.Status(status=result)
+        return remote_pb2.Status(status=result)
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         try:
@@ -88,14 +90,14 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     filenames=list(request.filenames),
                     usernames=list(request.usernames),
                     silent=request.silent)
-            return remote_attestation_pb2.Name(name=dmatrix_handle)
+            return remote_pb2.Name(name=dmatrix_handle)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Name(name=None)
+            return remote_pb2.Name(name=None)
 
     def rpc_XGBoosterSetParam(self, request, context):
         try:
@@ -103,28 +105,28 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     booster_handle=request.booster_handle,
                     key=request.key,
                     value=request.value)
-            return remote_attestation_pb2.Status(status=0)
+            return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Status(status=-1)
+            return remote_pb2.Status(status=-1)
 
     def rpc_XGBoosterCreate(self, request, context):
         try:
             booster_handle = server.XGBoosterCreate(
                             cache=list(request.cache),
                             length=request.length)
-            return remote_attestation_pb2.Name(name=booster_handle)
+            return remote_pb2.Name(name=booster_handle)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
     
-            return remote_attestation_pb2.Name(name=None)
+            return remote_pb2.Name(name=None)
 
     def rpc_XGBoosterUpdateOneIter(self, request, context):
         """
@@ -134,14 +136,14 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             server.XGBoosterUpdateOneIter(request.booster_handle,
                     request.dtrain_handle,
                     request.iteration)
-            return remote_attestation_pb2.Status(status=0)
+            return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
             print("Error type: " + str(e[0]))
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Status(status=-1)
+            return remote_pb2.Status(status=-1)
 
     def rpc_XGBoosterPredict(self, request, context):
         """
@@ -154,7 +156,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     request.ntree_limit,
                     request.username)
             enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
-            return remote_attestation_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
+            return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -162,7 +164,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Predictions(predictions=None, num_preds=None, status=-1)
+            return remote_pb2.Predictions(predictions=None, num_preds=None, status=-1)
 
     def rpc_XGBoosterSaveModel(self, request, context):
         """
@@ -172,7 +174,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             server.XGBoosterSaveModel(request.booster_handle,
                     request.filename,
                     request.username)
-            return remote_attestation_pb2.Status(status=0)
+            return remote_pb2.Status(status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -180,7 +182,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Status(status=-1)
+            return remote_pb2.Status(status=-1)
 
     def rpc_XGBoosterLoadModel(self, request, context):
         """
@@ -190,7 +192,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             server.XGBoosterLoadModel(request.booster_handle,
                     request.filename,
                     request.username)
-            return remote_attestation_pb2.Status(status=0)
+            return remote_pb2.Status(status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -198,7 +200,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Status(status=-1)
+            return remote_pb2.Status(status=-1)
 
     def rpc_XGBoosterDumpModelEx(self, request, context):
         """
@@ -209,7 +211,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     request.fmap,
                     request.with_stats,
                     request.dump_format)
-            return remote_attestation_pb2.Dump(sarr=sarr, length=length, status=0)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -217,7 +219,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Dump(sarr=None, length=None, status=-1)
+            return remote_pb2.Dump(sarr=None, length=None, status=-1)
 
     def rpc_XGBoosterDumpModelExWithFeatures(self, request, context):
         """
@@ -230,7 +232,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
                     request.ftype,
                     request.with_stats,
                     request.dump_format)
-            return remote_attestation_pb2.Dump(sarr=sarr, length=length, status=0)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -238,7 +240,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Dump(sarr=None, length=None, status=-1)
+            return remote_pb2.Dump(sarr=None, length=None, status=-1)
 
     def rpc_XGBoosterGetModelRaw(self, request, context):
         """
@@ -247,7 +249,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         try:
             length, sarr = server.XGBoosterGetModelRaw(request.booster_handle,
                     request.username)
-            return remote_attestation_pb2.Dump(sarr=sarr, length=length, status=0)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
             e = sys.exc_info()
@@ -255,7 +257,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Dump(sarr=None, length=None, status=-1)
+            return remote_pb2.Dump(sarr=None, length=None, status=-1)
 
     def rpc_XGDMatrixNumCol(self, request, context):
         """
@@ -263,7 +265,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         try:
             ret = server.XGDMatrixNumCol(request.name)
-            return remote_attestation_pb2.Integer(value=ret)
+            return remote_pb2.Integer(value=ret)
 
         except Exception as e:
             e = sys.exc_info()
@@ -271,7 +273,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Integer(value=None)
+            return remote_pb2.Integer(value=None)
 
     def rpc_XGDMatrixNumRow(self, request, context):
         """
@@ -279,7 +281,7 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
         """
         try:
             ret = server.XGDMatrixNumRow(request.dmatrix_handle)
-            return remote_attestation_pb2.Integer(value=ret)
+            return remote_pb2.Integer(value=ret)
 
         except Exception as e:
             e = sys.exc_info()
@@ -287,11 +289,11 @@ class RemoteAttestationServicer(remote_attestation_pb2_grpc.RemoteAttestationSer
             print("Error value: " + str(e[1]))
             traceback.print_tb(e[2])
 
-            return remote_attestation_pb2.Integer(value=None)
+            return remote_pb2.Integer(value=None)
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    remote_attestation_pb2_grpc.add_RemoteAttestationServicer_to_server(RemoteAttestationServicer(), server)
+    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()

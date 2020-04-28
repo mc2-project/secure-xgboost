@@ -6,8 +6,8 @@ from __future__ import absolute_import
 
 import os
 import grpc
-import remote_attestation_pb2
-import remote_attestation_pb2_grpc
+from .rpc import remote_pb2
+from .rpc import remote_pb2_grpc
 import warnings
 import numpy as np
 from .core import Booster, STRING_TYPES, XGBoostError, CallbackEnv, EarlyStopException

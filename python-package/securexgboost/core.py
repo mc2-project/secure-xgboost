@@ -17,8 +17,8 @@ import sys
 import warnings
 
 import grpc
-import remote_attestation_pb2
-import remote_attestation_pb2_grpc
+from .rpc import remote_pb2
+from .rpc import remote_pb2_grpc
 
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
@@ -456,8 +456,8 @@ class DMatrix(object):
                 channel_addr = os.getenv("RA_CHANNEL_ADDR")
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
-                        stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                        response = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_attestation_pb2.DMatrixAttrs(
+                        stub = remote_pb2_grpc.RemoteStub(channel)
+                        response = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
                             filenames=data,
                             usernames=usernames,
                             silent=silent))
@@ -863,8 +863,8 @@ class DMatrix(object):
         """
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_XGDMatrixNumRow(remote_attestation_pb2.Name(
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
                     name=self.handle.value))
                 return response.value
         else:
@@ -883,8 +883,8 @@ class DMatrix(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_XGDMatrixNumCol(remote_attestation_pb2.Name(
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
                     name=self.handle.value))
                 return response.value
         else:
@@ -1037,8 +1037,8 @@ class Enclave(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_get_remote_report_with_pubkey(remote_attestation_pb2.Status(status=1))
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1))
             pem_key = response.pem_key
             key_size = response.key_size
             remote_report = response.remote_report
@@ -1238,8 +1238,8 @@ class CryptoUtils(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_add_client_key(remote_attestation_pb2.DataMetadata(
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_add_client_key(remote_pb2.DataMetadata(
                                     enc_sym_key=data,
                                     key_size=data_len,
                                     signature=signature,
@@ -1282,8 +1282,8 @@ class CryptoUtils(object):
         # If we're on the client
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_add_client_key_with_certificate(remote_attestation_pb2.DataMetadata(
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
                     certificate=certificate,
                     enc_sym_key=data,
                     key_size=data_len,
@@ -1373,9 +1373,9 @@ class Booster(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                stub = remote_pb2_grpc.RemoteStub(channel)
                 cache_handles = [d.handle.value for d in cache]
-                response = stub.rpc_XGBoosterCreate(remote_attestation_pb2.BoosterAttrs(
+                response = stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
                     cache=cache_handles,
                     length=len(cache)))
             self.handle = c_str(response.name)
@@ -1529,8 +1529,8 @@ class Booster(object):
             channel_addr = os.getenv("RA_CHANNEL_ADDR")
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
-                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.rpc_XGBoosterSetParam(remote_attestation_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)))
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)))
             else:
                 _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
@@ -1551,8 +1551,8 @@ class Booster(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_XGBoosterUpdateOneIter(remote_attestation_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration))
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration))
                 return response
         else:
             _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
@@ -1752,8 +1752,8 @@ class Booster(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_XGBoosterPredict(remote_attestation_pb2.PredictParams(booster_handle=self.handle.value,
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGBoosterPredict(remote_pb2.PredictParams(booster_handle=self.handle.value,
                     dmatrix_handle=data.handle.value,
                     option_mask=option_mask,
                     ntree_limit=ntree_limit,
@@ -1824,8 +1824,8 @@ class Booster(object):
             channel_addr = os.getenv("RA_CHANNEL_ADDR")
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
-                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.rpc_XGBoosterSaveModel(remote_attestation_pb2.SaveModelParams(
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParams(
                         booster_handle=self.handle.value,
                         filename=fname,
                         username=username))
@@ -1855,8 +1855,8 @@ class Booster(object):
         channel_addr = os.getenv("RA_CHANNEL_ADDR")
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                response = stub.rpc_XGBoosterGetModelRaw(remote_attestation_pb2.ModelRawParams(
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGBoosterGetModelRaw(remote_pb2.ModelRawParams(
                     booster_handle=self.handle.value,
                     username=username))
 
@@ -1895,8 +1895,8 @@ class Booster(object):
             channel_addr = os.getenv("RA_CHANNEL_ADDR")
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
-                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.rpc_XGBoosterLoadModel(remote_attestation_pb2.LoadModelParams(
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParams(
                         booster_handle=self.handle.value,
                         filename=fname,
                         username=username))
@@ -1972,8 +1972,8 @@ class Booster(object):
                         ftype = ['q'] * flen
                     else:
                         ftype = self.feature_types
-                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.rpc_XGBoosterDumpModelExWithFeatures(remote_attestation_pb2.DumpModelWithFeaturesParams(
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
                         booster_handle=self.handle.value,
                         flen=flen,
                         fname=fname,
@@ -2007,8 +2007,8 @@ class Booster(object):
             channel_addr = os.getenv("RA_CHANNEL_ADDR")
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
-                    stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
-                    response = stub.rpc_XGBoosterDumpModelEx(remote_attestation_pb2.DumpModelParams(
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParams(
                         booster_handle=self.handle.value,
                         fmap=fmap,
                         with_stats=with_stats,
