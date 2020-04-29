@@ -24,7 +24,7 @@ from .compat import (STRING_TYPES, PY3, DataFrame, MultiIndex, py_str,
                      PANDAS_INSTALLED, DataTable)
 from .libpath import find_lib_path
 
-
+libc = ctyes.CDLL("libc.so.6")
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
@@ -1720,7 +1720,7 @@ class Booster(object):
         ## TODO: how to join the argument
         p = create_string_buffer(100)
         libc.snprintf(p, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
-        data = p
+        data = pointer_to_proto(ctypes.cast(ctypes.pointer(p), pointer(ctypes.c_char)),100,ctypes.c_char);
         print("buffer to sign is this", p.raw)
 
         data_size = 100
