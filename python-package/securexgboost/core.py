@@ -1719,23 +1719,23 @@ class Booster(object):
         utils = CryptoUtils()
 
         ## TODO: how to join the argument
-        p = create_string_buffer(100)
-        data = ctypes.cast(p, ctypes.POINTER(ctypes.c_char));
-        libc.snprintf(data, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
-        print("buffer to sign is this", p.raw)
+        p = ctypes.create_string_buffer(100)
+        p_pointer = ctypes.cast(p, ctypes.POINTER(ctypes.c_char));
+        libc.snprintf(p_pointer, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
 
         data_size = 100
-        sig, sig_len = utils.sign_data(user.private_key, data, data_size, pointer = True)
+        sig, sig_len = utils.sign_data(user.private_key, p_pointer, data_size, pointer = True)
         sig = proto_to_pointer(sig)
         sig_len = ctypes.c_size_t(sig_len)
+        print("seg faulted right after line 1730 of core.py")
         _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
                                           ctypes.byref(preds),
-                                          c_str(username)),
+                                          c_str(username),
                                           sig,
-                                          sig_len)
+                                          sig_len))
 
         # _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
         #                                  ctypes.c_int(option_mask),
