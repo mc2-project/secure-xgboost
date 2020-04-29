@@ -342,7 +342,7 @@ int get_remote_report_with_pubkey(
   }
 #endif
   return ret;
-} 
+}
 
 /**
  * Attest the given remote report and accompanying data. It consists of the
@@ -1182,16 +1182,16 @@ XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
                                     size_t sig_len){
     API_BEGIN();
     CHECK_HANDLE();
-    // TODO Add signature checking 
-     
-    size_t data_len = strlen(name) + strlen(value) + 1 ; 
+    // TODO Add signature checking
+
+    size_t data_len = strlen(name) + strlen(value) + 1 ;
     uint8_t data[data_len + 1];
     memcpy((uint8_t *)data, name, strlen(name));
     data[strlen(name)] = (uint8_t) ',';
     memcpy((uint8_t *)data+strlen(name)+1,value,strlen(value));
-    data[data_len] = 0; 
+    data[data_len] = 0;
     bool verified = EnclaveContext::getInstance().verifySignatureWithUserName(data, data_len, signature, sig_len, (char *)username);
-    // TODO Add Multi User Verification + Add Verification for a list of signatures 
+    // TODO Add Multi User Verification + Add Verification for a list of signatures
     if(verified){
         static_cast<Booster*>(handle)->SetParam(name,value);
     }
@@ -1268,6 +1268,33 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
 #endif // __ENCLAVE__
   API_END();
 }
+
+XGB_DLL int XGBoosterPredict(BoosterHandle handle,
+                             DMatrixHandle dmat,
+                             int option_mask,
+                             unsigned ntree_limit,
+                             xgboost::bst_ulong *len,
+#ifdef __ENCLAVE__
+                            uint8_t **out_result,
+                            char* username,
+                            uint8_t *signature,
+                           size_t sig_len) {
+
+
+API_BEGIN();
+CHECK_HANDLE();
+char * buff = calloc(100,sizeof(char));
+snprintf(buff,100,"booster handle %x data handler %x option mask %d ntree_limit %u.",handle, dmat, option_mask,ntree_limit);
+bool verified = EnclaveContext::getInstance().verifySignatureWithUserName(data, 100, signature, sig_len, (char *)username);
+// TODO Add Multi User Verification + Add Verification for a list of signatures
+if(verified){
+  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
+}
+API_END();
+}
+
+
+
 
 // FIXME out_result should be bst_float
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
@@ -1512,12 +1539,12 @@ inline void XGBoostDumpModelImpl(
   unsigned char tag[CIPHER_TAG_SIZE];
   unsigned char key[CIPHER_KEY_SIZE];
 
-  //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer 
-  char *username; 
+  //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer
+  char *username;
   EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
-    encrypted = (unsigned char*) malloc(length * sizeof(char)); 
+    encrypted = (unsigned char*) malloc(length * sizeof(char));
 
     /* Encrypt */
     encrypt_symm(

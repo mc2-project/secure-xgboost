@@ -73,7 +73,7 @@ int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char
 int enclave_XGBoosterSetParamWithSig(BoosterHandle handle, const char* name, const char* value, const char* username, uint8_t *signature, size_t sig_len){
   LOG(DEBUG) << "Ecall: XGBoosterSetParamWithSig";
   check_enclave_ptr(handle);
-  return XGBoosterSetParamWithSig(handle, name, value, username, signature, sig_len); 
+  return XGBoosterSetParamWithSig(handle, name, value, username, signature, sig_len);
 }
 
 int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain) {
@@ -204,6 +204,14 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
   LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
   check_enclave_ptr(handle);
   return XGBoosterLoadModelFromBuffer(handle, buf, len, username);
+}
+
+int enclave_XGBoosterPredictWithSig(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username, uint8_t *signature,
+size_t sig_len) {
+  LOG(DEBUG) << "Ecall: XGBoosterPredict";
+  check_enclave_ptr(handle);
+  check_enclave_ptr(dmat);
+  return XGBoosterPredictWithSig(handle, dmat, option_mask, ntree_limit, len, out_result, username, signature, sig_len);
 }
 
 int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username) {

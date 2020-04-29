@@ -249,6 +249,7 @@ def proto_to_pointer(proto):
     Returns:
         pointer :  ctypes.POINTER(ctypes.u_int)
     """
+
     ndarray = proto_to_ndarray(proto)
     # FIXME make the ctype POINTER type configurable
     pointer = ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
@@ -1191,7 +1192,7 @@ class CryptoUtils(object):
 
         return encrypted_data, encrypted_data_size_as_int
 
-    def sign_data(self, keyfile, data, data_size):
+    def sign_data(self, keyfile, data, data_size, string_buf = False):
         """
         Parameters
         ----------
@@ -1489,17 +1490,16 @@ class Booster(object):
             params = params.items()
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
-        
+
         if "current_user" in globals():
             user = globals()["current_user"]
         else:
             raise ValueError("Please set your user with User.set_user function")
 
         for key, val in params:
-
             sig, sig_len = user.sign_statement(key+","+str(val))
             _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len);
-            ## send it with signatures 
+            ## send it with signatures
             # _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
     def update(self, dtrain, iteration, fobj=None):
@@ -1691,7 +1691,8 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"].username
+            user = globals()["current_user"]
+            username = user.username
         if username is None:
             raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         option_mask = 0x00
@@ -1711,12 +1712,33 @@ class Booster(object):
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
-        _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
+
+        utils = CryptoUtils()
+
+        ## TODO: how to join the argument
+        p = create_string_buffer(100)
+        libc.snprintf(p, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
+        data = p
+        print("buffer to sign is this", p.raw)
+
+        data_size = 100
+        sig, sig_len = utils.sign_data(user.private_key, data, data_size)
+
+        _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
                                           ctypes.byref(preds),
-                                          c_str(username)))
+                                          c_str(username)),
+                                          sig,
+                                          sig_len)
+
+        # _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
+        #                                  ctypes.c_int(option_mask),
+        #                                  ctypes.c_uint(ntree_limit),
+        #                                  ctypes.byref(length),
+        #                                  ctypes.byref(preds),
+        #                                  c_str(username)))
 
         #  preds = ctypes2numpy(preds, length.value, np.float32)
         #  if pred_leaf:

@@ -901,7 +901,7 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
-                                    const char *name, 
+                                    const char *name,
                                     const char *value,
                                     const char *username,
                                     uint8_t *signature,
@@ -931,6 +931,18 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
                                  xgboost::bst_ulong len,
                                  const char** out_str) {
     safe_ecall(enclave_XGBoosterEvalOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dmats, evnames, len, (char**) out_str));
+}
+
+XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
+                             DMatrixHandle dmat,
+                             int option_mask,
+                             unsigned ntree_limit,
+                             xgboost::bst_ulong *len,
+                             uint8_t **out_result,
+                           char* username,
+                           uint8_t *signature,
+                           size_t sig_len) {
+    safe_ecall(enclave_XGBoosterPredictWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result, username, signature, sig_len));
 }
 
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
@@ -1371,7 +1383,7 @@ XGB_DLL int sign_data(char *keyfile, uint8_t* data, size_t data_size, uint8_t* s
 
   mbedtls_entropy_init( &m_entropy_context );
   mbedtls_pk_init( &pk );
-  mbedtls_ctr_drbg_init( &m_ctr_drbg_context ); 
+  mbedtls_ctr_drbg_init( &m_ctr_drbg_context );
 
   unsigned char hash[32];
   int ret = 1;
@@ -1577,7 +1589,7 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
             exit(1);
         }
         std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
-        myfile 
+        myfile
             << index << ","
             << total << ","
             << dmlc::data::base64_encode(iv, CIPHER_IV_SIZE) << ","

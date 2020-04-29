@@ -161,7 +161,7 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
  */
 XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
                                     int silent,
-                                    DMatrixHandle *out); 
+                                    DMatrixHandle *out);
 
 #if defined(__SGX__)
 /*!
@@ -453,6 +453,24 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
                                  const char *evnames[],
                                  bst_ulong len,
                                  const char **out_result);
+
+XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
+                            DMatrixHandle dmat,
+                            int option_mask,
+                            unsigned ntree_limit,
+                            bst_ulong *out_len,
+#ifdef __SGX__
+                            uint8_t **out_result,
+                            char* username,
+                            uint8_t *signature,
+                            size_t sig_len);
+#else
+                            const float **out_result);
+#endif
+
+
+
+
 /*!
  * \brief make prediction based on dmat
  * \param handle handle
@@ -648,7 +666,7 @@ XGB_DLL int XGBoosterLoadRabitCheckpoint(
  */
 XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
-#if defined(__SGX__) 
+#if defined(__SGX__)
 XGB_DLL int get_remote_report_with_pubkey(
     uint8_t** pem_key,
     size_t* key_size,
