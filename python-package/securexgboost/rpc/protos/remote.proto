@@ -118,15 +118,17 @@ message DataMetadata {
 
 // Params for the constructor of a DMatrix
 message DMatrixAttrs {
-  repeated string filenames = 1;
-  repeated string usernames = 2;
-  uint32 silent = 3;
+    repeated string filenames = 1;
+    repeated string usernames = 2;
+    uint32 silent = 3;
+    string username = 4;
 }
 
 // Params for the constructor of a Booster
 message BoosterAttrs {
-  repeated string cache = 1;
-  uint64 length = 2;
+    repeated string cache = 1;
+    uint64 length = 2;
+    string username = 3;
 }
 
 // Booster parameter
@@ -134,6 +136,7 @@ message BoosterParam {
     string booster_handle = 1;
     string key = 2;
     string value = 3;
+    string username = 4;
 }
 
 // Params for training
@@ -141,6 +144,7 @@ message BoosterUpdateParams {
     string booster_handle = 1;
     string dtrain_handle = 2;
     uint32 iteration = 3;
+    string username = 4;
 }
 
 // Params for eval
@@ -148,6 +152,7 @@ message BoosterEvalSetParams {
     string handle = 1;
     repeated Pair evals = 2;
     uint32 iteration = 3;
+    string username = 4;
 }
 
 // Params for prediction
@@ -179,6 +184,7 @@ message DumpModelParams {
     string fmap = 2;
     uint32 with_stats = 3;
     string dump_format = 4;
+    string username = 5;
 }
 
 // Params for dump model with features
@@ -189,6 +195,7 @@ message DumpModelWithFeaturesParams {
     repeated string ftype = 4;
     uint32 with_stats = 5;
     string dump_format = 6;
+    string username = 7;
 }
 
 // Params for dump model
@@ -211,9 +218,11 @@ message Pair {
 }
 
 // Object handle
+// FIXME: username not required for all names
 message Name {
-  // Name that the server assigned the handle
-  string name = 1;
+    // Name that the server assigned the handle
+    string name = 1;
+    string username = 2;
 }
 
 // Integer
@@ -223,18 +232,18 @@ message Integer {
 
 // Encrypted predictions served by enclave, to be decrypted at client
 message Predictions {
-  // Encrypted predictions
-  numproto.protobuf.NDArray predictions = 1;
+    // Encrypted predictions
+    numproto.protobuf.NDArray predictions = 1;
 
-  // Length of predictions
-  uint32 num_preds = 2;
-    
-  // Status
-  uint32 status = 3;
+    // Length of predictions
+    uint32 num_preds = 2;
+
+    // Status
+    uint32 status = 3;
 }
 
 // Params for distributed training
 message ClusterParams {
-  // Number of nodes in cluster
-  uint32 num_workers = 1;  
+    // Number of nodes in cluster
+    uint32 num_workers = 1;  
 }

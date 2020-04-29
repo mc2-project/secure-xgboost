@@ -469,7 +469,8 @@ class DMatrix(object):
                         response = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
                             filenames=data,
                             usernames=usernames,
-                            silent=silent))
+                            silent=silent,
+                            username=globals()["current_user"]))
                         handle = c_str(response.name)
                 else:
                     filenames = from_pystr_to_cstr(data)
@@ -874,7 +875,8 @@ class DMatrix(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 response = stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
-                    name=self.handle.value))
+                    name=self.handle.value,
+                    username=globals()["current_user"]))
                 return response.value
         else:
             ret = c_bst_ulong()
@@ -894,7 +896,8 @@ class DMatrix(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 response = stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
-                    name=self.handle.value))
+                    name=self.handle.value,
+                    username=globals()["current_user"]))
                 return response.value
         else:
             ret = c_bst_ulong()
@@ -1272,7 +1275,8 @@ class Booster(object):
                 cache_handles = [d.handle.value for d in cache]
                 response = stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
                     cache=cache_handles,
-                    length=len(cache)))
+                    length=len(cache),
+                    username=globals()["current_user"]))
             self.handle = c_str(response.name)
         else:
             dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
@@ -1425,7 +1429,7 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)))
+                    response = stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"]))
             else:
                 _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
@@ -1447,7 +1451,7 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration))
+                response = stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"]))
                 return response
         else:
             _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
@@ -1920,7 +1924,8 @@ class Booster(object):
                         fname=fname,
                         ftype=ftype,
                         with_stats=with_stats,
-                        dump_format=dump_format))
+                        dump_format=dump_format,
+                        username=globals()["current_user"]))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
@@ -1953,7 +1958,8 @@ class Booster(object):
                         booster_handle=self.handle.value,
                         fmap=fmap,
                         with_stats=with_stats,
-                        dump_format=dump_format))
+                        dump_format=dump_format,
+                        username=globals()["current_user"]))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
@@ -2266,7 +2272,13 @@ class Booster(object):
 ##########################################
 
 class RemoteAPI:
-    def XGBoosterPredict(booster_handle, dmatrix_handle, option_mask, ntree_limit, username):
+    def XGBoosterPredict(request):
+        booster_handle = request.booster_handle
+        dmatrix_handle = request.dmatrix_handle
+        option_mask = request.option_mask
+        ntree_limit = request.ntree_limit
+        username = request.username
+
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
         _check_call(_LIB.XGBoosterPredict(
@@ -2279,13 +2291,6 @@ class RemoteAPI:
             c_str(username)))
         return preds, length.value
 
-
-    # def XGBoosterUpdateOneIter(booster_handle, dtrain_handle, iteration):
-    #     _check_call(_LIB.XGBoosterUpdateOneIter(
-    #         c_str(booster_handle),
-    #         ctypes.c_int(iteration),
-    #         c_str(dtrain_handle)))
-
     def XGBoosterUpdateOneIter(request):
         booster_handle = request.booster_handle
         dtrain_handle = request.dtrain_handle
@@ -2297,7 +2302,10 @@ class RemoteAPI:
             c_str(dtrain_handle)))
 
 
-    def XGBoosterCreate(cache, length):
+    def XGBoosterCreate(request):
+        cache = list(request.cache)
+        length = request.length
+
         bst_handle = ctypes.c_char_p()
         _check_call(_LIB.XGBoosterCreate(
             from_pystr_to_cstr(cache),
@@ -2306,7 +2314,11 @@ class RemoteAPI:
         return bst_handle.value.decode('utf-8')
 
 
-    def XGBoosterSetParam(booster_handle, key, value):
+    def XGBoosterSetParam(request):
+        booster_handle = request.booster_handle
+        key = request.key
+        value = request.value
+
         bst_handle = c_str(booster_handle)
         _check_call(_LIB.XGBoosterSetParam(
             c_str(booster_handle),
@@ -2314,7 +2326,11 @@ class RemoteAPI:
             c_str(value)))
 
 
-    def XGDMatrixCreateFromEncryptedFile(filenames, usernames, silent):
+    def XGDMatrixCreateFromEncryptedFile(request):
+        filenames = list(request.filenames)
+        usernames = list(request.usernames)
+        silent = request.silent
+
         dmat_handle = ctypes.c_char_p()
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
             from_pystr_to_cstr(filenames),
@@ -2324,20 +2340,34 @@ class RemoteAPI:
             ctypes.byref(dmat_handle)))
         return dmat_handle.value.decode('utf-8')
 
-    def XGBoosterSaveModel(booster_handle, filename, username):
+
+    def XGBoosterSaveModel(request):
+        booster_handle = request.booster_handle
+        filename = request.filename
+        username = request.username
+
         _check_call(_LIB.XGBoosterSaveModel(
             c_str(booster_handle),
             c_str(filename),
             c_str(username)))
 
-    def XGBoosterLoadModel(booster_handle, filename, username):
+    def XGBoosterLoadModel(request):
+        booster_handle = request.booster_handle
+        filename = request.filename
+        username = request.username
+
         _check_call(_LIB.XGBoosterLoadModel(
             c_str(booster_handle),
             c_str(filename),
             c_str(username)))
 
     # TODO test this
-    def XGBoosterDumpModelEx(booster_handle, fmap, with_stats, dump_format):
+    def XGBoosterDumpModelEx(request):
+        booster_handle = request.booster_handle
+        fmap = request.fmap
+        with_stats = request.with_stats
+        dump_format = request.dump_format
+
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
         _check_call(_LIB.XGBoosterDumpModelEx(
@@ -2349,7 +2379,14 @@ class RemoteAPI:
             ctypes.byref(sarr)))
         return length.value, from_cstr_to_pystr(sarr, length)
 
-    def XGBoosterDumpModelExWithFeatures(booster_handle, flen, fname, ftype, with_stats, dump_format):
+    def XGBoosterDumpModelExWithFeatures(request):
+        booster_handle = request.booster_handle
+        flen = request.flen
+        fname = request.fname
+        ftype = request.ftype
+        with_stats = request.with_stats
+        dump_format = request.dump_format
+
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
         _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
@@ -2364,7 +2401,10 @@ class RemoteAPI:
         return length.value, from_cstr_to_pystr(sarr, length)
 
     # TODO test this
-    def XGBoosterGetModelRaw(booster_handle, username):
+    def XGBoosterGetModelRaw(request):
+        booster_handle = request.booster_handle
+        username = request.username
+
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
         _check_call(_LIB.XGBoosterGetModelRaw(
@@ -2372,14 +2412,18 @@ class RemoteAPI:
             c_str(username)))
         return length.value, from_cstr_to_pystr(sarr, length)
 
-    def XGDMatrixNumCol(dmatrix_handle):
+    def XGDMatrixNumCol(request):
+        dmatrix_handle = request.name
+
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumCol(
             c_str(dmatrix_handle),
             ctypes.byref(ret)))
         return ret.value
 
-    def XGDMatrixNumRow(dmatrix_handle):
+    def XGDMatrixNumRow(request):
+        dmatrix_handle = request.name
+
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumRow(
             c_str(dmatrix_handle),

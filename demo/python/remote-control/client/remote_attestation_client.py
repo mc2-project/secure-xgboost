@@ -12,10 +12,10 @@ import os
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../../"
-
+username = "user1"
 def run(channel_addr, sym_key_file, pub_key_file):
 
-    xgb.init_user("user1", sym_key_file, pub_key_file)
+    xgb.init_user(username, sym_key_file, pub_key_file)
 
     # Remote attestation
     print("Remote attestation")
@@ -28,14 +28,14 @@ def run(channel_addr, sym_key_file, pub_key_file):
     enclave_reference.add_key()
 
     print("Creating training matrix")
-    dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
+    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
     if not dtrain:
         print("Error creating dtrain")
         return
     print("dtrain: " + dtrain.handle.value.decode("utf-8"))
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix({"user1": HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
+    dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
     if not dtest:
         print("Error creating dtest")
         return
@@ -63,10 +63,10 @@ def run(channel_addr, sym_key_file, pub_key_file):
 
     print("booster: " + booster.handle.value.decode("utf-8"))
 
-    booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
+    booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
 
     booster = xgb.Booster(cache=[dtrain, dtest])
-    booster.load_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", "user1")
+    booster.load_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
 
     # Get encrypted predictions
     print("\n\nModel Predictions: ")
