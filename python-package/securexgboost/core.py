@@ -1498,7 +1498,7 @@ class Booster(object):
 
         for key, val in params:
             sig, sig_len = user.sign_statement(key+","+str(val))
-            _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len);
+            _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len)
             ## send it with signatures
             # _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
