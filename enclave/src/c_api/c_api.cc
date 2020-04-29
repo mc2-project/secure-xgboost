@@ -1279,7 +1279,9 @@ XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
                             char* username,
                             uint8_t *signature,
                            size_t sig_len) {
-
+#else
+                            const bst_float **out_result) {
+#endif
 
 API_BEGIN();
 CHECK_HANDLE();
