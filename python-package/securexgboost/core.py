@@ -2280,7 +2280,17 @@ class RemoteAPI:
         return preds, length.value
 
 
-    def XGBoosterUpdateOneIter(booster_handle, dtrain_handle, iteration):
+    # def XGBoosterUpdateOneIter(booster_handle, dtrain_handle, iteration):
+    #     _check_call(_LIB.XGBoosterUpdateOneIter(
+    #         c_str(booster_handle),
+    #         ctypes.c_int(iteration),
+    #         c_str(dtrain_handle)))
+
+    def XGBoosterUpdateOneIter(request):
+        booster_handle = request.booster_handle
+        dtrain_handle = request.dtrain_handle
+        iteration = request.iteration
+
         _check_call(_LIB.XGBoosterUpdateOneIter(
             c_str(booster_handle),
             ctypes.c_int(iteration),

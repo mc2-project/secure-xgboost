@@ -32,10 +32,73 @@ from .core import RemoteAPI as server
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
+
+import threading
+import types
+
+class Command(object):
+    """
+    Commands submitted for execution to remote server
+    """
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self._func = None
+        self._params = None
+        self._ret = None
+        self._usernames = []
+        self._retrieved = []
+
+    def submit(self, func, params, username):
+        if self._func is None:
+            self._func = func
+            self._params = params
+        self._usernames.append(username)
+
+    def is_ready(self):
+        for user in globals()["usernames"]:
+            if user not in self._usernames:
+                return False
+        return True
+
+    def invoke(self):
+        self._ret = self._func(self._params)
+
+    def result(self, username):
+        self._retrieved.append(username)
+        ret = self._ret
+        if self.is_complete():
+            self.reset()
+        return ret
+
+    def is_complete(self):
+        for user in globals()["usernames"]:
+            if user not in self._retrieved:
+                return False
+        return True
+
+
+
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
-    def __init__(self, enclave):
+    def __init__(self, enclave, condition, command):
         self.enclave = enclave
+        self.condition = condition
+        self.command = command
+
+    def _synchronize(self, func, params, username):
+        self.condition.acquire() 
+        self.command.submit(func, params, username)
+        if self.command.is_ready():
+            self.command.invoke()
+            ret = self.command.result(username)
+            self.condition.notifyAll()
+        else:
+            self.condition.wait()
+            ret = self.command.result(username)
+        self.condition.release()
+        return ret
 
     # FIXME implement the library call within class RemoteAPI
     def rpc_get_remote_report_with_pubkey(self, request, context):
@@ -138,9 +201,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Update model for one iteration
         """
         try:
-            server.XGBoosterUpdateOneIter(request.booster_handle,
-                    request.dtrain_handle,
-                    request.iteration)
+            _ = self._synchronize(server.XGBoosterUpdateOneIter, request, "user1")
             return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
@@ -296,9 +357,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Integer(value=None)
 
-def serve(enclave):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave), server)
+def serve(enclave, num_workers=10):
+    condition = threading.Condition()
+    command = Command()
+    globals()["usernames"] = ["user1"]
+
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
+    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
