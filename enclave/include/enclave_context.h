@@ -32,7 +32,7 @@ class EnclaveContext {
 
     // map user name to public key
     std::unordered_map<std::string, std::vector<uint8_t>> client_public_keys;
-
+    std::unordered_map<std::string, int> client_cert_len;
     //TODO undo/modified hard coding all the expected users
     std::string users[2] = {"user1", "user2"};
 
@@ -106,13 +106,13 @@ class EnclaveContext {
       mbedtls_x509_crt user_cert;
       mbedtls_x509_crt_init(&user_cert);
       if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
-                   cert_len)) != 0) {
+                   client_cert_len[CharPtrToString(username)])) != 0) {
          LOG(INFO) << "verification failed - Could not read user certificate";
          LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
          return false;
       }
 
-      _pk_context = user_cert.pk; 
+      _pk_context = user_cert.pk;
 
       if(!mbedtls_pk_can_do(&_pk_context, MBEDTLS_PK_RSA)) {
         LOG(INFO) << "verification failed - Key is not an RSA key";
@@ -378,6 +378,7 @@ class EnclaveContext {
       // TODO verify that user certificate's public key has the same length as the secure enclave public key
       std::vector<uint8_t> user_public_key(cert, cert + cert_len);
       client_public_keys.insert({user_nam, user_public_key});
+      client_cert_len.insert({user_nam, cert_len});
 
 
       LOG(INFO) << "verifiation succeded - user added";
