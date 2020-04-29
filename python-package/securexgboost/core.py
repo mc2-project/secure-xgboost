@@ -1498,6 +1498,8 @@ class Booster(object):
 
         for key, val in params:
             sig, sig_len = user.sign_statement(key+","+str(val))
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
             _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len))
             ## send it with signatures
             # _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
@@ -1723,7 +1725,8 @@ class Booster(object):
 
         data_size = 100
         sig, sig_len = utils.sign_data(user.private_key, data, data_size)
-
+        sig = proto_to_pointer(sig)
+        sig_len = ctypes.c_size_t(sig_len)
         _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
