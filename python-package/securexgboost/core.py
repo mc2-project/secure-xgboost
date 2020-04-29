@@ -1720,7 +1720,7 @@ class Booster(object):
         ## TODO: how to join the argument
         p = create_string_buffer(100)
         libc.snprintf(p, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
-        data = pointer_to_proto(ctypes.cast(ctypes.POINTER(p), ctypes.POINTER(ctypes.c_char)),100,ctypes.c_char);
+        data = pointer_to_proto(ctypes.cast(p, ctypes.POINTER(ctypes.c_char)),100,ctypes.c_char);
         print("buffer to sign is this", p.raw)
 
         data_size = 100
