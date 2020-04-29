@@ -1192,7 +1192,7 @@ class CryptoUtils(object):
 
         return encrypted_data, encrypted_data_size_as_int
 
-    def sign_data(self, keyfile, data, data_size, string_buf = False):
+    def sign_data(self, keyfile, data, data_size, pointer = False):
         """
         Parameters
         ----------
@@ -1209,7 +1209,8 @@ class CryptoUtils(object):
         keyfile = ctypes.c_char_p(str.encode(keyfile))
 
         # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
-        data = proto_to_pointer(data)
+        if (not pointer):
+            data = proto_to_pointer(data)
         data_size = ctypes.c_size_t(data_size)
 
         # Allocate memory to store the signature and sig_len
@@ -1720,11 +1721,11 @@ class Booster(object):
         ## TODO: how to join the argument
         p = create_string_buffer(100)
         libc.snprintf(p, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
-        data = pointer_to_proto(ctypes.cast(p, ctypes.POINTER(ctypes.c_char)),100,ctypes.c_char);
+        data = ctypes.cast(p, ctypes.POINTER(ctypes.c_char));
         print("buffer to sign is this", p.raw)
 
         data_size = 100
-        sig, sig_len = utils.sign_data(user.private_key, data, data_size)
+        sig, sig_len = utils.sign_data(user.private_key, data, data_size, pointer = True)
         sig = proto_to_pointer(sig)
         sig_len = ctypes.c_size_t(sig_len)
         _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
