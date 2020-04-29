@@ -102,13 +102,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         self.condition.release()
         return ret
 
-    # FIXME implement the library call within class RemoteAPI
     def rpc_get_remote_report_with_pubkey(self, request, context):
         """
-        Calls get_remote_report_with_public_key()
+        Calls get_remote_report_with_pubkey()
         """
         # Get report from enclave
-        pem_key, key_size, remote_report, remote_report_size = self.enclave.get_report()
+        pem_key, key_size, remote_report, remote_report_size = server.get_remote_report_with_pubkey(request)
 
         return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 

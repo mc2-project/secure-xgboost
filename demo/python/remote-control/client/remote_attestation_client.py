@@ -20,8 +20,7 @@ def run(channel_addr, sym_key_file, pub_key_file):
     # Remote attestation
     print("Remote attestation")
     enclave_reference = xgb.Enclave()
-    enclave_reference.get_report()
-    # enclave_reference.verify_report()
+    enclave_reference.attest(verify=False)
     print("Report successfully verified")
 
     print("Send private key to enclave")
@@ -64,9 +63,6 @@ def run(channel_addr, sym_key_file, pub_key_file):
     print("booster: " + booster.handle.value.decode("utf-8"))
 
     booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
-
-    booster = xgb.Booster(cache=[dtrain, dtest])
-    booster.load_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
 
     # Get encrypted predictions
     print("\n\nModel Predictions: ")
