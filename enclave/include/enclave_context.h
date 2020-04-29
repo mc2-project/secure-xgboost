@@ -102,13 +102,17 @@ class EnclaveContext {
         return false;
       }
 
-      char* pkey = (char *)(&((client_public_keys[CharPtrToString(username)])[0]));
-
-      if((ret = mbedtls_pk_parse_public_key(&_pk_context, (const unsigned char*) pkey, strlen(pkey) + 1)) != 0) {
-        LOG(INFO) << "verification failed - Could not read key";
-        LOG(INFO) << "verification failed - mbedtls_pk_parse_public_keyfile returned" << ret;
-        return false;
+      char* cert = (char *)(&((client_public_keys[CharPtrToString(username)])[0]));
+      mbedtls_x509_crt user_cert;
+      mbedtls_x509_crt_init(&user_cert);
+      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
+                   cert_len)) != 0) {
+         LOG(INFO) << "verification failed - Could not read user certificate";
+         LOG(INFO) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+         return false;
       }
+
+      _pk_context = user_cert.pk; 
 
       if(!mbedtls_pk_can_do(&_pk_context, MBEDTLS_PK_RSA)) {
         LOG(INFO) << "verification failed - Key is not an RSA key";
