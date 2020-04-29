@@ -1269,7 +1269,7 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
   API_END();
 }
 
-XGB_DLL int XGBoosterPredict(BoosterHandle handle,
+XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
@@ -1285,7 +1285,7 @@ API_BEGIN();
 CHECK_HANDLE();
 char * buff = calloc(100,sizeof(char));
 snprintf(buff,100,"booster handle %x data handler %x option mask %d ntree_limit %u.",handle, dmat, option_mask,ntree_limit);
-bool verified = EnclaveContext::getInstance().verifySignatureWithUserName(data, 100, signature, sig_len, (char *)username);
+bool verified = EnclaveContext::getInstance().verifySignatureWithUserName(buff, 100, signature, sig_len, (char *)username);
 // TODO Add Multi User Verification + Add Verification for a list of signatures
 if(verified){
   return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
