@@ -151,9 +151,9 @@ def _load_lib():
         raise XGBoostError(
             'XGBoost Library ({}) could not be loaded.\n'.format(libname) +
             'Likely causes:\n' +
-            '  * OpenMP runtime is not installed ' +
-            '(vcomp140.dll or libgomp-1.dll for Windows, ' +
-            'libgomp.so for UNIX-like OSes)\n' +
+            # '  * OpenMP runtime is not installed ' +
+            # '(vcomp140.dll or libgomp-1.dll for Windows, ' +
+            # 'libgomp.so for UNIX-like OSes)\n' +
             '  * You are running 32-bit Python on a 64-bit OS\n' +
             'Error message(s): {}\n'.format(os_error_list))
     lib.XGBGetLastError.restype = ctypes.c_char_p
@@ -627,120 +627,125 @@ class DMatrix(object):
             # _check_call(_LIB.XGDMatrixFree(self.handle))
             self.handle = None
 
-    def get_float_info(self, field):
-        """Get float property from the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def get_float_info(self, field):
+    #     """Get float property from the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     Returns
+    #     -------
+    #     info : array
+    #         a numpy array of float information of the data
+    #     """
+    #     length = c_bst_ulong()
+    #     ret = ctypes.POINTER(ctypes.c_float)()
+    #     _check_call(_LIB.XGDMatrixGetFloatInfo(self.handle,
+    #                                            c_str(field),
+    #                                            ctypes.byref(length),
+    #                                            ctypes.byref(ret)))
+    # 
+    #     return ctypes2numpy(ret, length.value, np.float32)
 
-        Parameters
-        ----------
-        field: str
-            The field name of the information
+    # TODO(rishabh): Enable this API with encryption
+    # def get_uint_info(self, field):
+    #     """Get unsigned integer property from the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     Returns
+    #     -------
+    #     info : array
+    #         a numpy array of unsigned integer information of the data
+    #     """
+    #     length = c_bst_ulong()
+    #     ret = ctypes.POINTER(ctypes.c_uint)()
+    #     _check_call(_LIB.XGDMatrixGetUIntInfo(self.handle,
+    #                                           c_str(field),
+    #                                           ctypes.byref(length),
+    #                                           ctypes.byref(ret)))
+    #     return ctypes2numpy(ret, length.value, np.uint32)
 
-        Returns
-        -------
-        info : array
-            a numpy array of float information of the data
-        """
-        length = c_bst_ulong()
-        ret = ctypes.POINTER(ctypes.c_float)()
-        _check_call(_LIB.XGDMatrixGetFloatInfo(self.handle,
-                                               c_str(field),
-                                               ctypes.byref(length),
-                                               ctypes.byref(ret)))
+    # TODO(rishabh): Enable this API with encryption
+    # def set_float_info(self, field, data):
+    #     """Set float type property into the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     data: numpy array
+    #         The array of data to be set
+    #     """
+    #     if getattr(data, 'base', None) is not None and \
+    #        data.base is not None and isinstance(data, np.ndarray) \
+    #        and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
+    #         self.set_float_info_npy2d(field, data)
+    #         return
+    #     c_data = c_array(ctypes.c_float, data)
+    #     _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
+    #                                            c_str(field),
+    #                                            c_data,
+    #                                            c_bst_ulong(len(data))))
 
-        return ctypes2numpy(ret, length.value, np.float32)
+    # TODO(rishabh): Enable this API with encryption
+    # def set_float_info_npy2d(self, field, data):
+    #     """Set float type property into the DMatrix
+    #        for numpy 2d array input
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     data: numpy array
+    #         The array of data to be set
+    #     """
+    #     if getattr(data, 'base', None) is not None and \
+    #        data.base is not None and isinstance(data, np.ndarray) \
+    #        and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
+    #         warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
+    #                       "because it will generate extra copies and increase memory consumption")
+    #         data = np.array(data, copy=True, dtype=np.float32)
+    #     else:
+    #         data = np.array(data, copy=False, dtype=np.float32)
+    #     c_data = data.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    #     _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
+    #                                            c_str(field),
+    #                                            c_data,
+    #                                            c_bst_ulong(len(data))))
 
-    def get_uint_info(self, field):
-        """Get unsigned integer property from the DMatrix.
-
-        Parameters
-        ----------
-        field: str
-            The field name of the information
-
-        Returns
-        -------
-        info : array
-            a numpy array of unsigned integer information of the data
-        """
-        length = c_bst_ulong()
-        ret = ctypes.POINTER(ctypes.c_uint)()
-        _check_call(_LIB.XGDMatrixGetUIntInfo(self.handle,
-                                              c_str(field),
-                                              ctypes.byref(length),
-                                              ctypes.byref(ret)))
-        return ctypes2numpy(ret, length.value, np.uint32)
-
-    def set_float_info(self, field, data):
-        """Set float type property into the DMatrix.
-
-        Parameters
-        ----------
-        field: str
-            The field name of the information
-
-        data: numpy array
-            The array of data to be set
-        """
-        if getattr(data, 'base', None) is not None and \
-           data.base is not None and isinstance(data, np.ndarray) \
-           and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
-            self.set_float_info_npy2d(field, data)
-            return
-        c_data = c_array(ctypes.c_float, data)
-        _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
-                                               c_str(field),
-                                               c_data,
-                                               c_bst_ulong(len(data))))
-
-    def set_float_info_npy2d(self, field, data):
-        """Set float type property into the DMatrix
-           for numpy 2d array input
-
-        Parameters
-        ----------
-        field: str
-            The field name of the information
-
-        data: numpy array
-            The array of data to be set
-        """
-        if getattr(data, 'base', None) is not None and \
-           data.base is not None and isinstance(data, np.ndarray) \
-           and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
-            warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
-                          "because it will generate extra copies and increase memory consumption")
-            data = np.array(data, copy=True, dtype=np.float32)
-        else:
-            data = np.array(data, copy=False, dtype=np.float32)
-        c_data = data.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-        _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
-                                               c_str(field),
-                                               c_data,
-                                               c_bst_ulong(len(data))))
-
-    def set_uint_info(self, field, data):
-        """Set uint type property into the DMatrix.
-
-        Parameters
-        ----------
-        field: str
-            The field name of the information
-
-        data: numpy array
-            The array of data to be set
-        """
-        if getattr(data, 'base', None) is not None and \
-           data.base is not None and isinstance(data, np.ndarray) \
-           and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
-            warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
-                          "because it will generate extra copies and increase memory consumption")
-            data = np.array(data, copy=True, dtype=ctypes.c_uint)
-        else:
-            data = np.array(data, copy=False, dtype=ctypes.c_uint)
-        _check_call(_LIB.XGDMatrixSetUIntInfo(self.handle,
-                                              c_str(field),
-                                              c_array(ctypes.c_uint, data),
-                                              c_bst_ulong(len(data))))
+    # TODO(rishabh): Enable this API with encryption
+    # def set_uint_info(self, field, data):
+    #     """Set uint type property into the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     data: numpy array
+    #         The array of data to be set
+    #     """
+    #     if getattr(data, 'base', None) is not None and \
+    #        data.base is not None and isinstance(data, np.ndarray) \
+    #        and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
+    #         warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
+    #                       "because it will generate extra copies and increase memory consumption")
+    #         data = np.array(data, copy=True, dtype=ctypes.c_uint)
+    #     else:
+    #         data = np.array(data, copy=False, dtype=ctypes.c_uint)
+    #     _check_call(_LIB.XGDMatrixSetUIntInfo(self.handle,
+    #                                           c_str(field),
+    #                                           c_array(ctypes.c_uint, data),
+    #                                           c_bst_ulong(len(data))))
 
     # def save_binary(self, fname, silent=True):
     #     """Save DMatrix to an XGBoost buffer.  Saved binary can be later loaded
@@ -757,78 +762,84 @@ class DMatrix(object):
     #                                          c_str(fname),
     #                                          ctypes.c_int(silent)))
 
-    def set_label(self, label):
-        """Set label of dmatrix
+    # TODO(rishabh): Enable this API with encryption
+    # def set_label(self, label):
+    #     """Set label of dmatrix
+    # 
+    #     Parameters
+    #     ----------
+    #     label: array like
+    #         The label information to be set into DMatrix
+    #     """
+    #     self.set_float_info('label', label)
 
-        Parameters
-        ----------
-        label: array like
-            The label information to be set into DMatrix
-        """
-        self.set_float_info('label', label)
+    # TODO(rishabh): Enable this API with encryption
+    # def set_label_npy2d(self, label):
+    #     """Set label of dmatrix
+    # 
+    #     Parameters
+    #     ----------
+    #     label: array like
+    #         The label information to be set into DMatrix
+    #         from numpy 2D array
+    #     """
+    #     self.set_float_info_npy2d('label', label)
 
-    def set_label_npy2d(self, label):
-        """Set label of dmatrix
+    # TODO(rishabh): Enable this API with encryption
+    # def set_weight(self, weight):
+    #     """ Set weight of each instance.
+    # 
+    #     Parameters
+    #     ----------
+    #     weight : array like
+    #         Weight for each data point
+    # 
+    #         .. note:: For ranking task, weights are per-group.
+    # 
+    #             In ranking task, one weight is assigned to each group (not each data
+    #             point). This is because we only care about the relative ordering of
+    #             data points within each group, so it doesn't make sense to assign
+    #             weights to individual data points.
+    #     """
+    #     self.set_float_info('weight', weight)
 
-        Parameters
-        ----------
-        label: array like
-            The label information to be set into DMatrix
-            from numpy 2D array
-        """
-        self.set_float_info_npy2d('label', label)
+    # TODO(rishabh): Enable this API with encryption
+    # def set_weight_npy2d(self, weight):
+    #     """ Set weight of each instance
+    #         for numpy 2D array
+    # 
+    #     Parameters
+    #     ----------
+    #     weight : array like
+    #         Weight for each data point in numpy 2D array
+    # 
+    #         .. note:: For ranking task, weights are per-group.
+    # 
+    #             In ranking task, one weight is assigned to each group (not each data
+    #             point). This is because we only care about the relative ordering of
+    #             data points within each group, so it doesn't make sense to assign
+    #             weights to individual data points.
+    #     """
+    #     self.set_float_info_npy2d('weight', weight)
 
-    def set_weight(self, weight):
-        """ Set weight of each instance.
+    # TODO(rishabh): Enable this API with encryption
+    # def set_base_margin(self, margin):
+    #     """ Set base margin of booster to start from.
+    # 
+    #     This can be used to specify a prediction value of
+    #     existing model to be base_margin
+    #     However, remember margin is needed, instead of transformed prediction
+    #     e.g. for logistic regression: need to put in value before logistic transformation
+    #     see also example/demo.py
+    # 
+    #     Parameters
+    #     ----------
+    #     margin: array like
+    #         Prediction margin of each datapoint
+    #     """
+    #     self.set_float_info('base_margin', margin)
 
-        Parameters
-        ----------
-        weight : array like
-            Weight for each data point
-
-            .. note:: For ranking task, weights are per-group.
-
-                In ranking task, one weight is assigned to each group (not each data
-                point). This is because we only care about the relative ordering of
-                data points within each group, so it doesn't make sense to assign
-                weights to individual data points.
-        """
-        self.set_float_info('weight', weight)
-
-    def set_weight_npy2d(self, weight):
-        """ Set weight of each instance
-            for numpy 2D array
-
-        Parameters
-        ----------
-        weight : array like
-            Weight for each data point in numpy 2D array
-
-            .. note:: For ranking task, weights are per-group.
-
-                In ranking task, one weight is assigned to each group (not each data
-                point). This is because we only care about the relative ordering of
-                data points within each group, so it doesn't make sense to assign
-                weights to individual data points.
-        """
-        self.set_float_info_npy2d('weight', weight)
-
-    def set_base_margin(self, margin):
-        """ Set base margin of booster to start from.
-
-        This can be used to specify a prediction value of
-        existing model to be base_margin
-        However, remember margin is needed, instead of transformed prediction
-        e.g. for logistic regression: need to put in value before logistic transformation
-        see also example/demo.py
-
-        Parameters
-        ----------
-        margin: array like
-            Prediction margin of each datapoint
-        """
-        self.set_float_info('base_margin', margin)
-
+    # TODO(rishabh): Enable this API with encryption
     # def set_group(self, group):
     #     """Set group size of DMatrix (used for ranking).
     # 
@@ -841,33 +852,37 @@ class DMatrix(object):
     #                                        c_array(ctypes.c_uint, group),
     #                                        c_bst_ulong(len(group))))
 
-    def get_label(self):
-        """Get the label of the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def get_label(self):
+    #     """Get the label of the DMatrix.
+    # 
+    #     Returns
+    #     -------
+    #     label : array
+    #     """
+    #     return self.get_float_info('label')
 
-        Returns
-        -------
-        label : array
-        """
-        return self.get_float_info('label')
+    # TODO(rishabh): Enable this API with encryption
+    # def get_weight(self):
+    #     """Get the weight of the DMatrix.
+    # 
+    #     Returns
+    #     -------
+    #     weight : array
+    #     """
+    #     return self.get_float_info('weight')
 
-    def get_weight(self):
-        """Get the weight of the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def get_base_margin(self):
+    #     """Get the base margin of the DMatrix.
+    # 
+    #     Returns
+    #     -------
+    #     base_margin : float
+    #     """
+    #     return self.get_float_info('base_margin')
 
-        Returns
-        -------
-        weight : array
-        """
-        return self.get_float_info('weight')
-
-    def get_base_margin(self):
-        """Get the base margin of the DMatrix.
-
-        Returns
-        -------
-        base_margin : float
-        """
-        return self.get_float_info('base_margin')
-#
+    # FIXME: Enable this API with encryption
     def num_row(self):
         """Get the number of rows in the DMatrix.
 
@@ -888,6 +903,7 @@ class DMatrix(object):
                                              ctypes.byref(ret)))
             return ret.value
 
+    # FIXME: Enable this API with encryption
     def num_col(self):
         """Get the number of columns (features) in the DMatrix.
 
