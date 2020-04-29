@@ -372,9 +372,7 @@ class EnclaveContext {
 
       // storing user public key
       // TODO verify that user certificate's public key has the same length as the secure enclave public key
-      mbedtls_rsa_alt_context* rsa_info = (mbedtls_rsa_alt_context *) &(user_cert.pk.pk_info);
-      uint8_t* keypointer = (uint8_t*) rsa_info->key;
-      std::vector<uint8_t> user_public_key(keypointer, keypointer + CIPHER_PK_SIZE);
+      std::vector<uint8_t> user_public_key(cert, cert + cert_len);
       client_public_keys.insert({user_nam, user_public_key});
 
 
