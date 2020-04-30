@@ -22,6 +22,15 @@ class EnclaveContext {
     uint8_t m_public_key[CIPHER_PK_SIZE];
     uint8_t m_private_key[CIPHER_PK_SIZE];
 
+     /* We maintain these maps to avoid having to pass out pointers to application code outside
+      * the enclave; instead, the application is given a string nickname that the enclave resolves
+      * to a pointer internally.
+      */
+    std::unordered_map<std::string, void*> booster_map;
+    std::unordered_map<std::string, void*> dmatrix_map;
+    int booster_ctr;
+    int dmatrix_ctr;
+
     // FIXME use array of fixed length instead of vector
     //std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
     uint8_t client_key[CIPHER_KEY_SIZE];
@@ -39,6 +48,8 @@ class EnclaveContext {
     EnclaveContext() {
       generate_public_key();
       client_key_is_set = false;
+      booster_ctr = 0;
+      dmatrix_ctr = 0;
     }
 
   public:
@@ -59,6 +70,60 @@ class EnclaveContext {
 
     uint8_t* get_private_key() {
       return m_private_key;
+    }
+
+    // Note: Returned handle needs to be freed
+    BoosterHandle add_booster(void* booster) {
+      std::ostringstream oss;
+      oss << "Booster_" << ++booster_ctr;
+      auto str = oss.str();
+      booster_map[str] = booster;
+      BoosterHandle handle = strdup(str.c_str());
+      LOG(DEBUG) << "Added booster " << handle;
+      return handle;
+    }
+
+    // Note: Returned handle needs to be freed
+    DMatrixHandle add_dmatrix(void* dmatrix) {
+      std::ostringstream oss;
+      oss << "DMatrix_" << ++dmatrix_ctr;
+      auto str = oss.str();
+      dmatrix_map[str] = dmatrix;
+      DMatrixHandle handle = strdup(str.c_str());
+      LOG(DEBUG) << "Added dmatrix " << handle;
+      return handle;
+    }
+
+    void* get_booster(BoosterHandle handle) {
+      LOG(DEBUG) << "Getting booster " << handle;
+      std::string str(handle);
+      std::unordered_map<std::string, void*>::const_iterator iter = booster_map.find(str);
+      if (iter == booster_map.end()) {
+        LOG(FATAL) << "No such booster oject";
+        return NULL;
+      } else {
+        return iter->second;
+      }
+    }
+
+    void* get_dmatrix(DMatrixHandle handle) {
+      LOG(DEBUG) << "Getting dmatrix " << handle;
+      std::string str(handle);
+      std::unordered_map<std::string, void*>::const_iterator iter = dmatrix_map.find(str);
+      if (iter == dmatrix_map.end()) {
+        LOG(FATAL) << "No such dmatrix oject";
+        return NULL;
+      } else {
+        return iter->second;
+      }
+    }
+
+    void del_booster(BoosterHandle handle) {
+      booster_map.erase(handle);
+    }
+
+    void del_dmatrix(DMatrixHandle handle) {
+      dmatrix_map.erase(handle);
     }
 
     //bool get_client_key(std::string fname, uint8_t* key) {

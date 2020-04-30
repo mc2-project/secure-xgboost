@@ -22,10 +22,8 @@ extern "C" {
 
 #include <cstring>
 
-#ifdef __ENCLAVE__ // includes
 #include "xgboost_t.h"
 #include <xgboost/common/common.h>
-#endif
 
 
 namespace dmlc {
@@ -84,7 +82,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
 #ifndef _WIN32
     // If lstat succeeds where stat failed, assume a problematic
     // symlink and treat this as if it were a 0-length file.
-#ifndef __ENCLAVE__ //lstat not supported by OE IO subsystem
+#if false  // FIXME: lstat not supported by OE IO subsystem
     if (lstat(path.name.c_str(), &sb) == 0) {
       ret.size = 0;
       ret.type = kFile;
@@ -92,7 +90,7 @@ FileInfo LocalFileSystem::GetPathInfo(const URI &path) {
                 << path.name << " error: " << strerror(errsv);
       return ret;
     }
-#endif // __ENCLAVE__
+#endif
 #endif  // _WIN32
     LOG(FATAL) << "LocalFileSystem.GetPathInfo: "
                << path.name << " error: " << strerror(errsv);

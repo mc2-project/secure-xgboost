@@ -16,7 +16,7 @@
 #include "./base.h"
 
 #if DMLC_LOG_STACK_TRACE
-#include <cxxabi.h>
+//#include <cxxabi.h>
 #include <sstream>
 #include DMLC_EXECINFO_H
 #endif
@@ -37,6 +37,7 @@ struct Error : public std::runtime_error {
 #if DMLC_LOG_STACK_TRACE
 inline std::string Demangle(char const *msg_str) {
   using std::string;
+#if false  // FIXME: Enable demangling
   string msg(msg_str);
   size_t symbol_start = string::npos;
   size_t symbol_end = string::npos;
@@ -57,6 +58,7 @@ inline std::string Demangle(char const *msg_str) {
       return os.str();
     }
   }
+#endif
   return string(msg_str);
 }
 

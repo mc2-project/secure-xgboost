@@ -40,7 +40,7 @@ class ThreadLocalStore {
  public:
   /*! \return get a thread local singleton */
   static T* Get() {
-#ifdef __ENCLAVE__
+#if true  // FIXME: Open Enclave thread locals wiped out on enclave exit
     static T* ptr = nullptr;
 #else
     static MX_TREAD_LOCAL T* ptr = nullptr;

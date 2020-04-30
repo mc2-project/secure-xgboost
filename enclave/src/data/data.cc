@@ -151,10 +151,8 @@ void MetaInfo::SetInfo(const char* key, const void* dptr, DataType dtype, size_t
 DMatrix* DMatrix::Load(const std::string& uri,
                        bool silent,
                        bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
                        bool is_encrypted,
                        char* key,
-#endif
                        const std::string& file_format,
                        const size_t page_size) {
   std::string fname, cache_file;
@@ -222,13 +220,8 @@ DMatrix* DMatrix::Load(const std::string& uri,
     }
   }
 
-#ifdef __ENCLAVE__ // pass decryption key
   std::unique_ptr<dmlc::Parser<uint32_t> > parser(
       dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, key));
-#else
-  std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-      dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));
-#endif
   DMatrix* dmat = DMatrix::Create(parser.get(), cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
@@ -239,7 +232,6 @@ DMatrix* DMatrix::Load(const std::string& uri,
    * since partitioned data not knowing the real number of features. */
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
-#ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
   if (is_encrypted) {
     int *indices = new int[npart];
     memset(indices, 0, sizeof(indices));
@@ -255,10 +247,9 @@ DMatrix* DMatrix::Load(const std::string& uri,
     CHECK_EQ(parser->starting_row_index, sum_prev + 1);
     CHECK_EQ(parser->total_rows_global, sum);
   }
-#endif
 
   // backward compatiblity code.
-#ifndef __ENCLAVE__ // FIXME: currently disabled to prevent OE errors if file not found
+#if false  // FIXME: currently disabled to prevent OE errors if file not found
   if (!load_row_split) {
     MetaInfo& info = dmat->Info();
     if (MetaTryLoadGroup(fname + ".group", &info.group_ptr_) && !silent) {
