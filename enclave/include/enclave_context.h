@@ -28,6 +28,7 @@ class EnclaveContext {
       */
     std::unordered_map<std::string, void*> booster_map;
     std::unordered_map<std::string, void*> dmatrix_map;
+    std::unordered_map<std::string, std::vector<std::string>> dmatrix_owner_map;
     int booster_ctr;
     int dmatrix_ctr;
 
@@ -78,14 +79,19 @@ class EnclaveContext {
     }
 
     // Note: Returned handle needs to be freed
-    DMatrixHandle add_dmatrix(void* dmatrix) {
+    DMatrixHandle add_dmatrix(void* dmatrix, char* usernames[], int len) {
       std::ostringstream oss;
       oss << "DMatrix_" << ++dmatrix_ctr;
       auto str = oss.str();
       dmatrix_map[str] = dmatrix;
+
+      std::vector<std::string> v(usernames, usernames + len);
+      dmatrix_owner_map[str] = v;
+
       DMatrixHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added dmatrix " << handle;
       print_dmatrix_map();
+      print_dmatrix_owner_map();
       return handle;
     }
 
@@ -120,6 +126,19 @@ class EnclaveContext {
       oss << "DMatrix map---------------" << "\n";
       for(auto elem : dmatrix_map) {
         oss << elem.first << " " << elem.second << "\n";
+      }
+      oss << "--------------------------" << "\n";
+      LOG(DEBUG) << oss.str();
+    }
+
+    void print_dmatrix_owner_map() {
+      std::ostringstream oss;
+      oss << "DMatrix owner map---------------" << "\n";
+      for(auto elem : dmatrix_owner_map) {
+        oss << elem.first << "\n";
+        for(auto name : elem.second) {
+          oss << "\t" << name << "\n";
+        }
       }
       oss << "--------------------------" << "\n";
       LOG(DEBUG) << oss.str();
@@ -411,7 +430,7 @@ class EnclaveContext {
       //  fprintf(stdout, "%d\t", output[i]);
       //fprintf(stdout, "\n");
       std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
-      std::string user_nam =  convertToString((char *)nameptr, name_len);
+      std::string user_nam = convertToString((char *)nameptr, name_len);
       client_keys.insert({user_nam, v});
 
       LOG(INFO) << "verifiation succeded - user added";

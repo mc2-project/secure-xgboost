@@ -402,7 +402,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         fnames_vector.push_back(std::string(fnames[i]));
     }
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames_vector, silent != 0, load_row_split, true, keys));
-    char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat);
+    char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, usernames, num_files);
     *out = oe_host_strndup(out_str, strlen(out_str));
     free(out_str);
     for (int i = 0; i < num_files; ++i) {
@@ -422,7 +422,7 @@ int XGDMatrixCreateFromFile(const char *fname,
         load_row_split = true;
     }
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, false, NULL));
-    char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat);
+    char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, NULL, 0);
     *out = oe_host_strndup(out_str, strlen(out_str));
     free(out_str);
     API_END();
