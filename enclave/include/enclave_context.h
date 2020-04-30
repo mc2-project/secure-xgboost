@@ -459,28 +459,6 @@ std::string CharPtrToString(char* a) {
       //}
       //return true;
     }
-
-  public:
-    // Compute the sha256 hash of given data.
-    int static compute_sha256(const uint8_t* data, size_t data_len, uint8_t sha256[32]) {
-      int ret = 0;
-      mbedtls_sha256_context ctx;
-
-#define safe_sha(call) {                \
-int ret = (call);                       \
-if (ret) {                              \
-  mbedtls_sha256_free(&ctx);            \
-  return -1;                            \
-}                                       \
-}
-      mbedtls_sha256_init(&ctx);
-      safe_sha(mbedtls_sha256_starts_ret(&ctx, 0));
-      safe_sha(mbedtls_sha256_update_ret(&ctx, data, data_len));
-      safe_sha(mbedtls_sha256_finish_ret(&ctx, sha256));
-
-      mbedtls_sha256_free(&ctx);
-      return ret;
-    }
 };
 
 #endif

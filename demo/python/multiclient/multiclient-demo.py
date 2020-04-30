@@ -109,7 +109,7 @@ params = {
         "min_child_weight": "1",
         "gamma": "0.1",
         "max_depth": "3",
-        "verbosity": "1"
+        "verbosity": "3"
 }
 
 # Train

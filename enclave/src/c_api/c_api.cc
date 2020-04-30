@@ -245,7 +245,7 @@ bool generate_remote_report(
   uint8_t* temp_buf = NULL;
 
   // Compute the sha256 hash of given data.
-  if (EnclaveContext::compute_sha256(data, data_size, sha256) != 0) {
+  if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(INFO) << "compute_sha256 failed";
     return false;
   }
@@ -424,7 +424,7 @@ bool attest_remote_report(
 
   // 3) Validate the report data
   //    The report_data has the hash value of the report data
-  if (EnclaveContext::compute_sha256(data, data_size, sha256) != 0) {
+  if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(FATAL) << "hash validation failed.";
   }
 
@@ -1282,17 +1282,17 @@ XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
 #else
                             const bst_float **out_result) {
 #endif
-
-API_BEGIN();
-CHECK_HANDLE();
-char * buff = (char*)calloc(100,sizeof(char));
-snprintf(buff,100,"booster handle %x data handler %x option mask %d ntree_limit %u.",handle, dmat, option_mask,ntree_limit);
-bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, 100, signature, sig_len, (char *)username);
-// TODO Add Multi User Verification + Add Verification for a list of signatures
-if(verified){
-  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
-}
-API_END();
+  API_BEGIN();
+  CHECK_HANDLE();
+  std::ostringstream oss;
+  oss << "booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
+  const char* buff = strdup(oss.str().c_str());
+  bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+  // TODO Add Multi User Verification + Add Verification for a list of signatures
+  if(verified){
+    return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
+  }
+  API_END();
 }
 
 

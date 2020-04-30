@@ -24,7 +24,6 @@ from .compat import (STRING_TYPES, PY3, DataFrame, MultiIndex, py_str,
                      PANDAS_INSTALLED, DataTable)
 from .libpath import find_lib_path
 
-libc = ctyes.CDLL("libc.so.6")
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
@@ -1719,15 +1718,14 @@ class Booster(object):
         utils = CryptoUtils()
 
         ## TODO: how to join the argument
-        p = ctypes.create_string_buffer(100)
-        p_pointer = ctypes.cast(p, ctypes.POINTER(ctypes.c_char));
-        libc.snprintf(p_pointer, 100, "booster handle %x data handler %x option mask %d ntree_limit %u.", self.handle, data.handle, ctypes.c_int(option_mask), ctypes.c_uint(ntree_limit))
+        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(hex(self.handle.value), hex(data.handle.value), option_mask, ntree_limit)
+        print(p)
+        c_args = ctypes.c_char_p(p.encode('utf-8'))
 
-        data_size = 100
-        sig, sig_len = utils.sign_data(user.private_key, p_pointer, data_size, pointer = True)
+        data_size = len(args)
+        sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
         sig = proto_to_pointer(sig)
         sig_len = ctypes.c_size_t(sig_len)
-        print("seg faulted right after line 1730 of core.py")
         _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),

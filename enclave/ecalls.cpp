@@ -208,7 +208,7 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
 
 int enclave_XGBoosterPredictWithSig(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username, uint8_t *signature,
 size_t sig_len) {
-  LOG(DEBUG) << "Ecall: XGBoosterPredict";
+  LOG(DEBUG) << "Ecall: XGBoosterPredictWithSig";
   check_enclave_ptr(handle);
   check_enclave_ptr(dmat);
   return XGBoosterPredictWithSig(handle, dmat, option_mask, ntree_limit, len, out_result, username, signature, sig_len);
