@@ -4,10 +4,13 @@ import os
 username = "user1"
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
-SYM_KEY_FILE = DIR + "/../../data/key_zeros.txt"
-PUB_KEY_FILE = DIR + "/../../data/keypair.pem"
+sym_key_file = DIR + "/../../data/key_zeros.txt"
+pub_key_file = DIR + "/../../data/userkeys/private_user_1.pem"
+cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
 
-xgb.init_user(username, SYM_KEY_FILE, PUB_KEY_FILE)
+
+print("Init user parameters")
+xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
 
 print("Creating enclave")
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")

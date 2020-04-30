@@ -361,7 +361,7 @@ def proto_to_pointer(proto):
 #     return array
 
 
-def init_user(user_name, sym_key_file, pub_key_file):
+def init_user(user_name, sym_key_file, pub_key_file, cert_file):
     """
     Parameters
     ----------
@@ -370,12 +370,14 @@ def init_user(user_name, sym_key_file, pub_key_file):
     """
     globals()["current_user"] = user_name
     with open(sym_key_file, "rb") as keyfile:
-        sym_key = keyfile.read()
-    globals()["current_user_sym_key"] = sym_key
+        globals()["current_user_sym_key"] = keyfile.read()
     # FIXME: Save buffer instead of file
     # with open(pub_key_file, "r") as keyfile:
     #     pub_key = keyfile.read()
     globals()["current_user_pub_key"] = pub_key_file
+
+    with open(cert_file, "r") as cert_file:
+        globals()["current_user_cert"] = cert_file.read()
 
 
 class DMatrix(object):
@@ -1156,6 +1158,7 @@ class Enclave(object):
         try:
             sym_key = globals()["current_user_sym_key"]
             pub_key = globals()["current_user_pub_key"]
+            cert = globals()["current_user_cert"]
         except:
             raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
 
@@ -1165,45 +1168,45 @@ class Enclave(object):
         # Sign the encrypted symmetric key (so enclave can verify it came from the client)
         sig, sig_size = sign_data(pub_key, enc_sym_key, enc_sym_key_size)
         # Send the encrypted key to the enclave
-        self._add_client_key(enc_sym_key, enc_sym_key_size, sig, sig_size)
+        self._add_client_key_with_certificate(cert, enc_sym_key, enc_sym_key_size, sig, sig_size)
 
-    def _add_client_key(self, enc_sym_key, enc_len, signature, sig_len):
-        """
-        Add client symmetric key used to encrypt file fname
-
-        Parameters
-        ----------
-        enc_sym_key : proto.NDArray
-            key used to encrypt client files
-        enc_len : int
-            length of enc_sym_key
-        signature : proto.NDArray
-            signature over enc_sym_key, signed with client private key
-        sig_len : int
-            length of signature
-        """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
-        if channel_addr:
-            with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_add_client_key(remote_pb2.DataMetadata(
-                    enc_sym_key=enc_sym_key,
-                    key_size=enc_len,
-                    signature=signature,
-                    sig_len=sig_len))
-                return
-        else:
-
-            # Cast enc_sym_key : proto.NDArray to pointer to pass into C++ add_client_key()
-            enc_sym_key = proto_to_pointer(enc_sym_key)
-            enc_len = ctypes.c_size_t(enc_len)
-
-            # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
-            signature = proto_to_pointer(signature)
-            sig_len = ctypes.c_size_t(sig_len)
-
-            # Add client key
-            _check_call(_LIB.add_client_key(enc_sym_key, enc_len, signature, sig_len))
+    # def _add_client_key(self, enc_sym_key, enc_len, signature, sig_len):
+    #     """
+    #     Add client symmetric key used to encrypt file fname
+    # 
+    #     Parameters
+    #     ----------
+    #     enc_sym_key : proto.NDArray
+    #         key used to encrypt client files
+    #     enc_len : int
+    #         length of enc_sym_key
+    #     signature : proto.NDArray
+    #         signature over enc_sym_key, signed with client private key
+    #     sig_len : int
+    #         length of signature
+    #     """
+    #     channel_addr = os.getenv("RA_CHANNEL_ADDR")
+    #     if channel_addr:
+    #         with grpc.insecure_channel(channel_addr) as channel:
+    #             stub = remote_pb2_grpc.RemoteStub(channel)
+    #             response = stub.rpc_add_client_key(remote_pb2.DataMetadata(
+    #                 enc_sym_key=enc_sym_key,
+    #                 key_size=enc_len,
+    #                 signature=signature,
+    #                 sig_len=sig_len))
+    #             return
+    #     else:
+    # 
+    #         # Cast enc_sym_key : proto.NDArray to pointer to pass into C++ add_client_key()
+    #         enc_sym_key = proto_to_pointer(enc_sym_key)
+    #         enc_len = ctypes.c_size_t(enc_len)
+    # 
+    #         # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
+    #         signature = proto_to_pointer(signature)
+    #         sig_len = ctypes.c_size_t(sig_len)
+    # 
+    #         # Add client key
+    #         _check_call(_LIB.add_client_key(enc_sym_key, enc_len, signature, sig_len))
 
     def _add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
         """
