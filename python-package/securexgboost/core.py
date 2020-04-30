@@ -1995,7 +1995,6 @@ class Booster(object):
                                                       ctypes.byref(length),
                                                       ctypes.byref(sarr)))
 
-
         if decrypt:
             self.decrypt_dump(sarr, length)
         res = from_cstr_to_pystr(sarr, length)

@@ -1254,8 +1254,8 @@ bool attest_remote_report(
   // signing key that was used to sign an enclave. Check that the enclave was
   // signed by an trusted entity.
   if (!verify_mrsigner(
-        (char*)ENCLAVE_PUBLIC_KEY,
-        sizeof(ENCLAVE_PUBLIC_KEY),
+        (char*)MRSIGNER_PUBLIC_KEY,
+        sizeof(MRSIGNER_PUBLIC_KEY),
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
     std::cout << "failed:mrsigner not equal!" << std::endl;
