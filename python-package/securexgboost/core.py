@@ -1525,8 +1525,8 @@ class Booster(object):
         if fobj is None:
 
             utils = CryptoUtils()
-            user = globals["current_user"]
-            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), iteration, data.handle.value.decode('utf-8'))
+            user = globals()["current_user"]
+            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), iteration, dtrain.handle.value.decode('utf-8'))
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
 
