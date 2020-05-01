@@ -361,20 +361,26 @@ def proto_to_pointer(proto):
 #     return array
 
 
-def init_user(user_name, sym_key_file, pub_key_file, cert_file):
+def init_user(user_name, sym_key_file, priv_key_file, cert_file):
     """
     Parameters
     ----------
     user_name : string
-        user you want to switch to
+        Current user's identity
+    sym_key_file : string
+        Path to file containing user's symmetric key used for encrypting data
+    priv_key_file : string
+        Path to file containing user's private key used for signing data
+    cert_file : string
+        Path to file containing user's public key certificate
     """
     globals()["current_user"] = user_name
     with open(sym_key_file, "rb") as keyfile:
         globals()["current_user_sym_key"] = keyfile.read()
     # FIXME: Save buffer instead of file
-    # with open(pub_key_file, "r") as keyfile:
-    #     pub_key = keyfile.read()
-    globals()["current_user_pub_key"] = pub_key_file
+    # with open(priv_key_file, "r") as keyfile:
+    #     priv_key = keyfile.read()
+    globals()["current_user_priv_key"] = priv_key_file
 
     with open(cert_file, "r") as cert_file:
         globals()["current_user_cert"] = cert_file.read()
@@ -1157,7 +1163,7 @@ class Enclave(object):
 
         try:
             sym_key = globals()["current_user_sym_key"]
-            pub_key = globals()["current_user_pub_key"]
+            priv_key = globals()["current_user_priv_key"]
             cert = globals()["current_user_cert"]
         except:
             raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
@@ -1166,7 +1172,7 @@ class Enclave(object):
         enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), 
                 enclave_pem_key, enclave_key_size)
         # Sign the encrypted symmetric key (so enclave can verify it came from the client)
-        sig, sig_size = sign_data(pub_key, enc_sym_key, enc_sym_key_size)
+        sig, sig_size = sign_data(priv_key, enc_sym_key, enc_sym_key_size)
         # Send the encrypted key to the enclave
         self._add_client_key_with_certificate(cert, enc_sym_key, enc_sym_key_size, sig, sig_size)
 

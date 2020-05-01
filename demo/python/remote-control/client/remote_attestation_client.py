@@ -13,9 +13,9 @@ import os
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../../"
 username = "user1"
-def run(channel_addr, sym_key_file, pub_key_file):
 
-    xgb.init_user(username, sym_key_file, pub_key_file)
+def run(channel_addr, sym_key_file, priv_key_file, cert_file):
+    xgb.init_user(username, sym_key_file, priv_key_file, cert_file)
 
     # Remote attestation
     print("Remote attestation")
@@ -78,8 +78,9 @@ def run(channel_addr, sym_key_file, pub_key_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--ip-addr", help="server IP address", required=True)
-    parser.add_argument("--key", help="path to key used to encrypt data on client", required=True)
-    parser.add_argument("--keypair", help="path to keypair for signing data", required=True)
+    parser.add_argument("--symmkey", help="path to symmetrix key used to encrypt data on client", required=True)
+    parser.add_argument("--privkey", help="path to user's private key for signing data", required=True)
+    parser.add_argument("--cert", help="path to user's public key certificate", required=True)
 
     args = parser.parse_args()
 
@@ -87,4 +88,4 @@ if __name__ == '__main__':
     os.environ["RA_CHANNEL_ADDR"] = channel_addr
 
     logging.basicConfig()
-    run(channel_addr, str(args.key), str(args.keypair))
+    run(channel_addr, str(args.symmkey), str(args.privkey), str(args.cert))
