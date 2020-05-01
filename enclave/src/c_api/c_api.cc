@@ -1256,6 +1256,27 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
   API_END();
 }
 
+
+XGB_DLL int XGBoosterUpdateOneIterWithSig(BoosterHandle handle,
+                                   int iter,
+                                   DMatrixHandle dtrain,
+                                   char *username,
+                                   uint8_t *signature,
+                                   size_t sig_len){
+API_BEGIN();
+CHECK_HANDLE();
+std::ostringstream oss;
+oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " dtrain;
+const char* buff = strdup(oss.str().c_str());
+bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+// TODO Add Multi User Verification + Add Verification for a list of signatures
+free(buff); // prevent memory leak
+if(verified){
+  return XGBoosterUpdateOneIter(handle, iter, dtrain);
+}
+API_END()
+                                   }
+
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain) {
@@ -1352,6 +1373,7 @@ XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
   const char* buff = strdup(oss.str().c_str());
   bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
   // TODO Add Multi User Verification + Add Verification for a list of signatures
+  free(buff); // prevent memory leak
   if(verified){
     return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
   }

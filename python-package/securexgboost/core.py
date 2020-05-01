@@ -1523,8 +1523,23 @@ class Booster(object):
         self._validate_features(dtrain)
 
         if fobj is None:
-            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
-                                                    dtrain.handle))
+
+            utils = CryptoUtils()
+            user = globals["current_user"]
+            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), iteration, data.handle.value.decode('utf-8'))
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+            _check_call(_LIB.XGBoosterUpdateOneIterWithSig(self.handle, ctypes.c_int(iteration),
+                                                    dtrain.handle,
+                                                    c_str(user.username),
+                                                    sig,
+                                                    sig_len))
+
         else:
             pred = self.predict(dtrain)
             grad, hess = fobj(pred, dtrain)
@@ -1716,7 +1731,6 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         utils = CryptoUtils()
-
         ## TODO: how to join the argument
         args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), option_mask, ntree_limit)
         print(args)

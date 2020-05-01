@@ -399,6 +399,14 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value);
 
+
+XGB_DLL int XGBoosterUpdateOneIterWithSig(BoosterHandle handle,
+                                   int iter,
+                                   DMatrixHandle dtrain,
+                                   char *username,
+                                   uint8_t *signature,
+                                   size_t sig_len) ;
+
 /*!
  * \brief update the model in one round using dtrain
  * \param handle handle

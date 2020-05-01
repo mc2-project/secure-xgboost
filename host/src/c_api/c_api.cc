@@ -916,6 +916,15 @@ XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
     safe_ecall(enclave_XGBoosterSetParamWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value, username, signature, sig_len));
 }
 
+XGB_DLL int XGBoosterUpdateOneIterWithSig(BoosterHandle handle,
+                                   int iter,
+                                   DMatrixHandle dtrain,
+                                   char *username,
+                                   uint8_t *signature,
+                                   size_t sig_len) {
+    safe_ecall(enclave_XGBoosterUpdateOneIterWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain, username, signature, sig_len));
+}
+
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain) {

@@ -9,7 +9,7 @@ enclave {
                 [in, string] const char *fname,
                 int silent,
                 [out] char** handle);
-        
+
         public int enclave_XGDMatrixCreateFromEncryptedFile(
                 [in, count=num_files] const char **fnames,
                 [in, count=num_files] size_t* fname_lengths,
@@ -18,13 +18,13 @@ enclave {
                 bst_ulong num_files,
                 int silent,
                 [out] char** handle);
-        
+
         public int enclave_XGBoosterCreate(
-                [in, count=len] char** dmat_handles, 
-                [in, count=len] size_t* handle_lengths, 
-                bst_ulong len, 
+                [in, count=len] char** dmat_handles,
+                [in, count=len] size_t* handle_lengths,
+                bst_ulong len,
                 [out] char** handle);
-        
+
         public int enclave_XGBoosterSetParam(
                 [in, string] char* handle,
                 [in, string] const char *name,
@@ -38,18 +38,26 @@ enclave {
                 [in, count=sig_len] uint8_t *signature,
                 size_t sig_len);
 
+        public int enclave_XGBoosterUpdateOneIterWithSig(
+                [in, string] char* handle,
+                int iter,
+                [in, string] char* dtrain,
+                [in, string] char *username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
         public int enclave_XGBoosterUpdateOneIter(
                 [in, string] char* handle,
                 int iter,
                 [in, string] char* dtrain);
-        
+
         public int enclave_XGBoosterBoostOneIter(
                 [in, string] char* handle,
                 [in, string] char* dtrain,
                 [in, count=len] bst_float *grad,
                 [in, count=len] bst_float *hess,
                 bst_ulong len);
-        
+
         public int enclave_XGBoosterEvalOneIter(
                 [in, string] char* handle,
                 int iter,
@@ -85,44 +93,44 @@ enclave {
                 [in, string] const char* field,
                 [out] bst_ulong *out_len,
                 [out] bst_float **out_dptr);
-        
+
         public int enclave_XGDMatrixGetUintInfo(
                 [in, string] char* handle,
                 [in, string] const char* field,
                 [out] bst_ulong *out_len,
                 [out] unsigned **out_dptr);
-        
+
         public int enclave_XGDMatrixSetFloatInfo(
                 [in, string] char* handle,
                 [in, string] const char* field,
                 [in] const bst_float* info,
                 bst_ulong len);
-        
+
         public int enclave_XGDMatrixSetUIntInfo(
                 [in, string] char* handle,
                 [in, string] const char* field,
                 [in] const unsigned* info,
                 bst_ulong len);
-        
+
         public int enclave_XGDMatrixNumRow(
                 [in, string] char* handle,
                 [out] bst_ulong *out);
-        
+
         public int enclave_XGDMatrixNumCol(
                 [in, string] char* handle,
                 [out] bst_ulong *out);
-        
+
         public int enclave_XGBoosterGetAttr(
                 [in, string] char* handle,
                 [in, string] const char* key,
                 [out] char** out,
                 [out] int* success);
-        
+
         public int enclave_XGBoosterGetAttrNames(
                 [in, string] char* handle,
                 [out] bst_ulong* out_len,
                 [out] char*** out);
-        
+
         public int enclave_XGBoosterLoadModel(
                 [in, string] char* handle,
                 [in, string] const char* fname,
@@ -139,7 +147,7 @@ enclave {
                 int with_stats,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-        
+
         public int enclave_XGBoosterDumpModelEx(
                 [in, string] char* handle,
                 [in, string] const char* fmap,
@@ -147,7 +155,7 @@ enclave {
                 [in, string] const char* format,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-        
+
         public int enclave_XGBoosterDumpModelWithFeatures(
                 [in, string] char* handle,
                 unsigned int fnum,
@@ -158,7 +166,7 @@ enclave {
                 int with_stats,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-        
+
         public int enclave_XGBoosterDumpModelExWithFeatures(
                 [in, string] char* handle,
                 unsigned int fnum,
@@ -170,7 +178,7 @@ enclave {
                 [in, string] const char* format,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-        
+
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
                 [out] bst_ulong *out_len,
@@ -185,10 +193,10 @@ enclave {
 
         public int enclave_XGDMatrixFree(
                 [in, string] char* handle);
-        
+
         public int enclave_XGBoosterFree(
                 [in, string] char* handle);
-        
+
         public int enclave_get_remote_report_with_pubkey(
                 [out] uint8_t **pem_key,
                 [out] size_t *key_size,
@@ -208,16 +216,16 @@ enclave {
                 size_t data_len,
                 [in, size=sig_len] uint8_t* signature,
                 size_t sig_len);
-        
+
         public void enclave_RabitInit(
                 int argc,
                 [in, count=argc] char **argv,
                 [in, count=argc] size_t* arg_lengths);
-        
+
         public void enclave_RabitFinalize();
-        
+
         public int enclave_RabitGetRank();
-        
+
         public int enclave_RabitIsDistributed();
     };
     untrusted {
