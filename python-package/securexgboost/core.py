@@ -444,7 +444,7 @@ class DMatrix(object):
                           DeprecationWarning)
 
         if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_void_p()
+            handle = ctypes.c_char_p()
             if encrypted:
                 _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
                     ctypes.c_int(silent),
@@ -491,7 +491,7 @@ class DMatrix(object):
         """
         if len(csr.indices) != len(csr.data):
             raise ValueError('length mismatch: {} vs {}'.format(len(csr.indices), len(csr.data)))
-        handle = ctypes.c_void_p()
+        handle = ctypes.c_char_p()
         _check_call(_LIB.XGDMatrixCreateFromCSREx(c_array(ctypes.c_size_t, csr.indptr),
                                                   c_array(ctypes.c_uint, csr.indices),
                                                   c_array(ctypes.c_float, csr.data),
@@ -507,7 +507,7 @@ class DMatrix(object):
         """
         if len(csc.indices) != len(csc.data):
             raise ValueError('length mismatch: {} vs {}'.format(len(csc.indices), len(csc.data)))
-        handle = ctypes.c_void_p()
+        handle = ctypes.c_char_p()
         _check_call(_LIB.XGDMatrixCreateFromCSCEx(c_array(ctypes.c_size_t, csc.indptr),
                                                   c_array(ctypes.c_uint, csc.indices),
                                                   c_array(ctypes.c_float, csc.data),
@@ -535,7 +535,7 @@ class DMatrix(object):
         # we try to avoid data copies if possible (reshape returns a view when possible
         # and we explicitly tell np.array to try and avoid copying)
         data = np.array(mat.reshape(mat.size), copy=False, dtype=np.float32)
-        handle = ctypes.c_void_p()
+        handle = ctypes.c_char_p()
         missing = missing if missing is not None else np.nan
         if nthread is None:
             _check_call(_LIB.XGDMatrixCreateFromMat(
@@ -576,7 +576,7 @@ class DMatrix(object):
         for icol in range(data.ncols):
             feature_type_strings[icol] = ctypes.c_char_p(data.stypes[icol].name.encode('utf-8'))
 
-        handle = ctypes.c_void_p()
+        handle = ctypes.c_char_p()
         _check_call(_LIB.XGDMatrixCreateFromDT(
             ptrs, feature_type_strings,
             c_bst_ulong(data.shape[0]),
@@ -870,7 +870,7 @@ class DMatrix(object):
         #  """
         #  res = DMatrix(None, feature_names=self.feature_names,
                       #  feature_types=self.feature_types)
-        #  res.handle = ctypes.c_void_p()
+        #  res.handle = ctypes.c_char_p()
         #  _check_call(_LIB.XGDMatrixSliceDMatrix(self.handle,
                                                #  c_array(ctypes.c_int, rindex),
                                                #  c_bst_ulong(len(rindex)),
@@ -1282,8 +1282,8 @@ class Booster(object):
             if not isinstance(d, DMatrix):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
             self._validate_features(d)
-        dmats = c_array(ctypes.c_void_p, [d.handle for d in cache])
-        self.handle = ctypes.c_void_p()
+        dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
+        self.handle = ctypes.c_char_p()
 
         _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
                                          ctypes.byref(self.handle)))
@@ -1316,8 +1316,8 @@ class Booster(object):
         handle = state['handle']
         if handle is not None:
             buf = handle
-            dmats = c_array(ctypes.c_void_p, [])
-            handle = ctypes.c_void_p()
+            dmats = c_array(ctypes.c_char_p, [])
+            handle = ctypes.c_char_p()
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(0), ctypes.byref(handle)))
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
@@ -1507,7 +1507,7 @@ class Booster(object):
                 raise TypeError('expected string, got {}'.format(type(d[1]).__name__))
             self._validate_features(d[0])
 
-        dmats = c_array(ctypes.c_void_p, [d[0].handle for d in evals])
+        dmats = c_array(ctypes.c_char_p, [d[0].handle for d in evals])
         evnames = c_array(ctypes.c_char_p, [c_str(d[1]) for d in evals])
         msg = ctypes.c_char_p()
         _check_call(_LIB.XGBoosterEvalOneIter(self.handle, ctypes.c_int(iteration),

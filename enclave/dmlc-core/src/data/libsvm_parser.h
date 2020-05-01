@@ -45,7 +45,6 @@ struct LibSVMParserParam : public Parameter<LibSVMParserParam> {
 template <typename IndexType, typename DType = real_t>
 class LibSVMParser : public TextParserBase<IndexType> {
  public:
-#ifdef __ENCLAVE__ // Init with encryption key
   explicit LibSVMParser(InputSplit *source, int nthread, bool is_encrypted, char* key)
      : LibSVMParser(source, std::map<std::string, std::string>(), nthread, is_encrypted, key) {}
   explicit LibSVMParser(InputSplit *source,
@@ -57,24 +56,11 @@ class LibSVMParser : public TextParserBase<IndexType> {
       param_.Init(args);
       CHECK_EQ(param_.format, "libsvm");
     }
-#else
-  explicit LibSVMParser(InputSplit *source, int nthread)
-      : LibSVMParser(source, std::map<std::string, std::string>(), nthread) {}
-  explicit LibSVMParser(InputSplit *source,
-                        const std::map<std::string, std::string>& args,
-                        int nthread)
-      : TextParserBase<IndexType>(source, nthread) {
-    param_.Init(args);
-    CHECK_EQ(param_.format, "libsvm");
-  }
-#endif
 
  protected:
-#ifdef __ENCLAVE__ // Parse blocks in encrypted files
   virtual void ParseEncryptedBlock(const char *begin,
                           const char *end,
                           RowBlockContainer<IndexType, DType> *out);
-#endif
 
   virtual void ParseBlock(const char *begin,
           const char *end,
@@ -103,7 +89,6 @@ std::ptrdiff_t IgnoreCommentAndBlank(char const* beg,
   return length;
 }
 
-#ifdef __ENCLAVE__ // Decrypt and parse file
 template <typename IndexType, typename DType>
 void LibSVMParser<IndexType, DType>::
 ParseEncryptedBlock(const char *begin,
@@ -201,7 +186,7 @@ ParseEncryptedBlock(const char *begin,
     }
   }
 }
-#endif // __ENCLAVE__
+
 template <typename IndexType, typename DType>
 void LibSVMParser<IndexType, DType>::
 ParseBlock(const char *begin,
