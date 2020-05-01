@@ -447,11 +447,11 @@ int verify_remote_report_and_set_pubkey(
   return 0;
 }
 
-int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
-    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
-      return 0;
-    return -1;
-}
+//int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
+//    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
+//      return 0;
+//    return -1;
+//}
 
 int add_client_key_with_certificate(char * cert,
         int cert_len,
