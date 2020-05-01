@@ -1242,7 +1242,11 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
       (option_mask & 16) != 0);
   preds = tmp_preds.HostVector();
   unsigned char key[CIPHER_KEY_SIZE];
-  EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
+  std::vector<std::string> owners = EnclaveContext::getInstance().get_dmatrix_owners(dmat);
+  if (owners.size() != 1) {
+    LOG(FATAL) << "Cannot run prediction on data owned by multiple users";
+  }
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key, (char*)owners[0].c_str());
 
   int preds_len = preds.size()*sizeof(float);
   size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + preds_len;

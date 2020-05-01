@@ -121,6 +121,18 @@ class EnclaveContext {
       }
     }
 
+    std::vector<std::string> get_dmatrix_owners(DMatrixHandle handle) {
+      LOG(DEBUG) << "Getting dmatrix " << handle;
+      std::string str(handle);
+      auto iter = dmatrix_owner_map.find(str);
+      if (iter == dmatrix_owner_map.end()) {
+        print_dmatrix_owner_map();
+        LOG(FATAL) << "No such dmatrix oject: " << handle;
+      } else {
+        return iter->second;
+      }
+    }
+
     void print_dmatrix_map() {
       std::ostringstream oss;
       oss << "DMatrix map---------------" << "\n";
