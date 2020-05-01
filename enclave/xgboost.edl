@@ -11,10 +11,13 @@ enclave {
                 [out] char** handle);
         
         public int enclave_XGDMatrixCreateFromEncryptedFile(
-                [in, string] const char *fname,
+                [in, count=num_files] const char **fnames,
+                [in, count=num_files] size_t* fname_lengths,
+                [in, count=num_files] char** usernames,
+                [in, count=num_files] size_t* username_lengths,
+                bst_ulong num_files,
                 int silent,
-                [out] DMatrixHandle *out,
-                [in, string] char* username);
+                [out] DMatrixHandle *out);
 
         public int enclave_XGBoosterCreate(
                 [in, count=len] char** dmat_handles, 

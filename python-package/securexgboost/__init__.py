@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 import os
 
-from .core import DMatrix, Booster, Enclave, CryptoUtils, Set_user
+from .core import DMatrix, Booster, Enclave, CryptoUtils, set_user
 from .training import train #, cv
 from . import rabit                   # noqa
 try:
@@ -23,7 +23,7 @@ with open(VERSION_FILE) as f:
     __version__ = f.read().strip()
 
 __all__ = ['DMatrix', 'Booster', 'Enclave', 'CryptoUtils', 
-           'train', 'cv', 'Set_user', 
+           'train', 'cv', 'set_user', 
            'XGBModel', 'XGBClassifier', 'XGBRegressor', 'XGBRanker',
            'XGBRFClassifier', 'XGBRFRegressor',
            'plot_importance', 'plot_tree', 'to_graphviz']

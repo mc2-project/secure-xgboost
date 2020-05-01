@@ -377,11 +377,13 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
   API_END();
 }
 
-int XGDMatrixCreateFromEncryptedFile(const char *fname,
+int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
+        char* usernames[],
+        xgboost::bst_ulong num_files,
         int silent,
-        DMatrixHandle *out,
-        char* username ) {
+        DMatrixHandle *out) {
     API_BEGIN();
+    LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
     if (rabit::IsDistributed()) {
         LOG(INFO) << "XGBoost distributed mode detected, "
@@ -389,12 +391,22 @@ int XGDMatrixCreateFromEncryptedFile(const char *fname,
         load_row_split = true;
     }
     // FIXME consistently use uint8_t* for key bytes
-    char key[CIPHER_KEY_SIZE];
-    EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
-    void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, true, key));
+    char* keys[num_files];
+    std::vector<const std::string> fnames_vector;
+    for (xgboost::bst_ulong i = 0; i < num_files; ++i) {
+        char key[CIPHER_KEY_SIZE];
+        EnclaveContext::getInstance().get_client_key((uint8_t*) key, usernames[i]);
+        keys[i] = (char*) malloc(sizeof(char) * CIPHER_KEY_SIZE);
+        memcpy(keys[i], key, CIPHER_KEY_SIZE);
+        fnames_vector.push_back(std::string(fnames[i]));
+    }
+    void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames_vector, silent != 0, load_row_split, true, keys));
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat);
     *out = oe_host_strndup(out_str, strlen(out_str));
     free(out_str);
+    for (int i = 0; i < num_files; ++i) {
+        free(keys[i]);
+    }
     API_END();
 }
 

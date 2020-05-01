@@ -355,14 +355,14 @@ def _maybe_dt_array(array):
 
     return array
 
-def Set_user(user_name):
+def set_user(user_name):
     """
     Parameters
     ----------
     user_name : string
         user you want to switch to
     """
-    globals()["current_user"]=user_name
+    globals()["current_user"] = user_name
 
 class DMatrix(object):
     """Data Matrix used in XGBoost.
@@ -375,17 +375,16 @@ class DMatrix(object):
     _feature_names = None  # for previous version's pickle
     _feature_types = None
 
-    def __init__(self, data, encrypted=False, label=None, missing=None,
+    def __init__(self, data_dict, encrypted=False, label=None, missing=None,
                  weight=None, silent=False,
                  feature_names=None, feature_types=None,
-                 nthread=None, username=None):
+                 nthread=None):
         """
         Parameters
         ----------
-        data : string/numpy.array/scipy.sparse/pd.DataFrame/dt.Frame
-            Data source of DMatrix.
-            When data is string type, it represents the path libsvm format txt file,
-            or binary file that xgboost can read from.
+        data_dict : dictionary 
+            Keys: Usernames
+            Values: Path to training data of corresponding user
         label : list or numpy 1-D array, optional
             Label of the training data.
         missing : float, optional
@@ -410,14 +409,17 @@ class DMatrix(object):
         nthread : integer, optional
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
-        username : string, optional
-            User's username. Used to find the corresponding key to decrypt the training data.
         """
         # check the global variable for current_user
-        if username is None and "current_user" in globals():
-            username = globals()["current_user"]
-        if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+        #  if usernames is None and "current_user" in globals():
+            #  username = globals()["current_user"]
+
+        usernames, data = [], []
+
+        for user, path in data_dict.items():
+            usernames.append(user)
+            data.append(path)
+
         # force into void_p, mac need to pass things in as void_p
         if data is None:
             self.handle = None
@@ -428,41 +430,44 @@ class DMatrix(object):
                 self._feature_types = feature_types
             return
 
-        data, feature_names, feature_types = _maybe_pandas_data(data,
-                                                                feature_names,
-                                                                feature_types)
-
-        data, feature_names, feature_types = _maybe_dt_data(data,
-                                                            feature_names,
-                                                            feature_types)
+        #  data, feature_names, feature_types = _maybe_pandas_data(data,
+                                                                #  feature_names,
+                                                                #  feature_types)
+#  
+        #  data, feature_names, feature_types = _maybe_dt_data(data,
+                                                            #  feature_names,
+                                                            #  feature_types)
         label = _maybe_pandas_label(label)
         label = _maybe_dt_array(label)
         weight = _maybe_dt_array(weight)
 
-        if isinstance(data, list):
-            warnings.warn('Initializing DMatrix from List is deprecated.',
-                          DeprecationWarning)
+        #  if isinstance(data, list):
+            #  warnings.warn('Initializing DMatrix from List is deprecated.',
+                          #  DeprecationWarning)
 
-        if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_char_p()
+        if isinstance(data, list):
+            handle = ctypes.c_void_p()
             if encrypted:
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
+                filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
+                usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
+                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                    usrs,
+                    c_bst_ulong(len(data)),
                     ctypes.c_int(silent),
-                    ctypes.byref(handle),
-                    c_str(username)))
+                    ctypes.byref(handle)))
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
                     ctypes.byref(handle)))
             self.handle = handle
-        elif isinstance(data, scipy.sparse.csr_matrix):
-            self._init_from_csr(data)
-        elif isinstance(data, scipy.sparse.csc_matrix):
-            self._init_from_csc(data)
-        elif isinstance(data, np.ndarray):
-            self._init_from_npy2d(data, missing, nthread)
-        elif isinstance(data, DataTable):
-            self._init_from_dt(data, nthread)
+        #  elif isinstance(data, scipy.sparse.csr_matrix):
+            #  self._init_from_csr(data)
+        #  elif isinstance(data, scipy.sparse.csc_matrix):
+            #  self._init_from_csc(data)
+        #  elif isinstance(data, np.ndarray):
+            #  self._init_from_npy2d(data, missing, nthread)
+        #  elif isinstance(data, DataTable):
+            #  self._init_from_dt(data, nthread)
         else:
             try:
                 csr = scipy.sparse.csr_matrix(data)
