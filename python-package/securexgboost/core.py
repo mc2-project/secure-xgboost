@@ -361,20 +361,26 @@ def proto_to_pointer(proto):
 #     return array
 
 
-def init_user(user_name, sym_key_file, pub_key_file, cert_file):
+def init_user(user_name, sym_key_file, priv_key_file, cert_file):
     """
     Parameters
     ----------
     user_name : string
-        user you want to switch to
+        Current user's identity
+    sym_key_file : string
+        Path to file containing user's symmetric key used for encrypting data
+    priv_key_file : string
+        Path to file containing user's private key used for signing data
+    cert_file : string
+        Path to file containing user's public key certificate
     """
     globals()["current_user"] = user_name
     with open(sym_key_file, "rb") as keyfile:
         globals()["current_user_sym_key"] = keyfile.read()
     # FIXME: Save buffer instead of file
-    # with open(pub_key_file, "r") as keyfile:
-    #     pub_key = keyfile.read()
-    globals()["current_user_pub_key"] = pub_key_file
+    # with open(priv_key_file, "r") as keyfile:
+    #     priv_key = keyfile.read()
+    globals()["current_user_priv_key"] = priv_key_file
 
     with open(cert_file, "r") as cert_file:
         globals()["current_user_cert"] = cert_file.read()
@@ -467,7 +473,7 @@ class DMatrix(object):
         if isinstance(data, list):
             handle = ctypes.c_char_p()
             if encrypted:
-                channel_addr = os.getenv("RA_CHANNEL_ADDR")
+                channel_addr = globals()["remote_addr"]
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
                         stub = remote_pb2_grpc.RemoteStub(channel)
@@ -913,7 +919,7 @@ class DMatrix(object):
         -------
         number of columns : int
         """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1049,7 +1055,7 @@ class Enclave(object):
     """
     Object wrapper for an enclave: a trusted execution environment used by secure XGBoost.
     """
-    def __init__(self, enclave_image=None, log_verbosity=0):
+    def __init__(self, enclave_image=None, log_verbosity=0, addr=None):
         """
         Parameters
         ----------
@@ -1058,8 +1064,11 @@ class Enclave(object):
         log_verbosity: int, optional
             Verbosity level for enclave (for enclaves in debug mode)
         """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
-        if not channel_addr:
+        if addr is not None:
+            # TODO(rishabh): Verify address is valid
+            globals()["remote_addr"] = addr;
+        else:
+            globals()["remote_addr"] = None;
             _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
         self.pem_key = ctypes.POINTER(ctypes.c_uint)()
         self.key_size = ctypes.c_size_t()
@@ -1080,7 +1089,7 @@ class Enclave(object):
             Whether to verify the enclave report or not
             Warning: Should only be set to False for development and testing.
         """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1157,7 +1166,7 @@ class Enclave(object):
 
         try:
             sym_key = globals()["current_user_sym_key"]
-            pub_key = globals()["current_user_pub_key"]
+            priv_key = globals()["current_user_priv_key"]
             cert = globals()["current_user_cert"]
         except:
             raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
@@ -1166,7 +1175,7 @@ class Enclave(object):
         enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), 
                 enclave_pem_key, enclave_key_size)
         # Sign the encrypted symmetric key (so enclave can verify it came from the client)
-        sig, sig_size = sign_data(pub_key, enc_sym_key, enc_sym_key_size)
+        sig, sig_size = sign_data(priv_key, enc_sym_key, enc_sym_key_size)
         # Send the encrypted key to the enclave
         self._add_client_key_with_certificate(cert, enc_sym_key, enc_sym_key_size, sig, sig_size)
 
@@ -1185,7 +1194,7 @@ class Enclave(object):
     #     sig_len : int
     #         length of signature
     #     """
-    #     channel_addr = os.getenv("RA_CHANNEL_ADDR")
+    #     channel_addr = globals()["remote_addr"]
     #     if channel_addr:
     #         with grpc.insecure_channel(channel_addr) as channel:
     #             stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1225,7 +1234,7 @@ class Enclave(object):
         sig_len : int
             length of signature
         """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
 
         # If we're on the client
         if channel_addr:
@@ -1288,7 +1297,7 @@ class Booster(object):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
             self._validate_features(d)
 
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1447,7 +1456,7 @@ class Booster(object):
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
         for key, val in params:
-            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            channel_addr = globals()["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1469,7 +1478,7 @@ class Booster(object):
             Customized objective function.
 
         """
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1678,7 +1687,7 @@ class Booster(object):
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1788,7 +1797,7 @@ class Booster(object):
         if username is None:
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
-            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            channel_addr = globals()["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1820,7 +1829,7 @@ class Booster(object):
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
-        channel_addr = os.getenv("RA_CHANNEL_ADDR")
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1861,7 +1870,7 @@ class Booster(object):
     #         raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
     #     if isinstance(fname, STRING_TYPES):
     #         # assume file name, cannot use os.path.exist to check, file can be from URL.
-    #         channel_addr = os.getenv("RA_CHANNEL_ADDR")
+    #         channel_addr = globals()["remote_addr"]
     #         if channel_addr:
     #             with grpc.insecure_channel(channel_addr) as channel:
     #                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1935,7 +1944,7 @@ class Booster(object):
             flen = len(self.feature_names)
 
 
-            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            channel_addr = globals()["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     fname = self.feature_names
@@ -1978,7 +1987,7 @@ class Booster(object):
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
 
-            channel_addr = os.getenv("RA_CHANNEL_ADDR")
+            channel_addr = globals()["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)

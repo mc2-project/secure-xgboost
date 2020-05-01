@@ -26,7 +26,7 @@ def run(channel_addr, key_path, keypair):
     3. A call to commence computation.
     """
     print("Doing remote attestation")
-    enclave_reference = xgb.Enclave(create_enclave=False)
+    enclave_reference = xgb.Enclave(addr=channel_addr)
     pem_key, key_size, remote_report, remote_report_size = enclave_reference.get_remote_report_with_pubkey()
 
     # set_report_attrs casts pem_key and remote_report from types proto to c pointers and sets the class attributes to them
@@ -72,6 +72,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     channel_addr = str(args.ip_addr) + ":50051" 
-    os.environ["RA_CHANNEL_ADDR"] = channel_addr
     logging.basicConfig()
     run(channel_addr, str(args.key), str(args.keypair))
