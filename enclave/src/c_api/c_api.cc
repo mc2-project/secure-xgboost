@@ -1266,7 +1266,7 @@ XGB_DLL int XGBoosterUpdateOneIterWithSig(BoosterHandle handle,
 API_BEGIN();
 CHECK_HANDLE();
 std::ostringstream oss;
-oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " dtrain;
+oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
 const char* buff = strdup(oss.str().c_str());
 bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
 // TODO Add Multi User Verification + Add Verification for a list of signatures
