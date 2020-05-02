@@ -62,7 +62,7 @@ def _train_internal(params, dtrain,
     version = 0
     start_iteration = 0
     # FIXME: rpc
-    rank = rabit.get_rank()
+    # rank = rabit.get_rank()
 
     callbacks_before_iter = [
         cb for cb in callbacks if cb.__dict__.get('before_iteration', False)]
