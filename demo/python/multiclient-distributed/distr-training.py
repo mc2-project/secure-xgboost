@@ -74,7 +74,7 @@ params = {
 # Train and evaluate
 num_rounds = 3 
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
-#  booster.save_model(DIR + "/demo_model.model")
+booster.save_model(DIR + "/demo_model.model")
 
 # Get encrypted predictions
 print("\n\nModel Predictions: ")

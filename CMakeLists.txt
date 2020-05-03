@@ -11,7 +11,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
 # OE configuration options for enclave
-set(OE_DEBUG 1
+set(OE_DEBUG 0
     CACHE STRING "Build enclave in debug mode (1) or release mode (0)")
 set(OE_NUM_HEAP_PAGES 100000
     CACHE STRING "Number of enclave heap pages")
@@ -25,9 +25,9 @@ set(OE_SECURITY_VERSION 1
     CACHE STRING "Enclave security version (ISVSVN)")
 
 option(LOGGING
-    "Enable enclave logger" ON)
+    "Enable enclave logger" OFF)
 option(SIMULATE
-    "Build enclave in simulation mode" ON)
+    "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS
     "Enable oblivious training and inference" ON)
 option(USE_AVX2 
