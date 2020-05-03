@@ -437,10 +437,6 @@ class EnclaveContext {
       unsigned char * nameptr = name.p;
       size_t name_len = name.len;
 
-      //fprintf(stdout, "Decrypted key\n");
-      //for (int i = 0; i < CIPHER_KEY_SIZE; i++)
-      //  fprintf(stdout, "%d\t", output[i]);
-      //fprintf(stdout, "\n");
       std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
       std::string user_nam = convertToString((char *)nameptr, name_len);
       client_keys.insert({user_nam, v});
