@@ -105,12 +105,12 @@ enclave {
                 [out] char*** out);
         
         public int enclave_XGBoosterLoadModel(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* fname,
                 [in, string] char* username);
         
         public int enclave_XGBoosterSaveModel(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* fname,
                 [in, string] char* username);
 
