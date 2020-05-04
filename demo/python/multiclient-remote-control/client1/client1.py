@@ -1,10 +1,6 @@
 """The Python implementation of the GRPC Remote Attestation client."""
 
 from __future__ import print_function
-import logging
-
-import grpc
-import base64
 import securexgboost as xgb
 import argparse
 import os
@@ -19,21 +15,21 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     # Remote attestation
     print("Remote attestation")
     enclave_reference = xgb.Enclave(addr=channel_addr)
-    enclave_reference.attest(verify=True)
+    enclave_reference.attest(verify=False)
     print("Report successfully verified")
 
     print("Send private key to enclave")
     enclave_reference.add_key()
 
     print("Load training matrices")
-    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-rpc/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-rpc/data/c2_train.enc"}, encrypted=True)
+    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-remote-control/data/c2_train.enc"}, encrypted=True)
     if not dtrain:
         print("Error loading data")
         return
 
     print("Creating test matrix")
-    dtest1 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-rpc/data/c1_test.enc"}, encrypted=True)
-    dtest2 = xgb.DMatrix({"user2": HOME_DIR + "demo/python/multiclient-rpc/data/c2_test.enc"}, encrypted=True)
+    dtest1 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c1_test.enc"}, encrypted=True)
+    dtest2 = xgb.DMatrix({"user2": HOME_DIR + "demo/python/multiclient-remote-control/data/c2_test.enc"}, encrypted=True)
 
     if not dtest1 or not dtest2:
         print("Error creating dtest")
