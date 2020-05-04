@@ -185,36 +185,23 @@ static int compute_sha256(const uint8_t* data, size_t data_size, uint8_t sha256[
   return ret;
 }
 
-//void verifySignature(char *pkfile, uint8_t* data, size_t data_size, uint8_t* signature, size_t sig_len) {
-//  mbedtls_pk_context pk;
-//  unsigned char hash[32];
-//  int ret = 1;
-//
-//  mbedtls_pk_init( &pk );
-//
-//  if((ret = mbedtls_pk_parse_public_keyfile(&pk, pkfile)) != 0) {
-//    printf(" failed\n  ! Could not read key\n");
-//    printf("  ! mbedtls_pk_parse_public_keyfile returned %d\n\n", ret);
-//    exit(1);
-//  }
-//
-//  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
-//    printf( " failed\n  ! Key is not an RSA key\n" );
-//    exit(1);
-//  }
-//
-//  mbedtls_rsa_set_padding( mbedtls_pk_rsa( pk ), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
-//
-//  if((ret = compute_sha256(data, data_size, hash)) != 0) {
-//    printf( " failed\n  ! Could not hash\n\n");
-//    exit(1);
-//  }
-//
-//  if((ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0 ) {
-//    printf( " failed\n  ! mbedtls_pk_verify returned %d\n\n", ret );
-//    exit(1);
-//  }
-//
-//  mbedtls_pk_free( &pk );
-//}
+static int verifySignature(mbedtls_pk_context pk, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
+  unsigned char hash[SHA_DIGEST_SIZE];
+  int ret = 0;
+
+  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
+    LOG(FATAL) << "verification failed - Key is not an RSA key";
+  }
+
+  mbedtls_rsa_set_padding( mbedtls_pk_rsa( pk ), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
+
+  if((ret = compute_sha256(data, data_len, hash)) != 0) {
+    LOG(FATAL) << "verification failed -- Could not hash";
+  }
+
+  if((ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0 ) {
+    LOG(FATAL) << "verification failed -- mbedtls_pk_verify returned " << ret;
+  }
+  return ret;
+}
 #endif // CRYPTO_H_

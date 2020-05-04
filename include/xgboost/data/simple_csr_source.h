@@ -47,6 +47,9 @@ class SimpleCSRSource : public DataSource {
    * \param info The additional information reflected in the parser.
    */
   void CopyFrom(dmlc::Parser<uint32_t>* src);
+
+  // Additional method to support multiple files
+  void CopyFrom(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers, int num_parsers);
   /*!
    * \brief Load data from binary stream.
    * \param fi the pointer to load data from.

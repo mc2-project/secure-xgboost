@@ -11,7 +11,11 @@ enclave {
                 [out] char** handle);
         
         public int enclave_XGDMatrixCreateFromEncryptedFile(
-                [in, string] const char *fname,
+                [in, count=num_files] const char **fnames,
+                [in, count=num_files] size_t* fname_lengths,
+                [in, count=num_files] char** usernames,
+                [in, count=num_files] size_t* username_lengths,
+                bst_ulong num_files,
                 int silent,
                 [out] char** handle);
         
@@ -54,7 +58,8 @@ enclave {
                 int option_mask,
                 unsigned ntree_limit,
                 [out] bst_ulong *out_len,
-                [out] uint8_t **out_result);
+                [out] uint8_t **out_result,
+                [in, string] char* username);
         
         public int enclave_XGDMatrixGetFloatInfo(
                 [in, string] char* handle,
@@ -101,12 +106,14 @@ enclave {
         
         public int enclave_XGBoosterLoadModel(
                 [in, string] char* handle,
-                [in, string] const char* fname);
+                [in, string] const char* fname,
+                [in, string] char* username);
         
         public int enclave_XGBoosterSaveModel(
                 [in, string] char* handle,
-                [in, string] const char* fname);
-        
+                [in, string] const char* fname,
+                [in, string] char* username);
+
         public int enclave_XGBoosterDumpModel(
                 [in, string] char* handle,
                 [in, string] const char* fmap,
@@ -148,13 +155,15 @@ enclave {
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
                 [out] bst_ulong *out_len,
-                [out] char **out_dptr);
-        
+                [out] char **out_dptr,
+                [in, string] char* username);
+
         public int enclave_XGBoosterLoadModelFromBuffer(
                 [in, string] char* handle,
                 [in, size=len] const void* buf,
-                bst_ulong len);
-        
+                bst_ulong len,
+                [in, string] char* username);
+
         public int enclave_XGDMatrixFree(
                 [in, string] char* handle);
         
@@ -167,12 +176,20 @@ enclave {
                 [out] uint8_t **remote_report,
                 [out] size_t  *remote_report_size);
 
-        public int enclave_add_client_key(
-                [in, size=data_len] uint8_t* data, 
-                size_t data_len, 
+        /*public int enclave_add_client_key(*/
+        /*        [in, size=data_len] uint8_t* data, */
+        /*        size_t data_len, */
+        /*        [in, size=sig_len] uint8_t* signature,*/
+        /*        size_t sig_len);*/
+
+        public int enclave_add_client_key_with_certificate(
+                [in, size=cert_len] char * cert,
+                int cert_len,
+                [in, size=data_len] uint8_t* data,
+                size_t data_len,
                 [in, size=sig_len] uint8_t* signature,
                 size_t sig_len);
-        
+
         public void enclave_RabitInit(
                 int argc,
                 [in, count=argc] char **argv,
