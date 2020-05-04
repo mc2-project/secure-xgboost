@@ -1,7 +1,7 @@
 #ifndef ATTESTATION_H_
 #define ATTESTATION_H_
 
-static const char MRSIGNER_PUBLIC_KEY[] =
+static const char ENCLAVE_PUBLIC_KEY[] =
 "-----BEGIN PUBLIC KEY-----\n"
 "MIIBoDANBgkqhkiG9w0BAQEFAAOCAY0AMIIBiAKCAYEAoaB84pKOIcKs4kIQbCfe\n"
 "9NdH5uj4hkXDtcc8hY2QYpZWLweZNKYPwbEADkpOLxSOJcBzhPHVgzzQdC29DVUB\n"
