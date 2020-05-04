@@ -328,6 +328,17 @@ int enclave_add_client_key_with_certificate(
     return add_client_key_with_certificate(cert, cert_len, data, data_len, signature, sig_len);
 }
 
+int enclave_add_client_key_with_certificate(
+        char * cert,
+        int cert_len,
+        uint8_t* data,
+        size_t data_len,
+        uint8_t* signature,
+        size_t sig_len) {
+    LOG(DEBUG) << "Ecall: add_client_key_with_certificate";
+    return add_client_key_with_certificate(cert, cert_len, data, data_len, signature, sig_len);
+}
+
 void enclave_RabitInit(int argc, char **argv, size_t arg_lengths[]) {
   LOG(DEBUG) << "Ecall: RabitInit";
 
