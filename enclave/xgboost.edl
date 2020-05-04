@@ -176,11 +176,11 @@ enclave {
                 [out] uint8_t **remote_report,
                 [out] size_t  *remote_report_size);
 
-        public int enclave_add_client_key(
-                [in, size=data_len] uint8_t* data, 
-                size_t data_len, 
-                [in, size=sig_len] uint8_t* signature,
-                size_t sig_len);
+        /*public int enclave_add_client_key(*/
+        /*        [in, size=data_len] uint8_t* data, */
+        /*        size_t data_len, */
+        /*        [in, size=sig_len] uint8_t* signature,*/
+        /*        size_t sig_len);*/
 
         public int enclave_add_client_key_with_certificate(
                 [in, size=cert_len] char * cert,

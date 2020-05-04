@@ -1307,10 +1307,10 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
   return 0;
 }
 
-XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-    // FIXME return value / error handling
-  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
-}
+//XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
+//    // FIXME return value / error handling
+//  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
+//}
 
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
     // FIXME return value / error handling

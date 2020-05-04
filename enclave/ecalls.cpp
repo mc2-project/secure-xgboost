@@ -292,14 +292,14 @@ int enclave_get_remote_report_with_pubkey(
   return get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
-int enclave_add_client_key(
-        uint8_t* data,
-        size_t data_len,
-        uint8_t* signature,
-        size_t sig_len) {
-    LOG(DEBUG) << "Ecall: add_client_key";
-    return add_client_key(data, data_len, signature, sig_len);
-}
+//int enclave_add_client_key(
+//        uint8_t* data,
+//        size_t data_len,
+//        uint8_t* signature,
+//        size_t sig_len) {
+//    LOG(DEBUG) << "Ecall: add_client_key";
+//    return add_client_key(data, data_len, signature, sig_len);
+//}
 
 int enclave_add_client_key_with_certificate(
         char * cert,

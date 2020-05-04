@@ -238,7 +238,7 @@ bool generate_remote_report(
   uint8_t* temp_buf = NULL;
 
   // Compute the sha256 hash of given data.
-  if (EnclaveContext::compute_sha256(data, data_size, sha256) != 0) {
+  if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(INFO) << "compute_sha256 failed";
     return false;
   }
@@ -337,11 +337,11 @@ int get_remote_report_with_pubkey(
   return ret;
 } 
 
-int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
-    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
-      return 0;
-    return -1;
-}
+//int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
+//    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
+//      return 0;
+//    return -1;
+//}
 
 int add_client_key_with_certificate(char * cert,
         int cert_len,
@@ -1427,7 +1427,7 @@ inline void XGBoostDumpModelImpl(
   unsigned char key[CIPHER_KEY_SIZE];
 
   //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer 
-  const char *username = "no_user"; 
+  const char *username = "user1"; 
   EnclaveContext::getInstance().get_client_key((uint8_t*) key, (char*) username);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
