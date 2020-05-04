@@ -18,7 +18,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     # Remote attestation
     print("Remote attestation")
     enclave_reference = xgb.Enclave(addr=channel_addr)
-    enclave_reference.attest(verify=False)
+    enclave_reference.attest(verify=True)
     print("Report successfully verified")
 
     print("Send private key to enclave")
@@ -75,6 +75,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     channel_addr = str(args.ip_addr) + ":50051" 
-
-    logging.basicConfig()
     run(channel_addr, str(args.symmkey), str(args.privkey), str(args.cert))

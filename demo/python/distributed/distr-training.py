@@ -4,18 +4,18 @@ import os
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 SYM_KEY_FILE = DIR + "/../../data/key_zeros.txt"
-PUB_KEY_FILE = DIR + "/../../data/keypair.pem"
+PRIVATE_KEY_FILE = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
 CERT_FILE = DIR + "/../../data/usercrts/user1.crt"
 
 username = "user1"
-xgb.init_user(username, SYM_KEY_FILE, PUB_KEY_FILE, CERT_FILE)
+xgb.init_user(username, SYM_KEY_FILE, PRIVATE_KEY_FILE, CERT_FILE)
 
 print("Creating enclave")
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")
-enclave.attest(verify=False)
+enclave.attest(verify=True)
 
 print("Send private key to enclave")
 enclave.add_key()

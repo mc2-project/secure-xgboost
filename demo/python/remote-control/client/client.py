@@ -20,7 +20,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     # Remote attestation
     print("Remote attestation")
     enclave_reference = xgb.Enclave(addr=channel_addr)
-    enclave_reference.attest(verify=False)
+    enclave_reference.attest(verify=True)
     print("Report successfully verified")
 
     print("Send private key to enclave")
@@ -39,8 +39,6 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
         print("Error creating dtest")
         return
     print("dtest: " + dtest.handle.value.decode("utf-8"))
-
-    # return
 
     print("Beginning Training")
 

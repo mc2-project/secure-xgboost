@@ -17,7 +17,7 @@ enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")
-enclave.attest(verify=False)
+enclave.attest(verify=True)
 
 print("Send private key to enclave")
 enclave.add_key()
