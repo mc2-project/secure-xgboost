@@ -22,6 +22,10 @@ Core Data Structure
     :members:
     :show-inheritance:
 
+.. autoclass:: securexgboost.CryptoUtils
+    :members:
+    :show-inheritance:
+
 Learning API
 ------------
 .. automodule:: securexgboost.training
