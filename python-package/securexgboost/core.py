@@ -886,7 +886,6 @@ class DMatrix(object):
     #     """
     #     return self.get_float_info('base_margin')
 
-    # FIXME: Enable this API with encryption
     def num_row(self):
         """Get the number of rows in the DMatrix.
 

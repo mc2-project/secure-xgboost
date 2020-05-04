@@ -90,8 +90,8 @@ class EnclaveContext {
 
       DMatrixHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added dmatrix " << handle;
-      print_dmatrix_map();
-      print_dmatrix_owner_map();
+      debug_print_dmatrix_map();
+      debug_print_dmatrix_owner_map();
       return handle;
     }
 
@@ -100,7 +100,7 @@ class EnclaveContext {
       std::string str(handle);
       std::unordered_map<std::string, void*>::const_iterator iter = booster_map.find(str);
       if (iter == booster_map.end()) {
-        print_booster_map();
+        debug_print_booster_map();
         LOG(FATAL) << "No such booster oject: " << handle;
         return NULL;
       } else {
@@ -113,7 +113,7 @@ class EnclaveContext {
       std::string str(handle);
       std::unordered_map<std::string, void*>::const_iterator iter = dmatrix_map.find(str);
       if (iter == dmatrix_map.end()) {
-        print_dmatrix_map();
+        debug_print_dmatrix_map();
         LOG(FATAL) << "No such dmatrix oject: " << handle;
         return NULL;
       } else {
@@ -126,14 +126,14 @@ class EnclaveContext {
       std::string str(handle);
       auto iter = dmatrix_owner_map.find(str);
       if (iter == dmatrix_owner_map.end()) {
-        print_dmatrix_owner_map();
+        debug_print_dmatrix_owner_map();
         LOG(FATAL) << "No such dmatrix oject: " << handle;
       } else {
         return iter->second;
       }
     }
 
-    void print_dmatrix_map() {
+    void debug_print_dmatrix_map() {
       std::ostringstream oss;
       oss << "DMatrix map---------------" << "\n";
       for(auto elem : dmatrix_map) {
@@ -143,7 +143,7 @@ class EnclaveContext {
       LOG(DEBUG) << oss.str();
     }
 
-    void print_dmatrix_owner_map() {
+    void debug_print_dmatrix_owner_map() {
       std::ostringstream oss;
       oss << "DMatrix owner map---------------" << "\n";
       for(auto elem : dmatrix_owner_map) {
@@ -156,7 +156,7 @@ class EnclaveContext {
       LOG(DEBUG) << oss.str();
     }
 
-    void print_booster_map() {
+    void debug_print_booster_map() {
       std::ostringstream oss;
       oss << "Booster map---------------" << "\n";
       for(auto elem : booster_map) {
