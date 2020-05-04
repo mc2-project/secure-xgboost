@@ -465,16 +465,6 @@ int add_client_key_with_certificate(char * cert,
 
 }
 
-int add_client_key_with_certificate(char * cert,
-        int cert_len,
-        uint8_t* data,
-        size_t data_len,
-        uint8_t* signature,
-        size_t sig_len) {
-    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len);
-    return 0;
-}
-
 /*! \brief entry to to easily hold returning information */
 struct XGBAPIThreadLocalEntry {
   /*! \brief result holder for returning string */
