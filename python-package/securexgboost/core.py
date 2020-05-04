@@ -397,10 +397,9 @@ class DMatrix(object):
     _feature_names = None  # for previous version's pickle
     _feature_types = None
 
-    def __init__(self, data_dict, encrypted=True, label=None, missing=None,
-                 weight=None, silent=False,
-                 feature_names=None, feature_types=None,
-                 nthread=None): 
+    # TODO(rishabh): Enable disabled arguments: `label`, `weight`
+    def __init__(self, data_dict, encrypted=True, silent=False,
+            feature_names=None, feature_types=None): 
         """
         Load a DMatrix from encrypted files at the enclave server, where
         each file is encrypted with a particular user's symmetric key.
@@ -410,31 +409,52 @@ class DMatrix(object):
         data_dict : dictionary 
             Keys: Usernames
             Values: Path to training data of corresponding user
-        label : list or numpy 1-D array, optional
-            Label of the training data.
-        missing : float, optional
-            Value in the data which needs to be present as a missing value. If
-            None, defaults to np.nan.
-        weight : list or numpy 1-D array , optional
-            Weight for each instance.
-
-            .. note:: For ranking task, weights are per-group.
-
-                In ranking task, one weight is assigned to each group (not each data
-                point). This is because we only care about the relative ordering of
-                data points within each group, so it doesn't make sense to assign
-                weights to individual data points.
-
         silent : boolean, optional
             Whether print messages during construction
         feature_names : list, optional
             Set names for features.
         feature_types : list, optional
             Set types for features.
-        nthread : integer, optional
-            Number of threads to use for loading data from numpy array. If -1,
-            uses maximum threads available on the system.
         """
+
+    # def __init__(self, data_dict, encrypted=True, label=None, missing=None,
+    #              weight=None, silent=False,
+    #              feature_names=None, feature_types=None,
+    #              nthread=None): 
+    #     """
+    #     Load a DMatrix from encrypted files at the enclave server, where
+    #     each file is encrypted with a particular user's symmetric key.
+    # 
+    #     Parameters
+    #     ----------
+    #     data_dict : dictionary 
+    #         Keys: Usernames
+    #         Values: Path to training data of corresponding user
+    #     label : list or numpy 1-D array, optional
+    #         Label of the training data.
+    #     missing : float, optional
+    #         Value in the data which needs to be present as a missing value. If
+    #         None, defaults to np.nan.
+    #     weight : list or numpy 1-D array , optional
+    #         Weight for each instance.
+    # 
+    #         .. note:: For ranking task, weights are per-group.
+    # 
+    #             In ranking task, one weight is assigned to each group (not each data
+    #             point). This is because we only care about the relative ordering of
+    #             data points within each group, so it doesn't make sense to assign
+    #             weights to individual data points.
+    # 
+    #     silent : boolean, optional
+    #         Whether print messages during construction
+    #     feature_names : list, optional
+    #         Set names for features.
+    #     feature_types : list, optional
+    #         Set types for features.
+    #     nthread : integer, optional
+    #         Number of threads to use for loading data from numpy array. If -1,
+    #         uses maximum threads available on the system.
+    #     """
         usernames, data = [], []
 
         for user, path in data_dict.items():
@@ -511,16 +531,17 @@ class DMatrix(object):
         #         raise TypeError('can not initialize DMatrix from'
         #                         ' {}'.format(type(data).__name__))
 
-        if label is not None:
-            if isinstance(label, np.ndarray):
-                self.set_label_npy2d(label)
-            else:
-                self.set_label(label)
-        if weight is not None:
-            if isinstance(weight, np.ndarray):
-                self.set_weight_npy2d(weight)
-            else:
-                self.set_weight(weight)
+        # TODO(rishabh): Enable this
+        # if label is not None:
+        #     if isinstance(label, np.ndarray):
+        #         self.set_label_npy2d(label)
+        #     else:
+        #         self.set_label(label)
+        # if weight is not None:
+        #     if isinstance(weight, np.ndarray):
+        #         self.set_weight_npy2d(weight)
+        #     else:
+        #         self.set_weight(weight)
 
         self.feature_names = feature_names
         self.feature_types = feature_types
