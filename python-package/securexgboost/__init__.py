@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 import os
 
-from .core import DMatrix, Booster, Enclave, RemoteAPI, init_user
+from .core import DMatrix, Booster, Enclave, init_user
 from .core import generate_client_key, encrypt_file
 from .training import train #, cv
 from . import rabit                   # noqa
@@ -24,7 +24,7 @@ VERSION_FILE = os.path.join(os.path.dirname(__file__), 'VERSION')
 with open(VERSION_FILE) as f:
     __version__ = f.read().strip()
 
-__all__ = ['DMatrix', 'Booster', 'Enclave', 'RemoteAPI', 
+__all__ = ['DMatrix', 'Booster', 'Enclave',
            'train', 'cv', 'init_user',
            'generate_client_key', 'encrypt_file',
            'XGBModel', 'XGBClassifier', 'XGBRegressor', 'XGBRanker',

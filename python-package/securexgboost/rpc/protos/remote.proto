@@ -96,9 +96,6 @@ message Report {
 // Message from client to enclaves with information on how to retrieve
 // training/test data
 message DataMetadata {
-  // Filename of data
-  // string data_fname = 1;
-
   // Symmetric key used to encrypt data file, encrypted with
   // enclave public key
   numproto.protobuf.NDArray enc_sym_key = 1;

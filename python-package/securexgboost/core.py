@@ -1728,7 +1728,7 @@ class Booster(object):
             #      else:
             #          preds = preds.reshape(nrow, chunk_size)
         if decrypt:
-            return self.decrypt_predictions(preds, length.value)
+            preds = self.decrypt_predictions(preds, length.value)
         return preds, length.value
 
     # TODO(rishabh): change encrypted_preds to Python type from ctype
@@ -1765,7 +1765,7 @@ class Booster(object):
 
         # Convert c pointer to numpy array
         preds = ctypes2numpy(preds, num_preds, np.float32)
-        return preds, num_preds
+        return preds
 
 
     def save_model(self, fname, username=None):

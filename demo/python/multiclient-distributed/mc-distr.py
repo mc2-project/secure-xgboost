@@ -9,7 +9,9 @@ enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", log_ver
 
 # Remote Attestation
 print("Remote attestation")
-enclave.attest(verify=False)
+# Note: Simulation mode does not support attestation
+# pass in `verify=False` to attest()
+enclave.attest()
 
 username1 = "user1"
 train_enc_1 = HOME_DIR + "demo/python/multiclient-distributed/data/u1_train.enc"
