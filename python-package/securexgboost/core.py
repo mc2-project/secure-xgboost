@@ -435,10 +435,6 @@ class DMatrix(object):
             Number of threads to use for loading data from numpy array. If -1,
             uses maximum threads available on the system.
         """
-        # check the global variable for current_user
-        #  if usernames is None and "current_user" in globals():
-            #  username = globals()["current_user"]
-
         usernames, data = [], []
 
         for user, path in data_dict.items():

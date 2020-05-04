@@ -1,11 +1,6 @@
 """The Python implementation of the GRPC Remote Attestation client."""
 
 from __future__ import print_function
-import logging
-
-import grpc
-import base64
-
 import securexgboost as xgb
 import argparse
 import os
@@ -83,6 +78,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     channel_addr = str(args.ip_addr) + ":50051" 
-
-    logging.basicConfig()
     run(channel_addr, str(args.symmkey), str(args.privkey), str(args.cert))
