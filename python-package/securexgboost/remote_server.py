@@ -26,7 +26,7 @@ from rpc_utils import *
 import os
 import sys
 import traceback
-from .core import RemoteAPI as server
+from .core import RemoteAPI as remote_api
 
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
@@ -107,7 +107,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Calls get_remote_report_with_pubkey()
         """
         # Get report from enclave
-        pem_key, key_size, remote_report, remote_report_size = server.get_remote_report_with_pubkey(request)
+        pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
 
         return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
@@ -149,7 +149,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Create DMatrix from encrypted file
         """
         try:
-            dmatrix_handle = self._synchronize(server.XGDMatrixCreateFromEncryptedFile, request)
+            dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
             return remote_pb2.Name(name=dmatrix_handle)
         except:
             e = sys.exc_info()
@@ -164,7 +164,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Set booster parameter
         """
         try:
-            _ = self._synchronize(server.XGBoosterSetParam, request)
+            _ = self._synchronize(remote_api.XGBoosterSetParam, request)
             return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
@@ -179,7 +179,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Create a booster
         """
         try:
-            booster_handle = self._synchronize(server.XGBoosterCreate, request)
+            booster_handle = self._synchronize(remote_api.XGBoosterCreate, request)
             return remote_pb2.Name(name=booster_handle)
         except:
             e = sys.exc_info()
@@ -194,7 +194,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Update model for one iteration
         """
         try:
-            _ = self._synchronize(server.XGBoosterUpdateOneIter, request)
+            _ = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
@@ -209,7 +209,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted predictions
         """
         try:
-            enc_preds, num_preds = self._synchronize(server.XGBoosterPredict, request)
+            enc_preds, num_preds = self._synchronize(remote_api.XGBoosterPredict, request)
             enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
             return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
 
@@ -226,7 +226,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Save model to encrypted file
         """
         try:
-            _ = self._synchronize(server.XGBoosterSaveModel, request)
+            _ = self._synchronize(remote_api.XGBoosterSaveModel, request)
             return remote_pb2.Status(status=0)
 
         except Exception as e:
@@ -242,7 +242,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Load model from encrypted file
         """
         try:
-            _ = self._synchronize(server.XGBoosterLoadModel, request)
+            _ = self._synchronize(remote_api.XGBoosterLoadModel, request)
             return remote_pb2.Status(status=0)
 
         except Exception as e:
@@ -258,7 +258,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted model dump
         """
         try:
-            length, sarr = self._synchronize(server.XGBoosterDumpModelEx, request)
+            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
             return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
@@ -274,7 +274,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted model dump with features
         """
         try:
-            length, sarr = self._synchronize(server.XGBoosterDumpModelExWithFeatures, request)
+            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
             return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
@@ -290,7 +290,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted raw model dump
         """
         try:
-            length, sarr = self._synchronize(server.XGBoosterGetModelRaw, request)
+            length, sarr = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
             return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
@@ -306,7 +306,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get number of columns in DMatrix
         """
         try:
-            ret = self._synchronize(server.XGDMatrixNumCol, request)
+            ret = self._synchronize(remote_api.XGDMatrixNumCol, request)
             return remote_pb2.Integer(value=ret)
 
         except Exception as e:
@@ -322,7 +322,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get number of rows in DMatrix
         """
         try:
-            ret = self._synchronize(server.XGDMatrixNumRow, request)
+            ret = self._synchronize(remote_api.XGDMatrixNumRow, request)
             return remote_pb2.Integer(value=ret)
 
         except Exception as e:
@@ -338,9 +338,9 @@ def serve(enclave, num_workers=10, all_users=[]):
     command = Command()
     globals()["all_users"] = all_users
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
-    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), server)
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    server.wait_for_termination()
+    rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
+    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)
+    rpc_server.add_insecure_port('[::]:50051')
+    rpc_server.start()
+    rpc_server.wait_for_termination()
 
