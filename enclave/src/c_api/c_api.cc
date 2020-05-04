@@ -238,7 +238,7 @@ bool generate_remote_report(
   uint8_t* temp_buf = NULL;
 
   // Compute the sha256 hash of given data.
-  if (EnclaveContext::compute_sha256(data, data_size, sha256) != 0) {
+  if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(INFO) << "compute_sha256 failed";
     return false;
   }
@@ -335,13 +335,123 @@ int get_remote_report_with_pubkey(
   }
 #endif
   return ret;
-} 
-
-int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
-    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
-      return 0;
-    return -1;
 }
+
+/**
+ * Attest the given remote report and accompanying data. It consists of the
+ * following three steps:
+ *
+ * 1) The remote report is first attested using the oe_verify_report API. This
+ * ensures the authenticity of the enclave that generated the remote report.
+ * 2) Next, to establish trust of the enclave that  generated the remote report,
+ * the mrsigner, product_id, isvsvn values are checked to  see if they are
+ * predefined trusted values.
+ * 3) Once the enclave's trust has been established, the validity of
+ * accompanying data is ensured by comparing its SHA256 digest against the
+ * report_data field.
+ */
+bool attest_remote_report(
+    const uint8_t* remote_report,
+    size_t remote_report_size,
+    const uint8_t* data,
+    size_t data_size) {
+
+  bool ret = false;
+  uint8_t sha256[32];
+  oe_report_t parsed_report = {0};
+  oe_result_t result = OE_OK;
+
+  // While attesting, the remote report being attested must not be tampered
+  // with. Ensure that it has been copied over to the enclave.
+  if (!oe_is_within_enclave(remote_report, remote_report_size)) {
+    LOG(FATAL) << "Cannot attest remote report in host memory. Unsafe.";
+  }
+
+  // 1)  Validate the report's trustworthiness
+  // Verify the remote report to ensure its authenticity.
+  result = oe_verify_report(remote_report, remote_report_size, &parsed_report);
+  if (result != OE_OK) {
+    LOG(FATAL) << "oe_verify_report failed " << oe_result_str(result);
+  }
+
+  // 2) validate the enclave identity's signed_id is the hash of the public
+  // signing key that was used to sign an enclave. Check that the enclave was
+  // signed by an trusted entity.
+  // FIXME Enable this check
+  /*if (memcmp(parsed_report.identity.signer_id, m_enclave_mrsigner, 32) != 0) {
+    LOG(FATAL) << "identity.signer_id checking failed."
+
+    LOG(INFO)<< "identity.signer_id " << parsed_report.identity.signer_id;
+
+    for (int i = 0; i < 32; i++) {
+    TRACE_ENCLAVE(
+    "m_enclave_mrsigner[%d]=0x%0x\n",
+    i,
+    (uint8_t)m_enclave_mrsigner[i]);
+    }
+
+    TRACE_ENCLAVE("\n\n\n");
+
+    for (int i = 0; i < 32; i++)
+    {
+    TRACE_ENCLAVE(
+    "parsedReport.identity.signer_id)[%d]=0x%0x\n",
+    i,
+    (uint8_t)parsed_report.identity.signer_id[i]);
+    }
+    TRACE_ENCLAVE("m_enclave_mrsigner %s", m_enclave_mrsigner);
+    goto exit;
+    }*/
+
+  // FIXME add verification for MRENCLAVE
+
+  // Check the enclave's product id and security version
+  // See enc.conf for values specified when signing the enclave.
+  if (parsed_report.identity.product_id[0] != 1) {
+    LOG(FATAL) << "identity.product_id checking failed.";
+  }
+
+  if (parsed_report.identity.security_version < 1) {
+    LOG(FATAL) << "identity.security_version checking failed.";
+  }
+
+  // 3) Validate the report data
+  //    The report_data has the hash value of the report data
+  if (compute_sha256(data, data_size, sha256) != 0) {
+    LOG(FATAL) << "hash validation failed.";
+  }
+
+  if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
+    LOG(FATAL) << "SHA256 mismatch.";
+  }
+  ret = true;
+  LOG(INFO) << "remote attestation succeeded.";
+  return ret;
+}
+
+int verify_remote_report_and_set_pubkey(
+    uint8_t* pem_key,
+    size_t key_size,
+    uint8_t* remote_report,
+    size_t remote_report_size) {
+
+  // Attest the remote report and accompanying key.
+  if (attest_remote_report(remote_report, remote_report_size, pem_key, key_size)) {
+    // FIXME save the pubkey passed by the other enclave
+    //memcpy(m_crypto->get_the_other_enclave_public_key(), pem_key, key_size);
+  } else {
+    LOG(INFO) << "verify_report_and_set_pubkey failed.";
+    return -1;
+  }
+  LOG(INFO) << "verify_report_and_set_pubkey succeeded.";
+  return 0;
+}
+
+//int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
+//    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
+//      return 0;
+//    return -1;
+//}
 
 int add_client_key_with_certificate(char * cert,
         int cert_len,
@@ -349,8 +459,10 @@ int add_client_key_with_certificate(char * cert,
         size_t data_len,
         uint8_t* signature,
         size_t sig_len) {
-    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len);
-    return 0;
+    if (EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len))
+      return 0;
+    return -1;
+
 }
 
 /*! \brief entry to to easily hold returning information */
@@ -1110,19 +1222,60 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle) {
   API_END();
 }
 
+XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
+                                    const char *name,
+                                    const char *value,
+                                    const char *username,
+                                    uint8_t *signature,
+                                    size_t sig_len){
+    API_BEGIN();
+    CHECK_HANDLE();
+    // TODO Add signature checking
+
+    size_t data_len = strlen(name) + strlen(value) + 2 ;
+    uint8_t data[data_len + 1];
+    memcpy((uint8_t *)data, name, strlen(name));
+    data[strlen(name)] = (uint8_t) ',';
+    memcpy((uint8_t *)data+strlen(name)+1,value,strlen(value)+1);
+    data[data_len] = 0;
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName(data, data_len, signature, sig_len, (char *)username);
+    // TODO Add Multi User Verification + Add Verification for a list of signatures
+    if(verified){
+      void* bst = EnclaveContext::getInstance().get_booster(handle);
+      static_cast<Booster*>(bst)->SetParam(name, value);
+    }
+    API_END();
+}
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
-#else
-  static_cast<Booster*>(handle)->SetParam(name, value);
-#endif
   API_END();
 }
+
+
+XGB_DLL int XGBoosterUpdateOneIterWithSig(BoosterHandle handle,
+                                   int iter,
+                                   DMatrixHandle dtrain,
+                                   char *username,
+                                   uint8_t *signature,
+                                   size_t sig_len){
+API_BEGIN();
+CHECK_HANDLE();
+std::ostringstream oss;
+oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
+const char* buff = strdup(oss.str().c_str());
+bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+// TODO Add Multi User Verification + Add Verification for a list of signatures
+free((void*)buff); // prevent memory leak
+if(verified){
+  return XGBoosterUpdateOneIter(handle, iter, dtrain);
+}
+API_END()
+                                   }
 
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
@@ -1203,6 +1356,32 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
   *out_str = oe_host_strndup(eval_str.c_str(), eval_str.length());
   API_END();
 }
+
+XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
+                             DMatrixHandle dmat,
+                             int option_mask,
+                             unsigned ntree_limit,
+                             xgboost::bst_ulong *len,
+                             uint8_t **out_result,
+                             char* username,
+                             uint8_t *signature,
+                             size_t sig_len) {
+  API_BEGIN();
+  CHECK_HANDLE();
+  std::ostringstream oss;
+  oss << "booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
+  const char* buff = strdup(oss.str().c_str());
+  bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+  // TODO Add Multi User Verification + Add Verification for a list of signatures
+  free((void*)buff); // prevent memory leak
+  if(verified){
+    return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
+  }
+  API_END();
+}
+
+
+
 
 // FIXME out_result should be bst_float
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
@@ -1419,10 +1598,11 @@ inline void XGBoostDumpModelImpl(
 
   //TODO: ADD Multi client support for dump model, current fix, just dummy char pointer 
   char *username; 
+
   EnclaveContext::getInstance().get_client_key((uint8_t*) key, username);
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
-    encrypted = (unsigned char*) malloc(length * sizeof(char)); 
+    encrypted = (unsigned char*) malloc(length * sizeof(char));
 
     /* Encrypt */
     encrypt_symm(

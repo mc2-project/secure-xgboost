@@ -150,7 +150,7 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
  */
 XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
                                     int silent,
-                                    DMatrixHandle *out); 
+                                    DMatrixHandle *out);
 
 /*!
  * \brief load a data matrix from an encrypted file
@@ -380,6 +380,14 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
  */
 XGB_DLL int XGBoosterFree(BoosterHandle handle);
 
+XGB_DLL int XGBoosterSetParamWithSig(BoosterHandle handle,
+                                    const char *name,
+                                    const char *value,
+                                    const char *username,
+                                    uint8_t *signature,
+                                    size_t sig_len);
+
+
 /*!
  * \brief set parameters
  * \param handle handle
@@ -390,6 +398,14 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle);
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value);
+
+
+XGB_DLL int XGBoosterUpdateOneIterWithSig(BoosterHandle handle,
+                                   int iter,
+                                   DMatrixHandle dtrain,
+                                   char *username,
+                                   uint8_t *signature,
+                                   size_t sig_len) ;
 
 /*!
  * \brief update the model in one round using dtrain
@@ -432,6 +448,20 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
                                  const char *evnames[],
                                  bst_ulong len,
                                  const char **out_result);
+
+XGB_DLL int XGBoosterPredictWithSig(BoosterHandle handle,
+                            DMatrixHandle dmat,
+                            int option_mask,
+                            unsigned ntree_limit,
+                            bst_ulong *out_len,
+                            uint8_t **out_result,
+                            char* username,
+                            uint8_t *signature,
+                            size_t sig_len);
+
+
+
+
 /*!
  * \brief make prediction based on dmat
  * \param handle handle

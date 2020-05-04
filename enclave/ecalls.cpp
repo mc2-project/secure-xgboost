@@ -80,6 +80,16 @@ int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char
   return XGBoosterSetParam(handle, name, value);
 }
 
+int enclave_XGBoosterSetParamWithSig(BoosterHandle handle, const char* name, const char* value, const char* username, uint8_t *signature, size_t sig_len){
+  LOG(DEBUG) << "Ecall: XGBoosterSetParamWithSig";
+  return XGBoosterSetParamWithSig(handle, name, value, username, signature, sig_len);
+}
+
+int enclave_XGBoosterUpdateOneIterWithSig(BoosterHandle handle, int iter, DMatrixHandle dtrain, char *username, uint8_t *signature, size_t sig_len) {
+  LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
+  return XGBoosterUpdateOneIterWithSig(handle, iter, dtrain, username, signature, sig_len);
+}
+
 int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain) {
   LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
   return XGBoosterUpdateOneIter(handle, iter, dtrain);
@@ -228,6 +238,12 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
   return XGBoosterLoadModelFromBuffer(handle, buf, len, username);
 }
 
+int enclave_XGBoosterPredictWithSig(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username, uint8_t *signature,
+size_t sig_len) {
+  LOG(DEBUG) << "Ecall: XGBoosterPredictWithSig";
+  return XGBoosterPredictWithSig(handle, dmat, option_mask, ntree_limit, len, out_result, username, signature, sig_len);
+}
+
 int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
   return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
@@ -292,14 +308,14 @@ int enclave_get_remote_report_with_pubkey(
   return get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
 
-int enclave_add_client_key(
-        uint8_t* data,
-        size_t data_len,
-        uint8_t* signature,
-        size_t sig_len) {
-    LOG(DEBUG) << "Ecall: add_client_key";
-    return add_client_key(data, data_len, signature, sig_len);
-}
+//int enclave_add_client_key(
+//        uint8_t* data,
+//        size_t data_len,
+//        uint8_t* signature,
+//        size_t sig_len) {
+//    LOG(DEBUG) << "Ecall: add_client_key";
+//    return add_client_key(data, data_len, signature, sig_len);
+//}
 
 int enclave_add_client_key_with_certificate(
         char * cert,

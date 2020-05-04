@@ -24,7 +24,6 @@ from .compat import (STRING_TYPES, PY3, DataFrame, MultiIndex, py_str,
                      PANDAS_INSTALLED, DataTable)
 from .libpath import find_lib_path
 
-
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
@@ -249,6 +248,7 @@ def proto_to_pointer(proto):
     Returns:
         pointer :  ctypes.POINTER(ctypes.u_int)
     """
+
     ndarray = proto_to_ndarray(proto)
     # FIXME make the ctype POINTER type configurable
     pointer = ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
@@ -355,14 +355,71 @@ def _maybe_dt_array(array):
 
     return array
 
-def set_user(user_name):
+class User(object):
     """
-    Parameters
-    ----------
-    user_name : string
-        user you want to switch to
+
+    This should store all the user information.
+    Make sure you call Set_user to set the default in the global variable
     """
-    globals()["current_user"] = user_name
+    def __init__(self, username, private_key, certificate):
+        """
+        Parameters
+        ----------
+        username: string
+            username encoded in the certificate
+        private_key: string
+            path to user's private key file
+        certificate: string
+            path to user's private key file
+        """
+        self.username = username
+        self.private_key = private_key
+        self.certificate = certificate
+        self.crypto = CryptoUtils()
+
+    def set_user(self):
+        """
+        set the current user
+        """
+        globals()["current_user"] = self
+        print("Current user has been set to {}!".format(self.username))
+
+    def sign_statement(self, statement):
+        """
+        Parameters
+        ----------
+        statement: string
+            sign some statement using a user's private key
+
+        Returns
+        -------
+        signature : proto.NDArray
+        sig_len_as_int : int
+        """
+        assert isinstance(statement, str)
+        statement_size = len(statement) + 1
+        statement_pointer = c_str(statement)
+
+        # slightly modified version of sign data
+        # Cast the keyfile to a char*
+        keyfile = ctypes.c_char_p(str.encode(self.private_key))
+
+        # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
+        data = statement_pointer
+        data_size = ctypes.c_size_t(statement_size)
+
+        # Allocate memory to store the signature and sig_len
+        signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+        sig_len = ctypes.c_size_t(1024)
+
+        # Sign data with key keyfile
+        _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
+
+        # Cast the signature and sig_len back to a gRPC serializable format
+        sig_len_as_int = sig_len.value
+        signature = pointer_to_proto(signature, sig_len_as_int)
+
+        return signature, sig_len_as_int
 
 class DMatrix(object):
     """Data Matrix used in XGBoost.
@@ -382,7 +439,7 @@ class DMatrix(object):
         """
         Parameters
         ----------
-        data_dict : dictionary 
+        data_dict : dictionary
             Keys: Usernames
             Values: Path to training data of corresponding user
         label : list or numpy 1-D array, optional
@@ -433,7 +490,6 @@ class DMatrix(object):
         #  data, feature_names, feature_types = _maybe_pandas_data(data,
                                                                 #  feature_names,
                                                                 #  feature_types)
-#  
         #  data, feature_names, feature_types = _maybe_dt_data(data,
                                                             #  feature_names,
                                                             #  feature_types)
@@ -446,7 +502,7 @@ class DMatrix(object):
                           #  DeprecationWarning)
 
         if isinstance(data, list):
-            handle = ctypes.c_void_p()
+            handle = ctypes.c_char_p()
             if encrypted:
                 filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
                 usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
@@ -1134,7 +1190,7 @@ class CryptoUtils(object):
 
         return encrypted_data, encrypted_data_size_as_int
 
-    def sign_data(self, keyfile, data, data_size):
+    def sign_data(self, keyfile, data, data_size, pointer = False):
         """
         Parameters
         ----------
@@ -1151,7 +1207,8 @@ class CryptoUtils(object):
         keyfile = ctypes.c_char_p(str.encode(keyfile))
 
         # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
-        data = proto_to_pointer(data)
+        if (not pointer):
+            data = proto_to_pointer(data)
         data_size = ctypes.c_size_t(data_size)
 
         # Allocate memory to store the signature and sig_len
@@ -1432,8 +1489,19 @@ class Booster(object):
             params = params.items()
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
+
+        if "current_user" in globals():
+            user = globals()["current_user"]
+        else:
+            raise ValueError("Please set your user with User.set_user function")
+
         for key, val in params:
-            _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
+            sig, sig_len = user.sign_statement(key+","+str(val))
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+            _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len))
+            ## send it with signatures
+            # _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1454,8 +1522,23 @@ class Booster(object):
         self._validate_features(dtrain)
 
         if fobj is None:
-            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
-                                                    dtrain.handle))
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), iteration, dtrain.handle.value.decode('utf-8'))
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+            _check_call(_LIB.XGBoosterUpdateOneIterWithSig(self.handle, ctypes.c_int(iteration),
+                                                    dtrain.handle,
+                                                    c_str(user.username),
+                                                    sig,
+                                                    sig_len))
+
         else:
             pred = self.predict(dtrain)
             grad, hess = fobj(pred, dtrain)
@@ -1624,9 +1707,10 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            user = globals()["current_user"]
+            username = user.username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1644,12 +1728,32 @@ class Booster(object):
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
-        _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
+
+        utils = CryptoUtils()
+        ## TODO: how to join the argument
+        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), option_mask, ntree_limit)
+        print(args)
+        c_args = ctypes.c_char_p(args.encode('utf-8'))
+
+        data_size = len(args)
+        sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+        sig = proto_to_pointer(sig)
+        sig_len = ctypes.c_size_t(sig_len)
+        _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
                                           ctypes.byref(preds),
-                                          c_str(username)))
+                                          c_str(username),
+                                          sig,
+                                          sig_len))
+
+        # _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
+        #                                  ctypes.c_int(option_mask),
+        #                                  ctypes.c_uint(ntree_limit),
+        #                                  ctypes.byref(length),
+        #                                  ctypes.byref(preds),
+        #                                  c_str(username)))
 
         #  preds = ctypes2numpy(preds, length.value, np.float32)
         #  if pred_leaf:
@@ -1693,9 +1797,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
             _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -1713,9 +1817,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
         _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
@@ -1742,9 +1846,9 @@ class Booster(object):
         """
         # check the global variable for current_user
         if username is None and "current_user" in globals():
-            username = globals()["current_user"]
+            username = globals()["current_user"].username
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your user with the user.set_user method or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
