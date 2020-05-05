@@ -913,13 +913,9 @@ int XGDMatrixCreateFromFile(const char *fname,
 XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   delete static_cast<std::shared_ptr<DMatrix>*>(mat);
   EnclaveContext::getInstance().del_dmatrix(handle);
-#else
-  delete static_cast<std::shared_ptr<DMatrix>*>(handle);
-#endif
   API_END();
 }
 
@@ -941,14 +937,9 @@ XGB_DLL int XGDMatrixSetFloatInfo(DMatrixHandle handle,
                           xgboost::bst_ulong len) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   static_cast<std::shared_ptr<DMatrix>*>(mat)
       ->get()->Info().SetInfo(field, info, kFloat32, len);
-#else
-  static_cast<std::shared_ptr<DMatrix>*>(handle)
-    ->get()->Info().SetInfo(field, info, kFloat32, len);
-#endif
   API_END();
 }
 
@@ -958,14 +949,9 @@ XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
                          xgboost::bst_ulong len) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   static_cast<std::shared_ptr<DMatrix>*>(mat)
       ->get()->Info().SetInfo(field, info, kUInt32, len);
-#else
-  static_cast<std::shared_ptr<DMatrix>*>(handle)
-    ->get()->Info().SetInfo(field, info, kUInt32, len);
-#endif
   API_END();
 }
 
@@ -993,12 +979,8 @@ XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
                                   const bst_float** out_dptr) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   const MetaInfo& info = static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info();
-#else
-  const MetaInfo& info = static_cast<std::shared_ptr<DMatrix>*>(handle)->get()->Info();
-#endif
   const std::vector<bst_float>* vec = nullptr;
   if (!std::strcmp(field, "label")) {
     vec = &info.labels_.HostVector();
@@ -1022,12 +1004,8 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
                                  const unsigned **out_dptr) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   const MetaInfo& info = static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info();
-#else
-  const MetaInfo& info = static_cast<std::shared_ptr<DMatrix>*>(handle)->get()->Info();
-#endif
   const std::vector<unsigned>* vec = nullptr;
   if (!std::strcmp(field, "root_index")) {
     vec = &info.root_index_;
@@ -1045,14 +1023,9 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<xgboost::bst_ulong>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_row_);
-#else
-  *out = static_cast<xgboost::bst_ulong>(
-      static_cast<std::shared_ptr<DMatrix>*>(handle)->get()->Info().num_row_);
-#endif
   API_END();
 }
 
@@ -1060,14 +1033,9 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             xgboost::bst_ulong *out) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
-#else
-  *out = static_cast<size_t>(
-      static_cast<std::shared_ptr<DMatrix>*>(handle)->get()->Info().num_col_);
-#endif
   API_END();
 }
 
@@ -1078,36 +1046,24 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
   API_BEGIN();
   std::vector<std::shared_ptr<DMatrix> > mats;
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
-#ifdef __ENCLAVE__
     void* mat = EnclaveContext::getInstance().get_dmatrix(dmats[i]);
     LOG(DEBUG) << "Got matrix";
     mats.push_back(*static_cast<std::shared_ptr<DMatrix>*>(mat));
     LOG(DEBUG) << "Pushed matrix";
-#else
-    mats.push_back(*static_cast<std::shared_ptr<DMatrix>*>(dmats[i]));
-#endif
   }
-#ifdef __ENCLAVE__
   void* booster = new Booster(mats);
   char* out_str = EnclaveContext::getInstance().add_booster(booster);
   *out = oe_host_strndup(out_str, strlen(out_str));
   free(out_str);
-#else
-  *out = new Booster(mats);
-#endif
   API_END();
 }
 
 XGB_DLL int XGBoosterFree(BoosterHandle handle) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   delete static_cast<Booster*>(bst);
   EnclaveContext::getInstance().del_dmatrix(handle);
-#else
-  delete static_cast<Booster*>(handle);
-#endif
   API_END();
 }
 
@@ -1116,12 +1072,8 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *value) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
-#else
-  static_cast<Booster*>(handle)->SetParam(name, value);
-#endif
   API_END();
 }
 
@@ -1130,15 +1082,9 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    DMatrixHandle dtrain) {
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   auto *dtr =
     static_cast<std::shared_ptr<DMatrix>*>(EnclaveContext::getInstance().get_dmatrix(dtrain));
-#else
-  auto* bst = static_cast<Booster*>(handle);
-  auto *dtr =
-    static_cast<std::shared_ptr<DMatrix>*>(dtrain);
-#endif
   bst->LazyInit();
   bst->learner()->UpdateOneIter(iter, dtr->get());
   API_END();
@@ -1152,15 +1098,9 @@ XGB_DLL int XGBoosterBoostOneIter(BoosterHandle handle,
   HostDeviceVector<GradientPair> tmp_gpair;
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   auto *dtr =
     static_cast<std::shared_ptr<DMatrix>*>(EnclaveContext::getInstance().get_dmatrix(dtrain));
-#else
-  auto* bst = static_cast<Booster*>(handle);
-  auto* dtr =
-      static_cast<std::shared_ptr<DMatrix>*>(dtrain);
-#endif
   tmp_gpair.Resize(len);
   std::vector<GradientPair>& tmp_gpair_h = tmp_gpair.HostVector();
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
@@ -1181,21 +1121,13 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
   std::string& eval_str = XGBAPIThreadLocalStore::Get()->ret_str;
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
-#else
-  auto* bst = static_cast<Booster*>(handle);
-#endif
   std::vector<DMatrix*> data_sets;
   std::vector<std::string> data_names;
 
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
-#ifdef __ENCLAVE__
     data_sets.push_back(static_cast<std::shared_ptr<DMatrix>*>(
           EnclaveContext::getInstance().get_dmatrix(dmats[i]))->get());
-#else
-    data_sets.push_back(static_cast<std::shared_ptr<DMatrix>*>(dmats[i])->get());
-#endif
     data_names.emplace_back(evnames[i]);
   }
 
@@ -1211,29 +1143,17 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              int option_mask,
                              unsigned ntree_limit,
                              xgboost::bst_ulong *len,
-#ifdef __ENCLAVE__
                             uint8_t **out_result,
                             char* username) {
-#else
-                             const bst_float **out_result) {
-#endif
   std::vector<bst_float>&preds =
     XGBAPIThreadLocalStore::Get()->ret_vec_float;
   API_BEGIN();
   CHECK_HANDLE();
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
-#else
-  auto *bst = static_cast<Booster*>(handle);
-#endif
   bst->LazyInit();
   HostDeviceVector<bst_float> tmp_preds;
   bst->learner()->Predict(
-#ifdef __ENCLAVE__
       static_cast<std::shared_ptr<DMatrix>*>(EnclaveContext::getInstance().get_dmatrix(dmat))->get(),
-#else
-      static_cast<std::shared_ptr<DMatrix>*>(dmat)->get(),
-#endif
       (option_mask & 1) != 0,
       &tmp_preds, ntree_limit,
       (option_mask & 2) != 0,
@@ -1368,11 +1288,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
   API_BEGIN();
   CHECK_HANDLE();
   common::MemoryBufferStream fo(&raw_str);
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
-#else
-  auto *bst = static_cast<Booster*>(handle);
-#endif
   bst->LazyInit();
   bst->learner()->Save(&fo);
   int buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + raw_str.length();
@@ -1410,11 +1326,7 @@ inline void XGBoostDumpModelImpl(
     xgboost::bst_ulong* len,
     const char*** out_models) {
   std::vector<std::string>& str_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_str;
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
-#else
-  auto *bst = static_cast<Booster*>(handle);
-#endif
   bst->LazyInit();
   str_vecs = bst->learner()->DumpModel(fmap, with_stats != 0, format);
   /* Write *out_models to user memory instead */
@@ -1518,11 +1430,7 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
                      const char** out,
                      int* success) {
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
-#else
-  auto* bst = static_cast<Booster*>(handle);
-#endif
   std::string& ret_str = XGBAPIThreadLocalStore::Get()->ret_str;
   API_BEGIN();
   CHECK_HANDLE();
@@ -1558,11 +1466,7 @@ XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
                      const char*** out) {
   std::vector<std::string>& str_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_str;
   std::vector<const char*>& charp_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_charp;
-#ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
-#else
-  auto *bst = static_cast<Booster*>(handle);
-#endif
   API_BEGIN();
   CHECK_HANDLE();
   str_vecs = bst->learner()->GetAttrNames();
