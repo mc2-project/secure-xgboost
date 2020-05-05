@@ -21,6 +21,10 @@ class EnclaveContext {
     mbedtls_pk_context m_pk_context;
     uint8_t m_public_key[CIPHER_PK_SIZE];
     uint8_t m_private_key[CIPHER_PK_SIZE];
+    
+    // 12 bytes for the session nonce and four bytes for a counter within the session.
+    uint8_t m_nonce[CIPHER_IV_SIZE];
+    uint32_t counter;
 
      /* We maintain these maps to avoid having to pass out pointers to application code outside
       * the enclave; instead, the application is given a string nickname that the enclave resolves
@@ -42,6 +46,7 @@ class EnclaveContext {
 
     EnclaveContext() {
       generate_public_key();
+      generate_nonce();
       client_key_is_set = false;
       booster_ctr = 0;
       dmatrix_ctr = 0;
@@ -65,6 +70,10 @@ class EnclaveContext {
 
     uint8_t* get_private_key() {
       return m_private_key;
+    }
+
+    uint8_t* get_nonce() {
+      return m_nonce;
     }
 
     // Note: Returned handle needs to be freed
@@ -436,6 +445,24 @@ class EnclaveContext {
         LOG(FATAL) << "mbedtls_pk_write_pubkey_pem failed with " << res;
       }
     }
+
+    /**
+     * Generate a session nonce for the enclave to be used by clients. 
+     */
+    bool generate_nonce() {
+      mbedtls_ctr_drbg_context ctr_drbg;
+      mbedtls_entropy_context entropy
+      mbedtls_entropy_init( &entropy );
+      mbedtls_ctr_drbg_init( &ctr_drbg );
+
+      std::string pers = "generate nonce for secure xgboost";
+      // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
+      int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
+      
+      uint8_t* nonce;
+      ret = mbedtls_ctr_drbg_random( &ctr_drbg, (unsigned char *)nonce, CIPHER_IV_SIZE );
+      memcpy(&m_nonce[0], nonce, CIPHER_IV_SIZE);
+    } 
 };
 
 #endif

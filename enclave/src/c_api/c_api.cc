@@ -337,6 +337,43 @@ int get_remote_report_with_pubkey(
   return ret;
 } 
 
+/**
+ * Return the public key of this enclave along with the enclave's remote report
+ * and a sequence number to be used by clients.
+ * The enclave that receives the key will use the remote report to attest this
+ * enclave.
+ */
+int get_remote_report_with_pubkey_and_nonce(
+    uint8_t** pem_key,
+    size_t* key_size,
+    uint8_t** remote_report,
+    size_t* remote_report_size,
+    uint8_t** nonce,
+    size_t* nonce_size) {
+  int ret = get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
+#ifndef __ENCLAVE_SIMULATION__
+  uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();
+  uint8_t* nonce_buf = (uint8_t*)oe_host_malloc(CIPHER_IV_SIZE);
+  if (nonce_buf == NULL) {
+    ret = OE_OUT_OF_MEMORY;
+    if (*remote_report)
+      oe_host_free(*remote_report);
+    goto done;
+  }
+  memcpy(nonce_buf, enclave_nonce, CIPHER_IV_SIZE);
+
+  *nonce = nonce_buf;
+  *nonce_size = CIPHER_IV_SIZE;
+#endif
+done:
+  if (ret) {
+    LOG(FATAL) << "get_remote_report_with_pubkey_and_nonce failed."
+  } else {
+    LOG(INFO) << "get_remote_report_with_pubkey_and_nonce succeeded."
+  }
+  return ret;
+}
+
 //int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
 //    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
 //      return 0;
