@@ -16,7 +16,7 @@ Python
 
 Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 
-Note: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets>`, remote attestation will not work, as the simulated report will not generate a report. Consequently, report verification will not work, and you should ``verify=False`` when calling ``attest()``
+Note: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets>`, remote attestation will not work, as the simulated enclave will not generate a report. Consequently, report verification will not work, and you should ``verify=False`` when calling ``attest()``
 
 .. code-block:: python
 
@@ -59,7 +59,9 @@ Note: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets
 Troubleshooting
 ***************
 
-1. Remote attestation fails with error ``Failed to get quote enclave identity information.``
+1. Remote attestation fails with error: 
+
+   ``Failed to get quote enclave identity information.``
    ``OE_QUOTE_PROVIDER_CALL_ERROR (oe_result_t=OE_QUOTE_PROVIDER_CALL_ERROR)``. 
    
    If you're using an ACC (Azure Confidential Computing) VM, this may be a sign of a ``dcap-client`` version issue. The ``dcap-client`` should be at least version 1.1. You can check your version by doing

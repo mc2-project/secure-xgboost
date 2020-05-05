@@ -38,7 +38,7 @@ This setup will involve encrypting data on the client, transferring the data to 
 
 ``cd`` into the ``demo/python/remote-control/client`` directory to begin setup.
 
-2. **Encrypt data locally.**
+1. **Encrypt data locally.**
 
    Use the ``encrypt.py`` script to generate a key and encrypt the sample data (``demo/data/agaricus.txt.train`` and ``demo/data/agaricus.txt.test``). It will output three files: 
 
@@ -55,16 +55,16 @@ This setup will involve encrypting data on the client, transferring the data to 
       python3 encrypt.py
 
 
-3. **Send encrypted data to the server**
+2. **Send encrypted data to the server**
 
    We assume that there will be a mechanism to transfer the encrypted data to the server. For the purposes of this demo, the user can try, for example, ``scp`` to simulate this transfer. Note that you will have to ``scp`` the files to the location you specified in the ``DMatrix`` constructor in the server setup.
 
    If simulating a client/server setup locally, think of the ``demo/python/remote-control/data/`` directory as external storage mounted to both the client and server machines. 
 
 
-4. **Make client calls**
+3. **Make client calls**
 
-   On the client, make the aforementioned calls to the server. The ``client.py`` script takes in 4 arguments: the IP address of the server, the path to the generated key, the path to the user's private key, and the path to the user's certificate. We've included a sample private key and certificate for this example.
+   On the client, send commands to the server by running ``client.py``. The ``client.py`` script takes in 4 arguments: the IP address of the server, the path to the generated key, the path to the user's private key, and the path to the user's certificate. We've included a sample private key and certificate for this example.
 
    .. code-block:: bash
 

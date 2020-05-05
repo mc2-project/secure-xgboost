@@ -14,27 +14,31 @@ There are six main steps in the notebook:
 
 1. **Key Generation**
 
-   A symmetric key is generated on the client to encrypt data.
+   The client generates a secret symmetric key.
 
 2. **Data Encryption**
-   
-   The symmetric key is used to encrypt sensitive data.
 
-3. **Enclave Preparation**
-   
-   An enclave is created, authenticated, and given the necessary keys. Be sure that if an enclave is not available on your machine that you create an enclave in simulation mode.
+   The client uses the key to encrypt its data.
 
-4. **Data Loading**
-   
-   Encrypted data is loaded into the enclave. 
+3. ** User Initialization**
 
-5. **Training**
-   
-   A model is securely trained inside the enclave.
+   The client creates a user object and passes in the path to its secret symmetric key, its private key, and its certificate.
 
-6. **Prediction**
+4. **Enclave Preparation**
    
-   The model yields encrypted predictions based off client test data, and the ciphertext is then decrypted.
+   The server creates an enclave, and starts a process within it. The client [*attests*](https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example) the enclave process, and securely transfers its key to the enclave.
 
-Note that in the outsourced computation model, steps 1 and 2 are done on the client, and 3, 4, and 5 are done on the server. Inference resulting in encrypted predictions in step 6 happens on the server, and decryption of the encrypted predictions happens on the client.
+5. **Data Loading**
+   
+   The enclave loads the client's encrypted data.
+
+6. **Training**
+   
+   The enclave trains a model using the provided data.
+
+7. **Prediction**
+   
+   The enclave makes predictions with the model, and produces a set of encrypted results; the client decrypts the results.
+
+Note that in the outsourced computation model, steps 1, 2, and 3 are done on the client, and 4, 5, and 6 are done on the server. Inference yielding encrypted predictions in step 7 happens on the server, and decryption of the encrypted predictions happens on the client.
 
