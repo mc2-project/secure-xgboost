@@ -364,7 +364,7 @@ DMatrix* DMatrix::Load(std::vector<const std::string>& uris,
    * since partitioned data not knowing the real number of features. */
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
-#ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
+  // check that row indices and total rows in file are correct
   for (int i = 0; i < num_uris; ++i) {
       dmlc::Parser<uint32_t>* parser = parsers[i].get();
       if (is_encrypted) {
@@ -383,10 +383,9 @@ DMatrix* DMatrix::Load(std::vector<const std::string>& uris,
           CHECK_EQ(parser->total_rows_global, sum);
       }
   }
-#endif
 
+#if false // FIXME: currently disabled to prevent OE errors if file not found
   // backward compatiblity code.
-#ifndef __ENCLAVE__ // FIXME: currently disabled to prevent OE errors if file not found
   if (!load_row_split) {
     MetaInfo& info = dmat->Info();
     if (MetaTryLoadGroup(fname + ".group", &info.group_ptr_) && !silent) {
