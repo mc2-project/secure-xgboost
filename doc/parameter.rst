@@ -1,7 +1,7 @@
-##################
-XGBoost Parameters
-##################
-Before running XGBoost, we must set three types of parameters: general parameters, booster parameters and task parameters.
+#########################
+Secure XGBoost Parameters
+#########################
+Before running Secure XGBoost, we must set three types of parameters: general parameters, booster parameters and task parameters.
 
 - **General parameters** relate to which booster we are using to do boosting, commonly tree or linear model
 - **Booster parameters** depend on which booster you have chosen
@@ -21,7 +21,7 @@ General Parameters
 * ``verbosity`` [default=1]
 
   - Verbosity of printing messages.  Valid values are 0 (silent),
-    1 (warning), 2 (info), 3 (debug).  Sometimes XGBoost tries to change
+    1 (warning), 2 (info), 3 (debug).  Sometimes Secure XGBoost tries to change
     configurations based on heuristics, which is displayed as warning message.
     If there's unexpected behaviour, please try to increase value of verbosity.
 
@@ -29,11 +29,11 @@ General Parameters
 
   - Flag to disable default metric. Set to >0 to disable.
 
-* ``num_pbuffer`` [set automatically by XGBoost, no need to be set by user]
+* ``num_pbuffer`` [set automatically by Secure XGBoost, no need to be set by user]
 
   - Size of prediction buffer, normally set to number of training instances. The buffers are used to save the prediction results of last boosting step.
 
-* ``num_feature`` [set automatically by XGBoost, no need to be set by user]
+* ``num_feature`` [set automatically by Secure XGBoost, no need to be set by user]
 
   - Feature dimension used in boosting, set to maximum dimension of the feature
 
@@ -51,7 +51,7 @@ Parameters for Tree Booster
 
 * ``max_depth`` [default=6]
 
-  - Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit. 0 is only accepted in ``lossguided`` growing policy when tree_method is set as ``hist`` and it indicates no limit on depth. Beware that XGBoost aggressively consumes memory when training a deep tree.
+  - Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit. 0 is only accepted in ``lossguided`` growing policy when tree_method is set as ``hist`` and it indicates no limit on depth. Beware that Secure XGBoost aggressively consumes memory when training a deep tree.
   - range: [0,∞] (0 is only accepted in ``lossguided`` growing policy when tree_method is set as ``hist``)
 
 * ``min_child_weight`` [default=1]
@@ -66,7 +66,7 @@ Parameters for Tree Booster
 
 * ``subsample`` [default=1]
 
-  - Subsample ratio of the training instances. Setting it to 0.5 means that XGBoost would randomly sample half of the training data prior to growing trees. and this will prevent overfitting. Subsampling will occur once in every boosting iteration.
+  - Subsample ratio of the training instances. Setting it to 0.5 means that Secure XGBoost would randomly sample half of the training data prior to growing trees. and this will prevent overfitting. Subsampling will occur once in every boosting iteration.
   - range: (0,1]
 
 * ``colsample_bytree``, ``colsample_bylevel``, ``colsample_bynode`` [default=1]
@@ -96,8 +96,8 @@ Parameters for Tree Booster
 
 * ``tree_method`` string [default= ``auto``]
 
-  - The tree construction algorithm used in XGBoost. See description in the `reference paper <http://arxiv.org/abs/1603.02754>`_.
-  - XGBoost supports ``hist`` and ``approx`` for distributed training and only support ``approx`` for external memory version.
+  - The tree construction algorithm used in Secure XGBoost. See description in the `reference paper <http://arxiv.org/abs/1603.02754>`_.
+  - Secure XGBoost supports ``hist`` and ``approx`` for distributed training and only support ``approx`` for external memory version.
   - Choices: ``auto``, ``exact``, ``approx``, ``hist``, ``gpu_exact``, ``gpu_hist``
 
     - ``auto``: Use heuristic to choose the fastest method.
@@ -124,7 +124,7 @@ Parameters for Tree Booster
 
 * ``scale_pos_weight`` [default=1]
 
-  - Control the balance of positive and negative weights, useful for unbalanced classes. A typical value to consider: ``sum(negative instances) / sum(positive instances)``. See :doc:`Parameters Tuning </tutorials/param_tuning>` for more discussion. Also, see Higgs Kaggle competition demo for examples: `R <https://github.com/dmlc/xgboost/blob/master/demo/kaggle-higgs/higgs-train.R>`_, `py1 <https://github.com/dmlc/xgboost/blob/master/demo/kaggle-higgs/higgs-numpy.py>`_, `py2 <https://github.com/dmlc/xgboost/blob/master/demo/kaggle-higgs/higgs-cv.py>`_, `py3 <https://github.com/dmlc/xgboost/blob/master/demo/guide-python/cross_validation.py>`_.
+  - Control the balance of positive and negative weights, useful for unbalanced classes. A typical value to consider: ``sum(negative instances) / sum(positive instances)``. Also, see Higgs Kaggle competition demo for examples: `R <https://github.com/dmlc/xgboost/blob/master/demo/kaggle-higgs/higgs-train.R>`_, `py1 <https://github.com/dmlc/xgboost/blob/master/demo/kaggle-higgs/higgs-numpy.py>`_, `py2 <https://github.com/dmlc/xgboost/blob/master/demo/kaggle-higgs/higgs-cv.py>`_, `py3 <https://github.com/dmlc/xgboost/blob/master/demo/guide-python/cross_validation.py>`_.
 
 * ``updater`` [default= ``grow_colmaker,prune``]
 
@@ -200,7 +200,7 @@ Specify the learning task and the corresponding learning objective. The objectiv
 
   - ``survival:cox``: Cox regression for right censored survival time data (negative values are considered right censored).
     Note that predictions are returned on the hazard ratio scale (i.e., as HR = exp(marginal_prediction) in the proportional hazard function ``h(t) = h0(t) * HR``).
-  - ``multi:softmax``: set XGBoost to do multiclass classification using the softmax objective, you also need to set num_class(number of classes)
+  - ``multi:softmax``: set Secure XGBoost to do multiclass classification using the softmax objective, you also need to set num_class(number of classes)
   - ``multi:softprob``: same as softmax, but output a vector of ``ndata * nclass``, which can be further reshaped to ``ndata * nclass`` matrix. The result contains predicted probability of each data point belonging to each class.
   - ``rank:pairwise``: Use LambdaMART to perform pairwise ranking where the pairwise loss is minimized
   - ``rank:ndcg``: Use LambdaMART to perform list-wise ranking where `Normalized Discounted Cumulative Gain (NDCG) <http://en.wikipedia.org/wiki/NDCG>`_ is maximized
@@ -231,7 +231,7 @@ Specify the learning task and the corresponding learning objective. The objectiv
     - ``ndcg``: `Normalized Discounted Cumulative Gain <http://en.wikipedia.org/wiki/NDCG>`_
     - ``map``: `Mean Average Precision <http://en.wikipedia.org/wiki/Mean_average_precision#Mean_average_precision>`_
     - ``ndcg@n``, ``map@n``: 'n' can be assigned as an integer to cut off the top positions in the lists for evaluation.
-    - ``ndcg-``, ``map-``, ``ndcg@n-``, ``map@n-``: In XGBoost, NDCG and MAP will evaluate the score of a list without any positive samples as 1. By adding "-" in the evaluation metric XGBoost will evaluate these score as 0 to be consistent under some conditions.
+    - ``ndcg-``, ``map-``, ``ndcg@n-``, ``map@n-``: In Secure XGBoost, NDCG and MAP will evaluate the score of a list without any positive samples as 1. By adding "-" in the evaluation metric Secure XGBoost will evaluate these score as 0 to be consistent under some conditions.
     - ``poisson-nloglik``: negative log-likelihood for Poisson regression
     - ``gamma-nloglik``: negative log-likelihood for gamma regression
     - ``cox-nloglik``: negative partial log-likelihood for Cox proportional hazards regression

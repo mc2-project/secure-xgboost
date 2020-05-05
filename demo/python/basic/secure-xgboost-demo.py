@@ -1,28 +1,36 @@
 import securexgboost as xgb
 import os
 
-print("Creating enclave")
+username = "user1"
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
+sym_key_file = DIR + "/../../data/key_zeros.txt"
+pub_key_file = DIR + "/../../data/userkeys/private_user_1.pem"
+cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
 
+
+print("Init user parameters")
+xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
+
+print("Creating enclave")
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
-crypto = xgb.CryptoUtils()
 
 # Remote Attestation
 print("Remote attestation")
-enclave.get_remote_report_with_pubkey()
-# NOTE: Verification will fail in simulation mode
-# Comment out this line for testing the code in simulation mode
-enclave.verify_remote_report_and_set_pubkey()
+# Note: Simulation mode does not support attestation
+# pass in `verify=False` to attest()
+enclave.attest()
 
-print("Creating training matrix")
-dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
+print("Send private key to enclave")
+enclave.add_key()
 
-print("Creating test matrix")
-dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
+print("Creating training matrix from encrypted file")
+dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"})
+
+print("Creating test matrix from encrypted file")
+dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"})
 
 print("Beginning Training")
-
 # Set training parameters
 params = {
         "tree_method": "hist",
@@ -38,17 +46,16 @@ params = {
 num_rounds = 5 
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
 
+# Save model to a file
+booster.save_model(HOME_DIR + "/demo/python/basic/modelfile.model")
+
 # Get encrypted predictions
 print("\n\nModel Predictions: ")
-predictions, num_preds = booster.predict(dtest)
-
-key_file = open(HOME_DIR +  "demo/python/" + "key_zeros.txt", 'rb')
-sym_key = key_file.read() # The key will be type bytes
-key_file.close()
+predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
-print(crypto.decrypt_predictions(sym_key, predictions, num_preds))
+print(booster.decrypt_predictions(predictions, num_preds))
 
 # Get fscores of model
 print("\n\nModel Feature Importance: ")
-print(booster.get_fscore(sym_key))
+print(booster.get_fscore())

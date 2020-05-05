@@ -148,14 +148,11 @@ void MetaInfo::SetInfo(const char* key, const void* dptr, DataType dtype, size_t
   }
 }
 
-
 DMatrix* DMatrix::Load(const std::string& uri,
                        bool silent,
                        bool load_row_split,
-#ifdef __ENCLAVE__ // pass decryption key
                        bool is_encrypted,
                        char* key,
-#endif
                        const std::string& file_format,
                        const size_t page_size) {
   std::string fname, cache_file;
@@ -223,13 +220,8 @@ DMatrix* DMatrix::Load(const std::string& uri,
     }
   }
 
-#ifdef __ENCLAVE__ // pass decryption key
   std::unique_ptr<dmlc::Parser<uint32_t> > parser(
       dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, key));
-#else
-  std::unique_ptr<dmlc::Parser<uint32_t> > parser(
-      dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str()));
-#endif
   DMatrix* dmat = DMatrix::Create(parser.get(), cache_file, page_size);
   if (!silent) {
     LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
@@ -240,7 +232,6 @@ DMatrix* DMatrix::Load(const std::string& uri,
    * since partitioned data not knowing the real number of features. */
   rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
 
-#ifdef __ENCLAVE__ // check that row indices and total rows in file are correct
   if (is_encrypted) {
     int *indices = new int[npart];
     memset(indices, 0, sizeof(indices));
@@ -256,10 +247,9 @@ DMatrix* DMatrix::Load(const std::string& uri,
     CHECK_EQ(parser->starting_row_index, sum_prev + 1);
     CHECK_EQ(parser->total_rows_global, sum);
   }
-#endif
 
   // backward compatiblity code.
-#ifndef __ENCLAVE__ // FIXME: currently disabled to prevent OE errors if file not found
+#if false  // FIXME: currently disabled to prevent OE errors if file not found
   if (!load_row_split) {
     MetaInfo& info = dmat->Info();
     if (MetaTryLoadGroup(fname + ".group", &info.group_ptr_) && !silent) {
@@ -279,6 +269,163 @@ DMatrix* DMatrix::Load(const std::string& uri,
   }
 #endif
   return dmat;
+}
+
+DMatrix* DMatrix::Load(std::vector<const std::string>& uris,
+                       bool silent,
+                       bool load_row_split,
+                       bool is_encrypted,
+                       char* keys[],
+                       const std::string& file_format,
+                       const size_t page_size) {
+  std::string fname;
+  std::string cache_file = "";
+  std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers;
+  int partid, npart;
+  int num_uris = uris.size();
+
+  for (int j = 0; j < num_uris; ++j) {
+      const std::string uri = uris[j];
+      size_t dlm_pos = uri.find('#');
+      if (dlm_pos != std::string::npos) {
+          cache_file = uri.substr(dlm_pos + 1, uri.length());
+          fname = uri.substr(0, dlm_pos);
+          CHECK_EQ(cache_file.find('#'), std::string::npos)
+              << "Only one `#` is allowed in file path for cache file specification.";
+          if (load_row_split) {
+              std::ostringstream os;
+              std::vector<std::string> cache_shards = common::Split(cache_file, ':');
+              for (size_t i = 0; i < cache_shards.size(); ++i) {
+                  size_t pos = cache_shards[i].rfind('.');
+                  if (pos == std::string::npos) {
+                      os << cache_shards[i]
+                          << ".r" << rabit::GetRank()
+                          << "-" <<  rabit::GetWorldSize();
+                  } else {
+                      os << cache_shards[i].substr(0, pos)
+                          << ".r" << rabit::GetRank()
+                          << "-" <<  rabit::GetWorldSize()
+                          << cache_shards[i].substr(pos, cache_shards[i].length());
+                  }
+                  if (i + 1 != cache_shards.size()) {
+                      os << ':';
+                  }
+              }
+              cache_file.append(os.str());
+          }
+      } else {
+          fname = uri;
+      }
+      partid = 0, npart = 1;
+      if (load_row_split) {
+          partid = rabit::GetRank();
+          npart = rabit::GetWorldSize();
+      } else {
+          // test option to load in part
+          npart = dmlc::GetEnv("XGBOOST_TEST_NPART", 1);
+      }
+
+      if (npart != 1) {
+          LOG(INFO) << "Load part of data " << partid
+              << " of " << npart << " parts";
+      }
+
+      // legacy handling of binary data loading
+      if (file_format == "auto" && npart == 1) {
+        int magic;
+        std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname.c_str(), "r", true));
+        if (fi != nullptr) {
+          common::PeekableInStream is(fi.get());
+          if (is.PeekRead(&magic, sizeof(magic)) == sizeof(magic) &&
+              magic == data::SimpleCSRSource::kMagic) {
+            std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+            source->LoadBinary(&is);
+            DMatrix* dmat = DMatrix::Create(std::move(source), cache_file);
+            if (!silent) {
+              LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+                           << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
+            }
+            return dmat;
+          }
+        }
+      }
+      std::shared_ptr<dmlc::Parser<uint32_t> > parser(
+              dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[j]));
+
+      parsers.push_back(std::move(parser));
+  }
+  DMatrix* dmat = DMatrix::Create(parsers, cache_file, page_size);
+  if (!silent) {
+    LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+                 << dmat->Info().num_nonzero_ << " entries loaded from " << std::accumulate(uris.begin(), uris.end(), std::string(", "));;
+  }
+  /* sync up number of features after matrix loaded.
+   * partitioned data will fail the train/val validation check
+   * since partitioned data not knowing the real number of features. */
+  rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1);
+
+  // check that row indices and total rows in file are correct
+  for (int i = 0; i < num_uris; ++i) {
+      dmlc::Parser<uint32_t>* parser = parsers[i].get();
+      if (is_encrypted) {
+          int *indices = new int[npart];
+          memset(indices, 0, sizeof(indices));
+          indices[partid] = parser->total_rows_in_chunk;
+          rabit::Allreduce<rabit::op::Max>(indices, npart);
+          uint64_t sum = 0;
+          uint64_t sum_prev = 0;
+          for (int k = 0; k < npart; k++) {
+              if (k < partid)
+                  sum_prev += indices[k];
+              sum += indices[k];
+          }
+          CHECK_EQ(parser->starting_row_index, sum_prev + 1);
+          CHECK_EQ(parser->total_rows_global, sum);
+      }
+  }
+
+#if false // FIXME: currently disabled to prevent OE errors if file not found
+  // backward compatiblity code.
+  if (!load_row_split) {
+    MetaInfo& info = dmat->Info();
+    if (MetaTryLoadGroup(fname + ".group", &info.group_ptr_) && !silent) {
+      LOG(INFO) << info.group_ptr_.size() - 1
+                   << " groups are loaded from " << fname << ".group";
+    }
+    if (MetaTryLoadFloatInfo
+        (fname + ".base_margin", &info.base_margin_.HostVector()) && !silent) {
+      LOG(INFO) << info.base_margin_.Size()
+                   << " base_margin are loaded from " << fname << ".base_margin";
+    }
+    if (MetaTryLoadFloatInfo
+        (fname + ".weight", &info.weights_.HostVector()) && !silent) {
+      LOG(INFO) << info.weights_.Size()
+                   << " weights are loaded from " << fname << ".weight";
+    }
+  }
+#endif
+  return dmat;
+}
+
+void DMatrix::SaveToLocalFile(const std::string& fname) {
+  data::SimpleCSRSource source;
+  source.CopyFrom(this);
+  std::unique_ptr<dmlc::Stream> fo(dmlc::Stream::Create(fname.c_str(), "w"));
+  source.SaveBinary(fo.get());
+}
+
+DMatrix* DMatrix::Create(std::unique_ptr<DataSource>&& source,
+                         const std::string& cache_prefix) {
+  if (cache_prefix.length() == 0) {
+    return new data::SimpleDMatrix(std::move(source));
+  } else {
+#if DMLC_ENABLE_STD_THREAD
+    return new data::SparsePageDMatrix(std::move(source), cache_prefix);
+#else
+    LOG(FATAL) << "External memory is not enabled in mingw";
+    return nullptr;
+#endif  // DMLC_ENABLE_STD_THREAD
+  }
 }
 
 DMatrix* DMatrix::Create(dmlc::Parser<uint32_t>* parser,
@@ -303,25 +450,27 @@ DMatrix* DMatrix::Create(dmlc::Parser<uint32_t>* parser,
   }
 }
 
-void DMatrix::SaveToLocalFile(const std::string& fname) {
-  data::SimpleCSRSource source;
-  source.CopyFrom(this);
-  std::unique_ptr<dmlc::Stream> fo(dmlc::Stream::Create(fname.c_str(), "w"));
-  source.SaveBinary(fo.get());
-}
-
-DMatrix* DMatrix::Create(std::unique_ptr<DataSource>&& source,
-                         const std::string& cache_prefix) {
-  if (cache_prefix.length() == 0) {
-    return new data::SimpleDMatrix(std::move(source));
-  } else {
+DMatrix* DMatrix::Create(std::vector<std::shared_ptr<dmlc::Parser<uint32_t>>> parsers,
+        const std::string& cache_prefix,
+        const size_t page_size) {
+    if (cache_prefix.length() == 0) {
+        std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+        int num_parsers = parsers.size();
+        source->CopyFrom(parsers, num_parsers);
+        return DMatrix::Create(std::move(source), cache_prefix);
+    } else {
 #if DMLC_ENABLE_STD_THREAD
-    return new data::SparsePageDMatrix(std::move(source), cache_prefix);
+        if (!data::SparsePageSource::CacheExist(cache_prefix, ".row.page")) {
+            data::SparsePageSource::CreateRowPage(parser, cache_prefix, page_size);
+        }
+        std::unique_ptr<data::SparsePageSource> source(
+                new data::SparsePageSource(cache_prefix, ".row.page"));
+        return DMatrix::Create(std::move(source), cache_prefix);
 #else
-    LOG(FATAL) << "External memory is not enabled in mingw";
-    return nullptr;
+        LOG(FATAL) << "External memory is not enabled in mingw";
+        return nullptr;
 #endif  // DMLC_ENABLE_STD_THREAD
-  }
+    }
 }
 }  // namespace xgboost
 

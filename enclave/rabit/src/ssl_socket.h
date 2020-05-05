@@ -23,8 +23,7 @@ static void print_err(int error_code) {
   const size_t LEN = 2048;
   char err_buf[LEN];
   mbedtls_strerror(error_code, err_buf, LEN);
-  mbedtls_printf(" ERROR %d: %s\n", getpid(), err_buf);
-  exit(1);
+  LOG(FATAL) << err_buf;
 }
 
 #define DEBUG_LEVEL 0

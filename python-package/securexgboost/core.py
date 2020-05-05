@@ -16,6 +16,10 @@ import re
 import sys
 import warnings
 
+import grpc
+from .rpc import remote_pb2
+from .rpc import remote_pb2_grpc
+
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
 import scipy.sparse
@@ -147,9 +151,9 @@ def _load_lib():
         raise XGBoostError(
             'XGBoost Library ({}) could not be loaded.\n'.format(libname) +
             'Likely causes:\n' +
-            '  * OpenMP runtime is not installed ' +
-            '(vcomp140.dll or libgomp-1.dll for Windows, ' +
-            'libgomp.so for UNIX-like OSes)\n' +
+            # '  * OpenMP runtime is not installed ' +
+            # '(vcomp140.dll or libgomp-1.dll for Windows, ' +
+            # 'libgomp.so for UNIX-like OSes)\n' +
             '  * You are running 32-bit Python on a 64-bit OS\n' +
             'Error message(s): {}\n'.format(os_error_list))
     lib.XGBGetLastError.restype = ctypes.c_char_p
@@ -174,6 +178,7 @@ def _check_call(ret):
     ret : int
         return value from API calls
     """
+    # FIXME rpc
     if ret != 0:
         raise XGBoostError(py_str(_LIB.XGBGetLastError()))
 
@@ -255,105 +260,130 @@ def proto_to_pointer(proto):
     return pointer
 
 
-PANDAS_DTYPE_MAPPER = {'int8': 'int', 'int16': 'int', 'int32': 'int', 'int64': 'int',
-                       'uint8': 'int', 'uint16': 'int', 'uint32': 'int', 'uint64': 'int',
-                       'float16': 'float', 'float32': 'float', 'float64': 'float',
-                       'bool': 'i'}
+# PANDAS_DTYPE_MAPPER = {'int8': 'int', 'int16': 'int', 'int32': 'int', 'int64': 'int',
+#                        'uint8': 'int', 'uint16': 'int', 'uint32': 'int', 'uint64': 'int',
+#                        'float16': 'float', 'float32': 'float', 'float64': 'float',
+#                        'bool': 'i'}
+# 
+# 
+# def _maybe_pandas_data(data, feature_names, feature_types):
+#     """ Extract internal data from pd.DataFrame for DMatrix data """
+# 
+#     if not isinstance(data, DataFrame):
+#         return data, feature_names, feature_types
+# 
+#     data_dtypes = data.dtypes
+#     if not all(dtype.name in PANDAS_DTYPE_MAPPER for dtype in data_dtypes):
+#         bad_fields = [data.columns[i] for i, dtype in
+#                       enumerate(data_dtypes) if dtype.name not in PANDAS_DTYPE_MAPPER]
+# 
+#         msg = """DataFrame.dtypes for data must be int, float or bool.
+#                 Did not expect the data types in fields """
+#         raise ValueError(msg + ', '.join(bad_fields))
+# 
+#     if feature_names is None:
+#         if isinstance(data.columns, MultiIndex):
+#             feature_names = [
+#                 ' '.join([str(x) for x in i])
+#                 for i in data.columns
+#             ]
+#         else:
+#             feature_names = data.columns.format()
+# 
+#     if feature_types is None:
+#         feature_types = [PANDAS_DTYPE_MAPPER[dtype.name] for dtype in data_dtypes]
+# 
+#     data = data.values.astype('float')
+# 
+#     return data, feature_names, feature_types
+# 
+# 
+# def _maybe_pandas_label(label):
+#     """ Extract internal data from pd.DataFrame for DMatrix label """
+# 
+#     if isinstance(label, DataFrame):
+#         if len(label.columns) > 1:
+#             raise ValueError('DataFrame for label cannot have multiple columns')
+# 
+#         label_dtypes = label.dtypes
+#         if not all(dtype.name in PANDAS_DTYPE_MAPPER for dtype in label_dtypes):
+#             raise ValueError('DataFrame.dtypes for label must be int, float or bool')
+#         label = label.values.astype('float')
+#     # pd.Series can be passed to xgb as it is
+# 
+#     return label
+# 
+# 
+# DT_TYPE_MAPPER = {'bool': 'bool', 'int': 'int', 'real': 'float'}
+# 
+# DT_TYPE_MAPPER2 = {'bool': 'i', 'int': 'int', 'real': 'float'}
+# 
+# 
+# def _maybe_dt_data(data, feature_names, feature_types):
+#     """
+#     Validate feature names and types if data table
+#     """
+#     if not isinstance(data, DataTable):
+#         return data, feature_names, feature_types
+# 
+#     data_types_names = tuple(lt.name for lt in data.ltypes)
+#     bad_fields = [data.names[i]
+#                   for i, type_name in enumerate(data_types_names)
+#                   if type_name not in DT_TYPE_MAPPER]
+#     if bad_fields:
+#         msg = """DataFrame.types for data must be int, float or bool.
+#                 Did not expect the data types in fields """
+#         raise ValueError(msg + ', '.join(bad_fields))
+# 
+#     if feature_names is None:
+#         feature_names = data.names
+# 
+#         # always return stypes for dt ingestion
+#         if feature_types is not None:
+#             raise ValueError('DataTable has own feature types, cannot pass them in')
+#         feature_types = np.vectorize(DT_TYPE_MAPPER2.get)(data_types_names)
+# 
+#     return data, feature_names, feature_types
+# 
+# 
+# def _maybe_dt_array(array):
+#     """ Extract numpy array from single column data table """
+#     if not isinstance(array, DataTable) or array is None:
+#         return array
+# 
+#     if array.shape[1] > 1:
+#         raise ValueError('DataTable for label or weight cannot have multiple columns')
+# 
+#     # below requires new dt version
+#     # extract first column
+#     array = array.to_numpy()[:, 0].astype('float')
+# 
+#     return array
 
 
-def _maybe_pandas_data(data, feature_names, feature_types):
-    """ Extract internal data from pd.DataFrame for DMatrix data """
-
-    if not isinstance(data, DataFrame):
-        return data, feature_names, feature_types
-
-    data_dtypes = data.dtypes
-    if not all(dtype.name in PANDAS_DTYPE_MAPPER for dtype in data_dtypes):
-        bad_fields = [data.columns[i] for i, dtype in
-                      enumerate(data_dtypes) if dtype.name not in PANDAS_DTYPE_MAPPER]
-
-        msg = """DataFrame.dtypes for data must be int, float or bool.
-                Did not expect the data types in fields """
-        raise ValueError(msg + ', '.join(bad_fields))
-
-    if feature_names is None:
-        if isinstance(data.columns, MultiIndex):
-            feature_names = [
-                ' '.join([str(x) for x in i])
-                for i in data.columns
-            ]
-        else:
-            feature_names = data.columns.format()
-
-    if feature_types is None:
-        feature_types = [PANDAS_DTYPE_MAPPER[dtype.name] for dtype in data_dtypes]
-
-    data = data.values.astype('float')
-
-    return data, feature_names, feature_types
-
-
-def _maybe_pandas_label(label):
-    """ Extract internal data from pd.DataFrame for DMatrix label """
-
-    if isinstance(label, DataFrame):
-        if len(label.columns) > 1:
-            raise ValueError('DataFrame for label cannot have multiple columns')
-
-        label_dtypes = label.dtypes
-        if not all(dtype.name in PANDAS_DTYPE_MAPPER for dtype in label_dtypes):
-            raise ValueError('DataFrame.dtypes for label must be int, float or bool')
-        label = label.values.astype('float')
-    # pd.Series can be passed to xgb as it is
-
-    return label
-
-
-DT_TYPE_MAPPER = {'bool': 'bool', 'int': 'int', 'real': 'float'}
-
-DT_TYPE_MAPPER2 = {'bool': 'i', 'int': 'int', 'real': 'float'}
-
-
-def _maybe_dt_data(data, feature_names, feature_types):
+def init_user(user_name, sym_key_file, priv_key_file, cert_file):
     """
-    Validate feature names and types if data table
+    Parameters
+    ----------
+    user_name : string
+        Current user's identity
+    sym_key_file : string
+        Path to file containing user's symmetric key used for encrypting data
+    priv_key_file : string
+        Path to file containing user's private key used for signing data
+    cert_file : string
+        Path to file containing user's public key certificate
     """
-    if not isinstance(data, DataTable):
-        return data, feature_names, feature_types
+    globals()["current_user"] = user_name
+    with open(sym_key_file, "rb") as keyfile:
+        globals()["current_user_sym_key"] = keyfile.read()
+    # FIXME: Save buffer instead of file
+    # with open(priv_key_file, "r") as keyfile:
+    #     priv_key = keyfile.read()
+    globals()["current_user_priv_key"] = priv_key_file
 
-    data_types_names = tuple(lt.name for lt in data.ltypes)
-    bad_fields = [data.names[i]
-                  for i, type_name in enumerate(data_types_names)
-                  if type_name not in DT_TYPE_MAPPER]
-    if bad_fields:
-        msg = """DataFrame.types for data must be int, float or bool.
-                Did not expect the data types in fields """
-        raise ValueError(msg + ', '.join(bad_fields))
-
-    if feature_names is None:
-        feature_names = data.names
-
-        # always return stypes for dt ingestion
-        if feature_types is not None:
-            raise ValueError('DataTable has own feature types, cannot pass them in')
-        feature_types = np.vectorize(DT_TYPE_MAPPER2.get)(data_types_names)
-
-    return data, feature_names, feature_types
-
-
-def _maybe_dt_array(array):
-    """ Extract numpy array from single column data table """
-    if not isinstance(array, DataTable) or array is None:
-        return array
-
-    if array.shape[1] > 1:
-        raise ValueError('DataTable for label or weight cannot have multiple columns')
-
-    # below requires new dt version
-    # extract first column
-    array = array.to_numpy()[:, 0].astype('float')
-
-    return array
+    with open(cert_file, "r") as cert_file:
+        globals()["current_user_cert"] = cert_file.read()
 
 
 class DMatrix(object):
@@ -367,454 +397,516 @@ class DMatrix(object):
     _feature_names = None  # for previous version's pickle
     _feature_types = None
 
-    def __init__(self, data, encrypted=False, label=None, missing=None,
-                 weight=None, silent=False,
-                 feature_names=None, feature_types=None,
-                 nthread=None):
+    # TODO(rishabh): Enable disabled arguments: `label`, `weight`
+    def __init__(self, data_dict, encrypted=True, silent=False,
+            feature_names=None, feature_types=None): 
         """
+        Load a DMatrix from encrypted files at the enclave server, where
+        each file is encrypted with a particular user's symmetric key.
+
         Parameters
         ----------
-        data : string/numpy.array/scipy.sparse/pd.DataFrame/dt.Frame
-            Data source of DMatrix.
-            When data is string type, it represents the path libsvm format txt file,
-            or binary file that xgboost can read from.
-        label : list or numpy 1-D array, optional
-            Label of the training data.
-        missing : float, optional
-            Value in the data which needs to be present as a missing value. If
-            None, defaults to np.nan.
-        weight : list or numpy 1-D array , optional
-            Weight for each instance.
-
-            .. note:: For ranking task, weights are per-group.
-
-                In ranking task, one weight is assigned to each group (not each data
-                point). This is because we only care about the relative ordering of
-                data points within each group, so it doesn't make sense to assign
-                weights to individual data points.
-
+        data_dict : dictionary 
+            Keys: Usernames
+            Values: Path to training data of corresponding user
         silent : boolean, optional
             Whether print messages during construction
         feature_names : list, optional
             Set names for features.
         feature_types : list, optional
             Set types for features.
-        nthread : integer, optional
-            Number of threads to use for loading data from numpy array. If -1,
-            uses maximum threads available on the system.
         """
+
+    # def __init__(self, data_dict, encrypted=True, label=None, missing=None,
+    #              weight=None, silent=False,
+    #              feature_names=None, feature_types=None,
+    #              nthread=None): 
+    #     """
+    #     Load a DMatrix from encrypted files at the enclave server, where
+    #     each file is encrypted with a particular user's symmetric key.
+    # 
+    #     Parameters
+    #     ----------
+    #     data_dict : dictionary 
+    #         Keys: Usernames
+    #         Values: Path to training data of corresponding user
+    #     label : list or numpy 1-D array, optional
+    #         Label of the training data.
+    #     missing : float, optional
+    #         Value in the data which needs to be present as a missing value. If
+    #         None, defaults to np.nan.
+    #     weight : list or numpy 1-D array , optional
+    #         Weight for each instance.
+    # 
+    #         .. note:: For ranking task, weights are per-group.
+    # 
+    #             In ranking task, one weight is assigned to each group (not each data
+    #             point). This is because we only care about the relative ordering of
+    #             data points within each group, so it doesn't make sense to assign
+    #             weights to individual data points.
+    # 
+    #     silent : boolean, optional
+    #         Whether print messages during construction
+    #     feature_names : list, optional
+    #         Set names for features.
+    #     feature_types : list, optional
+    #         Set types for features.
+    #     nthread : integer, optional
+    #         Number of threads to use for loading data from numpy array. If -1,
+    #         uses maximum threads available on the system.
+    #     """
+        usernames, data = [], []
+
+        for user, path in data_dict.items():
+            usernames.append(user)
+            data.append(path)
+
         # force into void_p, mac need to pass things in as void_p
-        if data is None:
-            self.handle = None
+        # if data is None:
+        #     self.handle = None
+        # 
+        #     if feature_names is not None:
+        #         self._feature_names = feature_names
+        #     if feature_types is not None:
+        #         self._feature_types = feature_types
+        #     return
 
-            if feature_names is not None:
-                self._feature_names = feature_names
-            if feature_types is not None:
-                self._feature_types = feature_types
-            return
+        # data, feature_names, feature_types = _maybe_pandas_data(data,
+        #                                                         feature_names,
+        #                                                         feature_types)
+        #
+        # data, feature_names, feature_types = _maybe_dt_data(data,
+        #                                                     feature_names,
+        #                                                     feature_types)
+        # label = _maybe_pandas_label(label)
+        # label = _maybe_dt_array(label)
+        # weight = _maybe_dt_array(weight)
 
-        data, feature_names, feature_types = _maybe_pandas_data(data,
-                                                                feature_names,
-                                                                feature_types)
-
-        data, feature_names, feature_types = _maybe_dt_data(data,
-                                                            feature_names,
-                                                            feature_types)
-        label = _maybe_pandas_label(label)
-        label = _maybe_dt_array(label)
-        weight = _maybe_dt_array(weight)
+        # if isinstance(data, list):
+        #     warnings.warn('Initializing DMatrix from List is deprecated.',
+        #                   DeprecationWarning)
 
         if isinstance(data, list):
-            warnings.warn('Initializing DMatrix from List is deprecated.',
-                          DeprecationWarning)
-
-        if isinstance(data, STRING_TYPES):
-            handle = ctypes.c_void_p()
+            handle = ctypes.c_char_p()
             if encrypted:
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(c_str(data),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+                channel_addr = globals()["remote_addr"]
+                if channel_addr:
+                    with grpc.insecure_channel(channel_addr) as channel:
+                        stub = remote_pb2_grpc.RemoteStub(channel)
+                        response = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
+                            filenames=data,
+                            usernames=usernames,
+                            silent=silent,
+                            username=globals()["current_user"]))
+                        handle = c_str(response.name)
+                else:
+                    filenames = from_pystr_to_cstr(data)
+                    usrs = from_pystr_to_cstr(usernames)
+                    _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                        usrs,
+                        c_bst_ulong(len(data)),
+                        ctypes.c_int(silent),
+                        ctypes.byref(handle)))
             else:
-                _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+                raise NotImplementedError("Loading from unencrypted files not supported.")
+                # FIXME implement RPC for this
+                # FIXME handle multiparty case
+                # _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
+                #     ctypes.c_int(silent),
+                #     ctypes.byref(handle)))
             self.handle = handle
-        elif isinstance(data, scipy.sparse.csr_matrix):
-            self._init_from_csr(data)
-        elif isinstance(data, scipy.sparse.csc_matrix):
-            self._init_from_csc(data)
-        elif isinstance(data, np.ndarray):
-            self._init_from_npy2d(data, missing, nthread)
-        elif isinstance(data, DataTable):
-            self._init_from_dt(data, nthread)
-        else:
-            try:
-                csr = scipy.sparse.csr_matrix(data)
-                self._init_from_csr(csr)
-            except:
-                raise TypeError('can not initialize DMatrix from'
-                                ' {}'.format(type(data).__name__))
+        # elif isinstance(data, scipy.sparse.csr_matrix):
+        #     self._init_from_csr(data)
+        # elif isinstance(data, scipy.sparse.csc_matrix):
+        #     self._init_from_csc(data)
+        # elif isinstance(data, np.ndarray):
+        #     self._init_from_npy2d(data, missing, nthread)
+        # elif isinstance(data, DataTable):
+        #     self._init_from_dt(data, nthread)
+        # else:
+        #     try:
+        #         csr = scipy.sparse.csr_matrix(data)
+        #         self._init_from_csr(csr)
+        #     except:
+        #         raise TypeError('can not initialize DMatrix from'
+        #                         ' {}'.format(type(data).__name__))
 
-        if label is not None:
-            if isinstance(label, np.ndarray):
-                self.set_label_npy2d(label)
-            else:
-                self.set_label(label)
-        if weight is not None:
-            if isinstance(weight, np.ndarray):
-                self.set_weight_npy2d(weight)
-            else:
-                self.set_weight(weight)
+        # TODO(rishabh): Enable this
+        # if label is not None:
+        #     if isinstance(label, np.ndarray):
+        #         self.set_label_npy2d(label)
+        #     else:
+        #         self.set_label(label)
+        # if weight is not None:
+        #     if isinstance(weight, np.ndarray):
+        #         self.set_weight_npy2d(weight)
+        #     else:
+        #         self.set_weight(weight)
 
         self.feature_names = feature_names
         self.feature_types = feature_types
 
-    def _init_from_csr(self, csr):
-        """
-        Initialize data from a CSR matrix.
-        """
-        if len(csr.indices) != len(csr.data):
-            raise ValueError('length mismatch: {} vs {}'.format(len(csr.indices), len(csr.data)))
-        handle = ctypes.c_void_p()
-        _check_call(_LIB.XGDMatrixCreateFromCSREx(c_array(ctypes.c_size_t, csr.indptr),
-                                                  c_array(ctypes.c_uint, csr.indices),
-                                                  c_array(ctypes.c_float, csr.data),
-                                                  ctypes.c_size_t(len(csr.indptr)),
-                                                  ctypes.c_size_t(len(csr.data)),
-                                                  ctypes.c_size_t(csr.shape[1]),
-                                                  ctypes.byref(handle)))
-        self.handle = handle
+    # def _init_from_csr(self, csr):
+    #     """
+    #     Initialize data from a CSR matrix.
+    #     """
+    #     if len(csr.indices) != len(csr.data):
+    #         raise ValueError('length mismatch: {} vs {}'.format(len(csr.indices), len(csr.data)))
+    #     handle = ctypes.c_char_p()
+    #     _check_call(_LIB.XGDMatrixCreateFromCSREx(c_array(ctypes.c_size_t, csr.indptr),
+    #                                               c_array(ctypes.c_uint, csr.indices),
+    #                                               c_array(ctypes.c_float, csr.data),
+    #                                               ctypes.c_size_t(len(csr.indptr)),
+    #                                               ctypes.c_size_t(len(csr.data)),
+    #                                               ctypes.c_size_t(csr.shape[1]),
+    #                                               ctypes.byref(handle)))
+    #     self.handle = handle
 
-    def _init_from_csc(self, csc):
-        """
-        Initialize data from a CSC matrix.
-        """
-        if len(csc.indices) != len(csc.data):
-            raise ValueError('length mismatch: {} vs {}'.format(len(csc.indices), len(csc.data)))
-        handle = ctypes.c_void_p()
-        _check_call(_LIB.XGDMatrixCreateFromCSCEx(c_array(ctypes.c_size_t, csc.indptr),
-                                                  c_array(ctypes.c_uint, csc.indices),
-                                                  c_array(ctypes.c_float, csc.data),
-                                                  ctypes.c_size_t(len(csc.indptr)),
-                                                  ctypes.c_size_t(len(csc.data)),
-                                                  ctypes.c_size_t(csc.shape[0]),
-                                                  ctypes.byref(handle)))
-        self.handle = handle
+    # def _init_from_csc(self, csc):
+    #     """
+    #     Initialize data from a CSC matrix.
+    #     """
+    #     if len(csc.indices) != len(csc.data):
+    #         raise ValueError('length mismatch: {} vs {}'.format(len(csc.indices), len(csc.data)))
+    #     handle = ctypes.c_char_p()
+    #     _check_call(_LIB.XGDMatrixCreateFromCSCEx(c_array(ctypes.c_size_t, csc.indptr),
+    #                                               c_array(ctypes.c_uint, csc.indices),
+    #                                               c_array(ctypes.c_float, csc.data),
+    #                                               ctypes.c_size_t(len(csc.indptr)),
+    #                                               ctypes.c_size_t(len(csc.data)),
+    #                                               ctypes.c_size_t(csc.shape[0]),
+    #                                               ctypes.byref(handle)))
+    #     self.handle = handle
 
-    def _init_from_npy2d(self, mat, missing, nthread):
-        """
-        Initialize data from a 2-D numpy matrix.
+    # def _init_from_npy2d(self, mat, missing, nthread):
+    #     """
+    #     Initialize data from a 2-D numpy matrix.
+    # 
+    #     If ``mat`` does not have ``order='C'`` (aka row-major) or is not contiguous,
+    #     a temporary copy will be made.
+    # 
+    #     If ``mat`` does not have ``dtype=numpy.float32``, a temporary copy will be made.
+    # 
+    #     So there could be as many as two temporary data copies; be mindful of input layout
+    #     and type if memory use is a concern.
+    #     """
+    #     if len(mat.shape) != 2:
+    #         raise ValueError('Input numpy.ndarray must be 2 dimensional')
+    #     # flatten the array by rows and ensure it is float32.
+    #     # we try to avoid data copies if possible (reshape returns a view when possible
+    #     # and we explicitly tell np.array to try and avoid copying)
+    #     data = np.array(mat.reshape(mat.size), copy=False, dtype=np.float32)
+    #     handle = ctypes.c_char_p()
+    #     missing = missing if missing is not None else np.nan
+    #     if nthread is None:
+    #         _check_call(_LIB.XGDMatrixCreateFromMat(
+    #             data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    #             c_bst_ulong(mat.shape[0]),
+    #             c_bst_ulong(mat.shape[1]),
+    #             ctypes.c_float(missing),
+    #             ctypes.byref(handle)))
+    #     else:
+    #         _check_call(_LIB.XGDMatrixCreateFromMat_omp(
+    #             data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    #             c_bst_ulong(mat.shape[0]),
+    #             c_bst_ulong(mat.shape[1]),
+    #             ctypes.c_float(missing),
+    #             ctypes.byref(handle),
+    #             nthread))
+    #     self.handle = handle
 
-        If ``mat`` does not have ``order='C'`` (aka row-major) or is not contiguous,
-        a temporary copy will be made.
-
-        If ``mat`` does not have ``dtype=numpy.float32``, a temporary copy will be made.
-
-        So there could be as many as two temporary data copies; be mindful of input layout
-        and type if memory use is a concern.
-        """
-        if len(mat.shape) != 2:
-            raise ValueError('Input numpy.ndarray must be 2 dimensional')
-        # flatten the array by rows and ensure it is float32.
-        # we try to avoid data copies if possible (reshape returns a view when possible
-        # and we explicitly tell np.array to try and avoid copying)
-        data = np.array(mat.reshape(mat.size), copy=False, dtype=np.float32)
-        handle = ctypes.c_void_p()
-        missing = missing if missing is not None else np.nan
-        if nthread is None:
-            _check_call(_LIB.XGDMatrixCreateFromMat(
-                data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                c_bst_ulong(mat.shape[0]),
-                c_bst_ulong(mat.shape[1]),
-                ctypes.c_float(missing),
-                ctypes.byref(handle)))
-        else:
-            _check_call(_LIB.XGDMatrixCreateFromMat_omp(
-                data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                c_bst_ulong(mat.shape[0]),
-                c_bst_ulong(mat.shape[1]),
-                ctypes.c_float(missing),
-                ctypes.byref(handle),
-                nthread))
-        self.handle = handle
-
-    def _init_from_dt(self, data, nthread):
-        """
-        Initialize data from a datatable Frame.
-        """
-        ptrs = (ctypes.c_void_p * data.ncols)()
-        if hasattr(data, "internal") and hasattr(data.internal, "column"):
-            # datatable>0.8.0
-            for icol in range(data.ncols):
-                col = data.internal.column(icol)
-                ptr = col.data_pointer
-                ptrs[icol] = ctypes.c_void_p(ptr)
-        else:
-            # datatable<=0.8.0
-            from datatable.internal import frame_column_data_r  # pylint: disable=no-name-in-module,import-error
-            for icol in range(data.ncols):
-                ptrs[icol] = frame_column_data_r(data, icol)
-
-        # always return stypes for dt ingestion
-        feature_type_strings = (ctypes.c_char_p * data.ncols)()
-        for icol in range(data.ncols):
-            feature_type_strings[icol] = ctypes.c_char_p(data.stypes[icol].name.encode('utf-8'))
-
-        handle = ctypes.c_void_p()
-        _check_call(_LIB.XGDMatrixCreateFromDT(
-            ptrs, feature_type_strings,
-            c_bst_ulong(data.shape[0]),
-            c_bst_ulong(data.shape[1]),
-            ctypes.byref(handle),
-            nthread))
-        self.handle = handle
+    # def _init_from_dt(self, data, nthread):
+    #     """
+    #     Initialize data from a datatable Frame.
+    #     """
+    #     ptrs = (ctypes.c_char_p * data.ncols)()
+    #     if hasattr(data, "internal") and hasattr(data.internal, "column"):
+    #         # datatable>0.8.0
+    #         for icol in range(data.ncols):
+    #             col = data.internal.column(icol)
+    #             ptr = col.data_pointer
+    #             ptrs[icol] = ctypes.c_char_p(ptr)
+    #     else:
+    #         # datatable<=0.8.0
+    #         from datatable.internal import frame_column_data_r  # pylint: disable=no-name-in-module,import-error
+    #         for icol in range(data.ncols):
+    #             ptrs[icol] = frame_column_data_r(data, icol)
+    # 
+    #     # always return stypes for dt ingestion
+    #     feature_type_strings = (ctypes.c_char_p * data.ncols)()
+    #     for icol in range(data.ncols):
+    #         feature_type_strings[icol] = ctypes.c_char_p(data.stypes[icol].name.encode('utf-8'))
+    # 
+    #     handle = ctypes.c_char_p()
+    #     _check_call(_LIB.XGDMatrixCreateFromDT(
+    #         ptrs, feature_type_strings,
+    #         c_bst_ulong(data.shape[0]),
+    #         c_bst_ulong(data.shape[1]),
+    #         ctypes.byref(handle),
+    #         nthread))
+    #     self.handle = handle
 
     def __del__(self):
         if hasattr(self, "handle") and self.handle is not None:
-            _check_call(_LIB.XGDMatrixFree(self.handle))
+            # FIXME free matrix after use using RPC
+            # _check_call(_LIB.XGDMatrixFree(self.handle))
             self.handle = None
 
-    def get_float_info(self, field):
-        """Get float property from the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def get_float_info(self, field):
+    #     """Get float property from the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     Returns
+    #     -------
+    #     info : array
+    #         a numpy array of float information of the data
+    #     """
+    #     length = c_bst_ulong()
+    #     ret = ctypes.POINTER(ctypes.c_float)()
+    #     _check_call(_LIB.XGDMatrixGetFloatInfo(self.handle,
+    #                                            c_str(field),
+    #                                            ctypes.byref(length),
+    #                                            ctypes.byref(ret)))
+    # 
+    #     return ctypes2numpy(ret, length.value, np.float32)
 
-        Parameters
-        ----------
-        field: str
-            The field name of the information
+    # TODO(rishabh): Enable this API with encryption
+    # def get_uint_info(self, field):
+    #     """Get unsigned integer property from the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     Returns
+    #     -------
+    #     info : array
+    #         a numpy array of unsigned integer information of the data
+    #     """
+    #     length = c_bst_ulong()
+    #     ret = ctypes.POINTER(ctypes.c_uint)()
+    #     _check_call(_LIB.XGDMatrixGetUIntInfo(self.handle,
+    #                                           c_str(field),
+    #                                           ctypes.byref(length),
+    #                                           ctypes.byref(ret)))
+    #     return ctypes2numpy(ret, length.value, np.uint32)
 
-        Returns
-        -------
-        info : array
-            a numpy array of float information of the data
-        """
-        length = c_bst_ulong()
-        ret = ctypes.POINTER(ctypes.c_float)()
-        _check_call(_LIB.XGDMatrixGetFloatInfo(self.handle,
-                                               c_str(field),
-                                               ctypes.byref(length),
-                                               ctypes.byref(ret)))
-                                  
-        return ctypes2numpy(ret, length.value, np.float32)
+    # TODO(rishabh): Enable this API with encryption
+    # def set_float_info(self, field, data):
+    #     """Set float type property into the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     data: numpy array
+    #         The array of data to be set
+    #     """
+    #     if getattr(data, 'base', None) is not None and \
+    #        data.base is not None and isinstance(data, np.ndarray) \
+    #        and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
+    #         self.set_float_info_npy2d(field, data)
+    #         return
+    #     c_data = c_array(ctypes.c_float, data)
+    #     _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
+    #                                            c_str(field),
+    #                                            c_data,
+    #                                            c_bst_ulong(len(data))))
 
-    def get_uint_info(self, field):
-        """Get unsigned integer property from the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def set_float_info_npy2d(self, field, data):
+    #     """Set float type property into the DMatrix
+    #        for numpy 2d array input
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     data: numpy array
+    #         The array of data to be set
+    #     """
+    #     if getattr(data, 'base', None) is not None and \
+    #        data.base is not None and isinstance(data, np.ndarray) \
+    #        and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
+    #         warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
+    #                       "because it will generate extra copies and increase memory consumption")
+    #         data = np.array(data, copy=True, dtype=np.float32)
+    #     else:
+    #         data = np.array(data, copy=False, dtype=np.float32)
+    #     c_data = data.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+    #     _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
+    #                                            c_str(field),
+    #                                            c_data,
+    #                                            c_bst_ulong(len(data))))
 
-        Parameters
-        ----------
-        field: str
-            The field name of the information
+    # TODO(rishabh): Enable this API with encryption
+    # def set_uint_info(self, field, data):
+    #     """Set uint type property into the DMatrix.
+    # 
+    #     Parameters
+    #     ----------
+    #     field: str
+    #         The field name of the information
+    # 
+    #     data: numpy array
+    #         The array of data to be set
+    #     """
+    #     if getattr(data, 'base', None) is not None and \
+    #        data.base is not None and isinstance(data, np.ndarray) \
+    #        and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
+    #         warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
+    #                       "because it will generate extra copies and increase memory consumption")
+    #         data = np.array(data, copy=True, dtype=ctypes.c_uint)
+    #     else:
+    #         data = np.array(data, copy=False, dtype=ctypes.c_uint)
+    #     _check_call(_LIB.XGDMatrixSetUIntInfo(self.handle,
+    #                                           c_str(field),
+    #                                           c_array(ctypes.c_uint, data),
+    #                                           c_bst_ulong(len(data))))
 
-        Returns
-        -------
-        info : array
-            a numpy array of unsigned integer information of the data
-        """
-        length = c_bst_ulong()
-        ret = ctypes.POINTER(ctypes.c_uint)()
-        _check_call(_LIB.XGDMatrixGetUIntInfo(self.handle,
-                                              c_str(field),
-                                              ctypes.byref(length),
-                                              ctypes.byref(ret)))
-        return ctypes2numpy(ret, length.value, np.uint32)
+    # def save_binary(self, fname, silent=True):
+    #     """Save DMatrix to an XGBoost buffer.  Saved binary can be later loaded
+    #     by providing the path to :py:func:`xgboost.DMatrix` as input.
+    # 
+    #     Parameters
+    #     ----------
+    #     fname : string
+    #         Name of the output buffer file.
+    #     silent : bool (optional; default: True)
+    #         If set, the output is suppressed.
+    #     """
+    #     _check_call(_LIB.XGDMatrixSaveBinary(self.handle,
+    #                                          c_str(fname),
+    #                                          ctypes.c_int(silent)))
 
-    def set_float_info(self, field, data):
-        """Set float type property into the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def set_label(self, label):
+    #     """Set label of dmatrix
+    # 
+    #     Parameters
+    #     ----------
+    #     label: array like
+    #         The label information to be set into DMatrix
+    #     """
+    #     self.set_float_info('label', label)
 
-        Parameters
-        ----------
-        field: str
-            The field name of the information
+    # TODO(rishabh): Enable this API with encryption
+    # def set_label_npy2d(self, label):
+    #     """Set label of dmatrix
+    # 
+    #     Parameters
+    #     ----------
+    #     label: array like
+    #         The label information to be set into DMatrix
+    #         from numpy 2D array
+    #     """
+    #     self.set_float_info_npy2d('label', label)
 
-        data: numpy array
-            The array of data to be set
-        """
-        if getattr(data, 'base', None) is not None and \
-           data.base is not None and isinstance(data, np.ndarray) \
-           and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
-            self.set_float_info_npy2d(field, data)
-            return
-        c_data = c_array(ctypes.c_float, data)
-        _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
-                                               c_str(field),
-                                               c_data,
-                                               c_bst_ulong(len(data))))
+    # TODO(rishabh): Enable this API with encryption
+    # def set_weight(self, weight):
+    #     """ Set weight of each instance.
+    # 
+    #     Parameters
+    #     ----------
+    #     weight : array like
+    #         Weight for each data point
+    # 
+    #         .. note:: For ranking task, weights are per-group.
+    # 
+    #             In ranking task, one weight is assigned to each group (not each data
+    #             point). This is because we only care about the relative ordering of
+    #             data points within each group, so it doesn't make sense to assign
+    #             weights to individual data points.
+    #     """
+    #     self.set_float_info('weight', weight)
 
-    def set_float_info_npy2d(self, field, data):
-        """Set float type property into the DMatrix
-           for numpy 2d array input
+    # TODO(rishabh): Enable this API with encryption
+    # def set_weight_npy2d(self, weight):
+    #     """ Set weight of each instance
+    #         for numpy 2D array
+    # 
+    #     Parameters
+    #     ----------
+    #     weight : array like
+    #         Weight for each data point in numpy 2D array
+    # 
+    #         .. note:: For ranking task, weights are per-group.
+    # 
+    #             In ranking task, one weight is assigned to each group (not each data
+    #             point). This is because we only care about the relative ordering of
+    #             data points within each group, so it doesn't make sense to assign
+    #             weights to individual data points.
+    #     """
+    #     self.set_float_info_npy2d('weight', weight)
 
-        Parameters
-        ----------
-        field: str
-            The field name of the information
+    # TODO(rishabh): Enable this API with encryption
+    # def set_base_margin(self, margin):
+    #     """ Set base margin of booster to start from.
+    # 
+    #     This can be used to specify a prediction value of
+    #     existing model to be base_margin
+    #     However, remember margin is needed, instead of transformed prediction
+    #     e.g. for logistic regression: need to put in value before logistic transformation
+    #     see also example/demo.py
+    # 
+    #     Parameters
+    #     ----------
+    #     margin: array like
+    #         Prediction margin of each datapoint
+    #     """
+    #     self.set_float_info('base_margin', margin)
 
-        data: numpy array
-            The array of data to be set
-        """
-        if getattr(data, 'base', None) is not None and \
-           data.base is not None and isinstance(data, np.ndarray) \
-           and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
-            warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
-                          "because it will generate extra copies and increase memory consumption")
-            data = np.array(data, copy=True, dtype=np.float32)
-        else:
-            data = np.array(data, copy=False, dtype=np.float32)
-        c_data = data.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-        _check_call(_LIB.XGDMatrixSetFloatInfo(self.handle,
-                                               c_str(field),
-                                               c_data,
-                                               c_bst_ulong(len(data))))
+    # TODO(rishabh): Enable this API with encryption
+    # def set_group(self, group):
+    #     """Set group size of DMatrix (used for ranking).
+    # 
+    #     Parameters
+    #     ----------
+    #     group : array like
+    #         Group size of each group
+    #     """
+    #     _check_call(_LIB.XGDMatrixSetGroup(self.handle,
+    #                                        c_array(ctypes.c_uint, group),
+    #                                        c_bst_ulong(len(group))))
 
-    def set_uint_info(self, field, data):
-        """Set uint type property into the DMatrix.
+    # TODO(rishabh): Enable this API with encryption
+    # def get_label(self):
+    #     """Get the label of the DMatrix.
+    # 
+    #     Returns
+    #     -------
+    #     label : array
+    #     """
+    #     return self.get_float_info('label')
 
-        Parameters
-        ----------
-        field: str
-            The field name of the information
+    # TODO(rishabh): Enable this API with encryption
+    # def get_weight(self):
+    #     """Get the weight of the DMatrix.
+    # 
+    #     Returns
+    #     -------
+    #     weight : array
+    #     """
+    #     return self.get_float_info('weight')
 
-        data: numpy array
-            The array of data to be set
-        """
-        if getattr(data, 'base', None) is not None and \
-           data.base is not None and isinstance(data, np.ndarray) \
-           and isinstance(data.base, np.ndarray) and (not data.flags.c_contiguous):
-            warnings.warn("Use subset (sliced data) of np.ndarray is not recommended " +
-                          "because it will generate extra copies and increase memory consumption")
-            data = np.array(data, copy=True, dtype=ctypes.c_uint)
-        else:
-            data = np.array(data, copy=False, dtype=ctypes.c_uint)
-        _check_call(_LIB.XGDMatrixSetUIntInfo(self.handle,
-                                              c_str(field),
-                                              c_array(ctypes.c_uint, data),
-                                              c_bst_ulong(len(data))))
+    # TODO(rishabh): Enable this API with encryption
+    # def get_base_margin(self):
+    #     """Get the base margin of the DMatrix.
+    # 
+    #     Returns
+    #     -------
+    #     base_margin : float
+    #     """
+    #     return self.get_float_info('base_margin')
 
-    #  def save_binary(self, fname, silent=True):
-        #  """Save DMatrix to an XGBoost buffer.  Saved binary can be later loaded
-        #  by providing the path to :py:func:`xgboost.DMatrix` as input.
-#  
-        #  Parameters
-        #  ----------
-        #  fname : string
-            #  Name of the output buffer file.
-        #  silent : bool (optional; default: True)
-            #  If set, the output is suppressed.
-        #  """
-        #  _check_call(_LIB.XGDMatrixSaveBinary(self.handle,
-                                             #  c_str(fname),
-                                             #  ctypes.c_int(silent)))
-
-    def set_label(self, label):
-        """Set label of dmatrix
-
-        Parameters
-        ----------
-        label: array like
-            The label information to be set into DMatrix
-        """
-        self.set_float_info('label', label)
-
-    def set_label_npy2d(self, label):
-        """Set label of dmatrix
-
-        Parameters
-        ----------
-        label: array like
-            The label information to be set into DMatrix
-            from numpy 2D array
-        """
-        self.set_float_info_npy2d('label', label)
-
-    def set_weight(self, weight):
-        """ Set weight of each instance.
-
-        Parameters
-        ----------
-        weight : array like
-            Weight for each data point
-
-            .. note:: For ranking task, weights are per-group.
-
-                In ranking task, one weight is assigned to each group (not each data
-                point). This is because we only care about the relative ordering of
-                data points within each group, so it doesn't make sense to assign
-                weights to individual data points.
-        """
-        self.set_float_info('weight', weight)
-
-    def set_weight_npy2d(self, weight):
-        """ Set weight of each instance
-            for numpy 2D array
-
-        Parameters
-        ----------
-        weight : array like
-            Weight for each data point in numpy 2D array
-
-            .. note:: For ranking task, weights are per-group.
-
-                In ranking task, one weight is assigned to each group (not each data
-                point). This is because we only care about the relative ordering of
-                data points within each group, so it doesn't make sense to assign
-                weights to individual data points.
-        """
-        self.set_float_info_npy2d('weight', weight)
-
-    def set_base_margin(self, margin):
-        """ Set base margin of booster to start from.
-
-        This can be used to specify a prediction value of
-        existing model to be base_margin
-        However, remember margin is needed, instead of transformed prediction
-        e.g. for logistic regression: need to put in value before logistic transformation
-        see also example/demo.py
-
-        Parameters
-        ----------
-        margin: array like
-            Prediction margin of each datapoint
-        """
-        self.set_float_info('base_margin', margin)
-
-    #  def set_group(self, group):
-        #  """Set group size of DMatrix (used for ranking).
-#  
-        #  Parameters
-        #  ----------
-        #  group : array like
-            #  Group size of each group
-        #  """
-        #  _check_call(_LIB.XGDMatrixSetGroup(self.handle,
-                                           #  c_array(ctypes.c_uint, group),
-                                           #  c_bst_ulong(len(group))))
-
-    def get_label(self):
-        """Get the label of the DMatrix.
-
-        Returns
-        -------
-        label : array
-        """
-        return self.get_float_info('label')
-
-    def get_weight(self):
-        """Get the weight of the DMatrix.
-
-        Returns
-        -------
-        weight : array
-        """
-        return self.get_float_info('weight')
-
-    def get_base_margin(self):
-        """Get the base margin of the DMatrix.
-
-        Returns
-        -------
-        base_margin : float
-        """
-        return self.get_float_info('base_margin')
-#  
     def num_row(self):
         """Get the number of rows in the DMatrix.
 
@@ -822,11 +914,20 @@ class DMatrix(object):
         -------
         number of rows : int
         """
-        ret = c_bst_ulong()
-        _check_call(_LIB.XGDMatrixNumRow(self.handle,
-                                         ctypes.byref(ret)))
-        return ret.value
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
+                    name=self.handle.value,
+                    username=globals()["current_user"]))
+                return response.value
+        else:
+            ret = c_bst_ulong()
+            _check_call(_LIB.XGDMatrixNumRow(self.handle,
+                                             ctypes.byref(ret)))
+            return ret.value
 
+    # FIXME: Enable this API with encryption
     def num_col(self):
         """Get the number of columns (features) in the DMatrix.
 
@@ -834,32 +935,41 @@ class DMatrix(object):
         -------
         number of columns : int
         """
-        ret = c_bst_ulong()
-        _check_call(_LIB.XGDMatrixNumCol(self.handle,
-                                         ctypes.byref(ret)))
-        return ret.value
+        channel_addr = globals()["remote_addr"]
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
+                    name=self.handle.value,
+                    username=globals()["current_user"]))
+                return response.value
+        else:
+            ret = c_bst_ulong()
+            _check_call(_LIB.XGDMatrixNumCol(self.handle,
+                                             ctypes.byref(ret)))
+            return ret.value
 
-    #  def slice(self, rindex):
-        #  """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
-#  
-        #  Parameters
-        #  ----------
-        #  rindex : list
-            #  List of indices to be selected.
-#  
-        #  Returns
-        #  -------
-        #  res : DMatrix
-            #  A new DMatrix containing only selected indices.
-        #  """
-        #  res = DMatrix(None, feature_names=self.feature_names,
-                      #  feature_types=self.feature_types)
-        #  res.handle = ctypes.c_void_p()
-        #  _check_call(_LIB.XGDMatrixSliceDMatrix(self.handle,
-                                               #  c_array(ctypes.c_int, rindex),
-                                               #  c_bst_ulong(len(rindex)),
-                                               #  ctypes.byref(res.handle)))
-        #  return res
+    # def slice(self, rindex):
+    #     """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
+    # 
+    #     Parameters
+    #     ----------
+    #     rindex : list
+    #         List of indices to be selected.
+    # 
+    #     Returns
+    #     -------
+    #     res : DMatrix
+    #         A new DMatrix containing only selected indices.
+    #     """
+    #     res = DMatrix(None, feature_names=self.feature_names,
+    #                   feature_types=self.feature_types)
+    #     res.handle = ctypes.c_char_p()
+    #     _check_call(_LIB.XGDMatrixSliceDMatrix(self.handle,
+    #                                            c_array(ctypes.c_int, rindex),
+    #                                            c_bst_ulong(len(rindex)),
+    #                                            ctypes.byref(res.handle)))
+    #     return res
 
     @property
     def feature_names(self):
@@ -958,31 +1068,69 @@ class DMatrix(object):
 
 
 class Enclave(object):
-    """An enclave.
-
-    A trusted execution environment used for secure XGBoost.
     """
-    def __init__(self, enclave_image=None, create_enclave=True, log_verbosity=0):
-        if create_enclave:
+    Object wrapper for an enclave: a trusted execution environment used by secure XGBoost.
+    """
+    def __init__(self, enclave_image=None, log_verbosity=0, addr=None):
+        """
+        Parameters
+        ----------
+        enclave_image: str
+            Path to enclave binary
+        log_verbosity: int, optional
+            Verbosity level for enclave (for enclaves in debug mode)
+        """
+        if addr is not None:
+            # TODO(rishabh): Verify address is valid
+            globals()["remote_addr"] = addr;
+        else:
+            globals()["remote_addr"] = None;
             _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
         self.pem_key = ctypes.POINTER(ctypes.c_uint)()
         self.key_size = ctypes.c_size_t()
         self.remote_report = ctypes.POINTER(ctypes.c_uint)()
         self.remote_report_size = ctypes.c_size_t()
 
-    def get_remote_report_with_pubkey(self):
+    # TODO(rishabh): user-defined parameters for verification
+    # (e.g. mrsigner / mrenclave values)
+    # TODO(rishabh): Handle verification failures
+    def attest(self, verify=True):
         """
-        Get remote attestation report and public key of enclave
-        """
-        _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+        Verify remote attestation report of enclave and get its public key.
+        The report and public key are saved as instance attributes.
 
-    def verify_remote_report_and_set_pubkey(self):
+        Parameters
+        ----------
+        verify: bool
+            Whether to verify the enclave report or not
+            Warning: Should only be set to False for development and testing.
         """
-        Verify the received attestation report and set the public key
+        channel_addr = globals()["remote_addr"]
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1))
+            pem_key = response.pem_key
+            key_size = response.key_size
+            remote_report = response.remote_report
+            remote_report_size = response.remote_report_size
+
+            self._set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+            # return pem_key, key_size, remote_report, remote_report_size
+        else:
+            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+            # return self._get_report_attrs()
+
+        if (verify):
+            self._verify_report()
+
+    def _verify_report(self):
+        """
+        Verify the received attestation report and set the public key.
         """
         _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
 
-    def set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
+    def _set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
         """
         Set the enclave public key and remote report
 
@@ -991,12 +1139,12 @@ class Enclave(object):
         pem_key_ndarray = proto_to_ndarray(pem_key)
         self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.key_size = ctypes.c_size_t(key_size)
- 
+
         remote_report_ndarray = proto_to_ndarray(remote_report)
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.remote_report_size = ctypes.c_size_t(remote_report_size)
 
-    def get_report_attrs(self):
+    def _get_report_attrs(self):
         """
         Get the enclave public key and remote report
 
@@ -1004,7 +1152,7 @@ class Enclave(object):
 
         Must be called after get_remote_report_with_pubkey() is called
 
-        Returns 
+        Returns
         -------
         pem_key : proto.NDArray
         key_size : int
@@ -1020,140 +1168,81 @@ class Enclave(object):
         remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint32)
         remote_report = ndarray_to_proto(remote_report)
         remote_report_size = self.remote_report_size.value
-        
+
         return pem_key, key_size, remote_report, remote_report_size
 
-
-class CryptoUtils(object):
-    """
-    Crypto utils class
-    """
-    def __init__(self):
-        # FIXME what do we need here?
-        pass
-
-    def generate_client_key(self, path_to_key):
+    def add_key(self):
         """
-        Generate a new key and save it to `path_to_key`
-
-        Parameters
-        ----------
-        path_to_key : str
-            path to which key will be saved
+        Add private (symmetric) key to enclave.
+        This function encrypts the user's symmetric key using the enclave's public key, and signs the ciphertext with the user's private key.
+        The signed message is sent to the enclave.
         """
-        KEY_BYTES = 32
 
-        print("Generating client key...")
-        key = os.urandom(KEY_BYTES)
-        with open(path_to_key, "wb") as keyfile:
-            keyfile.write(key)
+        enclave_pem_key, enclave_key_size, _, _ = self._get_report_attrs()
 
-    def encrypt_file(self, input_file, output_file, key_file):
-        """
-        Encrypt a file
+        try:
+            sym_key = globals()["current_user_sym_key"]
+            priv_key = globals()["current_user_priv_key"]
+            cert = globals()["current_user_cert"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
 
-        Parameters
-        ----------
-        input_file : str
-            path to file to be encrypted
-        output_file : str
-            path to which encrypted file will be saved
-        key_file : str
-            path to key used to encrypt file
-        """
-        if not os.path.exists(input_file):
-            print("Error: File {} does not exist".format(input_file))
-            return
+        # Encrypt the symmetric key using the enclave's public key
+        enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), 
+                enclave_pem_key, enclave_key_size)
+        # Sign the encrypted symmetric key (so enclave can verify it came from the client)
+        sig, sig_size = sign_data(priv_key, enc_sym_key, enc_sym_key_size)
+        # Send the encrypted key to the enclave
+        self._add_client_key_with_certificate(cert, enc_sym_key, enc_sym_key_size, sig, sig_size)
 
-        print("Encrypting file {}".format(input_file))
+    # def _add_client_key(self, enc_sym_key, enc_len, signature, sig_len):
+    #     """
+    #     Add client symmetric key used to encrypt file fname
+    # 
+    #     Parameters
+    #     ----------
+    #     enc_sym_key : proto.NDArray
+    #         key used to encrypt client files
+    #     enc_len : int
+    #         length of enc_sym_key
+    #     signature : proto.NDArray
+    #         signature over enc_sym_key, signed with client private key
+    #     sig_len : int
+    #         length of signature
+    #     """
+    #     channel_addr = globals()["remote_addr"]
+    #     if channel_addr:
+    #         with grpc.insecure_channel(channel_addr) as channel:
+    #             stub = remote_pb2_grpc.RemoteStub(channel)
+    #             response = stub.rpc_add_client_key(remote_pb2.DataMetadata(
+    #                 enc_sym_key=enc_sym_key,
+    #                 key_size=enc_len,
+    #                 signature=signature,
+    #                 sig_len=sig_len))
+    #             return
+    #     else:
+    # 
+    #         # Cast enc_sym_key : proto.NDArray to pointer to pass into C++ add_client_key()
+    #         enc_sym_key = proto_to_pointer(enc_sym_key)
+    #         enc_len = ctypes.c_size_t(enc_len)
+    # 
+    #         # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
+    #         signature = proto_to_pointer(signature)
+    #         sig_len = ctypes.c_size_t(sig_len)
+    # 
+    #         # Add client key
+    #         _check_call(_LIB.add_client_key(enc_sym_key, enc_len, signature, sig_len))
 
-        input_file_bytes = input_file.encode('utf-8')
-        output_file_bytes = output_file.encode('utf-8')
-        key_file_bytes = key_file.encode('utf-8')
-        
-        # Convert to proper ctypes
-        input_path = ctypes.c_char_p(input_file_bytes)
-        output_path = ctypes.c_char_p(output_file_bytes)
-        key_path = ctypes.c_char_p(key_file_bytes)
-
-        _check_call(_LIB.encrypt_file(input_path, output_path, key_path))
-
-    def encrypt_data_with_pk(self, data, data_len, pem_key, key_size):
-        """
-        Parameters
-        ----------
-        data : byte array  
-        data_len : int
-        pem_key : proto 
-        key_size : int
-
-        Returns
-        -------
-        encrypted_data : proto.NDArray 
-        encrypted_data_size_as_int : int
-        """
-        # Cast data to char*
-        data = ctypes.c_char_p(data)
-        data_len = ctypes.c_size_t(data_len)
-
-        # Cast proto to pointer to pass into C++ encrypt_data_with_pk()
-        pem_key = proto_to_pointer(pem_key)
-        pem_key_len = ctypes.c_size_t(key_size)
-
-        # Allocate memory that will be used to store the encrypted_data and encrypted_data_size
-        encrypted_data = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
-        encrypted_data_size = ctypes.c_size_t(1024)
-
-        # Encrypt the data with pk pem_key
-        _check_call(_LIB.encrypt_data_with_pk(data, data_len, pem_key, key_size, encrypted_data, ctypes.byref(encrypted_data_size)))
-
-        # Cast the encrypted data back to a proto.NDArray (for RPC purposes) and return it
-        encrypted_data_size_as_int = encrypted_data_size.value
-        encrypted_data = pointer_to_proto(encrypted_data, encrypted_data_size_as_int)
-
-        return encrypted_data, encrypted_data_size_as_int
-
-    def sign_data(self, keyfile, data, data_size):
-        """
-        Parameters
-        ----------
-        keyfile : str 
-        data : proto.NDArray 
-        data_size : int 
-
-        Returns
-        -------
-        signature : proto.NDArray 
-        sig_len_as_int : int
-        """
-        # Cast the keyfile to a char* 
-        keyfile = ctypes.c_char_p(str.encode(keyfile)) 
-
-        # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
-        data = proto_to_pointer(data)
-        data_size = ctypes.c_size_t(data_size)
-        
-        # Allocate memory to store the signature and sig_len
-        signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
-        sig_len = ctypes.c_size_t(1024)
-
-        # Sign data with key keyfile
-        _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
-
-        # Cast the signature and sig_len back to a gRPC serializable format
-        sig_len_as_int = sig_len.value
-        signature = pointer_to_proto(signature, sig_len_as_int)
-
-        return signature, sig_len_as_int
-
-    def add_client_key(self, data, data_len, signature, sig_len):
+    def _add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
         """
         Add client symmetric key used to encrypt file fname
-        
+
         Parameters
         ----------
+        certificate : a string
+            content of the user certificate
         data : proto.NDArray
-            key used to encrypt client files 
+            key used to encrypt client files
         data_len : int
             length of data
         signature : proto.NDArray
@@ -1161,8 +1250,27 @@ class CryptoUtils(object):
         sig_len : int
             length of signature
         """
-        # # Cast fname to a char*
-        # fname = ctypes.c_char_p(str.encode(fname))
+        channel_addr = globals()["remote_addr"]
+
+        # If we're on the client
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
+                    certificate=certificate,
+                    enc_sym_key=data,
+                    key_size=data_len,
+                    signature=signature,
+                    sig_len=sig_len))
+
+                return response.status
+
+        # Else we're on the server
+
+        # length needed to call cert parse later
+        cert_len = len(certificate) + 1
+        # Cast certificate to a char*
+        certificate = ctypes.c_char_p(str.encode(certificate))
 
         # Cast data : proto.NDArray to pointer to pass into C++ add_client_key()
         data = proto_to_pointer(data)
@@ -1173,37 +1281,7 @@ class CryptoUtils(object):
         sig_len = ctypes.c_size_t(sig_len)
 
         # Add client key
-        _LIB.add_client_key(data, data_len, signature, sig_len)
-
-    def decrypt_predictions(self, key, encrypted_preds, num_preds):
-        """
-        Decrypt encrypted predictions
-
-        Parameters
-        ----------
-        key : byte array
-            key used to encrypt client files
-        encrypted_preds : c_char_p
-            encrypted predictions
-        num_preds : int
-            number of predictions
-
-        Returns
-        -------
-        preds : numpy array
-            plaintext predictions
-        """
-        # Cast arguments to proper ctypes
-        c_char_p_key = ctypes.c_char_p(key)
-        size_t_num_preds = ctypes.c_size_t(num_preds)
-
-        preds = ctypes.POINTER(ctypes.c_float)()
-
-        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
-
-        # Convert c pointer to numpy array
-        preds = ctypes2numpy(preds, num_preds, np.float32)
-        return preds
+        _LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len)
 
 
 class Booster(object):
@@ -1228,16 +1306,28 @@ class Booster(object):
         model_file : string
             Path to the model file.
         """
-
+        # check if RPC call is needed (client provoked initialization)
+ 
         for d in cache:
             if not isinstance(d, DMatrix):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
             self._validate_features(d)
-        dmats = c_array(ctypes.c_void_p, [d.handle for d in cache])
-        self.handle = ctypes.c_void_p()
 
-        _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
-                                         ctypes.byref(self.handle)))
+        channel_addr = globals()["remote_addr"]
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                cache_handles = [d.handle.value for d in cache]
+                response = stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
+                    cache=cache_handles,
+                    length=len(cache),
+                    username=globals()["current_user"]))
+            self.handle = c_str(response.name)
+        else:
+            dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
+            self.handle = ctypes.c_char_p()
+            _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
+                                             ctypes.byref(self.handle)))
         self.set_param({'seed': 0})
         self.set_param(params or {})
         if (params is not None) and ('booster' in params):
@@ -1249,33 +1339,35 @@ class Booster(object):
 
     def __del__(self):
         if self.handle is not None:
-            _check_call(_LIB.XGBoosterFree(self.handle))
+            # FIXME free booster after use using RPC
+            # _check_call(_LIB.XGBoosterFree(self.handle))
             self.handle = None
 
-    def __getstate__(self):
-        # can't pickle ctypes pointers
-        # put model content in bytearray
-        this = self.__dict__.copy()
-        handle = this['handle']
-        if handle is not None:
-            raw = self.save_raw()
-            this["handle"] = raw
-        return this
-
-    def __setstate__(self, state):
-        # reconstruct handle from raw data
-        handle = state['handle']
-        if handle is not None:
-            buf = handle
-            dmats = c_array(ctypes.c_void_p, [])
-            handle = ctypes.c_void_p()
-            _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(0), ctypes.byref(handle)))
-            length = c_bst_ulong(len(buf))
-            ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(handle, ptr, length))
-            state['handle'] = handle
-        self.__dict__.update(state)
-        self.set_param({'seed': 0})
+    # TODO(rishabh): Add pickling support (two methods below)
+    # def __getstate__(self):
+    #     # can't pickle ctypes pointers
+    #     # put model content in bytearray
+    #     this = self.__dict__.copy()
+    #     handle = this['handle']
+    #     if handle is not None:
+    #         raw = self.save_raw()
+    #         this["handle"] = raw
+    #     return this
+    # 
+    # def __setstate__(self, state):
+    #     # reconstruct handle from raw data
+    #     handle = state['handle']
+    #     if handle is not None:
+    #         buf = handle
+    #         dmats = c_array(ctypes.c_char_p, [])
+    #         handle = ctypes.c_char_p()
+    #         _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(0), ctypes.byref(handle)))
+    #         length = c_bst_ulong(len(buf))
+    #         ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
+    #         _check_call(_LIB.XGBoosterLoadModelFromBuffer(handle, ptr, length))
+    #         state['handle'] = handle
+    #     self.__dict__.update(state)
+    #     self.set_param({'seed': 0})
 
     def __copy__(self):
         return self.__deepcopy__(None)
@@ -1283,86 +1375,87 @@ class Booster(object):
     def __deepcopy__(self, _):
         return Booster(model_file=self.save_raw())
 
-    #  def copy(self):
-        #  """Copy the booster object.
-#  
-        #  Returns
-        #  -------
-        #  booster: `Booster`
-            #  a copied booster model
-        #  """
-        #  return self.__copy__()
-
-    #  def load_rabit_checkpoint(self):
-        #  """Initialize the model by load from rabit checkpoint.
-#  
-        #  Returns
-        #  -------
-        #  version: integer
-            #  The version number of the model.
-        #  """
-        #  version = ctypes.c_int()
-        #  _check_call(_LIB.XGBoosterLoadRabitCheckpoint(
-            #  self.handle, ctypes.byref(version)))
-        #  return version.value
-
-    #  def save_rabit_checkpoint(self):
-        #  """Save the current booster to rabit checkpoint."""
-        #  _check_call(_LIB.XGBoosterSaveRabitCheckpoint(self.handle))
-
-    def attr(self, key):
-        """Get attribute string from the Booster.
-
-        Parameters
-        ----------
-        key : str
-            The key to get attribute from.
+    def copy(self):
+        """Copy the booster object.
 
         Returns
         -------
-        value : str
-            The attribute value of the key, returns None if attribute do not exist.
+        booster: `Booster`
+            a copied booster model
         """
-        ret = ctypes.c_char_p()
-        success = ctypes.c_int()
-        _check_call(_LIB.XGBoosterGetAttr(
-            self.handle, c_str(key), ctypes.byref(ret), ctypes.byref(success)))
-        if success.value != 0:
-            return py_str(ret.value)
-        return None
+        return self.__copy__()
 
-    #  def attributes(self):
-        #  """Get attributes stored in the Booster as a dictionary.
-#  
-        #  Returns
-        #  -------
-        #  result : dictionary of  attribute_name: attribute_value pairs of strings.
-            #  Returns an empty dict if there's no attributes.
-        #  """
-        #  # FIXME: this function most likely has a bug
-        #  length = c_bst_ulong()
-        #  sarr = ctypes.POINTER(ctypes.c_char_p)()
-        #  _check_call(_LIB.XGBoosterGetAttrNames(self.handle,
-                                               #  ctypes.byref(length),
-                                               #  ctypes.byref(sarr)))
-        #  attr_names = from_cstr_to_pystr(sarr, length)
-        #  return {n: self.attr(n) for n in attr_names}
+    # def load_rabit_checkpoint(self):
+    #     """Initialize the model by load from rabit checkpoint.
+    # 
+    #     Returns
+    #     -------
+    #     version: integer
+    #         The version number of the model.
+    #     """
+    #     version = ctypes.c_int()
+    #     _check_call(_LIB.XGBoosterLoadRabitCheckpoint(
+    #         self.handle, ctypes.byref(version)))
+    #     return version.value
+    #  
+    # def save_rabit_checkpoint(self):
+    #     """Save the current booster to rabit checkpoint."""
+    #     _check_call(_LIB.XGBoosterSaveRabitCheckpoint(self.handle))
 
-    #  def set_attr(self, **kwargs):
-        #  """Set the attribute of the Booster.
-#  
-        #  Parameters
-        #  ----------
-        #  **kwargs
-            #  The attributes to set. Setting a value to None deletes an attribute.
-        #  """
-        #  for key, value in kwargs.items():
-            #  if value is not None:
-                #  if not isinstance(value, STRING_TYPES):
-                    #  raise ValueError("Set Attr only accepts string values")
-                #  value = c_str(str(value))
-            #  _check_call(_LIB.XGBoosterSetAttr(
-                #  self.handle, c_str(key), value))
+    # TODO(rishabh): Enable these functions
+    # def attr(self, key):
+    #     """Get attribute string from the Booster.
+    # 
+    #     Parameters
+    #     ----------
+    #     key : str
+    #         The key to get attribute from.
+    # 
+    #     Returns
+    #     -------
+    #     value : str
+    #         The attribute value of the key, returns None if attribute do not exist.
+    #     """
+    #     ret = ctypes.c_char_p()
+    #     success = ctypes.c_int()
+    #     _check_call(_LIB.XGBoosterGetAttr(
+    #         self.handle, c_str(key), ctypes.byref(ret), ctypes.byref(success)))
+    #     if success.value != 0:
+    #         return py_str(ret.value)
+    #     return None
+
+    # def attributes(self):
+    #     """Get attributes stored in the Booster as a dictionary.
+    # 
+    #     Returns
+    #     -------
+    #     result : dictionary of  attribute_name: attribute_value pairs of strings.
+    #         Returns an empty dict if there's no attributes.
+    #     """
+    #     # FIXME: this function most likely has a bug
+    #     length = c_bst_ulong()
+    #     sarr = ctypes.POINTER(ctypes.c_char_p)()
+    #     _check_call(_LIB.XGBoosterGetAttrNames(self.handle,
+    #                                            ctypes.byref(length),
+    #                                            ctypes.byref(sarr)))
+    #     attr_names = from_cstr_to_pystr(sarr, length)
+    #     return {n: self.attr(n) for n in attr_names}
+    # 
+    # def set_attr(self, **kwargs):
+    #     """Set the attribute of the Booster.
+    # 
+    #     Parameters
+    #     ----------
+    #     **kwargs
+    #         The attributes to set. Setting a value to None deletes an attribute.
+    #     """
+    #     for key, value in kwargs.items():
+    #         if value is not None:
+    #             if not isinstance(value, STRING_TYPES):
+    #                 raise ValueError("Set Attr only accepts string values")
+    #             value = c_str(str(value))
+    #         _check_call(_LIB.XGBoosterSetAttr(
+    #             self.handle, c_str(key), value))
 
     def set_param(self, params, value=None):
         """Set parameters into the Booster.
@@ -1379,7 +1472,13 @@ class Booster(object):
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
         for key, val in params:
-            _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
+            channel_addr = globals()["remote_addr"]
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"]))
+            else:
+                _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1398,111 +1497,120 @@ class Booster(object):
         if not isinstance(dtrain, DMatrix):
             raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
         self._validate_features(dtrain)
-
+        
         if fobj is None:
-            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
-                                                    dtrain.handle))
+            channel_addr = globals()["remote_addr"]
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"]))
+                    return response
+            else:
+                _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
         else:
-            pred = self.predict(dtrain)
-            grad, hess = fobj(pred, dtrain)
-            self.boost(dtrain, grad, hess)
+            raise NotImplementedError("Custom objective functions not supported")
+            # TODO(rishabh): We do not support custom objectives currently
+            # pred = self.predict(dtrain)
+            # grad, hess = fobj(pred, dtrain)
+            # self.boost(dtrain, grad, hess)
 
-    def boost(self, dtrain, grad, hess):
-        """Boost the booster for one iteration, with customized gradient
-        statistics.  Like :func:`xgboost.core.Booster.update`, this
-        function should not be called directly by users.
+    # def boost(self, dtrain, grad, hess):
+    #     """Boost the booster for one iteration, with customized gradient
+    #     statistics.  Like :func:`xgboost.core.Booster.update`, this
+    #     function should not be called directly by users.
+    # 
+    #     Parameters
+    #     ----------
+    #     dtrain : DMatrix
+    #         The training DMatrix.
+    #     grad : list
+    #         The first order of gradient.
+    #     hess : list
+    #         The second order of gradient.
+    # 
+    #     """
+    #     if len(grad) != len(hess):
+    #         raise ValueError('grad / hess length mismatch: {} / {}'.format(len(grad), len(hess)))
+    #     if not isinstance(dtrain, DMatrix):
+    #         raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
+    #     self._validate_features(dtrain)
+    # 
+    #     _check_call(_LIB.XGBoosterBoostOneIter(self.handle, dtrain.handle,
+    #                                            c_array(ctypes.c_float, grad),
+    #                                            c_array(ctypes.c_float, hess),
+    #                                            c_bst_ulong(len(grad))))
 
-        Parameters
-        ----------
-        dtrain : DMatrix
-            The training DMatrix.
-        grad : list
-            The first order of gradient.
-        hess : list
-            The second order of gradient.
-
-        """
-        if len(grad) != len(hess):
-            raise ValueError('grad / hess length mismatch: {} / {}'.format(len(grad), len(hess)))
-        if not isinstance(dtrain, DMatrix):
-            raise TypeError('invalid training matrix: {}'.format(type(dtrain).__name__))
-        self._validate_features(dtrain)
-
-        _check_call(_LIB.XGBoosterBoostOneIter(self.handle, dtrain.handle,
-                                               c_array(ctypes.c_float, grad),
-                                               c_array(ctypes.c_float, hess),
-                                               c_bst_ulong(len(grad))))
-
-    def eval_set(self, evals, iteration=0, feval=None):
-        # pylint: disable=invalid-name
-        """Evaluate a set of data.
-
-        Parameters
-        ----------
-        evals : list of tuples (DMatrix, string)
-            List of items to be evaluated.
-        iteration : int
-            Current iteration.
-        feval : function
-            Custom evaluation function.
-
-        Returns
-        -------
-        result: str
-            Evaluation result string.
-        """
-        for d in evals:
-            if not isinstance(d[0], DMatrix):
-                raise TypeError('expected DMatrix, got {}'.format(type(d[0]).__name__))
-            if not isinstance(d[1], STRING_TYPES):
-                raise TypeError('expected string, got {}'.format(type(d[1]).__name__))
-            self._validate_features(d[0])
-
-        dmats = c_array(ctypes.c_void_p, [d[0].handle for d in evals])
-        evnames = c_array(ctypes.c_char_p, [c_str(d[1]) for d in evals])
-        msg = ctypes.c_char_p()
-        _check_call(_LIB.XGBoosterEvalOneIter(self.handle, ctypes.c_int(iteration),
-                                              dmats, evnames,
-                                              c_bst_ulong(len(evals)),
-                                              ctypes.byref(msg)))
-                                       
-        res = msg.value.decode()
-        if feval is not None:
-            for dmat, evname in evals:
-                feval_ret = feval(self.predict(dmat), dmat)
-                if isinstance(feval_ret, list):
-                    for name, val in feval_ret:
-                        res += '\t%s-%s:%f' % (evname, name, val)
-                else:
-                    name, val = feval_ret
-                    res += '\t%s-%s:%f' % (evname, name, val)
-        return res
-
-    def eval(self, data, name='eval', iteration=0):
-        """Evaluate the model on mat.
-
-        Parameters
-        ----------
-        data : DMatrix
-            The dmatrix storing the input.
-
-        name : str, optional
-            The name of the dataset.
-
-        iteration : int, optional
-            The current iteration number.
-
-        Returns
-        -------
-        result: str
-            Evaluation result string.
-        """
-        self._validate_features(data)
-        return self.eval_set([(data, name)], iteration)
+    # TODO(rishabh): Enable these functions
+    # def eval_set(self, evals, iteration=0, feval=None):
+    #     # pylint: disable=invalid-name
+    #     """Evaluate a set of data.
+    # 
+    #     Parameters
+    #     ----------
+    #     evals : list of tuples (DMatrix, string)
+    #         List of items to be evaluated.
+    #     iteration : int
+    #         Current iteration.
+    #     feval : function
+    #         Custom evaluation function.
+    # 
+    #     Returns
+    #     -------
+    #     result: str
+    #         Evaluation result string.
+    #     """
+    #     for d in evals:
+    #         if not isinstance(d[0], DMatrix):
+    #             raise TypeError('expected DMatrix, got {}'.format(type(d[0]).__name__))
+    #         if not isinstance(d[1], STRING_TYPES):
+    #             raise TypeError('expected string, got {}'.format(type(d[1]).__name__))
+    #         self._validate_features(d[0])
+    # 
+    #     dmats = c_array(ctypes.c_char_p, [d[0].handle for d in evals])
+    #     evnames = c_array(ctypes.c_char_p, [c_str(d[1]) for d in evals])
+    #     msg = ctypes.c_char_p()
+    #     _check_call(_LIB.XGBoosterEvalOneIter(self.handle, ctypes.c_int(iteration),
+    #                                           dmats, evnames,
+    #                                           c_bst_ulong(len(evals)),
+    #                                           ctypes.byref(msg)))
+    # 
+    #     res = msg.value.decode()
+    #     if feval is not None:
+    #         for dmat, evname in evals:
+    #             feval_ret = feval(self.predict(dmat), dmat)
+    #             if isinstance(feval_ret, list):
+    #                 for name, val in feval_ret:
+    #                     res += '\t%s-%s:%f' % (evname, name, val)
+    #             else:
+    #                 name, val = feval_ret
+    #                 res += '\t%s-%s:%f' % (evname, name, val)
+    #     return res
+    # 
+    # def eval(self, data, name='eval', iteration=0):
+    #     """Evaluate the model on mat.
+    # 
+    #     Parameters
+    #     ----------
+    #     data : DMatrix
+    #         The dmatrix storing the input.
+    # 
+    #     name : str, optional
+    #         The name of the dataset.
+    # 
+    #     iteration : int, optional
+    #         The current iteration number.
+    # 
+    #     Returns
+    #     -------
+    #     result: str
+    #         Evaluation result string.
+    #     """
+    #     self._validate_features(data)
+    #     return self.eval_set([(data, name)], iteration)
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True):
+                validate_features=True, username=None, decrypt=True):
         """
         Predict with data.
 
@@ -1560,11 +1668,22 @@ class Booster(object):
             When this is True, validate that the Booster's and data's feature_names are identical.
             Otherwise, it is assumed that the feature_names are the same.
 
+        username: string
+            Use the name to find the encryption key used for prediction result
+
+        decrypt: bool
+            When this is True, the predictions received from the enclave are decrypted using the user's symmetric key
+
         Returns
         -------
         prediction : numpy array
         num_preds: number of predictions
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1582,39 +1701,97 @@ class Booster(object):
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
-        _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
-                                          ctypes.c_int(option_mask),
-                                          ctypes.c_uint(ntree_limit),
-                                          ctypes.byref(length),
-                                          ctypes.byref(preds)))
-                         
-        #  preds = ctypes2numpy(preds, length.value, np.float32)
-        #  if pred_leaf:
-        #      preds = preds.astype(np.int32)
-        #  
-        #  nrow = data.num_row()
-        #  if preds.size != nrow and preds.size % nrow == 0:
-        #      chunk_size = int(preds.size / nrow)
-        #  
-        #      if pred_interactions:
-        #          ngroup = int(chunk_size / ((data.num_col() + 1) * (data.num_col() + 1)))
-        #          if ngroup == 1:
-        #              preds = preds.reshape(nrow, data.num_col() + 1, data.num_col() + 1)
-        #          else:
-        #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1, data.num_col() + 1)
-        #      elif pred_contribs:
-        #          ngroup = int(chunk_size / (data.num_col() + 1))
-        #          if ngroup == 1:
-        #              preds = preds.reshape(nrow, data.num_col() + 1)
-        #          else:
-        #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
-        #      else:
-        #          preds = preds.reshape(nrow, chunk_size)
+        channel_addr = globals()["remote_addr"]
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGBoosterPredict(remote_pb2.PredictParams(booster_handle=self.handle.value,
+                    dmatrix_handle=data.handle.value,
+                    option_mask=option_mask,
+                    ntree_limit=ntree_limit,
+                    username=username))
+
+                enc_preds_serialized = response.predictions
+                length = c_bst_ulong(response.num_preds)
+
+                preds = proto_to_pointer(enc_preds_serialized)
+        else:
+            _check_call(_LIB.XGBoosterPredict(self.handle,
+                                              data.handle,
+                                              ctypes.c_int(option_mask),
+                                              ctypes.c_uint(ntree_limit),
+                                              ctypes.byref(length),
+                                              ctypes.byref(preds),
+                                              c_str(username)))
+
+            # TODO(rishabh): implement this in decrypt_predictions
+            #  preds = ctypes2numpy(preds, length.value, np.float32)
+            #  if pred_leaf:
+            #      preds = preds.astype(np.int32)
+            #
+            #  nrow = data.num_row()
+            #  if preds.size != nrow and preds.size % nrow == 0:
+            #      chunk_size = int(preds.size / nrow)
+            #
+            #      if pred_interactions:
+            #          ngroup = int(chunk_size / ((data.num_col() + 1) * (data.num_col() + 1)))
+            #          if ngroup == 1:
+            #              preds = preds.reshape(nrow, data.num_col() + 1, data.num_col() + 1)
+            #          else:
+            #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1, data.num_col() + 1)
+            #      elif pred_contribs:
+            #          ngroup = int(chunk_size / (data.num_col() + 1))
+            #          if ngroup == 1:
+            #              preds = preds.reshape(nrow, data.num_col() + 1)
+            #          else:
+            #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
+            #      else:
+            #          preds = preds.reshape(nrow, chunk_size)
+        if decrypt:
+            preds = self.decrypt_predictions(preds, length.value)
         return preds, length.value
 
-    def save_model(self, fname):
+    # TODO(rishabh): change encrypted_preds to Python type from ctype
+    def decrypt_predictions(self, encrypted_preds, num_preds):
         """
-        Save the model to a file.
+        Decrypt encrypted predictions
+
+        Parameters
+        ----------
+        key : byte array
+            key used to encrypt client files
+        encrypted_preds : c_char_p
+            encrypted predictions
+        num_preds : int
+            number of predictions
+
+        Returns
+        -------
+        preds : numpy array
+            plaintext predictions
+        """
+        try:
+            sym_key = globals()["current_user_sym_key"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+
+        # Cast arguments to proper ctypes
+        c_char_p_key = ctypes.c_char_p(sym_key)
+        size_t_num_preds = ctypes.c_size_t(num_preds)
+
+        preds = ctypes.POINTER(ctypes.c_float)()
+
+        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
+
+        # Convert c pointer to numpy array
+        preds = ctypes2numpy(preds, num_preds, np.float32)
+        return preds
+
+
+    def save_model(self, fname, username=None):
+        """
+        Save the model to an encrypted file at the server.
+        The file is encrypted with the user's symmetric key.
 
         The model is saved in an XGBoost internal binary format which is
         universal among the various XGBoost interfaces. Auxiliary attributes of
@@ -1625,49 +1802,103 @@ class Booster(object):
         ----------
         fname : string
             Output file name
+        username: string
+            Used to encrypt the file
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
-            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname)))
+            channel_addr = globals()["remote_addr"]
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParams(
+                        booster_handle=self.handle.value,
+                        filename=fname,
+                        username=username))
+            else:
+                _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
             raise TypeError("fname must be a string")
 
-    def save_raw(self):
+    # FIXME Should we decrypt the raw model?
+    def save_raw(self, username=None):
         """
-        Save the model to a in memory buffer representation
+        Save the model to a in memory buffer representation.
+        The model is encrypted with the user's symmetric key.
 
+        username: string
+            usred to encrypt this file
         Returns
         -------
         a in memory buffer representation of the model
         """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
-        _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
-                                              ctypes.byref(length),
-                                              ctypes.byref(cptr)))
+        channel_addr = globals()["remote_addr"]
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_XGBoosterGetModelRaw(remote_pb2.ModelRawParams(
+                    booster_handle=self.handle.value,
+                    username=username))
+
+                cptr = from_pystr_to_cstr(list(response.sarr))
+                length = c_bst_ulong(response.length)
+        else:
+            _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
+                                                  ctypes.byref(length),
+                                                  ctypes.byref(cptr),
+                                                  c_str(username)))
         return ctypes2buffer(cptr, length.value)
 
-    def load_model(self, fname):
-        """
-        Load the model from a file.
-
-        The model is loaded from an XGBoost internal binary format which is
-        universal among the various XGBoost interfaces. Auxiliary attributes of
-        the Python Booster object (such as feature_names) will not be loaded.
-        To preserve all attributes, pickle the Booster object.
-
-        Parameters
-        ----------
-        fname : string or a memory buffer
-            Input file name or memory buffer(see also save_raw)
-        """
-        if isinstance(fname, STRING_TYPES):
-            # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname)))
-        else:
-            buf = fname
-            length = c_bst_ulong(len(buf))
-            ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length))
+    # TODO(rishabh): Fix this API for the multiparty case
+    # def load_model(self, fname, username=None):
+    #     """
+    #     Load the model from a file.
+    # 
+    #     The model is loaded from an XGBoost internal binary format which is
+    #     universal among the various XGBoost interfaces. Auxiliary attributes of
+    #     the Python Booster object (such as feature_names) will not be loaded.
+    #     To preserve all attributes, pickle the Booster object.
+    # 
+    #     Parameters
+    #     ----------
+    #     fname : string or a memory buffer
+    #         Input file name or memory buffer(see also save_raw)
+    #     username: string
+    #         Used to find the encryption key
+    #     """
+    #     # check the global variable for current_user
+    #     if username is None and "current_user" in globals():
+    #         username = globals()["current_user"]
+    #     if username is None:
+    #         raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+    #     if isinstance(fname, STRING_TYPES):
+    #         # assume file name, cannot use os.path.exist to check, file can be from URL.
+    #         channel_addr = globals()["remote_addr"]
+    #         if channel_addr:
+    #             with grpc.insecure_channel(channel_addr) as channel:
+    #                 stub = remote_pb2_grpc.RemoteStub(channel)
+    #                 response = stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParams(
+    #                     booster_handle=self.handle.value,
+    #                     filename=fname,
+    #                     username=username))
+    #         else:
+    #             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+    #     else:
+    #         buf = fname
+    #         length = c_bst_ulong(len(buf))
+    #         ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
+    #         _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
@@ -1689,7 +1920,7 @@ class Booster(object):
             need_close = True
         else:
             need_close = False
-        ret = self.get_dump(key, fmap, with_stats, dump_format)
+        ret = self.get_dump(fmap, with_stats, dump_format)
         if dump_format == 'json':
             fout.write('[\n')
             for i, _ in enumerate(ret):
@@ -1704,9 +1935,11 @@ class Booster(object):
         if need_close:
             fout.close()
 
-    def get_dump(self, key, fmap='', with_stats=False, dump_format="text"):
+    def get_dump(self, fmap='', with_stats=False, dump_format="text", decrypt=True):
         """
-        Returns the model dump as a list of strings.
+        Returns the (encrypted) model dump as a list of strings.
+        The model is encrypted with the user's symmetric key.
+        If `decrypt` is True, then the dump is decrypted by the client.
 
         Parameters
         ----------
@@ -1716,52 +1949,94 @@ class Booster(object):
             Controls whether the split statistics are output.
         dump_format : string, optional
             Format of model dump. Can be 'text' or 'json'.
+        decrypt: bool
+            When this is True, the model dump received from the enclave is decrypted using the user's symmetric key
         """
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
         if self.feature_names is not None and fmap == '':
             flen = len(self.feature_names)
 
-            fname = from_pystr_to_cstr(self.feature_names)
 
-            if self.feature_types is None:
-                # use quantitative as default
-                # {'q': quantitative, 'i': indicator}
-                ftype = from_pystr_to_cstr(['q'] * flen)
+            channel_addr = globals()["remote_addr"]
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    fname = self.feature_names
+                    if self.feature_types is None:
+                        # use quantitative as default
+                        # {'q': quantitative, 'i': indicator}
+                        ftype = ['q'] * flen
+                    else:
+                        ftype = self.feature_types
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
+                        booster_handle=self.handle.value,
+                        flen=flen,
+                        fname=fname,
+                        ftype=ftype,
+                        with_stats=with_stats,
+                        dump_format=dump_format,
+                        username=globals()["current_user"]))
+                    sarr = from_pystr_to_cstr(list(response.sarr))
+                    length = c_bst_ulong(response.length)
             else:
-                ftype = from_pystr_to_cstr(self.feature_types)
-            _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
-                self.handle,
-                ctypes.c_int(flen),
-                fname,
-                ftype,
-                ctypes.c_int(with_stats),
-                c_str(dump_format),
-                ctypes.byref(length),
-                ctypes.byref(sarr)))
+                fname = from_pystr_to_cstr(self.feature_names)
+
+                if self.feature_types is None:
+                    # use quantitative as default
+                    # {'q': quantitative, 'i': indicator}
+                    ftype = from_pystr_to_cstr(['q'] * flen)
+                else:
+                    ftype = from_pystr_to_cstr(self.feature_types)
+                _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+                    self.handle,
+                    ctypes.c_int(flen),
+                    fname,
+                    ftype,
+                    ctypes.c_int(with_stats),
+                    c_str(dump_format),
+                    ctypes.byref(length),
+                    ctypes.byref(sarr)))
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
-            _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
-                                                  c_str(fmap),
-                                                  ctypes.c_int(with_stats),
-                                                  c_str(dump_format),
-                                                  ctypes.byref(length),
-                                                  ctypes.byref(sarr)))
 
+            channel_addr = globals()["remote_addr"]
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParams(
+                        booster_handle=self.handle.value,
+                        fmap=fmap,
+                        with_stats=with_stats,
+                        dump_format=dump_format,
+                        username=globals()["current_user"]))
+                    sarr = from_pystr_to_cstr(list(response.sarr))
+                    length = c_bst_ulong(response.length)
+            else:
+                _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
+                                                      c_str(fmap),
+                                                      ctypes.c_int(with_stats),
+                                                      c_str(dump_format),
+                                                      ctypes.byref(length),
+                                                      ctypes.byref(sarr)))
 
-        key = ctypes.c_char_p(key)
-        self.decrypt_dump(key, sarr, length)
+        if decrypt:
+            self.decrypt_dump(sarr, length)
         res = from_cstr_to_pystr(sarr, length)
         return res
 
-    def decrypt_dump(self, key, sarr, length):
-        """ Decrypt the models before returning from get_dump()
-        """
-        _check_call(_LIB.decrypt_dump(key, sarr, length))
+    def decrypt_dump(self, sarr, length):
+        """ Decrypt the models obtained from get_dump()
+        """ 
+        try:
+            sym_key = globals()["current_user_sym_key"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+        _check_call(_LIB.decrypt_dump(sym_key, sarr, length))
 
- 
-    def get_fscore(self, key, fmap=''):
+
+    def get_fscore(self, fmap=''):
         """Get feature importance of each feature.
 
         .. note:: Feature importance is defined only for tree boosters
@@ -1781,9 +2056,9 @@ class Booster(object):
             The name of feature map file
         """
 
-        return self.get_score(key, fmap, importance_type='weight')
- 
-    def get_score(self, key, fmap='', importance_type='weight'):
+        return self.get_score(fmap, importance_type='weight')
+
+    def get_score(self, fmap='', importance_type='weight'):
         """Get feature importance of each feature.
         Importance type can be defined as:
 
@@ -1819,7 +2094,7 @@ class Booster(object):
         # if it's weight, then omap stores the number of missing values
         if importance_type == 'weight':
             # do a simpler tree dump to save time
-            trees = self.get_dump(key, fmap, with_stats=False)
+            trees = self.get_dump(fmap, with_stats=False)
 
             fmap = {}
             for tree in trees:
@@ -1849,7 +2124,7 @@ class Booster(object):
             importance_type = 'cover'
             average_over_splits = False
 
-        trees = self.get_dump(key, fmap, with_stats=True)
+        trees = self.get_dump(fmap, with_stats=True)
 
         importance_type += '='
         fmap = {}
@@ -1886,7 +2161,7 @@ class Booster(object):
 
         return gmap
 
-    def trees_to_dataframe(self, key, fmap=''):
+    def trees_to_dataframe(self, fmap=''):
         """Parse a boosted tree model text dump into a pandas DataFrame structure.
 
         This feature is only defined when the decision tree model is chosen as base
@@ -1998,7 +2273,7 @@ class Booster(object):
                 raise ValueError(msg.format(self.feature_names,
                                             data.feature_names))
 
-    def get_split_value_histogram(self, key, feature, fmap='', bins=None, as_pandas=True):
+    def get_split_value_histogram(self, feature, fmap='', bins=None, as_pandas=True):
         """Get split value histogram of a feature
 
         Parameters
@@ -2020,7 +2295,7 @@ class Booster(object):
         a histogram of used splitting values for the specified feature
         either as numpy array or pandas DataFrame.
         """
-        xgdump = self.get_dump(key, fmap=fmap)
+        xgdump = self.get_dump(fmap=fmap)
         values = []
         regexp = re.compile(r"\[{0}<([\d.Ee+-]+)\]".format(feature))
         for i, _ in enumerate(xgdump):
@@ -2040,3 +2315,309 @@ class Booster(object):
             sys.stderr.write(
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
+
+
+##########################################
+# APIs invoked by RPC server
+##########################################
+
+class RemoteAPI:
+    def get_remote_report_with_pubkey(request):
+        pem_key = ctypes.POINTER(ctypes.c_uint)()
+        key_size = ctypes.c_size_t()
+        remote_report = ctypes.POINTER(ctypes.c_uint)()
+        remote_report_size = ctypes.c_size_t()
+        _check_call(_LIB.get_remote_report_with_pubkey(
+            ctypes.byref(pem_key),
+            ctypes.byref(key_size),
+            ctypes.byref(remote_report),
+            ctypes.byref(remote_report_size)))
+
+        key_size = key_size.value
+        remote_report_size = remote_report_size.value
+
+        pem_key = ctypes2numpy(pem_key, key_size, np.uint32)
+        pem_key = ndarray_to_proto(pem_key)
+        remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint32)
+        remote_report = ndarray_to_proto(remote_report)
+
+        return pem_key, key_size, remote_report, remote_report_size
+
+
+    def XGBoosterPredict(request):
+        booster_handle = request.booster_handle
+        dmatrix_handle = request.dmatrix_handle
+        option_mask = request.option_mask
+        ntree_limit = request.ntree_limit
+        username = request.username
+
+        length = c_bst_ulong()
+        preds = ctypes.POINTER(ctypes.c_uint8)()
+        _check_call(_LIB.XGBoosterPredict(
+            c_str(booster_handle),
+            c_str(dmatrix_handle),
+            ctypes.c_int(option_mask),
+            ctypes.c_uint(ntree_limit),
+            ctypes.byref(length),
+            ctypes.byref(preds),
+            c_str(username)))
+        return preds, length.value
+
+    def XGBoosterUpdateOneIter(request):
+        booster_handle = request.booster_handle
+        dtrain_handle = request.dtrain_handle
+        iteration = request.iteration
+
+        _check_call(_LIB.XGBoosterUpdateOneIter(
+            c_str(booster_handle),
+            ctypes.c_int(iteration),
+            c_str(dtrain_handle)))
+
+
+    def XGBoosterCreate(request):
+        cache = list(request.cache)
+        length = request.length
+
+        bst_handle = ctypes.c_char_p()
+        _check_call(_LIB.XGBoosterCreate(
+            from_pystr_to_cstr(cache),
+            c_bst_ulong(length),
+            ctypes.byref(bst_handle)))
+        return bst_handle.value.decode('utf-8')
+
+
+    def XGBoosterSetParam(request):
+        booster_handle = request.booster_handle
+        key = request.key
+        value = request.value
+
+        bst_handle = c_str(booster_handle)
+        _check_call(_LIB.XGBoosterSetParam(
+            c_str(booster_handle),
+            c_str(key),
+            c_str(value)))
+
+
+    def XGDMatrixCreateFromEncryptedFile(request):
+        filenames = list(request.filenames)
+        usernames = list(request.usernames)
+        silent = request.silent
+
+        dmat_handle = ctypes.c_char_p()
+        _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
+            from_pystr_to_cstr(filenames),
+            from_pystr_to_cstr(usernames),
+            c_bst_ulong(len(filenames)),
+            ctypes.c_int(silent),
+            ctypes.byref(dmat_handle)))
+        return dmat_handle.value.decode('utf-8')
+
+
+    def XGBoosterSaveModel(request):
+        booster_handle = request.booster_handle
+        filename = request.filename
+        username = request.username
+
+        _check_call(_LIB.XGBoosterSaveModel(
+            c_str(booster_handle),
+            c_str(filename),
+            c_str(username)))
+
+    def XGBoosterLoadModel(request):
+        booster_handle = request.booster_handle
+        filename = request.filename
+        username = request.username
+
+        _check_call(_LIB.XGBoosterLoadModel(
+            c_str(booster_handle),
+            c_str(filename),
+            c_str(username)))
+
+    # TODO test this
+    def XGBoosterDumpModelEx(request):
+        booster_handle = request.booster_handle
+        fmap = request.fmap
+        with_stats = request.with_stats
+        dump_format = request.dump_format
+
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
+        _check_call(_LIB.XGBoosterDumpModelEx(
+            c_str(booster_handle),
+            c_str(fmap),
+            ctypes.c_int(with_stats),
+            c_str(dump_format),
+            ctypes.byref(length),
+            ctypes.byref(sarr)))
+        return length.value, from_cstr_to_pystr(sarr, length)
+
+    def XGBoosterDumpModelExWithFeatures(request):
+        booster_handle = request.booster_handle
+        flen = request.flen
+        fname = request.fname
+        ftype = request.ftype
+        with_stats = request.with_stats
+        dump_format = request.dump_format
+
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
+        _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+            c_str(booster_handle),
+            ctypes.c_int(flen),
+            from_pystr_to_cstr(list(fname)),
+            from_pystr_to_cstr(list(ftype)),
+            ctypes.c_int(with_stats),
+            c_str(dump_format),
+            ctypes.byref(length),
+            ctypes.byref(sarr)))
+        return length.value, from_cstr_to_pystr(sarr, length)
+
+    # TODO test this
+    def XGBoosterGetModelRaw(request):
+        booster_handle = request.booster_handle
+        username = request.username
+
+        length = c_bst_ulong()
+        sarr = ctypes.POINTER(ctypes.c_char_p)()
+        _check_call(_LIB.XGBoosterGetModelRaw(
+            c_str(booster_handle),
+            c_str(username)))
+        return length.value, from_cstr_to_pystr(sarr, length)
+
+    def XGDMatrixNumCol(request):
+        dmatrix_handle = request.name
+
+        ret = c_bst_ulong()
+        _check_call(_LIB.XGDMatrixNumCol(
+            c_str(dmatrix_handle),
+            ctypes.byref(ret)))
+        return ret.value
+
+    def XGDMatrixNumRow(request):
+        dmatrix_handle = request.name
+
+        ret = c_bst_ulong()
+        _check_call(_LIB.XGDMatrixNumRow(
+            c_str(dmatrix_handle),
+            ctypes.byref(ret)))
+        return ret.value
+
+##########################################
+# Crypto APIs
+##########################################
+
+
+def generate_client_key(keyfile):
+    """
+    Generate a new key and save it to `path_to_key`
+
+    Parameters
+    ----------
+    path_to_key : str
+        path to which key will be saved
+    """
+    KEY_BYTES = 32
+
+    print("Generating client key...")
+    key = os.urandom(KEY_BYTES)
+    with open(keyfile, "wb") as _keyfile:
+        _keyfile.write(key)
+
+def encrypt_file(input_file, output_file, key_file):
+    """
+    Encrypt a file
+
+    Parameters
+    ----------
+    input_file : str
+        path to file to be encrypted
+    output_file : str
+        path to which encrypted file will be saved
+    key_file : str
+        path to key used to encrypt file
+    """
+    if not os.path.exists(input_file):
+        print("Error: File {} does not exist".format(input_file))
+        return
+
+    print("Encrypting file {}".format(input_file))
+
+    input_file_bytes = input_file.encode('utf-8')
+    output_file_bytes = output_file.encode('utf-8')
+    key_file_bytes = key_file.encode('utf-8')
+
+    # Convert to proper ctypes
+    input_path = ctypes.c_char_p(input_file_bytes)
+    output_path = ctypes.c_char_p(output_file_bytes)
+    key_path = ctypes.c_char_p(key_file_bytes)
+
+    _check_call(_LIB.encrypt_file(input_path, output_path, key_path))
+
+def encrypt_data_with_pk(data, data_len, pem_key, key_size):
+    """
+    Parameters
+    ----------
+    data : byte array
+    data_len : int
+    pem_key : proto
+    key_size : int
+
+    Returns
+    -------
+    encrypted_data : proto.NDArray
+    encrypted_data_size_as_int : int
+    """
+    # Cast data to char*
+    data = ctypes.c_char_p(data)
+    data_len = ctypes.c_size_t(data_len)
+
+    # Cast proto to pointer to pass into C++ encrypt_data_with_pk()
+    pem_key = proto_to_pointer(pem_key)
+    pem_key_len = ctypes.c_size_t(key_size)
+
+    # Allocate memory that will be used to store the encrypted_data and encrypted_data_size
+    encrypted_data = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+    encrypted_data_size = ctypes.c_size_t(1024)
+
+    # Encrypt the data with pk pem_key
+    _check_call(_LIB.encrypt_data_with_pk(data, data_len, pem_key, key_size, encrypted_data, ctypes.byref(encrypted_data_size)))
+
+    # Cast the encrypted data back to a proto.NDArray (for RPC purposes) and return it
+    encrypted_data_size_as_int = encrypted_data_size.value
+    encrypted_data = pointer_to_proto(encrypted_data, encrypted_data_size_as_int)
+
+    return encrypted_data, encrypted_data_size_as_int
+
+def sign_data(key, data, data_size):
+    """
+    Parameters
+    ----------
+    keyfile : str
+    data : proto.NDArray
+    data_size : int
+
+    Returns
+    -------
+    signature : proto.NDArray
+    sig_len_as_int : int
+    """
+    # Cast the keyfile to a char*
+    keyfile = ctypes.c_char_p(str.encode(key))
+
+    # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
+    data = proto_to_pointer(data)
+    data_size = ctypes.c_size_t(data_size)
+
+    # Allocate memory to store the signature and sig_len
+    signature = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+    sig_len = ctypes.c_size_t(1024)
+
+    # Sign data with key keyfile
+    _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
+
+    # Cast the signature and sig_len back to a gRPC serializable format
+    sig_len_as_int = sig_len.value
+    signature = pointer_to_proto(signature, sig_len_as_int)
+
+    return signature, sig_len_as_int
+

@@ -1,0 +1,92 @@
+syntax = "proto2";
+
+// Compile with -> python -m grpc_tools.protoc -I=. --python_out=<_pb2 file out> --grpc_python_out=<_pb2_grpc file out> <path of this file>
+
+// Compile with -> python -m grpc_tools.protoc -I=. --python_out=. --grpc_python_out=. ./fxgb.proto
+
+message DMLC_VARS {
+    required string DMLC_TRACKER_URI = 1;
+    required int32 DMLC_TRACKER_PORT = 2;
+    optional string DMLC_ROLE = 3;
+    optional string DMLC_NODE_HOST = 4;
+    required int32 DMLC_NUM_WORKER = 5;
+    optional int32 DMLC_NUM_SERVER = 6;
+}
+
+// InitRequest proto to be used in Init RPC.
+message InitRequest {
+    optional DMLC_VARS dmlc_vars = 1;    // DMLC variables.
+}
+
+// TrainRequest proto to be used in Train RPC.
+// See https://xgboost.readthedocs.io/en/latest/parameter.html for XGBoost parameter documentation.
+message TrainRequest {
+    /* Learning rate. Default = 0.3 (Range: [0,1]) */
+    optional float eta = 1;
+    /* Min loss reduction to make a further split on the tree. Default = 0 */
+    optional float gamma = 2;
+    /* Max depth of tree. Default = 6 */
+    optional int32 max_depth = 3;
+    /* Minimum sum of hessian needed in a child to create new split. Default = 1 */
+    optional float min_child_weight = 4;
+    /* Max delta step we allow each leaf output to be. Default = 0 (unbounded) */
+    optional float max_delta_step = 5;
+    /* Subsample ratio of training data. Default = 1 */
+    optional float subsample = 26;
+    /* Subsample ratio of columns once per constructed tree. Default = 1 (Range: (0,1]) */
+    optional float colsample_bytree = 6;
+    /* Subsample ratio of columns once per tree level. Default = 1 */
+    optional float colsample_bylevel = 7;
+    /* Subsample ratio of columns once per split. Default = 1 */
+    optional float colsample_bynode = 8;
+    /* L2 regularization term on weights. Default = 1 */
+    optional float lambda = 9;
+    /* L1 regularization term on weights. Default = 0 */
+    optional float alpha = 10;
+    /* Method of tree construction. Default = 'auto' */
+    optional string tree_method = 11;
+    /* Only used for tree_method='approx'. Roughly translates into O(1/sketch_eps) bins.
+       Default = 0.03 (Range: (0,1)) */
+    optional float sketch_eps = 12;
+    /* Control balance of positive and negative weights. Useful for imbalanced dataset. Default = 1 */
+    optional float scale_pos_weight = 13;
+    /* Define sequence of tree updaters to run. */
+    optional string updater = 14;
+    /* When this flag is 1, tree leafs as well as tree nodes’ stats are updated.
+    When it is 0, only node stats are updated. */
+    optional int32 refresh_leaf = 15;
+    /* Type of boosting process to run. 'default' or 'update' */
+    optional string process_type = 16;
+    /* Set only when tree_method='hist'. Controls the way new nodes are added to tree. */
+    optional string grow_policy = 17;
+    /* Maximum number of nodes to be added. Only relevant when grow_policy=lossguide is set. */
+    optional int32 max_leaves = 18;
+    /* Maximum number of discrete bins to bucket continuous features. Only relevant when tree_method='hist' */
+    optional int32 max_bin = 19;
+    /* The type of predictor algorithm to use. Provides the same results but allows the use of GPU or CPU. */
+    optional string predictor = 20;
+    /* Number of parallel trees constructed during each iteration. This option is used to support boosted random forest. */
+    optional int32 num_parallel_tree = 21;
+    /* Specify learning task. */
+    optional string objective = 22;
+    /* Initial prediction score of all instances. */
+    optional float base_score = 23;
+    /* Evaluation metrics for validation data. */
+    optional string eval_metric = 24;
+    /* Number of rounds for boosting. */
+    optional int32 num_round = 25;
+}
+
+// WorkerResponse that wraps boolean success/failure variable.
+message WorkerResponse {
+    optional bool success = 1;  // True if success, else failure.
+}
+
+service FXGBWorker {
+    // Initialize rabit and environment variables.
+    // When client receives this RPC, it can accept or reject the federated training session.
+    rpc Init(InitRequest) returns (WorkerResponse) {} 
+
+    // Load data and train
+    rpc Train(TrainRequest) returns (WorkerResponse) {}
+}

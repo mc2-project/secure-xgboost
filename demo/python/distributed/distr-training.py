@@ -1,16 +1,26 @@
 import securexgboost as xgb
 import os
 
-print("Creating enclave")
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
+SYM_KEY_FILE = DIR + "/../../data/key_zeros.txt"
+PRIVATE_KEY_FILE = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
+CERT_FILE = DIR + "/../../data/usercrts/user1.crt"
 
+username = "user1"
+xgb.init_user(username, SYM_KEY_FILE, PRIVATE_KEY_FILE, CERT_FILE)
+
+print("Creating enclave")
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
-# print("Remote attestation")
-# enclave.get_remote_report_with_pubkey()
-# enclave.verify_remote_report_and_set_pubkey()
+print("Remote attestation")
+# Note: Simulation mode does not support attestation
+# pass in `verify=False` to attest()
+enclave.attest()
+
+print("Send private key to enclave")
+enclave.add_key()
 
 rabit_args = {
         "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
@@ -25,11 +35,11 @@ rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
 
 xgb.rabit.init(rargs)
 
-print("Creating training matrix")
-dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
+print("Creating training matrix from encrypted file")
+dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"})
 
-print("Creating test matrix")
-dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
+print("Creating test matrix from encrypted file")
+dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"})
 
 print("Beginning Training")
 
@@ -50,18 +60,10 @@ booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest
 booster.save_model(DIR + "/demo_model.model")
 
 # Get encrypted predictions
-print("True Labels: ")
-print(dtest.get_float_info("label")[:20])
-print("\nModel Predictions: ")
-predictions, num_preds = booster.predict(dtest)
-
-key_file = open("../key_zeros.txt", 'rb')
-sym_key = key_file.read() # The key will be type bytes
-key_file.close()
-
-crypto = xgb.CryptoUtils()
+print("\n\nModel Predictions: ")
+predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
-print(crypto.decrypt_predictions(sym_key, predictions, num_preds)[:20])
+print(booster.decrypt_predictions(predictions, num_preds)[0][:20])
 
 xgb.rabit.finalize()

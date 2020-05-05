@@ -16,7 +16,7 @@
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/error.h>
 
-#include "mbedtls/gcm.h"
+#include <dmlc/logging.h>
 
 #define CIPHER_KEY_SIZE 32
 #define CIPHER_IV_SIZE  12
@@ -33,7 +33,8 @@ static int cipher_init(mbedtls_gcm_context* gcm, unsigned char* key) {
       key,                       // encryption key
       CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
   if( ret != 0 ) {
-    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret);
+    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret);
+    LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
   }
   return ret;
 }
@@ -52,20 +53,21 @@ static int encrypt_symm(unsigned char* key, const unsigned char* data, size_t da
   // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
   int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
   if( ret != 0 ) {
-    printf( "mbedtls_ctr_drbg_seed() failed - returned --x%04x\n", -ret);
-    exit(1);
+    //printf( "mbedtls_ctr_drbg_seed() failed - returned --x%04x\n", -ret);
+    LOG(FATAL) << "mbedtls_ctr_drbg_seed() failed - returned " <<  -ret;
   }
 
   // Initialize the GCM context with our key and desired cipher
   ret = cipher_init(&gcm, key);
   if( ret != 0 ) {
-    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
   }
   // Extract data for your IV, in this case we generate 12 bytes (96 bits) of random data
   ret = mbedtls_ctr_drbg_random( &ctr_drbg, iv, CIPHER_IV_SIZE );
   if( ret != 0 ) {
-    printf( "mbedtls_ctr_drbg_random failed to extract IV - returned -0x%04x\n", -ret );
-    return ret;
+    //printf( "mbedtls_ctr_drbg_random failed to extract IV - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_ctr_drbg_random failed to extract IV - returned " << -ret;
   }
 
   ret = mbedtls_gcm_crypt_and_tag( 
@@ -81,7 +83,8 @@ static int encrypt_symm(unsigned char* key, const unsigned char* data, size_t da
       CIPHER_TAG_SIZE,                            // length of the tag to generate
       tag);                                       // buffer for holding the tag
   if( ret != 0 ) {
-    printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
+    //printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned " << -ret;
   }
   return ret;
 }
@@ -91,8 +94,8 @@ static int encrypt_symm(mbedtls_gcm_context* gcm, mbedtls_ctr_drbg_context* ctr_
     // Extract data for your IV, in this case we generate 12 bytes (96 bits) of random data
     int ret = mbedtls_ctr_drbg_random(ctr_drbg, iv, CIPHER_IV_SIZE);
     if( ret != 0 ) {
-        printf( "mbedtls_ctr_drbg_random failed to extract IV - returned -0x%04x\n", -ret );
-        return ret;
+        //printf( "mbedtls_ctr_drbg_random failed to extract IV - returned -0x%04x\n", -ret );
+        LOG(FATAL) << "mbedtls_ctr_drbg_random failed to extract IV - returned " << -ret;
     }
 
     ret = mbedtls_gcm_crypt_and_tag( 
@@ -108,7 +111,8 @@ static int encrypt_symm(mbedtls_gcm_context* gcm, mbedtls_ctr_drbg_context* ctr_
             CIPHER_TAG_SIZE,                            // length of the tag to generate
             tag);                                       // buffer for holding the tag
     if( ret != 0 ) {
-        printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
+        //printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
+        LOG(FATAL) << "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned " << -ret;
     }
     return ret;
 }
@@ -119,8 +123,8 @@ static int decrypt_symm(unsigned char* key, const unsigned char* data, size_t da
   // Initialize the GCM context with our key and desired cipher
   int ret = cipher_init(&gcm, key);
   if( ret != 0 ) {
-    printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-    exit(1);
+    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
   }
 
   ret = mbedtls_gcm_auth_decrypt(
@@ -135,7 +139,8 @@ static int decrypt_symm(unsigned char* key, const unsigned char* data, size_t da
       data,                                     // buffer holding the input ciphertext data
       output);                                  // buffer for holding the output decrypted data
   if (ret != 0) {
-    printf( "mbedtls_gcm_auth_decrypt failed with error -0x%04x\n", -ret);
+    //printf( "mbedtls_gcm_auth_decrypt failed with error -0x%04x\n", -ret);
+    LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
   }
   return ret;
 }
@@ -154,7 +159,8 @@ static int decrypt_symm(mbedtls_gcm_context* gcm, const unsigned char* data, siz
       data,                                     // buffer holding the input ciphertext data
       output);                                  // buffer for holding the output decrypted data
   if (ret != 0) {
-    printf( "mbedtls_gcm_auth_decrypt failed with error -0x%04x\n ", -ret);
+    //printf( "mbedtls_gcm_auth_decrypt failed with error -0x%04x\n ", -ret);
+    LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
   }
   return ret;
 }
@@ -179,36 +185,23 @@ static int compute_sha256(const uint8_t* data, size_t data_size, uint8_t sha256[
   return ret;
 }
 
-//void verifySignature(char *pkfile, uint8_t* data, size_t data_size, uint8_t* signature, size_t sig_len) {
-//  mbedtls_pk_context pk;
-//  unsigned char hash[32];
-//  int ret = 1;
-//
-//  mbedtls_pk_init( &pk );
-//
-//  if((ret = mbedtls_pk_parse_public_keyfile(&pk, pkfile)) != 0) {
-//    printf(" failed\n  ! Could not read key\n");
-//    printf("  ! mbedtls_pk_parse_public_keyfile returned %d\n\n", ret);
-//    exit(1);
-//  }
-//
-//  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
-//    printf( " failed\n  ! Key is not an RSA key\n" );
-//    exit(1);
-//  }
-//
-//  mbedtls_rsa_set_padding( mbedtls_pk_rsa( pk ), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
-//
-//  if((ret = compute_sha256(data, data_size, hash)) != 0) {
-//    printf( " failed\n  ! Could not hash\n\n");
-//    exit(1);
-//  }
-//
-//  if((ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0 ) {
-//    printf( " failed\n  ! mbedtls_pk_verify returned %d\n\n", ret );
-//    exit(1);
-//  }
-//
-//  mbedtls_pk_free( &pk );
-//}
+static int verifySignature(mbedtls_pk_context pk, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
+  unsigned char hash[SHA_DIGEST_SIZE];
+  int ret = 0;
+
+  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
+    LOG(FATAL) << "verification failed - Key is not an RSA key";
+  }
+
+  mbedtls_rsa_set_padding( mbedtls_pk_rsa( pk ), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
+
+  if((ret = compute_sha256(data, data_len, hash)) != 0) {
+    LOG(FATAL) << "verification failed -- Could not hash";
+  }
+
+  if((ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0 ) {
+    LOG(FATAL) << "verification failed -- mbedtls_pk_verify returned " << ret;
+  }
+  return ret;
+}
 #endif // CRYPTO_H_

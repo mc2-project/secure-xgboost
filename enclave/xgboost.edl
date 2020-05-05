@@ -8,182 +8,202 @@ enclave {
         public int enclave_XGDMatrixCreateFromFile(
                 [in, string] const char *fname,
                 int silent,
-                [out] DMatrixHandle *out);
-
+                [out] char** handle);
+        
         public int enclave_XGDMatrixCreateFromEncryptedFile(
-                [in, string] const char *fname,
+                [in, count=num_files] const char **fnames,
+                [in, count=num_files] size_t* fname_lengths,
+                [in, count=num_files] char** usernames,
+                [in, count=num_files] size_t* username_lengths,
+                bst_ulong num_files,
                 int silent,
-                [out] DMatrixHandle *out);
-
+                [out] char** handle);
+        
         public int enclave_XGBoosterCreate(
-                [in, count=len] const DMatrixHandle* dmats, 
+                [in, count=len] char** dmat_handles, 
+                [in, count=len] size_t* handle_lengths, 
                 bst_ulong len, 
-                [out] BoosterHandle* out);
-
+                [out] char** handle);
+        
         public int enclave_XGBoosterSetParam(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, string] const char *name,
                 [in, string] const char *value); 
-
+        
         public int enclave_XGBoosterUpdateOneIter(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 int iter,
-                DMatrixHandle dtrain);
-
+                [in, string] char* dtrain);
+        
         public int enclave_XGBoosterBoostOneIter(
-                BoosterHandle handle,
-                DMatrixHandle dtrain,
+                [in, string] char* handle,
+                [in, string] char* dtrain,
                 [in, count=len] bst_float *grad,
                 [in, count=len] bst_float *hess,
                 bst_ulong len);
-
+        
         public int enclave_XGBoosterEvalOneIter(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 int iter,
-                [in, count=len] DMatrixHandle* dmats,
+                [in, count=len] char** dmat_handles,
+                [in, count=len] size_t* handle_lengths,
                 [in, count=len] const char** evnames,
+                [in, count=len] size_t* name_lengths,
                 bst_ulong len,
                 [out] char** out_str);
-
+        
         public int enclave_XGBoosterPredict(
-                BoosterHandle handle,
-                DMatrixHandle dmat,
+                [in, string] char* handle,
+                [in, string] char* dmat,
                 int option_mask,
                 unsigned ntree_limit,
                 [out] bst_ulong *out_len,
-                [out] uint8_t **out_result);
+                [out] uint8_t **out_result,
+                [in, string] char* username);
         
         public int enclave_XGDMatrixGetFloatInfo(
-                DMatrixHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* field,
                 [out] bst_ulong *out_len,
                 [out] bst_float **out_dptr);
-
+        
         public int enclave_XGDMatrixGetUintInfo(
-                DMatrixHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* field,
                 [out] bst_ulong *out_len,
                 [out] unsigned **out_dptr);
-
+        
         public int enclave_XGDMatrixSetFloatInfo(
-                DMatrixHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* field,
                 [in] const bst_float* info,
                 bst_ulong len);
-
+        
         public int enclave_XGDMatrixSetUIntInfo(
-                DMatrixHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* field,
                 [in] const unsigned* info,
                 bst_ulong len);
-
+        
         public int enclave_XGDMatrixNumRow(
-                DMatrixHandle handle,
+                [in, string] char* handle,
                 [out] bst_ulong *out);
-
+        
         public int enclave_XGDMatrixNumCol(
-                DMatrixHandle handle,
+                [in, string] char* handle,
                 [out] bst_ulong *out);
-
+        
         public int enclave_XGBoosterGetAttr(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* key,
                 [out] char** out,
                 [out] int* success);
-
+        
         public int enclave_XGBoosterGetAttrNames(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [out] bst_ulong* out_len,
                 [out] char*** out);
-
+        
         public int enclave_XGBoosterLoadModel(
-                BoosterHandle handle,
-                [in, string] const char* fname);
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, string] char* username);
         
         public int enclave_XGBoosterSaveModel(
-                BoosterHandle handle,
-                [in, string] const char* fname);
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, string] char* username);
 
         public int enclave_XGBoosterDumpModel(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* fmap,
                 int with_stats,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-
+        
         public int enclave_XGBoosterDumpModelEx(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, string] const char* fmap,
                 int with_stats,
                 [in, string] const char* format,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-
+        
         public int enclave_XGBoosterDumpModelWithFeatures(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 unsigned int fnum,
                 [in, count=fnum] const char** fname,
+                [in, count=fnum] size_t* fname_lengths,
                 [in, count=fnum] const char** ftype,
+                [in, count=fnum] size_t* ftype_lengths,
                 int with_stats,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-
+        
         public int enclave_XGBoosterDumpModelExWithFeatures(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 unsigned int fnum,
                 [in, count=fnum] const char** fname,
+                [in, count=fnum] size_t* fname_lengths,
                 [in, count=fnum] const char** ftype,
+                [in, count=fnum] size_t* ftype_lengths,
                 int with_stats,
                 [in, string] const char* format,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
-
+        
         public int enclave_XGBoosterGetModelRaw(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [out] bst_ulong *out_len,
-                [out] char **out_dptr);
+                [out] char **out_dptr,
+                [in, string] char* username);
 
         public int enclave_XGBoosterLoadModelFromBuffer(
-                BoosterHandle handle,
+                [in, string] char* handle,
                 [in, size=len] const void* buf,
-                bst_ulong len);
+                bst_ulong len,
+                [in, string] char* username);
 
         public int enclave_XGDMatrixFree(
-                DMatrixHandle handle);
-
+                [in, string] char* handle);
+        
         public int enclave_XGBoosterFree(
-                BoosterHandle handle);
-
+                [in, string] char* handle);
+        
         public int enclave_get_remote_report_with_pubkey(
                 [out] uint8_t **pem_key, 
                 [out] size_t *key_size,
                 [out] uint8_t **remote_report,
                 [out] size_t  *remote_report_size);
 
-        public int enclave_verify_remote_report_and_set_pubkey(
-                [in, count=key_size] uint8_t *pem_key, 
-                size_t key_size,
-                [in, count=remote_report_size] uint8_t *remote_report,
-                size_t remote_report_size);
+        /*public int enclave_add_client_key(*/
+        /*        [in, size=data_len] uint8_t* data, */
+        /*        size_t data_len, */
+        /*        [in, size=sig_len] uint8_t* signature,*/
+        /*        size_t sig_len);*/
 
-        public int enclave_add_client_key(
-                [in, size=data_len] uint8_t* data, 
-                size_t data_len, 
+        public int enclave_add_client_key_with_certificate(
+                [in, size=cert_len] char * cert,
+                int cert_len,
+                [in, size=data_len] uint8_t* data,
+                size_t data_len,
                 [in, size=sig_len] uint8_t* signature,
                 size_t sig_len);
 
         public void enclave_RabitInit(
                 int argc,
-                [user_check] char **argv);
-
+                [in, count=argc] char **argv,
+                [in, count=argc] size_t* arg_lengths);
+        
         public void enclave_RabitFinalize();
-
+        
         public int enclave_RabitGetRank();
-
+        
         public int enclave_RabitIsDistributed();
-
-        public void enclave_RabitTrackerPrint(
-                [user_check] const char *msg);
+    };
+    untrusted {
+        void host_XGBAPISetLastError(
+                [in, string] const char* msg);
     };
 };
 
