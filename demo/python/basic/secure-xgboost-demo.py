@@ -17,6 +17,7 @@ enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")
+
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
 enclave.attest()
@@ -47,7 +48,7 @@ num_rounds = 5
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
 
 # Save model to a file
-booster.save_model(HOME_DIR + "/demo/python/basic/modelfile.model")
+booster.save_model(HOME_DIR + "demo/python/basic/modelfile.model")
 
 # Get encrypted predictions
 print("\n\nModel Predictions: ")
