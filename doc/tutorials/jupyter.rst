@@ -20,13 +20,13 @@ There are six main steps in the notebook:
 
    The client uses the key to encrypt its data.
 
-3. ** User Initialization**
+3. **User Initialization**
 
    The client creates a user object and passes in the path to its secret symmetric key, its private key, and its certificate.
 
 4. **Enclave Preparation**
    
-   The server creates an enclave, and starts a process within it. The client [*attests*](https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example) the enclave process, and securely transfers its key to the enclave.
+   The server creates an enclave, and starts a process within it. The client `attests <https://software.intel.com/en-us/articles/code-sample-intel-software-guard-extensions-remote-attestation-end-to-end-example>`_ the enclave process, and securely transfers its key to the enclave.
 
 5. **Data Loading**
    
