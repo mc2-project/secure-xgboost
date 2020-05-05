@@ -51,12 +51,12 @@ booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest
 booster.save_model(HOME_DIR + "demo/python/basic/modelfile.model")
 
 # Get encrypted predictions
-print("\n\nModel Predictions: ")
+print("\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
 print(booster.decrypt_predictions(predictions, num_preds))
 
 # Get fscores of model
-print("\n\nModel Feature Importance: ")
+print("\nModel Feature Importance: ")
 print(booster.get_fscore())
