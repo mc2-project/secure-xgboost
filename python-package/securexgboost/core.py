@@ -1090,6 +1090,9 @@ class Enclave(object):
         self.key_size = ctypes.c_size_t()
         self.remote_report = ctypes.POINTER(ctypes.c_uint)()
         self.remote_report_size = ctypes.c_size_t()
+        self.nonce = ctypes.POINTER(ctypes.c_uint)()
+        self.nonce_size = ctypse.c_size_t()
+        self.counter = 0 # TODO(andrew): maybe not needed?
 
     # TODO(rishabh): user-defined parameters for verification
     # (e.g. mrsigner / mrenclave values)
@@ -1109,16 +1112,21 @@ class Enclave(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1))
+                response = stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=1))
+
             pem_key = response.pem_key
             key_size = response.key_size
+            nonce = response.nonce
+            nonce_size = response.nonce_size
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
-            self._set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+            self._set_report_attrs(pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
-            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+            _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(ctypes.byref(self.pem_key), ctypes.byref(self.key_size),
+                ctypes.byref(self.nonce), ctypes.byref(self.nonce_size),
+                ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
             # return self._get_report_attrs()
 
         if (verify):
@@ -1128,9 +1136,11 @@ class Enclave(object):
         """
         Verify the received attestation report and set the public key.
         """
-        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
+        _check_call(_LIB.verify_remote_report_and_set_pubkey_and_nonce(self.pem_key, self.key_size,
+                                                                       self.nonce, self.nonce_size,
+                                                                       self.remote_report, self.remote_report_size))
 
-    def _set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
+    def _set_report_attrs(self, pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size):
         """
         Set the enclave public key and remote report
 
@@ -1139,6 +1149,10 @@ class Enclave(object):
         pem_key_ndarray = proto_to_ndarray(pem_key)
         self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
         self.key_size = ctypes.c_size_t(key_size)
+
+        nonce_ndarray = proto_to_ndarray(nonce)
+        self.nonce = nonce_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+        self.nonce_size = ctypes.c_size_t(nonce_size)
 
         remote_report_ndarray = proto_to_ndarray(remote_report)
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
@@ -1156,6 +1170,8 @@ class Enclave(object):
         -------
         pem_key : proto.NDArray
         key_size : int
+        nonce : proto.NDArray
+        nonce_size : int
         remote_report : proto.NDArray
         remote_report_size : int
         """
@@ -1164,12 +1180,17 @@ class Enclave(object):
         pem_key = ndarray_to_proto(pem_key)
         key_size = self.key_size.value
 
+        # Convert nonce to serialized numpy array
+        nonce = ctypes2numpy(self.nonce, self.nonce_size.value, np.uint32)
+        nonce = ndarray_to_proto(nonce)
+        nonce_size = self.nonce_size.value
+
         # Convert remote_report to serialized numpy array
         remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint32)
         remote_report = ndarray_to_proto(remote_report)
         remote_report_size = self.remote_report_size.value
 
-        return pem_key, key_size, remote_report, remote_report_size
+        return pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size
 
     def add_key(self):
         """
@@ -1178,7 +1199,7 @@ class Enclave(object):
         The signed message is sent to the enclave.
         """
 
-        enclave_pem_key, enclave_key_size, _, _ = self._get_report_attrs()
+        enclave_pem_key, enclave_key_size, _, _, _, _ = self._get_report_attrs()
 
         try:
             sym_key = globals()["current_user_sym_key"]
@@ -2343,6 +2364,33 @@ class RemoteAPI:
 
         return pem_key, key_size, remote_report, remote_report_size
 
+    def get_remote_report_with_pubkey_and_nonce(request):
+        pem_key = ctypes.POINTER(ctypes.c_uint)()
+        key_size = ctypes.c_size_t()
+        remote_report = ctypes.POINTER(ctypes.c_uint)()
+        remote_report_size = ctypes.c_size_t()
+        nonce = ctypes.POINTER(ctypes.uint)()
+        nonce_size = ctypes.c_size_t()
+        _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(
+            ctypes.byref(pem_key),
+            ctypes.byref(key_size),
+            ctypes.byref(nonce),
+            ctypes.byref(nonce_size),
+            ctypes.byref(remote_report),
+            ctypes.byref(remote_report_size)))
+
+        key_size = key_size.value
+        nonce_size = nonce_size.value
+        remote_report_size = remote_report_size.value
+
+        pem_key = ctypes2numpy(pem_key, key_size, np.uint32)
+        pem_key = ndarray_to_proto(pem_key)
+        nonce = ctypes2numpy(nonce, nonce_size, np.uint32)
+        nonce = ndarray_to_proto(nonce)
+        remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint32)
+        remote_report = ndarray_to_proto(remote_report)
+
+        return pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size
 
     def XGBoosterPredict(request):
         booster_handle = request.booster_handle

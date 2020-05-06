@@ -111,6 +111,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
         return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
+    def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
+        pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
+
+        return remote_pb2.Report(pem_key=pem_key, key_size=key_size,
+            nonce=nonce, nonce_size=nonce_size,
+            remote_report=remote_report, remote_report_size=remote_report_size)
+
     # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key(self, request, context):
         """

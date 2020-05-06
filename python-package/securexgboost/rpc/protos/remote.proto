@@ -91,6 +91,12 @@ message Report {
 
   // Size of remote report
   uint32 remote_report_size = 4;
+
+  // Session nonce
+  numproto.protobuf.NDArray nonce = 5;
+
+  // Size of nonce
+  uint32 nonce_size = 6;
 }
 
 // Message from client to enclaves with information on how to retrieve

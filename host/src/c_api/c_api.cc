@@ -1132,6 +1132,16 @@ XGB_DLL int get_remote_report_with_pubkey(
   safe_ecall(enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, remote_report, remote_report_size));
 }
 
+XGB_DLL int get_remote_report_with_pubkey_and_nonce(
+    uint8_t** pem_key,
+    size_t* key_size,
+    uint8_t** nonce,
+    size_t* nonce_size,
+    uint8_t** remote_report,
+    size_t* remote_report_size) {
+  safe_ecall(enclave_get_remote_report_with_pubkey_and_nonce(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size));
+}
+
 bool verify_mrsigner(
     char* siging_public_key_buf,
     size_t siging_public_key_buf_size,
@@ -1304,6 +1314,26 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
     return -1;
   }
   std::cout << "verify_report_and_set_pubkey succeeded." << std::endl;
+  return 0;
+}
+
+XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
+    uint8_t* pem_key,
+    size_t key_size,
+    uint8_t* nonce,
+    size_t nonce_size,
+    uint8_t* remote_report,
+    size_t remote_report_size) {
+  // Attest the remote report and accompanying key.
+  size_t key_and_nonce_size = CIPHER_KEY_SIZE + CIPHER_IV_SIZE;
+  uint8_t key_and_nonce[key_and_nonce_size];
+  memcpy(key_and_nonce, pem_key, CIPHER_KEY_SIZE);
+  memcpy(key_and_nonce + CIPHER_KEY_SIZE, nonce, CIPHER_IV_SIZE);
+  if (!attest_remote_report(remote_report, remote_report_size, key_and_nonce, key_and_nonce_size)) {
+    std::cout << "verify_report_and_set_pubkey_and_nonce failed." << std::endl;
+    return -1;
+  }
+  std::cout << "verify_report_and_set_pubkey_and_nonce succeeded." << std::endl;
   return 0;
 }
 
