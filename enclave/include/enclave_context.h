@@ -24,7 +24,7 @@ class EnclaveContext {
     
     // 12 bytes for the session nonce and four bytes for a counter within the session.
     uint8_t m_nonce[CIPHER_IV_SIZE];
-    uint32_t counter;
+    uint32_t nonce_ctr;
 
      /* We maintain these maps to avoid having to pass out pointers to application code outside
       * the enclave; instead, the application is given a string nickname that the enclave resolves
@@ -47,6 +47,7 @@ class EnclaveContext {
     EnclaveContext() {
       generate_public_key();
       generate_nonce();
+      nonce_ctr = 0;
       client_key_is_set = false;
       booster_ctr = 0;
       dmatrix_ctr = 0;
@@ -451,7 +452,7 @@ class EnclaveContext {
      */
     bool generate_nonce() {
       mbedtls_ctr_drbg_context ctr_drbg;
-      mbedtls_entropy_context entropy
+      mbedtls_entropy_context entropy;
       mbedtls_entropy_init( &entropy );
       mbedtls_ctr_drbg_init( &ctr_drbg );
 
