@@ -350,9 +350,26 @@ int get_remote_report_with_pubkey_and_nonce(
     size_t* remote_report_size,
     uint8_t** nonce,
     size_t* nonce_size) {
-  int ret = get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
-#ifndef __ENCLAVE_SIMULATION__
+  
+  uint8_t* report = NULL;
+  size_t report_size = 0;
+  uint8_t* key_buf = NULL;
+  int ret = 1;
+
+  uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
   uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();
+
+#ifdef __ENCLAVE_SIMULATION__
+  key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+  if (key_buf == NULL) {
+    ret = OE_OUT_OF_MEMORY;
+    return ret;
+  }
+  memcpy(key_buf, public_key, CIPHER_PK_SIZE);
+
+  *pem_key = key_buf;
+  *key_size = CIPHER_PK_SIZE;
+
   uint8_t* nonce_buf = (uint8_t*)oe_host_malloc(CIPHER_IV_SIZE);
   if (nonce_buf == NULL) {
     ret = OE_OUT_OF_MEMORY;
@@ -364,13 +381,60 @@ int get_remote_report_with_pubkey_and_nonce(
 
   *nonce = nonce_buf;
   *nonce_size = CIPHER_IV_SIZE;
-#endif
-done:
-  if (ret) {
-    LOG(FATAL) << "get_remote_report_with_pubkey_and_nonce failed."
+
+  ret = 0;
+
+#else
+  uint8_t report_data[CIPHER_PK_SIZE + CIPHER_IV_SIZE];
+  memcpy(report_data, public_key, CIPHER_PK_SIZE);
+  memcpy(report_data + CIPHER_PK_SIZE, enclave_nonce, CIPHER_IV_SIZE);
+  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE, &report, &report_size)) {
+    // Allocate memory on the host and copy the report over.
+    *remote_report = (uint8_t*)oe_host_malloc(report_size);
+    if (*remote_report == NULL) {
+      ret = OE_OUT_OF_MEMORY;
+      if (report)
+        oe_free_report(report);
+      return ret;
+    }
+    memcpy(*remote_report, report, report_size);
+    *remote_report_size = report_size;
+    oe_free_report(report);
+
+    key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+    if (key_buf == NULL) {
+      ret = OE_OUT_OF_MEMORY;
+      if (report)
+        oe_free_report(report);
+      if (*remote_report)
+        oe_host_free(*remote_report);
+      return ret;
+    }
+    memcpy(key_buf, public_key, CIPHER_PK_SIZE);
+
+    *pem_key = key_buf;
+    *key_size = CIPHER_PK_SIZE;
+
+    uint8_t* nonce_buf = (uint8_t*)oe_host_malloc(CIPHER_IV_SIZE);
+    if (nonce_buf == NULL) {
+      ret = OE_OUT_OF_MEMORY;
+      if (report)
+        oe_free_report(report);
+      if (*remote_report)
+        oe_host_free(*remote_report);
+      return ret;
+    }
+    memcpy(nonce_buf, enclave_nonce, CIPHER_IV_SIZE);
+
+    *nonce = nonce_buf;
+    *nonce_size = CIPHER_IV_SIZE;
+
+    ret = 0;
+    LOG(INFO) << "get_remote_report_with_pubkey succeeded";
   } else {
-    LOG(INFO) << "get_remote_report_with_pubkey_and_nonce succeeded."
+    LOG(FATAL) << "get_remote_report_with_pubkey failed.";
   }
+#endif
   return ret;
 }
 
