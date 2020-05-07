@@ -7,6 +7,8 @@ env:
   matrix:
     # cmake test
     - TASK=cmake_test
+    # python test
+    - TASK=python_test
 
 before_install:
   # Configure Intel and Microsoft APT repositories
@@ -26,8 +28,8 @@ before_install:
   - source /opt/openenclave/share/openenclave/openenclaverc
 
 
-#install:
-#  - source tests/travis/setup.sh
+install:
+  - source tests/travis/setup.sh
 
 script:
   - tests/travis/run_test.sh
