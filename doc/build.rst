@@ -168,14 +168,6 @@ The Python package is located at ``python-package/``.
 
   If you recompiled Secure XGBoost, then you need to reinstall it again to make the new library take effect.
 
-2. Set the environment variable ``PYTHONPATH`` to tell Python where to find
-   the RPC library. For example, assume we cloned ``secure-xgboost`` on the home directory
-   ``~``. then we can added the following line in ``~/.bashrc``.
-
-.. code-block:: bash
-
-   export PYTHONPATH=/path/to/mc2-xgboost/rpc
-
 
 ***************
 Troubleshooting

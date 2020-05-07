@@ -30,8 +30,8 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
         return
 
     print("Creating test matrix")
-    dtest1 = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-remote-control/data/c1_test.enc"}, encrypted=True)
-    dtest2 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c2_test.enc"}, encrypted=True)
+    dtest1 = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-remote-control/data/c1_test.enc"})
+    dtest2 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c2_test.enc"})
 
     if not dtest1 or not dtest2:
         print("Error creating dtest")

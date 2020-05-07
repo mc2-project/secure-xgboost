@@ -10,5 +10,5 @@ This section contains tutorials discussing how to use Secure XGBoost.
 
   jupyter
   outsourced
+  multiclient-outsourced
   distributed
-  outsourced-cluster
