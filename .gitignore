@@ -105,5 +105,3 @@ demo/enclave/distributed/hosts.config
 
 # Jupyter notebook checkpoints
 .ipynb_checkpoints
-
-*.model
