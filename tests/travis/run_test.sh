@@ -6,11 +6,13 @@
 
 if [ ${TASK} == "python_test" ]; then
     set -e
-    # Build/test
-    pushd build
-    cmake ..
+    # Build/test without oblviousness
+    rm -rf build
+    mkdir build && cd build
+    cmake .. ${CMAKE_COMMON_FLAGS} -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
     make -j4
-    popd
+    cd ..
+    rm -rf build
 
     echo "-------------------------------"
     conda activate python3
