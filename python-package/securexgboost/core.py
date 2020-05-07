@@ -490,7 +490,6 @@ class DMatrix(object):
         #  data, feature_names, feature_types = _maybe_pandas_data(data,
                                                                 #  feature_names,
                                                                 #  feature_types)
-#
         #  data, feature_names, feature_types = _maybe_dt_data(data,
                                                             #  feature_names,
                                                             #  feature_types)
