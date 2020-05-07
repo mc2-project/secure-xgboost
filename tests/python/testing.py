@@ -1,0 +1,2 @@
+def initial():
+    return True
