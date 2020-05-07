@@ -183,6 +183,12 @@ def _check_call(ret):
         raise XGBoostError(py_str(_LIB.XGBGetLastError()))
 
 
+def pass_globals():
+    return {
+            "current_user": globals()["current_user"],
+            "remote_addr": globals()["remote_addr"]
+            }
+
 def ctypes2numpy(cptr, length, dtype):
     """Convert a ctypes pointer array to a numpy array.
     """

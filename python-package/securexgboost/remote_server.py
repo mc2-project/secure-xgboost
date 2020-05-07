@@ -27,6 +27,7 @@ import os
 import sys
 import traceback
 from .core import RemoteAPI as remote_api
+from .rabit import RemoteAPI as rabit_remote_api
 
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
@@ -332,6 +333,37 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             traceback.print_tb(e[2])
 
             return remote_pb2.Integer(value=None)
+
+    def rpc_RabitInit(self, request, context):
+        """
+        Initialize rabit
+        """
+        try:
+            _ = self._synchronize(rabit_remote_api.RabitInit, request)
+            return remote_pb2.Status(status=0)
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_pb2.Status(status=-1)
+
+
+    def rpc_RabitFinalize(self, request, context):
+        """
+        Notify rabit tracker that everything is done
+        """
+        try:
+            _ = self._synchronize(rabit_remote_api.RabitFinalize, request)
+            return remote_pb2.Status(status=0)
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
+
+            return remote_pb2.Status(status=-1)
 
 def serve(enclave, num_workers=10, all_users=[]):
     condition = threading.Condition()

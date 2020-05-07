@@ -4,12 +4,16 @@
 """Distributed XGBoost Rabit related API."""
 from __future__ import absolute_import
 import sys
+import os
 import ctypes
 import numpy as np
 
-from .core import _LIB, c_str, STRING_TYPES
+from .core import _LIB, c_str, STRING_TYPES, pass_globals 
 from .compat import pickle
 
+import grpc
+from .rpc import remote_pb2
+from .rpc import remote_pb2_grpc
 
 def _init_rabit():
     """internal library initializer."""
@@ -22,16 +26,35 @@ def _init_rabit():
 
 def init(args=None):
     """Initialize the rabit library with arguments"""
-    if args is None:
-        args = []
-    arr = (ctypes.c_char_p * len(args))()
-    arr[:] = args
-    _LIB.RabitInit(len(arr), arr)
+
+    core_globals = pass_globals()
+    channel_addr = core_globals.get("remote_addr")
+    current_user = core_globals.get("current_user")
+
+    if channel_addr:
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_pb2_grpc.RemoteStub(channel)
+            response = stub.rpc_RabitInit(remote_pb2.RabitParams(username=current_user)) 
+    else:
+        if args is None:
+            args = []
+        arr = (ctypes.c_char_p * len(args))()
+        arr[:] = args
+        _LIB.RabitInit(len(arr), arr)
 
 
 def finalize():
     """Finalize the process, notify tracker everything is done."""
-    _LIB.RabitFinalize()
+    core_globals = pass_globals()
+    channel_addr = core_globals.get("remote_addr")
+    current_user = core_globals.get("current_user")
+
+    if channel_addr:
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_pb2_grpc.RemoteStub(channel)
+            response = stub.rpc_RabitFinalize(remote_pb2.RabitParams(username=current_user)) 
+    else:
+        _LIB.RabitFinalize()
 
 
 def get_rank():
@@ -205,6 +228,25 @@ def version_number():
     ret = _LIB.RabitVersionNumber()
     return ret
 
+class RemoteAPI:
+    def RabitInit(request):
+        rabit_args = {
+           "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
+            "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
+            "DMLC_TRACKER_URI": os.environ.get("DMLC_TRACKER_URI"),
+            "DMLC_TRACKER_PORT": os.environ.get("DMLC_TRACKER_PORT"),
+            "DMLC_ROLE": os.environ.get("DMLC_ROLE"),
+            "DMLC_NODE_HOST": os.environ.get("DMLC_NODE_HOST")
+        }
+
+        args = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()] 
+
+        arr = (ctypes.c_char_p * len(args))()
+        arr[:] = args
+        _LIB.RabitInit(len(arr), arr)
+
+    def RabitFinalize(request):
+        _LIB.RabitFinalize()
 
 # intialization script
 _init_rabit()

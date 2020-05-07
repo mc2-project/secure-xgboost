@@ -67,6 +67,12 @@ service Remote {
 
   // Get number of rows in the DMatrix
   rpc rpc_XGDMatrixNumRow(Name) returns (Integer) {}
+
+  // Initialize Rabit
+  rpc rpc_RabitInit(RabitParams) returns (Status) {}
+
+  // Finalize Rabit
+  rpc rpc_RabitFinalize(RabitParams) returns (Status) {}
 }
 
 // Current status of the node
@@ -243,4 +249,8 @@ message Predictions {
 message ClusterParams {
     // Number of nodes in cluster
     uint32 num_workers = 1;  
+}
+
+message RabitParams {
+    string username = 1;
 }

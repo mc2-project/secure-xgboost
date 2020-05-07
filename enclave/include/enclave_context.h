@@ -344,54 +344,67 @@ class EnclaveContext {
             size_t data_len,
             uint8_t* signature,
             size_t sig_len) {
-      if (!verifySignatureWithCertificate(cert,cert_len,data,data_len,signature,sig_len)) {
-        LOG(FATAL) << "Signature verification failed";
-      }
-
-      int res = 0;
-      mbedtls_rsa_context* rsa_context;
-
-      mbedtls_pk_rsa(m_pk_context)->len = data_len;
-      rsa_context = mbedtls_pk_rsa(m_pk_context);
-      rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
-      rsa_context->hash_id = MBEDTLS_MD_SHA256;
 
       size_t output_size;
       uint8_t output[CIPHER_KEY_SIZE];
+      unsigned char* nameptr;
+      size_t name_len;
+        
+      // Only the master node verifies signature and certificate
+      if (rabit::GetRank() == 0) {
+          if (!verifySignatureWithCertificate(cert, cert_len, data, data_len, signature, sig_len)) {
+              LOG(FATAL) << "Signature verification failed";
+          }
 
-      res = mbedtls_rsa_pkcs1_decrypt(
-          rsa_context,
-          mbedtls_ctr_drbg_random,
-          &m_ctr_drbg_context,
-          MBEDTLS_RSA_PRIVATE,
-          &output_size,
-          data,
-          output,
-          CIPHER_KEY_SIZE);
-      if (res != 0) {
-        LOG(FATAL) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
+          int res = 0;
+          mbedtls_rsa_context* rsa_context;
+
+          mbedtls_pk_rsa(m_pk_context)->len = data_len;
+          rsa_context = mbedtls_pk_rsa(m_pk_context);
+          rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
+          rsa_context->hash_id = MBEDTLS_MD_SHA256;
+
+
+          res = mbedtls_rsa_pkcs1_decrypt(
+                  rsa_context,
+                  mbedtls_ctr_drbg_random,
+                  &m_ctr_drbg_context,
+                  MBEDTLS_RSA_PRIVATE,
+                  &output_size,
+                  data,
+                  output,
+                  CIPHER_KEY_SIZE);
+          if (res != 0) {
+              LOG(FATAL) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
+          }
+
+          int ret;
+          mbedtls_x509_crt user_cert;
+          mbedtls_x509_crt_init(&user_cert);
+          if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
+                          cert_len)) != 0) {
+              LOG(FATAL) << "verification failed - Could not read user certificate\n"
+                  << "mbedtls_x509_crt_parse returned " << ret;
+          }
+          mbedtls_x509_name subject_name = user_cert.subject;
+          mbedtls_asn1_buf name = subject_name.val;
+          nameptr = name.p;
+          name_len = name.len;
       }
+        
 
-      mbedtls_x509_crt user_cert;
-      mbedtls_x509_crt_init(&user_cert);
-      int ret;
-      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
-              cert_len)) != 0) {
-        LOG(FATAL) << "verification failed - Could not read user certificate\n"
-          << "mbedtls_x509_crt_parse returned " << ret;
-      }
-
-      mbedtls_x509_name subject_name = user_cert.subject;
-      mbedtls_asn1_buf name = subject_name.val;
-      unsigned char * nameptr = name.p;
-      size_t name_len = name.len;
-
+      // Signature and certificate verification has passed
+      // The master node (rank 0) broadcasts the client key and client name to other nodes
+      // FIXME: we'll likely have to broadcast the certificates themselves
+      rabit::Broadcast(output, CIPHER_KEY_SIZE, 0);
+      rabit::Broadcast(nameptr, name_len, 0);
+        
       // storing user private key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);
       std::string user_nam(nameptr, nameptr + name_len);
       client_keys[user_nam] = user_private_key;
 
-      LOG(DEBUG) << "verification succeded - user added: " << user_nam;
+      LOG(DEBUG) << "verification succeeded - user added: " << user_nam;
       return true;
     }
 
