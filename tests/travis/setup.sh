@@ -10,6 +10,7 @@ if [ ${TASK} == "python_test" ] || [ ${TASK} == "python_sdist_test" ]; then
     source $HOME/miniconda/bin/activate
     hash -r
     conda config --set always_yes yes --set changeps1 no
+    conda config --append channels conda-forge
     conda update -q conda
     # Useful for debugging any issues with conda
     conda info -a
