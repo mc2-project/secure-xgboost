@@ -408,7 +408,7 @@ class DMatrix(object):
         ----------
         data_dict : dictionary 
             Keys: Usernames
-            Values: Path to training data of corresponding user
+            Values: Path to training data of corresponding user. Must be the absolute path.
         silent : boolean, optional
             Whether print messages during construction
         feature_names : list, optional
@@ -1801,7 +1801,7 @@ class Booster(object):
         Parameters
         ----------
         fname : string
-            Output file name
+            Absolute path to save the model to
         username: string
             Used to encrypt the file
         """

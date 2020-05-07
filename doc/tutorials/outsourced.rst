@@ -57,7 +57,7 @@ This setup will involve encrypting data on the client, transferring the data to 
 
 2. **Send encrypted data to the server**
 
-   We assume that there will be a mechanism to transfer the encrypted data to the server. For the purposes of this demo, the user can try, for example, ``scp`` to simulate this transfer. 
+   We assume that there will be a mechanism to transfer the encrypted data to the server. For the purposes of this demo, the user can try, for example, ``scp`` to perform this transfer. 
 
    If simulating a client/server setup locally, think of the ``demo/python/remote-control/data/`` directory as external storage mounted to both the client and server machines. 
 
