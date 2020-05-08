@@ -1106,9 +1106,9 @@ class Enclave(object):
         self.key_size = ctypes.c_size_t()
         self.remote_report = ctypes.POINTER(ctypes.c_uint)()
         self.remote_report_size = ctypes.c_size_t()
-        self.nonce = ctypes.POINTER(ctypes.c_uint)()
-        self.nonce_size = ctypse.c_size_t()
-        self.counter = 0 # TODO(andrew): maybe not needed?
+        globals()["nonce"] = ctypes.POINTER(ctypes.c_uint)()
+        globals()["nonce_size"] = ctypes.c_size_t()
+        globals()["counter"] = 0 # TODO(andrew): maybe not needed?
 
     # TODO(rishabh): user-defined parameters for verification
     # (e.g. mrsigner / mrenclave values)
@@ -1131,16 +1131,16 @@ class Enclave(object):
                 response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=1)))
             pem_key = response.pem_key
             key_size = response.key_size
-            nonce = response.nonce
-            nonce_size = response.nonce_size
+            nonce_ = response.nonce
+            nonce_size_ = response.nonce_size
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
-            self._set_report_attrs(pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size)
+            self._set_report_attrs(pem_key, key_size, nonce_, nonce_size_, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
             _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(ctypes.byref(self.pem_key), ctypes.byref(self.key_size),
-                ctypes.byref(self.nonce), ctypes.byref(self.nonce_size),
+                ctypes.byref(globals()["nonce"]), ctypes.byref(globals()["nonce_size"]),
                 ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
             # return self._get_report_attrs()
 
@@ -1152,7 +1152,7 @@ class Enclave(object):
         Verify the received attestation report and set the public key.
         """
         _check_call(_LIB.verify_remote_report_and_set_pubkey_and_nonce(self.pem_key, self.key_size,
-                                                                       self.nonce, self.nonce_size,
+                                                                       globals()["nonce"], globals()["nonce_size"],
                                                                        self.remote_report, self.remote_report_size))
 
     def _set_report_attrs(self, pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size):
@@ -1166,8 +1166,8 @@ class Enclave(object):
         self.key_size = ctypes.c_size_t(key_size)
 
         nonce_ndarray = proto_to_ndarray(nonce)
-        self.nonce = nonce_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
-        self.nonce_size = ctypes.c_size_t(nonce_size)
+        globals()["nonce"] = nonce_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+        globals()["nonce_size"] = ctypes.c_size_t(nonce_size)
 
         remote_report_ndarray = proto_to_ndarray(remote_report)
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
@@ -1196,9 +1196,9 @@ class Enclave(object):
         key_size = self.key_size.value
 
         # Convert nonce to serialized numpy array
-        nonce = ctypes2numpy(self.nonce, self.nonce_size.value, np.uint32)
+        nonce = ctypes2numpy(globals()["nonce"], globals()["nonce_size"].value, np.uint32)
         nonce = ndarray_to_proto(nonce)
-        nonce_size = self.nonce_size.value
+        nonce_size = globals()["nonce_size"].value
 
         # Convert remote_report to serialized numpy array
         remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint32)
@@ -2465,6 +2465,9 @@ class RemoteAPI:
         filenames = list(request.filenames)
         usernames = list(request.usernames)
         silent = request.silent
+        nonce = globals()["nonce"]
+        counter = globals()["counter"]
+        globals()["counter"] += 1
 
         dmat_handle = ctypes.c_char_p()
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
@@ -2472,7 +2475,9 @@ class RemoteAPI:
             from_pystr_to_cstr(usernames),
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
-            ctypes.byref(dmat_handle)))
+            ctypes.byref(nonce),
+            ctypes.byref(counter),
+            ctypes.byref(dmat_handle))
         return dmat_handle.value.decode('utf-8')
 
 

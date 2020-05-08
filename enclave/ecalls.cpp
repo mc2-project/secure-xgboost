@@ -36,7 +36,7 @@ int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle
   return XGDMatrixCreateFromFile(fname, silent, out);
 }
 
-int enclave_XGDMatrixCreateFromEncryptedFile(const char *filenames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out) {
+int enclave_XGDMatrixCreateFromEncryptedFile(const char *filenames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, uint8_t* nonce, uint32_t nonce_ctr, DMatrixHandle *out) {
   LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
   char* _filenames[num_files];
   char* _usernames[num_files];
@@ -53,7 +53,7 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *filenames[], size_t fna
       _usernames[i] = strndup(uname, namelen);
       _usernames[i][namelen] = '\0';
   }
-  return XGDMatrixCreateFromEncryptedFile((const char**) _filenames, _usernames, num_files, silent, out);
+  return XGDMatrixCreateFromEncryptedFile((const char**) _filenames, _usernames, num_files, silent, nonce, nonce_ctr, out);
 }
 
 int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, BoosterHandle* out) {

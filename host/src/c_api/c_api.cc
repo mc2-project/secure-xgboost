@@ -287,6 +287,8 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         char* usernames[],
         xgboost::bst_ulong num_files,
         int silent,
+        uint8_t *nonce,
+        uint32_t nonce_ctr,
         DMatrixHandle *out) {
     size_t fname_lengths[num_files];
     size_t username_lengths[num_files];
@@ -296,7 +298,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         username_lengths[i] = strlen(usernames[i]);
     }
 
-    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out));
+    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, nonce, nonce_ctr, out));
 }
 
 /* TODO(rishabhp): Enable this

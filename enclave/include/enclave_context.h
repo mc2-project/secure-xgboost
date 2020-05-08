@@ -24,7 +24,7 @@ class EnclaveContext {
     
     // 12 bytes for the session nonce and four bytes for a counter within the session.
     uint8_t m_nonce[CIPHER_IV_SIZE];
-    uint32_t nonce_ctr;
+    uint32_t m_nonce_ctr;
 
      /* We maintain these maps to avoid having to pass out pointers to application code outside
       * the enclave; instead, the application is given a string nickname that the enclave resolves
@@ -47,7 +47,7 @@ class EnclaveContext {
     EnclaveContext() {
       generate_public_key();
       generate_nonce();
-      nonce_ctr = 0;
+      m_nonce_ctr = 0;
       client_key_is_set = false;
       booster_ctr = 0;
       dmatrix_ctr = 0;
@@ -75,6 +75,19 @@ class EnclaveContext {
 
     uint8_t* get_nonce() {
       return m_nonce;
+    }
+
+    bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
+      bool retval = recv_nonce_ctr == m_nonce_ctr;
+      if (!retval) return retval;
+      for (int i = 0; i < CIPHER_IV_SIZE; i++) {
+        retval = retval && (recv_nonce[i] == m_nonce[i]); 
+      }
+      return retval;
+    }
+
+    void increment_seq_num() {
+      m_nonce_ctr += 1;
     }
 
     // Note: Returned handle needs to be freed
