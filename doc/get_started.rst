@@ -16,22 +16,22 @@ Python
 
 Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 
-If your machine doesn't have hardware enclave support, then you can simulate an enclave (for development purposes) by setting the variables ``OE_DEBUG=1`` and  ``SIMULATE=ON`` while building the project (by modifying the root ``CMakeLists.txt`` file). However, note that remote attestation primitives are not supported in simulation mode, and the remote attestation APIs used below simply return dummy values instead of generating a valid attestation report. As a result, verification of the report will fail in simulation mode.
+Note: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets>`, remote attestation will not work, as the simulated enclave will not generate a report. Consequently, report verification will not work, and you should ``verify=False`` when calling ``attest()``
 
 .. code-block:: python
 
    import securexgboost as xgb
 
+   xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
    enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
-   # Remote Attestation
-   enclave.get_remote_report_with_pubkey()
-   # Note: Verification will fail in simulation mode
-   # Comment out this line for testing the code in simulation mode
-   enclave.verify_remote_report_and_set_pubkey()
+   # Note: Simulation mode does not support attestation
+   # pass in `verify=False` to attest()
+   enclave.attest()
+   enclave.add_key()
 
-   dtrain = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.train.enc", encrypted=True)
-   dtest = xgb.DMatrix(HOME_DIR + "demo/data/agaricus.txt.test.enc", encrypted=True) 
+   dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"})
+   dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"})
 
    params = {
    "objective": "binary:logistic",
@@ -45,20 +45,24 @@ If your machine doesn't have hardware enclave support, then you can simulate an 
    # Get encrypted predictions
    predictions, num_preds = booster.predict(dtest)
 
-   # Read the key used to encrypt data into memory
-   key_file = open("key_zeros.txt", 'rb')
-   sym_key = key_file.read() # The key will be type bytes
-   key_file.close()
+   # Save model to a file
+   booster.save_model(HOME_DIR + "/demo/python/basic/modelfile.model")
+
+   # Get encrypted predictions
+   predictions, num_preds = booster.predict(dtest, decrypt=False)
 
    # Decrypt predictions
-   crypto.decrypt_predictions(sym_key, predictions, num_preds)
+   booster.decrypt_predictions(predictions, num_preds)
 
 
 ***************
 Troubleshooting
 ***************
 
-1. Remote attestation fails with error ``Failed to get quote enclave identity information. OE_QUOTE_PROVIDER_CALL_ERROR (oe_result_t=OE_QUOTE_PROVIDER_CALL_ERROR)``. 
+1. Remote attestation fails with error: 
+
+   ``Failed to get quote enclave identity information.``
+   ``OE_QUOTE_PROVIDER_CALL_ERROR (oe_result_t=OE_QUOTE_PROVIDER_CALL_ERROR)``. 
    
    If you're using an ACC (Azure Confidential Computing) VM, this may be a sign of a ``dcap-client`` version issue. The ``dcap-client`` should be at least version 1.1. You can check your version by doing
 

@@ -80,6 +80,16 @@ class Command(object):
         return True
 
 
+def handle_exception():
+    e = sys.exc_info()
+    print("Error type: " + str(e[0]))
+    print("Error value: " + str(e[1]))
+    traceback.print_tb(e[2])
+
+    status = remote_pb2.Status(status=-1, exception=str(e[1]))
+    return status
+
+
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
     def __init__(self, enclave, condition, command):
@@ -106,10 +116,15 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Calls get_remote_report_with_pubkey()
         """
-        # Get report from enclave
-        pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
+        try:
+            # Get report from enclave
+            pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
 
-        return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
+        except:
+            status = handle_exception()
+            return remote_pb2.Report(status=status)
 
     def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
         pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
@@ -123,33 +138,41 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Sends encrypted symmetric key, signature over key, and filename of data that was encrypted using the symmetric key
         """
-        # Get encrypted symmetric key, signature, and filename from request
-        enc_sym_key = request.enc_sym_key
-        key_size = request.key_size
-        signature = request.signature
-        sig_len = request.sig_len
+        try:
+            # Get encrypted symmetric key, signature, and filename from request
+            enc_sym_key = request.enc_sym_key
+            key_size = request.key_size
+            signature = request.signature
+            sig_len = request.sig_len
 
-        # Get a reference to the existing enclave
-        result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
+            # Get a reference to the existing enclave
+            result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
 
-        return remote_pb2.Status(status=result)
+            return remote_pb2.Status(status=result)
+        except:
+            status = handle_exception()
+            return status
 
     # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
         """
         Calls add_client_key_with_certificate()
         """
-        # Get encrypted symmetric key, signature, and certificate from request
-        certificate = request.certificate
-        enc_sym_key = request.enc_sym_key
-        key_size = request.key_size
-        signature = request.signature
-        sig_len = request.sig_len
+        try:
+            # Get encrypted symmetric key, signature, and certificate from request
+            certificate = request.certificate
+            enc_sym_key = request.enc_sym_key
+            key_size = request.key_size
+            signature = request.signature
+            sig_len = request.sig_len
 
-        # Get a reference to the existing enclave
-        result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
+            # Get a reference to the existing enclave
+            result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
 
-        return remote_pb2.Status(status=result)
+            return remote_pb2.Status(status=result)
+        except:
+            status = handle_exception()
+            return status
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         """
@@ -157,14 +180,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
-            return remote_pb2.Name(name=dmatrix_handle)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Name(name=dmatrix_handle, status=status)
         except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Name(name=None)
+            status = handle_exception()
+            return remote_pb2.Name(name=None, status=status)
 
     def rpc_XGBoosterSetParam(self, request, context):
         """
@@ -174,12 +194,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             _ = self._synchronize(remote_api.XGBoosterSetParam, request)
             return remote_pb2.Status(status=0)
         except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Status(status=-1)
+            status = handle_exception()
+            return status
 
     def rpc_XGBoosterCreate(self, request, context):
         """
@@ -187,14 +203,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             booster_handle = self._synchronize(remote_api.XGBoosterCreate, request)
-            return remote_pb2.Name(name=booster_handle)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Name(name=booster_handle, status=status)
         except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-    
-            return remote_pb2.Name(name=None)
+            status = handle_exception()
+            return remote_pb2.Name(status=status)
 
     def rpc_XGBoosterUpdateOneIter(self, request, context):
         """
@@ -204,12 +217,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             _ = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             return remote_pb2.Status(status=0)
         except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Status(status=-1)
+            status = handle_exception()
+            return status
 
     def rpc_XGBoosterPredict(self, request, context):
         """
@@ -218,15 +227,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         try:
             enc_preds, num_preds = self._synchronize(remote_api.XGBoosterPredict, request)
             enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
-            return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=status)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Predictions(predictions=None, num_preds=None, status=-1)
+        except:
+            status = handle_exception()
+            return remote_pb2.Predictions(status=status)
 
     def rpc_XGBoosterSaveModel(self, request, context):
         """
@@ -236,13 +242,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             _ = self._synchronize(remote_api.XGBoosterSaveModel, request)
             return remote_pb2.Status(status=0)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Status(status=-1)
+        except:
+            status = handle_exception()
+            return status
 
     def rpc_XGBoosterLoadModel(self, request, context):
         """
@@ -252,13 +254,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             _ = self._synchronize(remote_api.XGBoosterLoadModel, request)
             return remote_pb2.Status(status=0)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Status(status=-1)
+        except:
+            status = handle_exception()
+            return status
 
     def rpc_XGBoosterDumpModelEx(self, request, context):
         """
@@ -266,15 +264,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             length, sarr = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=0)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Dump(sarr=None, length=None, status=-1)
+        except:
+            status = handle_exception()
+            return remote_pb2.Dump(status=status)
 
     def rpc_XGBoosterDumpModelExWithFeatures(self, request, context):
         """
@@ -282,15 +277,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=0)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Dump(sarr=None, length=None, status=-1)
+        except:
+            status = handle_exception()
+            return remote_pb2.Dump(status=status)
 
     def rpc_XGBoosterGetModelRaw(self, request, context):
         """
@@ -298,15 +290,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             length, sarr = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=0)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Dump(sarr=None, length=None, status=-1)
+        except:
+            status = handle_exception()
+            return remote_pb2.Dump(status=status)
 
     def rpc_XGDMatrixNumCol(self, request, context):
         """
@@ -314,15 +303,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             ret = self._synchronize(remote_api.XGDMatrixNumCol, request)
-            return remote_pb2.Integer(value=ret)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Integer(value=ret, status=status)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Integer(value=None)
+        except:
+            status = handle_exception()
+            return remote_pb2.Integer(status=status)
 
     def rpc_XGDMatrixNumRow(self, request, context):
         """
@@ -330,15 +316,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             ret = self._synchronize(remote_api.XGDMatrixNumRow, request)
-            return remote_pb2.Integer(value=ret)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.Integer(value=ret, status=status)
 
-        except Exception as e:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Integer(value=None)
+        except:
+            status = handle_exception()
+            return remote_pb2.Integer(status=status)
 
 def serve(enclave, num_workers=10, all_users=[]):
     condition = threading.Condition()

@@ -75,7 +75,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
-    'breathe'
+    'breathe',
+    'sphinx.ext.autosectionlabel'
 ]
 
 graphviz_output_format = 'png'
