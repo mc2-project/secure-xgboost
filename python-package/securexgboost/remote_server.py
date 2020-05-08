@@ -65,7 +65,29 @@ class Command(object):
         return True
 
     def invoke(self):
-        self._ret = self._func(self._params)
+        node_ips = globals().get("nodes")
+        if not node_ips:
+            self._ret = self._func(self._params)
+        else: # We're the RPC orchestrator
+            # FIXME: map RemoteAPI functions to rpc functions so that they are properly called
+            channels = []
+            for channel_addr in node_ips:
+                channels.append(grpc.insecure_channel(channel_addr))
+        
+            # Store futures in a list
+            # Futures hold the result of asynchronous calls to each gRPC server
+            futures = []
+        
+            for channel in node_ips:
+                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+        
+                # Asynchronous calls to start job on each node
+                response_future = stub.SignalStartCluster.future(remote_pb2.ClusterParams(num_workers=2))
+                futures.append(response_future)
+        
+            results = []
+            for future in futures:
+                results.append(future.result().status)
 
     def result(self, username):
         self._retrieved.append(username)
@@ -107,8 +129,21 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Calls get_remote_report_with_pubkey()
         """
-        # Get report from enclave
-        pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
+        node_ips = globals().get("nodes")
+        if not node_ips:
+            # Get report from enclave
+            pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
+        else:
+            master_enclave_ip = node_ips[0]
+            with grpc.insecure_channel(master_enclave_ip) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1))
+
+            pem_key = response.pem_key
+            key_size = response.key_size
+            remote_report = response.remote_report
+            remote_report_size = response.remote_report_size
+
 
         return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
@@ -365,10 +400,15 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Status(status=-1)
 
-def serve(enclave, num_workers=10, all_users=[]):
+def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     condition = threading.Condition()
     command = Command()
     globals()["all_users"] = all_users
+
+    # Sort node IPs to ensure that first element in list is rank 0
+    # Above is true because of how tracker assigns ranks
+    nodes.sort()
+    globals()["nodes"] = nodes
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)
