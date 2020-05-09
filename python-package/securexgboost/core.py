@@ -387,11 +387,14 @@ def init_user(user_name, sym_key_file, priv_key_file, cert_file):
 
 
 class DMatrix(object):
-    """Data Matrix used in XGBoost.
+    """Data Matrix used in Secure XGBoost.
 
     DMatrix is a internal data structure that used by XGBoost
     which is optimized for both memory efficiency and training speed.
-    You can construct DMatrix from numpy.arrays
+
+    You can load a DMatrix from one ore more encrypted files at the enclave server, where
+    each file is encrypted with a particular user's symmetric key.
+    Each DMatrix in Secure XGBoost is thus associated with one or more data owners.
     """
 
     _feature_names = None  # for previous version's pickle
@@ -401,16 +404,12 @@ class DMatrix(object):
     def __init__(self, data_dict, encrypted=True, silent=False,
             feature_names=None, feature_types=None): 
         """
-        Load a DMatrix from encrypted files at the enclave server, where
-        each file is encrypted with a particular user's symmetric key.
-
         Parameters
         ----------
-        data_dict : dictionary 
-            Keys: Usernames
-            Values: Path to training data of corresponding user. Must be the absolute path.
+        data_dict : dict [str, str]
+            The keys are usernames. The values are absolute paths to the training data of the corresponding user.
         silent : boolean, optional
-            Whether print messages during construction
+            Whether to print messages during construction
         feature_names : list, optional
             Set names for features.
         feature_types : list, optional
@@ -1103,7 +1102,7 @@ class Enclave(object):
         ----------
         verify: bool
             Whether to verify the enclave report or not
-            Warning: Should only be set to False for development and testing.
+            .. note:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
         """
         channel_addr = globals()["remote_addr"]
         if channel_addr:
@@ -1286,9 +1285,9 @@ class Enclave(object):
 
 class Booster(object):
     # pylint: disable=too-many-public-methods
-    """A Booster of XGBoost.
+    """A Booster of Secure XGBoost.
 
-    Booster is the model of xgboost, that contains low level routines for
+    Booster is the model of Secure XGBoost, that contains low level routines for
     training, prediction and evaluation.
     """
 
@@ -1306,8 +1305,6 @@ class Booster(object):
         model_file : string
             Path to the model file.
         """
-        # check if RPC call is needed (client provoked initialization)
- 
         for d in cache:
             if not isinstance(d, DMatrix):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
@@ -1335,7 +1332,9 @@ class Booster(object):
         else:
             self.booster = 'gbtree'
         if model_file is not None:
-            self.load_model(model_file)
+            raise NotImplementedError("Created a booster from file not currently supported")
+            # TODO(rishabh): Add model_file support
+            # self.load_model(model_file)
 
     def __del__(self):
         if self.handle is not None:
