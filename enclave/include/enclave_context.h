@@ -77,17 +77,15 @@ class EnclaveContext {
       return m_nonce;
     }
 
+    // Checks equality of received and expected nonce and nonce counter and increments nonce counter.
     bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
       bool retval = recv_nonce_ctr == m_nonce_ctr;
       if (!retval) return retval;
       for (int i = 0; i < CIPHER_IV_SIZE; i++) {
         retval = retval && (recv_nonce[i] == m_nonce[i]); 
       }
-      return retval;
-    }
-
-    void increment_seq_num() {
       m_nonce_ctr += 1;
+      return retval;
     }
 
     // Note: Returned handle needs to be freed

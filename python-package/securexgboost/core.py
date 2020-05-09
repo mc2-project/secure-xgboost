@@ -2466,6 +2466,7 @@ class RemoteAPI:
         usernames = list(request.usernames)
         silent = request.silent
         nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
         counter = globals()["counter"]
         globals()["counter"] += 1
 
@@ -2476,6 +2477,7 @@ class RemoteAPI:
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
             ctypes.byref(nonce),
+            ctypes.byref(nonce_size),
             ctypes.byref(counter),
             ctypes.byref(dmat_handle))
         return dmat_handle.value.decode('utf-8')

@@ -484,6 +484,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         xgboost::bst_ulong num_files,
         int silent,
         uint8_t* nonce,
+        size_t nonce_size,
         uint32_t nonce_ctr,
         DMatrixHandle *out) {
     API_BEGIN();
@@ -515,7 +516,6 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     for (int i = 0; i < num_files; ++i) {
         free(keys[i]);
     }
-    EnclaveContext::getInstance().increment_seq_num();
     API_END();
 }
 
