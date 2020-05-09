@@ -518,10 +518,16 @@ class DMatrix(object):
                 else:
                     filenames = from_pystr_to_cstr(data)
                     usrs = from_pystr_to_cstr(usernames)
+                    nonce = globals()["nonce"]
+                    nonce_size = globals()["nonce_size"]
+                    counter = globals()["counter"]
                     _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                         usrs,
                         c_bst_ulong(len(data)),
                         ctypes.c_int(silent),
+                        ctypes.byref(nonce),
+                        ctypes.c_size_t(nonce_size),
+                        ctypes.c_uint32(counter),
                         ctypes.byref(handle)))
             else:
                 raise NotImplementedError("Loading from unencrypted files not supported.")
@@ -2477,8 +2483,8 @@ class RemoteAPI:
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
             ctypes.byref(nonce),
-            ctypes.byref(nonce_size),
-            ctypes.byref(counter),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(counter),
             ctypes.byref(dmat_handle))
         return dmat_handle.value.decode('utf-8')
 
