@@ -74,20 +74,29 @@ class Command(object):
             for channel_addr in node_ips:
                 channels.append(grpc.insecure_channel(channel_addr))
         
+            #  rpc_function = RemoteServicer.get_rpc_function(self._func)
             # Store futures in a list
             # Futures hold the result of asynchronous calls to each gRPC server
             futures = []
         
             for channel in node_ips:
-                stub = remote_attestation_pb2_grpc.RemoteAttestationStub(channel)
+                stub = remote_pb2_grpc.RemoteStub(channel)
         
                 # Asynchronous calls to start job on each node
-                response_future = stub.SignalStartCluster.future(remote_pb2.ClusterParams(num_workers=2))
+                if self._func == rabit_remote_api.RabitInit:
+                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(username))
+                ### More conditions
                 futures.append(response_future)
         
             results = []
             for future in futures:
                 results.append(future.result().status)
+
+            if self._func == rabit_remote_api.RabitInit:
+                if sum(results) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
 
     def result(self, username):
         self._retrieved.append(username)
@@ -373,16 +382,28 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Initialize rabit
         """
-        try:
-            _ = self._synchronize(rabit_remote_api.RabitInit, request)
-            return remote_pb2.Status(status=0)
-        except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
+        if globals()["is_orchestrator"]:
+            try:
+                _ = self._synchronize(rabit_remote_api.RabitInit, request)
+                return remote_pb2.Status(status=0)
+            except:
+                e = sys.exc_info()
+                print("Error type: " + str(e[0]))
+                print("Error value: " + str(e[1]))
+                traceback.print_tb(e[2])
 
-            return remote_pb2.Status(status=-1)
+                return remote_pb2.Status(status=-1)
+        else:
+            try:
+                rabit_remote_api.RabitInit(request)
+                return remote_pb2.Status(status=0)
+            except:
+                e = sys.exc_info()
+                print("Error type: " + str(e[0]))
+                print("Error value: " + str(e[1]))
+                traceback.print_tb(e[2])
+
+                return remote_pb2.Status(status=-1)
 
 
     def rpc_RabitFinalize(self, request, context):
@@ -400,6 +421,14 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Status(status=-1)
 
+    @static
+    def get_rpc_function(remote_api_function):
+        function_map = {
+            rabit_remote_api.RabitInit: rpc_RabitInit,
+        }
+
+    return function_map.get(remote_api_function)
+
 def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     condition = threading.Condition()
     command = Command()
@@ -407,8 +436,14 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
 
     # Sort node IPs to ensure that first element in list is rank 0
     # Above is true because of how tracker assigns ranks
-    nodes.sort()
-    globals()["nodes"] = nodes
+    # Nodes will be passed in if this is the orchestrator
+    if nodes == []:
+        # This is a node in the cluster, i.e. not an orchestrator
+        globals()["is_orchestrator"] = False
+    else:
+        nodes.sort()
+        globals()["nodes"] = nodes
+        globals()["is_orchestrator"] = True
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)
