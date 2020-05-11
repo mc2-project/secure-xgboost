@@ -36,6 +36,8 @@ c_bst_ulong = ctypes.c_uint64
 import threading
 import types
 
+logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+
 class Command(object):
     """
     Commands submitted for execution to remote server
@@ -72,6 +74,7 @@ class Command(object):
             # FIXME: map RemoteAPI functions to rpc functions so that they are properly called
             channels = []
             for channel_addr in node_ips:
+                print(channel_addr)
                 channels.append(grpc.insecure_channel(channel_addr))
         
             #  rpc_function = RemoteServicer.get_rpc_function(self._func)
@@ -86,18 +89,36 @@ class Command(object):
                 if self._func == rabit_remote_api.RabitInit:
                     print("RPC Orchestrator making RabitInit call to ", channel)
                     response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(status=0))
-                ### More conditions
+                elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
+                    filenames = self._params.filenames
+                    usernames = self._params.usernames
+                    silent = self._params.silent
+                    response_future = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
+                        filenames=filenames,
+                        usernames=usernames,
+                        silent=silent
+                        ))
+                    ### TODO: More conditions
                 futures.append(response_future)
         
             results = []
             for future in futures:
-                results.append(future.result().status)
+                results.append(future.result())
 
             if self._func == rabit_remote_api.RabitInit:
-                if sum(results) == 0:
-                    self._ret = 0
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = remote_pb2.Status(status=0)
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=-1)
+            elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
+                dmatrix_handles = [result.name for result in results]
+                if dmatrix_handles.count(dmatrix_handles[0]) == len(dmatrix_handles):
+                    # Every enclave returned the same handle string
+                    self._ret = remote_pb2.Name(name=dmatrix_handles[0])
+                else:
+                    self._ret = remote_pb2.Name(name=None)
+
 
     def result(self, username):
         self._retrieved.append(username)
@@ -139,11 +160,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Calls get_remote_report_with_pubkey()
         """
-        node_ips = globals().get("nodes")
-        if not node_ips:
+        if not globals()["is_orchestrator"]:    
             # Get report from enclave
             pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
         else:
+            node_ips = globals()["nodes"]
             master_enclave_ip = node_ips[0]
             with grpc.insecure_channel(master_enclave_ip) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -178,32 +199,55 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Calls add_client_key_with_certificate()
         """
-        # Get encrypted symmetric key, signature, and certificate from request
         certificate = request.certificate
         enc_sym_key = request.enc_sym_key
         key_size = request.key_size
         signature = request.signature
         sig_len = request.sig_len
+        # Get encrypted symmetric key, signature, and certificate from request
+        if not globals()["is_orchestrator"]:
+            # Get a reference to the existing enclave
+            result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
+        else:
+            node_ips = globals()["nodes"]
+            master_enclave_ip = node_ips[0]
+            with grpc.insecure_channel(master_enclave_ip) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
+                    certificate=certificate,
+                    enc_sym_key=enc_sym_key,
+                    key_size=key_size,
+                    signature=signature,
+                    sig_len=sig_len))
 
-        # Get a reference to the existing enclave
-        result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
-
-        return remote_pb2.Status(status=result)
+        return remote_pb2.Status(status=response.status)
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         """
         Create DMatrix from encrypted file
         """
-        try:
-            dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
-            return remote_pb2.Name(name=dmatrix_handle)
-        except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
+        if globals()["is_orchestrator"]:
+            try:
+                dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+                return remote_pb2.Name(name=dmatrix_handle)
+            except:
+                e = sys.exc_info()
+                print("Error type: " + str(e[0]))
+                print("Error value: " + str(e[1]))
+                traceback.print_tb(e[2])
 
-            return remote_pb2.Name(name=None)
+                return remote_pb2.Name(name=None)
+        else:
+            try:
+                dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
+                return remote_pb2.Name(name=dmatrix_handle)
+            except:
+                e = sys.exc_info()
+                print("Error type: " + str(e[0]))
+                print("Error value: " + str(e[1]))
+                traceback.print_tb(e[2])
+
+                return remote_pb2.Name(name=None)
 
     def rpc_XGBoosterSetParam(self, request, context):
         """
@@ -443,6 +487,7 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
         globals()["is_orchestrator"] = False
     else:
         nodes.sort()
+        nodes = [addr + ":50051" for addr in nodes]
         globals()["nodes"] = nodes
         globals()["is_orchestrator"] = True
 
