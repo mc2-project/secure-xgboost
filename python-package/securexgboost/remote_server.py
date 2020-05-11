@@ -79,12 +79,13 @@ class Command(object):
             # Futures hold the result of asynchronous calls to each gRPC server
             futures = []
         
-            for channel in node_ips:
+            for channel in channels:
                 stub = remote_pb2_grpc.RemoteStub(channel)
         
                 # Asynchronous calls to start job on each node
                 if self._func == rabit_remote_api.RabitInit:
-                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(username))
+                    print("RPC Orchestrator making RabitInit call to ", channel)
+                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(status=0))
                 ### More conditions
                 futures.append(response_future)
         
@@ -421,13 +422,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Status(status=-1)
 
-    @static
-    def get_rpc_function(remote_api_function):
-        function_map = {
-            rabit_remote_api.RabitInit: rpc_RabitInit,
-        }
-
-    return function_map.get(remote_api_function)
+    #  @static
+    #  def get_rpc_function(remote_api_function):
+    #      function_map = {
+    #          rabit_remote_api.RabitInit: rpc_RabitInit,
+    #      }
+    #  
+    #  return function_map.get(remote_api_function)
 
 def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     condition = threading.Condition()
