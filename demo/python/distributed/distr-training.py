@@ -17,7 +17,7 @@ enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 print("Remote attestation")
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-enclave.attest()
+enclave.attest(verify=False)
 
 print("Send private key to enclave")
 enclave.add_key()
@@ -64,6 +64,6 @@ print("\n\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
-print(booster.decrypt_predictions(predictions, num_preds)[0][:20])
+print(booster.decrypt_predictions(predictions, num_preds)[:20])
 
 xgb.rabit.finalize()
