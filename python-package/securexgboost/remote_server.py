@@ -32,6 +32,7 @@ from .rabit import RemoteAPI as rabit_remote_api
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
+log = open("log.txt", "w+")
 
 import threading
 import types
@@ -427,6 +428,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Initialize rabit
         """
+        print("host1 rpc rabit init", file=log)
         if globals()["is_orchestrator"]:
             try:
                 _ = self._synchronize(rabit_remote_api.RabitInit, request)
@@ -439,7 +441,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
                 return remote_pb2.Status(status=-1)
         else:
+            print("host 1 recognize not orchestrator", file=log)
             try:
+                print("host1 calling remote api rabit init", file=log)
                 rabit_remote_api.RabitInit(request)
                 return remote_pb2.Status(status=0)
             except:
