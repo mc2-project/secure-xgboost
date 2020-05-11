@@ -398,8 +398,8 @@ class EnclaveContext {
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
       // FIXME: we'll likely have to broadcast the certificates themselves
-      LOG(INFO) << "Broadcasting client key and username" << std::endl;
-      rabit::Broadcast(output, CIPHER_KEY_SIZE, 0);
+      LOG(DEBUG) << "Broadcasting client key and username" << std::endl;
+      rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
       rabit::Broadcast(nameptr, name_len, 0);
         
       // storing user private key
