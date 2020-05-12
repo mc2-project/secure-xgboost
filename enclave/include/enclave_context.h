@@ -356,8 +356,7 @@ class EnclaveContext {
               LOG(FATAL) << "Signature verification failed";
           }
 
-          LOG(INFO) << "Rank: ";
-          LOG(INFO) << rabit::GetRank() << std::endl;
+          LOG(INFO) << "Rank: " << rabit::GetRank() << std::endl;
           int res = 0;
           mbedtls_rsa_context* rsa_context;
 
@@ -398,9 +397,11 @@ class EnclaveContext {
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
       // FIXME: we'll likely have to broadcast the certificates themselves
-      LOG(DEBUG) << "Broadcasting client key and username" << std::endl;
+      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasting client key and username" << std::endl;
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
+      LOG(DEBUG) << "Rank "  << rabit::GetRank() << "Broadcasted client key\n";
       rabit::Broadcast(nameptr, name_len, 0);
+      LOG(DEBUG) << "Rank "  << rabit::GetRank() << "Broadcasted username\n";
         
       // storing user private key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);
