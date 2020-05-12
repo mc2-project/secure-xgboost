@@ -209,20 +209,36 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         if not globals()["is_orchestrator"]:
             # Get a reference to the existing enclave
             result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
+            return remote_pb2.Status(status=response.status)
         else:
             node_ips = globals()["nodes"]
-            master_enclave_ip = node_ips[0]
-            with grpc.insecure_channel(master_enclave_ip) as channel:
+            #  master_enclave_ip = node_ips[0]
+            channels = []
+            for channel_addr in node_ips:
+                print(channel_addr)
+                channels.append(grpc.insecure_channel(channel_addr))
+
+            futures = []
+            for channel in channels:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                print("Adding client key to ", master_enclave_ip)
-                response = stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
+                print("Calling add client key to ", channel)
+                # The transmitted data is encrypted with the public key of rank 0 enclave
+                response = stub.rpc_add_client_key_with_certificate.future(remote_pb2.DataMetadata(
                     certificate=certificate,
                     enc_sym_key=enc_sym_key,
                     key_size=key_size,
                     signature=signature,
                     sig_len=sig_len))
 
-        return remote_pb2.Status(status=response.status)
+            results = []
+            for future in futures:
+                results.append(future.result())
+
+            if sum(results == 0):
+                return remote_pb2.Status(status=0)
+            else:
+                return remote_pb2.Status(status=-1)
+
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         """
