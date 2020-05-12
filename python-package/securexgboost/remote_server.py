@@ -234,7 +234,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             for future in futures:
                 results.append(future.result())
 
-            if sum(results == 0):
+            if sum(results) == 0:
                 return remote_pb2.Status(status=0)
             else:
                 return remote_pb2.Status(status=-1)
