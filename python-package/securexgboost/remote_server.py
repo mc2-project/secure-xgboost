@@ -94,7 +94,7 @@ class Command(object):
                     filenames = self._params.filenames
                     usernames = self._params.usernames
                     silent = self._params.silent
-                    response_future = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
+                    response_future = stub.rpc_XGDMatrixCreateFromEncryptedFile.future(remote_pb2.DMatrixAttrs(
                         filenames=filenames,
                         usernames=usernames,
                         silent=silent
@@ -109,16 +109,16 @@ class Command(object):
             if self._func == rabit_remote_api.RabitInit:
                 return_codes = [result.status for result in results]
                 if sum(return_codes) == 0:
-                    self._ret = remote_pb2.Status(status=0)
+                    self._ret = 0
                 else:
-                    self._ret = remote_pb2.Status(status=-1)
+                    self._ret = -1
             elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                 dmatrix_handles = [result.name for result in results]
                 if dmatrix_handles.count(dmatrix_handles[0]) == len(dmatrix_handles):
                     # Every enclave returned the same handle string
-                    self._ret = remote_pb2.Name(name=dmatrix_handles[0])
+                    self._ret = dmatrix_handles[0]
                 else:
-                    self._ret = remote_pb2.Name(name=None)
+                    self._ret = None
 
 
     def result(self, username):
@@ -445,7 +445,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Initialize rabit
         """
-        print("host1 rpc rabit init", file=log)
         if globals()["is_orchestrator"]:
             try:
                 _ = self._synchronize(rabit_remote_api.RabitInit, request)
@@ -458,9 +457,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
                 return remote_pb2.Status(status=-1)
         else:
-            print("host 1 recognize not orchestrator", file=log)
             try:
-                print("host1 calling remote api rabit init", file=log)
                 rabit_remote_api.RabitInit(request)
                 return remote_pb2.Status(status=0)
             except:
