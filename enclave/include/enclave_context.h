@@ -347,7 +347,7 @@ class EnclaveContext {
 
       size_t output_size;
       uint8_t output[CIPHER_KEY_SIZE];
-      unsigned char* nameptr;
+      unsigned char* nameptr = (unsigned char*) "";
       size_t name_len;
       LOG(DEBUG) << rabit::GetRank() << " rank in decrypt_and_save()";
         
