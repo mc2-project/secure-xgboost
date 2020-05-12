@@ -347,7 +347,7 @@ class EnclaveContext {
 
       size_t output_size;
       uint8_t output[CIPHER_KEY_SIZE];
-      unsigned char* nameptr = (unsigned char*) "";
+      unsigned char* nameptr = new unsigned char[100];
       size_t name_len;
       LOG(DEBUG) << rabit::GetRank() << " rank in decrypt_and_save()";
         
@@ -393,15 +393,19 @@ class EnclaveContext {
           mbedtls_asn1_buf name = subject_name.val;
           nameptr = name.p;
           name_len = name.len;
-      }
-        
+      } 
 
+      // if (rabit::GetRank() != 0) {
+          // // Allocate space for name ptr
+          // nameptr = new unsigned char[100];
+      // }
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
       // FIXME: we'll likely have to broadcast the certificates themselves
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasting client key and username";
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted client key";
+
       rabit::Broadcast(nameptr, name_len, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted username";
         
