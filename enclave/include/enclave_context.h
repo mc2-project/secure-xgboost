@@ -349,6 +349,7 @@ class EnclaveContext {
       uint8_t output[CIPHER_KEY_SIZE];
       unsigned char* nameptr;
       size_t name_len;
+      LOG(DEBUG) << rabit::GetRank() << " rank in decrypt_and_save()\n";
         
       // Only the master node verifies signature and certificate
       if (rabit::GetRank() == 0) {
@@ -379,6 +380,8 @@ class EnclaveContext {
               LOG(FATAL) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
           }
 
+          LOG(DEBUG) << rabit::GetRank() << " rank decrypted key properly\n";
+
           int ret;
           mbedtls_x509_crt user_cert;
           mbedtls_x509_crt_init(&user_cert);
@@ -387,6 +390,8 @@ class EnclaveContext {
               LOG(FATAL) << "verification failed - Could not read user certificate\n"
                   << "mbedtls_x509_crt_parse returned " << ret;
           }
+
+          LOG(DEBUG) << rabit::GetRank() << " rank got username from cert\n";
           mbedtls_x509_name subject_name = user_cert.subject;
           mbedtls_asn1_buf name = subject_name.val;
           nameptr = name.p;
