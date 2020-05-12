@@ -660,11 +660,9 @@ AllreduceBase::TryAllreduceTree(void *sendrecvbuf_,
 AllreduceBase::ReturnType
 AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
   RefLinkVector &links = tree_links;
-  LOG(DEBUG) << "We're in trybroadcast\n";
   if (links.size() == 0 || total_size == 0) return kSuccess;
   utils::Check(root < world_size,
                "Broadcast: root should be smaller than world size");
-  LOG(DEBUG) << "Passed check\n";
   // number of links
   const int nlink = static_cast<int>(links.size());
   // size of space already read from data
@@ -672,19 +670,16 @@ AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
   // input link, -2 means unknown yet, -1 means this is root
   int in_link = -2;
 
-  LOG(DEBUG) << this->rank << "about to initialize link stats\n";
   // initialize the link statistics
   for (int i = 0; i < nlink; ++i) {
     links[i].ResetSize();
   }
   // root have all the data
   if (this->rank == root) {
-    LOG(DEBUG) << "Rank " << this->rank << " is the root\n";
     size_in = total_size;
     in_link = -1;
   }
   // while we have not passed the messages out
-  LOG(DEBUG) << this->rank << " About to poll...\n";
   while (true) {
     bool finished = true;
     // select helper
@@ -704,7 +699,6 @@ AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
       }
       watcher.WatchException(*links[i].sock);
     }
-    LOG(DEBUG) << this->rank << "loop donezo\n";
     // finish running
     if (finished) break;
     // select
@@ -716,7 +710,6 @@ AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
         return ReportError(&links[i], kGetExcept);
       }
     }
-    LOG(DEBUG) << this->rank << " Finish exception handling\n";
     if (in_link == -2) {
       // probe in-link
       for (int i = 0; i < nlink; ++i) {
@@ -741,7 +734,6 @@ AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
         size_in = links[in_link].size_read;
       }
     }
-    LOG(DEBUG) << this->rank << " send data to all out-link\n";
     // send data to all out-link
     for (int i = 0; i < nlink; ++i) {
       if (i != in_link && links[i].size_write < size_in) {
