@@ -40,7 +40,11 @@ class ThreadLocalStore {
     static thread_local T inst;
     return &inst;
 #else
-    static MX_THREAD_LOCAL T* ptr = nullptr;
+#if true  // FIXME: Open Enclave thread locals wiped out on enclave exit
+    static T* ptr = nullptr;
+#else
+    static MX_TREAD_LOCAL T* ptr = nullptr;
+#endif
     if (ptr == nullptr) {
       ptr = new T();
       Singleton()->RegisterDelete(ptr);

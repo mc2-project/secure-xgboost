@@ -214,6 +214,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             master_enclave_ip = node_ips[0]
             with grpc.insecure_channel(master_enclave_ip) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
+                print("Adding client key to ", master_enclave_ip)
                 response = stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
                     certificate=certificate,
                     enc_sym_key=enc_sym_key,
@@ -470,14 +471,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Status(status=-1)
 
-    #  @static
-    #  def get_rpc_function(remote_api_function):
-    #      function_map = {
-    #          rabit_remote_api.RabitInit: rpc_RabitInit,
-    #      }
-    #  
-    #  return function_map.get(remote_api_function)
-
 def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     condition = threading.Condition()
     command = Command()
@@ -494,6 +487,7 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
         nodes = [addr + ":50051" for addr in nodes]
         globals()["nodes"] = nodes
         globals()["is_orchestrator"] = True
+        print(nodes)
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)
