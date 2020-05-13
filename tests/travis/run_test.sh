@@ -16,9 +16,8 @@ if [ ${TASK} == "python_test" ]; then
     echo "-------------------------------"
     conda activate python3
     python --version
-    # conda install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
 
-    # Installing the python package
+    # Install the python package
     cd python-package
     python3 setup.py install
     cd ..

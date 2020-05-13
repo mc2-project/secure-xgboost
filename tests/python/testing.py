@@ -1,2 +1,0 @@
-def initial():
-    return True
