@@ -17,10 +17,18 @@ if [ ${TASK} == "python_test" ]; then
     echo "-------------------------------"
     conda activate python3
     python --version
-    conda install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
+    # conda install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
+
+    # Build binary wheel
+    cd ../python-package
+    python setup.py bdist_wheel
+    TAG=macosx_10_13_x86_64.macosx_10_14_x86_64.macosx_10_15_x86_64
+    python ../tests/ci_build/rename_whl.py dist/*.whl ${TRAVIS_COMMIT} ${TAG}
+    python -m pip install ./dist/xgboost-*-py3-none-${TAG}.whl
 
     python -m pip install graphviz pytest pytest-cov codecov
     python -m pip install datatable
+    python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
     python -m pytest -v --fulltrace -s tests/python --cov=python-package/xgboost || exit -1
     codecov
 fi
