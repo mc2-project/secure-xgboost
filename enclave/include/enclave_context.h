@@ -347,7 +347,7 @@ class EnclaveContext {
 
       size_t output_size;
       uint8_t output[CIPHER_KEY_SIZE];
-      unsigned char* nameptr = new unsigned char[100];
+      unsigned char* nameptr;
       size_t name_len;
       LOG(DEBUG) << rabit::GetRank() << " rank in decrypt_and_save()";
         
@@ -404,7 +404,11 @@ class EnclaveContext {
       // FIXME: we'll likely have to broadcast the certificates themselves
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted client key";
-      rabit::Broadcast(&nameptr, name_len, 0);
+
+      rabit::Broadcast(&name_len, sizeof(name_len), 0);
+      LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted name_len";
+
+      rabit::Broadcast(nameptr, name_len, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted username";
         
       // storing user private key
