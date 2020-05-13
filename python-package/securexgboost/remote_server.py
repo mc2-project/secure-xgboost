@@ -150,7 +150,8 @@ class Command(object):
                     self._ret = -1
             elif self._func == remote_api.XGBoosterCreate:
                 bst_handles = [result.name for result in results]
-                if bst_handles.count(bst_handles[0] == len(bst_handles)):
+                print(bst_handles)
+                if bst_handles.count(bst_handles[0]) == len(bst_handles):
                     # Every enclave returned the same booster handle string
                     self._ret = bst_handles[0]
                 else:
@@ -270,7 +271,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             futures = []
             for channel in channels:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                print("Calling add client key to ", channel)
                 # The transmitted data is encrypted with the public key of rank 0 enclave
                 response_future = stub.rpc_add_client_key_with_certificate.future(remote_pb2.DataMetadata(
                     certificate=certificate,
