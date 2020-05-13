@@ -12,7 +12,7 @@ dpath = 'demo/data/'
 rng = np.random.RandomState(1994)
 
 username = "user1"
-DIR = os.path.dirname(os.path.realpath(__file__))
+DIR = os.path.dirname(os.path.realpath(__file__)) + "/../.."
 sym_key_file = DIR + "/demo/data/key_zeros.txt"
 pub_key_file = DIR + "/demo/data/userkeys/private_user_1.pem"
 cert_file = DIR + "/demo/data/usercrts/{0}.crt".format(username)
