@@ -56,13 +56,13 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
             "max_depth": "3",
             "verbosity": "0" 
     }
-    #  
-    #  # Train and evaluate
-    #  num_rounds = 5 
-    #  print("Training...")
-    #  booster = xgb.train(params, dtrain, num_rounds)
-    #  
-    #  print("booster: " + booster.handle.value.decode("utf-8"))
+    
+    # Train and evaluate
+    num_rounds = 5 
+    print("Training...")
+    booster = xgb.train(params, dtrain, num_rounds)
+    
+    print("booster: " + booster.handle.value.decode("utf-8"))
     #  
     #  booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
     #  
