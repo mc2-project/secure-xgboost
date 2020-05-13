@@ -109,7 +109,6 @@ class Command(object):
                         cache=cache,
                         length=length
                         ))
-                    ### TODO: More conditions
                 elif self._func == remote_api.XGBoosterUpdateOneIter:
                     booster_handle = self._params.booster_handle
                     dtrain_handle = self._params.dtrain_handle
@@ -120,19 +119,24 @@ class Command(object):
                         iteration=iteration
                         ))
                 elif self._func == remote_api.XGBoosterSaveModel:
+                    print("Calling save model on node")
                     booster_handle = self._params.booster_handle
                     filename = self._params.filename
+                    username = self._params.username
                     response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParams(
                         booster_handle=booster_handle,
-                        filename=filename
+                        filename=filename,
+                        username=username
                         ))
                 # predict
                 elif self._func == remote_api.XGBoosterLoadModel:
                     booster_handle = self._params.booster_handle
                     filename = self._params.filename
+                    username = username
                     response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParams(
                         booster_handle=booster_handle,
-                        filename=filename
+                        filename=filename,
+                        username=username
                         ))
                 elif self._func == remote_api.XGBoosterDumpModelEx:
                     booster_handle = self._params.booster_handle
@@ -162,8 +166,10 @@ class Command(object):
                         ))
                 elif self._func == remote_api.XGBoosterGetModelRaw:
                     booster_handle = self._params.booster_handle
+                    username = self._params.username
                     response_future = stub.rpc_XGBoosterGetModelRaw.future(remote_pb2.ModelRawParams(
-                        booster_handle=booster_handle
+                        booster_handle=booster_handle,
+                        username=username
                         ))
                 elif self._func == remote_api.XGDMatrixNumRow:
                     name = self._params.name

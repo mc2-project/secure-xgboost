@@ -64,7 +64,8 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     
     print("booster: " + booster.handle.value.decode("utf-8"))
     
-    booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
+    booster.save_model(HOME_DIR + "demo/python/orch-demo/client/modelfile.model", username)
+    print("Saved model")
     #  
     #  # Get encrypted predictions
     #  print("\n\nModel Predictions: ")
