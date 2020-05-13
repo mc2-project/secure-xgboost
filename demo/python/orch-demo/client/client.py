@@ -36,7 +36,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
         print("Error creating dtrain")
         return
     print("dtrain: " + dtrain.handle.value.decode("utf-8"))
-    #  
+    
     #  print("Creating test matrix")
     #  dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
     #  if not dtest:
