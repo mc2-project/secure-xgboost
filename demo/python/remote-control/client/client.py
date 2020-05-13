@@ -16,13 +16,10 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Remote attestation")
     enclave_reference = xgb.Enclave(addr=channel_addr)
 
-    # TODO: Add support for Rabit Init for interenclave attestation
-    xgb.rabit.init()
-
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
     # TODO: Return public key of rank 0 enclave to client
-    enclave_reference.attest()
+    enclave_reference.attest(verify=False)
     print("Report successfully verified")
 
     print("Send private key to enclave")

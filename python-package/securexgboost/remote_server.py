@@ -192,10 +192,12 @@ class Command(object):
                         ntree_limit=ntree_limit,
                         username=username
                         ))
+                    print("orchestrator made predict rpc call")
                 futures.append(response_future)
         
             results = []
             for future in futures:
+                print(future.result())
                 results.append(future.result())
 
             # Set return value
@@ -291,6 +293,7 @@ class Command(object):
                 else:
                     self._ret = None 
             elif self._func == remote_api.XGBoosterPredict:
+                print("trying to aggregate predictions...")
                 enc_preds_protos_list = [result.predictions for result in results]
                 num_preds_list = [result.num_preds for result in results] 
                 if len(enc_preds_protos_list) == len(num_preds_list):
