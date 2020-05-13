@@ -43,19 +43,19 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
         print("Error creating dtest")
         return
     print("dtest: " + dtest.handle.value.decode("utf-8"))
-    #  
-    #  print("Beginning Training")
-    #  
-    #  # Set training parameters
-    #  params = {
-    #          "tree_method": "hist",
-    #          "n_gpus": "0",
-    #          "objective": "binary:logistic",
-    #          "min_child_weight": "1",
-    #          "gamma": "0.1",
-    #          "max_depth": "3",
-    #          "verbosity": "0" 
-    #  }
+    
+    print("Beginning Training")
+    
+    # Set training parameters
+    params = {
+            "tree_method": "hist",
+            "n_gpus": "0",
+            "objective": "binary:logistic",
+            "min_child_weight": "1",
+            "gamma": "0.1",
+            "max_depth": "3",
+            "verbosity": "0" 
+    }
     #  
     #  # Train and evaluate
     #  num_rounds = 5 

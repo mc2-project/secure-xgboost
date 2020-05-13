@@ -32,12 +32,8 @@ from .rabit import RemoteAPI as rabit_remote_api
 # c_bst_ulong corresponds to bst_ulong defined in xgboost/c_api.h
 c_bst_ulong = ctypes.c_uint64
 
-log = open("log.txt", "w+")
-
 import threading
 import types
-
-logging.basicConfig(format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 
 class Command(object):
     """
@@ -85,7 +81,6 @@ class Command(object):
         
                 # Asynchronous calls to start job on each node
                 if self._func == rabit_remote_api.RabitInit:
-                    print("RPC Orchestrator making RabitInit call to ", channel)
                     response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(status=0))
                 elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                     filenames = self._params.filenames
@@ -96,6 +91,15 @@ class Command(object):
                         usernames=usernames,
                         silent=silent
                         ))
+                elif self._func == remote_api.XGBoosterSetParam:
+                    booster_handle = self._params.booster_handle
+                    key = self._params.key
+                    value = self._params.value
+                    response_future = stub.rpc_XGBoosterSetParam.future(remote_pb2.BoosterParam(
+                        booster_handle=booster_handle,
+                        key=key,
+                        value=value
+                        ))
                     ### TODO: More conditions
                 futures.append(response_future)
         
@@ -103,6 +107,7 @@ class Command(object):
             for future in futures:
                 results.append(future.result())
 
+            # Set return value
             if self._func == rabit_remote_api.RabitInit:
                 return_codes = [result.status for result in results]
                 if sum(return_codes) == 0:
@@ -116,6 +121,12 @@ class Command(object):
                     self._ret = dmatrix_handles[0]
                 else:
                     self._ret = None
+            elif self._func == remote_api.XGBoosterSetParam:
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
 
 
     def result(self, username):
@@ -263,7 +274,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Set booster parameter
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterSetParam, request)
+            if globals()["is_orchestrator"]:
+                self._synchronize(remote_api.XGBoosterSetParam, request)
+            else:
+                remote_api.XGBoosterSetParam(request)
             return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
@@ -436,28 +450,19 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Initialize rabit
         """
-        if globals()["is_orchestrator"]:
-            try:
+        try:
+            if globals()["is_orchestrator"]:
                 _ = self._synchronize(rabit_remote_api.RabitInit, request)
-                return remote_pb2.Status(status=0)
-            except:
-                e = sys.exc_info()
-                print("Error type: " + str(e[0]))
-                print("Error value: " + str(e[1]))
-                traceback.print_tb(e[2])
-
-                return remote_pb2.Status(status=-1)
-        else:
-            try:
+            else:
                 rabit_remote_api.RabitInit(request)
-                return remote_pb2.Status(status=0)
-            except:
-                e = sys.exc_info()
-                print("Error type: " + str(e[0]))
-                print("Error value: " + str(e[1]))
-                traceback.print_tb(e[2])
+            return remote_pb2.Status(status=0)
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
 
-                return remote_pb2.Status(status=-1)
+            return remote_pb2.Status(status=-1)
 
 
     def rpc_RabitFinalize(self, request, context):
