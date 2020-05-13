@@ -37,12 +37,12 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
         return
     print("dtrain: " + dtrain.handle.value.decode("utf-8"))
     
-    #  print("Creating test matrix")
-    #  dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
-    #  if not dtest:
-    #      print("Error creating dtest")
-    #      return
-    #  print("dtest: " + dtest.handle.value.decode("utf-8"))
+    print("Creating test matrix")
+    dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
+    if not dtest:
+        print("Error creating dtest")
+        return
+    print("dtest: " + dtest.handle.value.decode("utf-8"))
     #  
     #  print("Beginning Training")
     #  

@@ -72,13 +72,10 @@ class Command(object):
         if not node_ips:
             self._ret = self._func(self._params)
         else: # We're the RPC orchestrator
-            # FIXME: map RemoteAPI functions to rpc functions so that they are properly called
             channels = []
             for channel_addr in node_ips:
-                print(channel_addr)
                 channels.append(grpc.insecure_channel(channel_addr))
         
-            #  rpc_function = RemoteServicer.get_rpc_function(self._func)
             # Store futures in a list
             # Futures hold the result of asynchronous calls to each gRPC server
             futures = []
@@ -246,20 +243,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Create DMatrix from encrypted file
         """
-        if globals()["is_orchestrator"]:
             try:
-                dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
-                return remote_pb2.Name(name=dmatrix_handle)
-            except:
-                e = sys.exc_info()
-                print("Error type: " + str(e[0]))
-                print("Error value: " + str(e[1]))
-                traceback.print_tb(e[2])
+                if globals()["is_orchestrator"]:
+                    dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+                else:
+                    dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
 
-                return remote_pb2.Name(name=None)
-        else:
-            try:
-                dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
                 return remote_pb2.Name(name=dmatrix_handle)
             except:
                 e = sys.exc_info()
