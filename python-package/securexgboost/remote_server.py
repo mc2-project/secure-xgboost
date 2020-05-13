@@ -100,7 +100,28 @@ class Command(object):
                         key=key,
                         value=value
                         ))
+                elif self._func == remote_api.XGBoosterCreate:
+                    cache = self._params.cache
+                    length = self._params.length
+                    response_future = stub.rpc_XGBoosterCreate.future(remote_pb2.BoosterAttrs(
+                        cache=cache,
+                        length=length
+                        ))
                     ### TODO: More conditions
+                elif self._func == remote_api.XGBoosterUpdateOneIter:
+                    booster_handle = self._params.booster_handle
+                    dtrain_handle = self._params.dtrain_handle
+                    iteration = self-._params.iteration
+                    response_future = stub.rpc_XGBoosterUpdateOneIter.future(remote_pb2.BoosterUpdateParams(
+                        booster_handle=booster_handle,
+                        dtrain_handle=dtrain_handle,
+                        iteration=iteration
+                        ))
+                elif self._func == remote_api.XGDMatrixNumCol:
+                    name = self._params.name
+                    response_future = stub.rpc_XGDmatrixNumCol.future(remote_pb2.Name(
+                        name=name
+                        ))
                 futures.append(response_future)
         
             results = []
@@ -127,6 +148,26 @@ class Command(object):
                     self._ret = 0
                 else:
                     self._ret = -1
+            elif self._func == remote_api.XGBoosterCreate:
+                bst_handles = [result.name for result in results]
+                if bst_handles.count(bst_handles[0] == len(bst_handles)):
+                    # Every enclave returned the same booster handle string
+                    self._ret = bst_handles[0]
+                else:
+                    self._ret = None
+            elif self._func == remote_api.XGBoosterUpdateOneIter:
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
+            elif self._func == remote_api.XGDMatrixNumCol:
+                num_cols = [result.value for result in results]
+                if num_cols.count(num_cols[0]) == len(num_cols):
+                    # Each enclave agrees on the number of columns in the DMatrix
+                    self._ret = num_cols[0]
+                else:
+                    self._ret = None 
 
 
     def result(self, username):
@@ -188,6 +229,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size)
 
     # FIXME implement the library call within class RemoteAPI
+    # FIXME add support for this function for cluster
     def rpc_add_client_key(self, request, context):
         """
         Sends encrypted symmetric key, signature over key, and filename of data that was encrypted using the symmetric key
@@ -292,7 +334,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Create a booster
         """
         try:
-            booster_handle = self._synchronize(remote_api.XGBoosterCreate, request)
+            if globals()["is_orchestrator"]:
+                booster_handle = self._synchronize(remote_api.XGBoosterCreate, request)
+            else:
+                booster_handle = remote_api.XGBoosterCreate(request)
             return remote_pb2.Name(name=booster_handle)
         except:
             e = sys.exc_info()
@@ -307,7 +352,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Update model for one iteration
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
+            if globals()["is_orchestrator"]:
+                _ = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
+            else:
+                remote_api.XGBoosterUpdateOneIter(request)
             return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
@@ -419,7 +467,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get number of columns in DMatrix
         """
         try:
-            ret = self._synchronize(remote_api.XGDMatrixNumCol, request)
+            if globals()["is_orchestrator"]:
+                ret = self._synchronize(remote_api.XGDMatrixNumCol, request)
+            else:
+                ret = remote_api.XGDMatrixNumCol(request)
             return remote_pb2.Integer(value=ret)
 
         except Exception as e:
