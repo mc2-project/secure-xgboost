@@ -122,6 +122,13 @@ class Command(object):
                     response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.Name(
                         name=name
                         ))
+                elif self._func == remote_api.XGBoosterSaveModel:
+                    booster_handle = self._params.booster_handle
+                    filename = self._params.filename
+                    response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParams(
+                        booster_handle=booster_handle,
+                        filename=filename
+                        ))
                 futures.append(response_future)
         
             results = []
@@ -169,6 +176,12 @@ class Command(object):
                     self._ret = num_cols[0]
                 else:
                     self._ret = None 
+            elif self._func == remote_api.XGBoosterSaveModel:
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
 
 
     def result(self, username):
@@ -382,12 +395,16 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             return remote_pb2.Predictions(predictions=None, num_preds=None, status=-1)
 
+    # FIXME: save model only for rank 0 enclave
     def rpc_XGBoosterSaveModel(self, request, context):
         """
         Save model to encrypted file
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterSaveModel, request)
+            if globals()["is_orchestrator"]:
+                _ = self._synchronize(remote_api.XGBoosterSaveModel, request)
+            else:
+                remote_api.XGBoosterSaveModel(request)
             return remote_pb2.Status(status=0)
 
         except Exception as e:
