@@ -25,10 +25,10 @@ service Remote {
   rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
 
   // Send symmetric key encrypted with enclave public key, signature
-  rpc rpc_add_client_key(DataMetadata) returns (Status) {}
+  rpc rpc_add_client_key(DataMetadata) returns (StatusMsg) {}
 
   // Send symmetric key encrypted with enclave public key, signature, certificate
-  rpc rpc_add_client_key_with_certificate(DataMetadata) returns (Status) {}
+  rpc rpc_add_client_key_with_certificate(DataMetadata) returns (StatusMsg) {}
 
   // Send params of a DMatrix to the server for initialization
   // Returns the name assigned to this DMatrix
@@ -39,19 +39,19 @@ service Remote {
   rpc rpc_XGBoosterCreate(BoosterAttrs) returns (Name) {}
 
   // Set booster parameters
-  rpc rpc_XGBoosterSetParam(BoosterParam) returns (Status) {}
+  rpc rpc_XGBoosterSetParam(BoosterParam) returns (StatusMsg) {}
 
   // Update the booster for one round
-  rpc rpc_XGBoosterUpdateOneIter(BoosterUpdateParams) returns (Status) {}
+  rpc rpc_XGBoosterUpdateOneIter(BoosterUpdateParams) returns (StatusMsg) {}
 
   // Run predictions
   rpc rpc_XGBoosterPredict(PredictParams) returns (Predictions) {}
 
   // Save model to a file on the server
-  rpc rpc_XGBoosterSaveModel(SaveModelParams) returns (Status) {}
+  rpc rpc_XGBoosterSaveModel(SaveModelParams) returns (StatusMsg) {}
 
   // Load model from file on the server
-  rpc rpc_XGBoosterLoadModel(LoadModelParams) returns (Status) {}
+  rpc rpc_XGBoosterLoadModel(LoadModelParams) returns (StatusMsg) {}
 
   // Dump model 
   rpc rpc_XGBoosterDumpModelEx(DumpModelParams) returns (Dump) {}
@@ -67,6 +67,11 @@ service Remote {
 
   // Get number of rows in the DMatrix
   rpc rpc_XGDMatrixNumRow(Name) returns (Integer) {}
+}
+
+message StatusMsg {
+    // Status
+    Status status = 1;
 }
 
 // Current status of the node
@@ -91,6 +96,9 @@ message Report {
 
   // Size of remote report
   uint32 remote_report_size = 4;
+
+  // Status of call
+  Status status = 5;
 }
 
 // Message from client to enclaves with information on how to retrieve
@@ -205,7 +213,7 @@ message ModelRawParams {
 message Dump {
     repeated string sarr = 1;
     uint64 length = 2;
-    uint32 status = 3;
+    Status status = 3;
 }
 
 // Pair of strings
@@ -216,15 +224,20 @@ message Pair {
 
 // Object handle
 // FIXME: username not required for all names
+// FIXME: status only required for returned values
 message Name {
     // Name that the server assigned the handle
     string name = 1;
     string username = 2;
+    // Status of call (for returned Name)
+    Status status = 3;
 }
 
 // Integer
 message Integer {
     uint32 value = 1;
+    // Status of call (for returned Integer)
+    Status status = 2;
 }
 
 // Encrypted predictions served by enclave, to be decrypted at client
@@ -236,7 +249,7 @@ message Predictions {
     uint32 num_preds = 2;
 
     // Status
-    uint32 status = 3;
+    Status status = 3;
 }
 
 // Params for distributed training
