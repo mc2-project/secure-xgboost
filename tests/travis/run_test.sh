@@ -20,7 +20,7 @@ if [ ${TASK} == "python_test" ]; then
     # conda install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
 
     # Installing the python package
-    cd ../../python-package
+    cd ../python-package
     python3 setup.py install
     cd ../ # Back in mc2-xgboost directory
 
@@ -30,7 +30,7 @@ if [ ${TASK} == "python_test" ]; then
     python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
 
     # Start python tests
-    python -m pytest -v --fulltrace -s tests/python --cov=python-package/xgboost || exit -1
+    python -m pytest -v --fulltrace -s tests/python --cov=python-package/securexgboost || exit -1
     codecov
 fi
 
