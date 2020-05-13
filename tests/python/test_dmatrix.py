@@ -12,17 +12,17 @@ dpath = 'demo/data/'
 rng = np.random.RandomState(1994)
 
 username = "user1"
-DIR = os.path.dirname(os.path.realpath(__file__)) + "/../.."
-sym_key_file = DIR + "/demo/data/key_zeros.txt"
-pub_key_file = DIR + "/demo/data/userkeys/private_user_1.pem"
-cert_file = DIR + "/demo/data/usercrts/{0}.crt".format(username)
+HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
+sym_key_file = HOME_DIR + "demo/data/key_zeros.txt"
+pub_key_file = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
+cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
 
 
 print("Init user parameters")
 xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
 
 print("Creating enclave")
-enclave = xgb.Enclave(DIR + "/build/enclave/xgboost_enclave.signed")
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")

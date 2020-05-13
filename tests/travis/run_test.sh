@@ -6,10 +6,10 @@ source $HOME/miniconda/bin/activate
 
 if [ ${TASK} == "python_test" ]; then
     set -e
-    # Build/test without oblviousness and AVX
+    # Build the enclave in simulate mode
     rm -rf build
     mkdir build && cd build
-    cmake .. ${CMAKE_COMMON_FLAGS} -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
+    cmake .. ${CMAKE_COMMON_FLAGS} -DLOGGING=ON -DSIMULATE=ON -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
     make -j4
     cd ..
 
