@@ -243,20 +243,20 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         Create DMatrix from encrypted file
         """
-            try:
-                if globals()["is_orchestrator"]:
-                    dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
-                else:
-                    dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
+        try:
+            if globals()["is_orchestrator"]:
+                dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+            else:
+                dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
 
-                return remote_pb2.Name(name=dmatrix_handle)
-            except:
-                e = sys.exc_info()
-                print("Error type: " + str(e[0]))
-                print("Error value: " + str(e[1]))
-                traceback.print_tb(e[2])
+            return remote_pb2.Name(name=dmatrix_handle)
+        except:
+            e = sys.exc_info()
+            print("Error type: " + str(e[0]))
+            print("Error value: " + str(e[1]))
+            traceback.print_tb(e[2])
 
-                return remote_pb2.Name(name=None)
+            return remote_pb2.Name(name=None)
 
     def rpc_XGBoosterSetParam(self, request, context):
         """
