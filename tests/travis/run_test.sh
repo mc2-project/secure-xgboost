@@ -19,16 +19,17 @@ if [ ${TASK} == "python_test" ]; then
     python --version
     # conda install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
 
-    # Build binary wheel
-    cd ../python-package
-    python setup.py bdist_wheel
-    TAG=macosx_10_13_x86_64.macosx_10_14_x86_64.macosx_10_15_x86_64
-    python ../tests/ci_build/rename_whl.py dist/*.whl ${TRAVIS_COMMIT} ${TAG}
-    python -m pip install ./dist/xgboost-*-py3-none-${TAG}.whl
+    # Installing the python package
+    cd ../../python-package
+    python3 setup.py install
+    cd ../ # Back in mc2-xgboost directory
 
+    # Install python dependencies
     python -m pip install graphviz pytest pytest-cov codecov
     python -m pip install datatable
     python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
+
+    # Start python tests
     python -m pytest -v --fulltrace -s tests/python --cov=python-package/xgboost || exit -1
     codecov
 fi
