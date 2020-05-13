@@ -402,11 +402,9 @@ class EnclaveContext {
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
       // FIXME: we'll likely have to broadcast the certificates themselves
-      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasting client key and username";
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted client key";
-
-      rabit::Broadcast(nameptr, name_len, 0);
+      rabit::Broadcast(&nameptr, name_len, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted username";
         
       // storing user private key
