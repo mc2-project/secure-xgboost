@@ -119,7 +119,6 @@ class Command(object):
                         iteration=iteration
                         ))
                 elif self._func == remote_api.XGBoosterSaveModel:
-                    print("Calling save model on node")
                     booster_handle = self._params.booster_handle
                     filename = self._params.filename
                     username = self._params.username
@@ -241,24 +240,27 @@ class Command(object):
             elif self._func == remote_api.XGBoosterDumpModelEx:
                 sarrs = [result.sarr for result in results]
                 lengths = [result.length for result in results]
-                if sarrs.count(sarrs[0]) == len(sarrs) and lengths.count(lengths[0]) == len(lengths):
-                    # Every enclave returned the same thing
+                if lengths.count(lengths[0]) == len(lengths):
+                    # Every enclave returned the same length
+                    # We cannot check if the dumps are the same because they are encrypted
                     self._ret = (lengths[0], sarrs[0])
                 else:
                     self._ret = (None, None)
             elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
                 sarrs = [result.sarr for result in results]
                 lengths = [result.length for result in results]
-                if sarrs.count(sarrs[0]) == len(sarrs) and lengths.count(lengths[0]) == len(lengths):
-                    # Every enclave returned the same thing
+                if lengths.count(lengths[0]) == len(lengths):
+                    # Every enclave returned the same length
+                    # We cannot check if the dumps are the same because they are encrypted
                     self._ret = (lengths[0], sarrs[0])
                 else:
                     self._ret = (None, None)
             elif self._func == remote_api.XGBoosterGetModelRaw:
                 sarrs = [result.sarr for result in results]
                 lengths = [result.length for result in results]
-                if sarrs.count(sarrs[0]) == len(sarrs) and lengths.count(lengths[0]) == len(lengths):
-                    # Every enclave returned the same thing
+                if lengths.count(lengths[0]) == len(lengths):
+                    # Every enclave returned the same length
+                    # We cannot check if the dumps are the same because they are encrypted
                     self._ret = (lengths[0], sarrs[0])
                 else:
                     self._ret = (None, None)
@@ -477,7 +479,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted predictions
         """
         try:
-            enc_preds, num_preds = self._synchronize(remote_api.XGBoosterPredict, request)
+            if globals()["is_orchestrator"]:
+                enc_preds, num_preds = self._synchronize(remote_api.XGBoosterPredict, request)
+            else:
+                enc_preds, num_preds = remote_api.XGBoosterPredict(request)
             enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
             return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=0)
 

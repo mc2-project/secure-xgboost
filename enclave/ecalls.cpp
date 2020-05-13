@@ -192,7 +192,7 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    const char *format,
                                    xgboost::bst_ulong* len,
                                    char*** out_models) {
-  LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
+  LOG(DEBUG) << "Ecall: XGBoosterDumpModelExWithFeatures";
 
   // Validate buffers and copy to enclave memory
   char* fname_cpy[fnum];

@@ -54,7 +54,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
             "min_child_weight": "1",
             "gamma": "0.1",
             "max_depth": "3",
-            "verbosity": "0" 
+            "verbosity": "3" 
     }
     
     # Train and evaluate
