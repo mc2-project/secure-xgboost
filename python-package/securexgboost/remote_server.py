@@ -111,7 +111,7 @@ class Command(object):
                 elif self._func == remote_api.XGBoosterUpdateOneIter:
                     booster_handle = self._params.booster_handle
                     dtrain_handle = self._params.dtrain_handle
-                    iteration = self-._params.iteration
+                    iteration = self._params.iteration
                     response_future = stub.rpc_XGBoosterUpdateOneIter.future(remote_pb2.BoosterUpdateParams(
                         booster_handle=booster_handle,
                         dtrain_handle=dtrain_handle,
@@ -119,7 +119,7 @@ class Command(object):
                         ))
                 elif self._func == remote_api.XGDMatrixNumCol:
                     name = self._params.name
-                    response_future = stub.rpc_XGDmatrixNumCol.future(remote_pb2.Name(
+                    response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.Name(
                         name=name
                         ))
                 futures.append(response_future)
