@@ -185,7 +185,7 @@ class Command(object):
                     option_mask = self._params.option_mask
                     ntree_limit = self._params.ntree_limit
                     username = self._params.username
-                    response_future = stub.rpc_XGBoosterPredict(remote_pb2.PredictParams(
+                    response_future = stub.rpc_XGBoosterPredict.future(remote_pb2.PredictParams(
                         booster_handle=booster_handle,
                         dmatrix_handle=dmatrix_handle,
                         option_mask=option_mask,
@@ -291,7 +291,7 @@ class Command(object):
                 else:
                     self._ret = None 
             elif self._func == remote_api.XGBoosterPredict:
-                enc_preds_list = [result.preds for result in results]
+                enc_preds_list = [result.predictions for result in results]
                 num_preds_list = [result.num_preds for result in results] 
                 if len(enc_preds_list) == len(num_preds_list):
                     self._ret = (enc_preds_list, num_preds_list)
@@ -498,11 +498,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted predictions
         """
         try:
+            enc_preds_list, num_preds_list = [], []
             if globals()["is_orchestrator"]:
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 enc_preds_list, num_preds_list = self._synchronize(remote_api.XGBoosterPredict, request)
 
-                # If not a cluster, make the single set of predictions into a list
+                # If not using a cluster, make the single set of predictions into a list
                 if not isinstance(enc_preds_list, list):
                     enc_preds_list = [enc_preds_list]
                 if not isinstance(num_preds_list, list):
@@ -514,6 +515,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 num_preds_list = [num_preds]
 
             enc_preds_proto_list = []
+            print("We've collected {} predictions".format(len(enc_preds_list)))
             for i in range(len(enc_preds_list)):
                 enc_preds = enc_preds_list[i]
                 num_preds = num_preds_list[i]

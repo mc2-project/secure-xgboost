@@ -68,11 +68,11 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Saved model")
     #  
     #  # Get encrypted predictions
-    #  print("\n\nModel Predictions: ")
-    #  predictions, num_preds = booster.predict(dtest, decrypt=False)
+    print("\n\nModel Predictions: ")
+    predictions, num_preds = booster.predict(dtest, decrypt=False)
     #  
     #  # Decrypt predictions
-    #  print(booster.decrypt_predictions_list(predictions, num_preds))
+    print(booster.decrypt_predictions_list(predictions, num_preds))
     #  
     # Get fscores of model
     print("\n\nModel Feature Importance: ")
