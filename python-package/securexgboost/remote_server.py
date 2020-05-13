@@ -82,6 +82,8 @@ class Command(object):
                 # Asynchronous calls to start job on each node
                 if self._func == rabit_remote_api.RabitInit:
                     response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(status=0))
+                elif self._func == rabit_remote_api.RabitFinalize:
+                    response_future = stub.rpc_RabitFinalize(remote_pb2.RabitParams(status=0))
                 elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                     filenames = self._params.filenames
                     usernames = self._params.usernames
@@ -117,17 +119,61 @@ class Command(object):
                         dtrain_handle=dtrain_handle,
                         iteration=iteration
                         ))
-                elif self._func == remote_api.XGDMatrixNumCol:
-                    name = self._params.name
-                    response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.Name(
-                        name=name
-                        ))
                 elif self._func == remote_api.XGBoosterSaveModel:
                     booster_handle = self._params.booster_handle
                     filename = self._params.filename
                     response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParams(
                         booster_handle=booster_handle,
                         filename=filename
+                        ))
+                # predict
+                elif self._func == remote_api.XGBoosterLoadModel:
+                    booster_handle = self._params.booster_handle
+                    filename = self._params.filename
+                    response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParams(
+                        booster_handle=booster_handle,
+                        filename=filename
+                        ))
+                elif self._func == remote_api.XGBoosterDumpModelEx:
+                    booster_handle = self._params.booster_handle
+                    fmap = self._params.fmap
+                    with_stats = self._params.with_stats
+                    dump_format = self._params.dump_format
+                    response_future = stub.rpc_XGBoosterDumpModelEx.future(remote_pb2.DumpModelParams(
+                        booster_handle=self.handle.value,
+                        fmap=fmap,
+                        with_stats=with_stats,
+                        dump_format=dump_format
+                        ))
+                elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
+                    booster_handle = self._params.booster_handle
+                    flen = self._params.flen
+                    fname = self._params.fname
+                    ftype = self._params.ftype
+                    with_stats = self._params.with_stats
+                    dump_format = self._params.dump_format
+                    response_future = stub.rpc_XGBoosterDumpModelExWithFeatures.future(remote_pb2.DumpModelWithFeaturesParams(
+                        booster_handle=self.handle.value,
+                        flen=flen,
+                        fname=fname,
+                        ftype=ftype,
+                        with_stats=with_stats,
+                        dump_format=dump_format
+                        ))
+                elif self._func == remote_api.XGBoosterGetModelRaw:
+                    booster_handle = self._params.booster_handle
+                    response_future = stub.rpc_XGBoosterGetModelRaw.future(remote_pb2.ModelRawParams(
+                        booster_handle=booster_handle
+                        ))
+                elif self._func == remote_api.XGDMatrixNumRow:
+                    name = self._params.name
+                    response_future = stub.rpc_XGDMatrixNumRow.future(remote_pb2.Name(
+                        name=name
+                        ))
+                elif self._func == remote_api.XGDMatrixNumCol:
+                    name = self._params.name
+                    response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.Name(
+                        name=name
                         ))
                 futures.append(response_future)
         
@@ -137,6 +183,12 @@ class Command(object):
 
             # Set return value
             if self._func == rabit_remote_api.RabitInit:
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
+            elif self._func == rabit_remote_api.RabitFinalize:
                 return_codes = [result.status for result in results]
                 if sum(return_codes) == 0:
                     self._ret = 0
@@ -157,7 +209,6 @@ class Command(object):
                     self._ret = -1
             elif self._func == remote_api.XGBoosterCreate:
                 bst_handles = [result.name for result in results]
-                print(bst_handles)
                 if bst_handles.count(bst_handles[0]) == len(bst_handles):
                     # Every enclave returned the same booster handle string
                     self._ret = bst_handles[0]
@@ -169,6 +220,49 @@ class Command(object):
                     self._ret = 0
                 else:
                     self._ret = -1
+            elif self._func == remote_api.XGBoosterSaveModel:
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
+            elif self._func == remote_api.XGBoosterLoadModel:
+                return_codes = [result.status for result in results]
+                if sum(return_codes) == 0:
+                    self._ret = 0
+                else:
+                    self._ret = -1
+            elif self._func == remote_api.XGBoosterDumpModelEx:
+                sarrs = [result.sarr for result in results]
+                lengths = [result.length for result in results]
+                if sarrs.count(sarrs[0]) == len(sarrs) and lengths.count(lengths[0]) == len(lengths):
+                    # Every enclave returned the same thing
+                    self._ret = (lengths[0], sarrs[0])
+                else:
+                    self._ret = (None, None)
+            elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
+                sarrs = [result.sarr for result in results]
+                lengths = [result.length for result in results]
+                if sarrs.count(sarrs[0]) == len(sarrs) and lengths.count(lengths[0]) == len(lengths):
+                    # Every enclave returned the same thing
+                    self._ret = (lengths[0], sarrs[0])
+                else:
+                    self._ret = (None, None)
+            elif self._func == remote_api.XGBoosterGetModelRaw:
+                sarrs = [result.sarr for result in results]
+                lengths = [result.length for result in results]
+                if sarrs.count(sarrs[0]) == len(sarrs) and lengths.count(lengths[0]) == len(lengths):
+                    # Every enclave returned the same thing
+                    self._ret = (lengths[0], sarrs[0])
+                else:
+                    self._ret = (None, None)
+            elif self._func == remote_api.XGDMatrixNumRow:
+                num_rows = [result.value for result in results]
+                if num_rows.count(num_rows[0]) == len(num_rows):
+                    # Each enclave agrees on the number of rows in the DMatrix
+                    self._ret = num_rows[0]
+                else:
+                    self._ret = None 
             elif self._func == remote_api.XGDMatrixNumCol:
                 num_cols = [result.value for result in results]
                 if num_cols.count(num_cols[0]) == len(num_cols):
@@ -176,12 +270,6 @@ class Command(object):
                     self._ret = num_cols[0]
                 else:
                     self._ret = None 
-            elif self._func == remote_api.XGBoosterSaveModel:
-                return_codes = [result.status for result in results]
-                if sum(return_codes) == 0:
-                    self._ret = 0
-                else:
-                    self._ret = -1
 
 
     def result(self, username):
@@ -420,7 +508,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Load model from encrypted file
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterLoadModel, request)
+            if globals()["is_orchestrator"]:
+                _ = self._synchronize(remote_api.XGBoosterLoadModel, request)
+            else:
+                remote_api.XGBoosterLoadModel(request)
             return remote_pb2.Status(status=0)
 
         except Exception as e:
@@ -436,7 +527,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted model dump
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+            if globals()["is_orchestrator"]:
+                length, sarr = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+            else:
+                length, sarr = remote_api.XGBoosterDumpModelEx(request)
             return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
@@ -452,7 +546,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted model dump with features
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+            if globals()["is_orchestrator"]:
+                length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+            else:
+                length, sarr = remote_api.XGBoosterDumpModelExWithFeatures(request)
             return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
@@ -468,7 +565,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted raw model dump
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
+            if globals()["is_orchestrator"]:
+                length, sarr = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
+            else:
+                length, sarr = remote_api.XGBoosterGetModelRaw(request)
             return remote_pb2.Dump(sarr=sarr, length=length, status=0)
 
         except Exception as e:
@@ -503,7 +603,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get number of rows in DMatrix
         """
         try:
-            ret = self._synchronize(remote_api.XGDMatrixNumRow, request)
+            if globals()["is_orchestrator"]:
+                ret = self._synchronize(remote_api.XGDMatrixNumRow, request)
+            else:
+                ret = remote_api.XGDMatrixNumRow(request)
             return remote_pb2.Integer(value=ret)
 
         except Exception as e:
@@ -538,7 +641,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Notify rabit tracker that everything is done
         """
         try:
-            _ = self._synchronize(rabit_remote_api.RabitFinalize, request)
+            if globals()["is_orchestrator"]:
+                _ = self._synchronize(rabit_remote_api.RabitFinalize, request)
+            else:
+                rabit_remote_api.RabitFinalize(request)
             return remote_pb2.Status(status=0)
         except:
             e = sys.exc_info()
