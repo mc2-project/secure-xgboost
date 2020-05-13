@@ -12,7 +12,6 @@ if [ ${TASK} == "python_test" ]; then
     cmake .. ${CMAKE_COMMON_FLAGS} -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
     make -j4
     cd ..
-    rm -rf build
 
     echo "-------------------------------"
     conda activate python3
@@ -20,9 +19,9 @@ if [ ${TASK} == "python_test" ]; then
     # conda install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
 
     # Installing the python package
-    cd ../python-package
+    cd python-package
     python3 setup.py install
-    cd ../ # Back in mc2-xgboost directory
+    cd ..
 
     # Install python dependencies
     python -m pip install graphviz pytest pytest-cov codecov
