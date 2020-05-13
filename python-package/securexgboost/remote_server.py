@@ -144,7 +144,7 @@ class Command(object):
                     with_stats = self._params.with_stats
                     dump_format = self._params.dump_format
                     response_future = stub.rpc_XGBoosterDumpModelEx.future(remote_pb2.DumpModelParams(
-                        booster_handle=self.handle.value,
+                        booster_handle=booster_handle,
                         fmap=fmap,
                         with_stats=with_stats,
                         dump_format=dump_format
@@ -157,7 +157,7 @@ class Command(object):
                     with_stats = self._params.with_stats
                     dump_format = self._params.dump_format
                     response_future = stub.rpc_XGBoosterDumpModelExWithFeatures.future(remote_pb2.DumpModelWithFeaturesParams(
-                        booster_handle=self.handle.value,
+                        booster_handle=booster_handle,
                         flen=flen,
                         fname=fname,
                         ftype=ftype,
