@@ -83,7 +83,7 @@ class Command(object):
                 if self._func == rabit_remote_api.RabitInit:
                     response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(status=0))
                 elif self._func == rabit_remote_api.RabitFinalize:
-                    response_future = stub.rpc_RabitFinalize(remote_pb2.RabitParams(status=0))
+                    response_future = stub.rpc_RabitFinalize.future(remote_pb2.RabitParams(status=0))
                 elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                     filenames = self._params.filenames
                     usernames = self._params.usernames
