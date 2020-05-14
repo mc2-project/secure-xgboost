@@ -197,7 +197,6 @@ class Command(object):
         
             results = []
             for future in futures:
-                print(future.result())
                 results.append(future.result())
 
             # Set return value
@@ -214,25 +213,38 @@ class Command(object):
                 else:
                     self._ret = -1
             elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
-                dmatrix_handles = [result.name for result in results]
-                if dmatrix_handles.count(dmatrix_handles[0]) == len(dmatrix_handles):
-                    # Every enclave returned the same handle string
-                    self._ret = dmatrix_handles[0]
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = None
+                    dmatrix_handles = [result.name for result in results]
+                    if dmatrix_handles.count(dmatrix_handles[0]) == len(dmatrix_handles):
+                        # Every enclave returned the same handle string
+                        self._ret = (dmatrix_handles[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent dmatrix handles returned by enclaves"))
             elif self._func == remote_api.XGBoosterSetParam:
                 return_codes = [result.status for result in results]
+                print("Return codes: ", return_codes)
                 if sum(return_codes) == 0:
                     self._ret = 0
                 else:
                     self._ret = -1
             elif self._func == remote_api.XGBoosterCreate:
-                bst_handles = [result.name for result in results]
-                if bst_handles.count(bst_handles[0]) == len(bst_handles):
-                    # Every enclave returned the same booster handle string
-                    self._ret = bst_handles[0]
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = None
+                    bst_handles = [result.name for result in results]
+                    if bst_handles.count(bst_handles[0]) == len(bst_handles):
+                        # Every enclave returned the same booster handle string
+                        self._ret = (bst_handles[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent bst handles returned by enclaves"))
             elif self._func == remote_api.XGBoosterUpdateOneIter:
                 return_codes = [result.status for result in results]
                 if sum(return_codes) == 0:
@@ -252,46 +264,76 @@ class Command(object):
                 else:
                     self._ret = -1
             elif self._func == remote_api.XGBoosterDumpModelEx:
-                sarrs = [result.sarr for result in results]
-                lengths = [result.length for result in results]
-                if lengths.count(lengths[0]) == len(lengths):
-                    # Every enclave returned the same length
-                    # We cannot check if the dumps are the same because they are encrypted
-                    self._ret = (lengths[0], sarrs[0])
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = (None, None)
+                    sarrs = [result.sarr for result in results]
+                    lengths = [result.length for result in results]
+                    if lengths.count(lengths[0]) == len(lengths):
+                        # Every enclave returned the same length
+                        # We cannot check if the dumps are the same because they are encrypted
+                        self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results from enclaves"))
             elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
-                sarrs = [result.sarr for result in results]
-                lengths = [result.length for result in results]
-                if lengths.count(lengths[0]) == len(lengths):
-                    # Every enclave returned the same length
-                    # We cannot check if the dumps are the same because they are encrypted
-                    self._ret = (lengths[0], sarrs[0])
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = (None, None)
+                    sarrs = [result.sarr for result in results]
+                    lengths = [result.length for result in results]
+                    if lengths.count(lengths[0]) == len(lengths):
+                        # Every enclave returned the same length
+                        # We cannot check if the dumps are the same because they are encrypted
+                        self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results from enclaves"))
             elif self._func == remote_api.XGBoosterGetModelRaw:
-                sarrs = [result.sarr for result in results]
-                lengths = [result.length for result in results]
-                if lengths.count(lengths[0]) == len(lengths):
-                    # Every enclave returned the same length
-                    # We cannot check if the dumps are the same because they are encrypted
-                    self._ret = (lengths[0], sarrs[0])
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = (None, None)
+                    sarrs = [result.sarr for result in results]
+                    lengths = [result.length for result in results]
+                    if lengths.count(lengths[0]) == len(lengths):
+                        # Every enclave returned the same length
+                        # We cannot check if the dumps are the same because they are encrypted
+                        self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results from enclaves"))
             elif self._func == remote_api.XGDMatrixNumRow:
-                num_rows = [result.value for result in results]
-                if num_rows.count(num_rows[0]) == len(num_rows):
-                    # Each enclave agrees on the number of rows in the DMatrix
-                    self._ret = num_rows[0]
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = None 
+                    num_rows = [result.value for result in results]
+                    if num_rows.count(num_rows[0]) == len(num_rows):
+                        # Each enclave agrees on the number of rows in the DMatrix
+                        self._ret = (num_rows[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves")) 
             elif self._func == remote_api.XGDMatrixNumCol:
-                num_cols = [result.value for result in results]
-                if num_cols.count(num_cols[0]) == len(num_cols):
-                    # Each enclave agrees on the number of columns in the DMatrix
-                    self._ret = num_cols[0]
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = None 
+                    num_cols = [result.value for result in results]
+                    if num_cols.count(num_cols[0]) == len(num_cols):
+                        # Each enclave agrees on the number of columns in the DMatrix
+                        self._ret = (num_cols[0], remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves"))
             elif self._func == remote_api.XGBoosterPredict:
                 print("trying to aggregate predictions...")
                 enc_preds_protos_list = [result.predictions for result in results]
@@ -451,10 +493,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+                dmatrix_handle, status = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
             else:
                 dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Name(name=dmatrix_handle, status=status)
         except:
             status = handle_exception()
@@ -480,10 +522,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                booster_handle = self._synchronize(remote_api.XGBoosterCreate, request)
+                booster_handle, status = self._synchronize(remote_api.XGBoosterCreate, request)
             else:
                 booster_handle = remote_api.XGBoosterCreate(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Name(name=booster_handle, status=status)
         except:
             status = handle_exception()
@@ -569,10 +611,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+                length, sarr, status = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
             else:
                 length, sarr = remote_api.XGBoosterDumpModelEx(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
         except:
@@ -585,10 +627,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+                length, sarr, status = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
             else:
                 length, sarr = remote_api.XGBoosterDumpModelExWithFeatures(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Dump(sarr=sarr, length=length, status=status)
         except:
             status = handle_exception()
@@ -600,10 +642,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
+                length, sarr, status = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
             else:
                 length, sarr = remote_api.XGBoosterGetModelRaw(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
         except:
@@ -616,10 +658,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                ret = self._synchronize(remote_api.XGDMatrixNumCol, request)
+                ret, status = self._synchronize(remote_api.XGDMatrixNumCol, request)
             else:
                 ret = remote_api.XGDMatrixNumCol(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Integer(value=ret, status=status)
         except:
             status = handle_exception()
@@ -631,10 +673,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                ret = self._synchronize(remote_api.XGDMatrixNumRow, request)
+                ret, status= self._synchronize(remote_api.XGDMatrixNumRow, request)
             else:
                 ret = remote_api.XGDMatrixNumRow(request)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Integer(value=ret, status=status)
         except:
             status = handle_exception()
