@@ -361,6 +361,7 @@ class User(object):
     This should store all the user information.
     Make sure you call Set_user to set the default in the global variable
     """
+    all_users = {}
     def __init__(self, username, private_key, certificate):
         """
         Parameters
@@ -376,6 +377,8 @@ class User(object):
         self.private_key = private_key
         self.certificate = certificate
         self.crypto = CryptoUtils()
+        # adding itself to global user pool
+        User.all_users[username] = self
 
     def set_user(self):
         """
@@ -506,11 +509,41 @@ class DMatrix(object):
             if encrypted:
                 filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
                 usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
-                    usrs,
-                    c_bst_ulong(len(data)),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+
+                # add signature for each user
+                utils = CryptoUtils()
+                sigs = []
+                sig_lens = []
+
+                for i, username in enumerate(usernames):
+
+                    args = "filename {} num_files {} silent {}".format(data[i], len(data), silent)
+                    print(args)
+                    c_args = ctypes.c_char_p(args.encode('utf-8'))
+                    data_size = len(args)
+                    sig, sig_len = utils.sign_data(User.all_users[username].private_key, c_args, data_size, pointer = True)
+                    sig = proto_to_pointer(sig)
+                    sig_len = ctypes.c_size_t(sig_len)
+                    sigs.append(sig)
+                    sig_lens.append(sig_len)
+
+                sigs = c_array(ctypes.c_char_p, sigs)
+                sig_lens = c_array(ctypes.c_size_t, sig_lens)
+
+                _check_call(_LIB.XGDMatrixCreateFromEncryptedFileWithSigs(filenames,
+                                                                  usrs,
+                                                                  c_bst_ulong(len(data)),
+                                                                  ctypes.c_int(silent),
+                                                                  ctypes.byref(handle)),
+                                                                sigs,
+                                                                sig_lens)
+
+                #_check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                #    usrs,
+                #    c_bst_ulong(len(data)),
+                #    ctypes.c_int(silent),
+                #    ctypes.byref(handle)))
+
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),

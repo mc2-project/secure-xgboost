@@ -164,6 +164,23 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         bst_ulong num_files,
         int silent,
         DMatrixHandle *out);
+/*!
+ * \brief load a data matrix from an encrypted file
+ * \param fname the name of the encrypted file
+ * \param silent whether print messages during loading
+ * \param out a loaded data matrix
+ * \param signatures a list of signatures
+ * \param signature_lengths a lit of signature lengths
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
+                                             char* usernames[],
+                                             bst_ulong num_files,
+                                             int silent,
+                                             DMatrixHandle *out,
+                                             const char *signatures[],
+                                             xgboost::bst_ulong signature_lengths[]);
+
 
 /*!
  * \brief Create a DMatrix from a data iterator.
