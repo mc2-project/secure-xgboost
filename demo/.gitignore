@@ -1,2 +1,3 @@
 *.libsvm
 *.pkl
+*.model

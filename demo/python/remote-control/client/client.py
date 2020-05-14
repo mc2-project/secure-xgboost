@@ -26,14 +26,14 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     enclave_reference.add_key()
 
     print("Creating training matrix")
-    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"}, encrypted=True)
+    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/remote-control/data/train.enc"})
     if not dtrain:
         print("Error creating dtrain")
         return
     print("dtrain: " + dtrain.handle.value.decode("utf-8"))
 
     print("Creating test matrix")
-    dtest = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.test.enc"}, encrypted=True)
+    dtest = xgb.DMatrix({username: HOME_DIR + "demo/python/remote-control/data/test.enc"})
     if not dtest:
         print("Error creating dtest")
         return
@@ -59,17 +59,17 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     print("booster: " + booster.handle.value.decode("utf-8"))
 
-    booster.save_model(HOME_DIR + "/demo/python/remote-control/client/modelfile.model", username)
+    booster.save_model(HOME_DIR + "demo/python/remote-control/client/modelfile.model", username)
 
     # Get encrypted predictions
-    print("\n\nModel Predictions: ")
+    print("\nModel Predictions: ")
     predictions, num_preds = booster.predict(dtest, decrypt=False)
 
     # Decrypt predictions
     print(booster.decrypt_predictions_list(predictions, num_preds))
 
     # Get fscores of model
-    print("\n\nModel Feature Importance: ")
+    print("\nModel Feature Importance: ")
     print(booster.get_fscore())
      
 if __name__ == '__main__':
