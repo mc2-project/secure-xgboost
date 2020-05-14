@@ -16,13 +16,11 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Remote attestation")
     enclave_reference = xgb.Enclave(addr=channel_addr)
 
-    # TODO: Add support for Rabit Init for interenclave attestation
     print("Rabit Init")
     xgb.rabit.init()
 
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    # TODO: Return public key of rank 0 enclave to client
     print("Attesting...")
     enclave_reference.attest(verify=False)
     print("Report successfully verified")
@@ -68,17 +66,17 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Saved model")
     #  
     #  # Get encrypted predictions
-    print("\n\nModel Predictions: ")
+    print("\nModel Predictions: ")
     predictions, num_preds = booster.predict(dtest, decrypt=False)
     
-    print(len(predictions))
-    print("Num preds: ", num_preds)
     #  # Decrypt predictions
     print(booster.decrypt_predictions_list(predictions, num_preds))
     #  
     # Get fscores of model
-    print("\n\nModel Feature Importance: ")
+    print("\nModel Feature Importance: ")
     print(booster.get_fscore())
+
+    xgb.rabit.finalize()
      
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

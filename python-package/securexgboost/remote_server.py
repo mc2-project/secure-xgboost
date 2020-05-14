@@ -419,7 +419,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 master_enclave_ip = node_ips[0]
                 with grpc.insecure_channel(master_enclave_ip) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1))
+                    response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=0))
 
                 pem_key = response.pem_key
                 key_size = response.key_size
@@ -497,7 +497,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 if sum(return_codes) == 0:
                     return remote_pb2.Status(status=0)
                 else:
-                    return remote_pb2.Status(status=-1)
+                    return remote_pb2.Status(status=-1, exception="A node threw an error")
         except:
             status = handle_exception()
             return status
@@ -523,10 +523,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                self._synchronize(remote_api.XGBoosterSetParam, request)
+                status = self._synchronize(remote_api.XGBoosterSetParam, request)
             else:
                 remote_api.XGBoosterSetParam(request)
-            return remote_pb2.Status(status=0)
+                status = 0
+            return remote_pb2.Status(status=status)
         except:
             status = handle_exception()
             return status
@@ -552,10 +553,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                _ = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
+                status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             else:
                 remote_api.XGBoosterUpdateOneIter(request)
-            return remote_pb2.Status(status=0)
+                status = 0
+            return remote_pb2.Status(status=status)
         except:
             status = handle_exception()
             return status
@@ -597,10 +599,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                _ = self._synchronize(remote_api.XGBoosterSaveModel, request)
+                status = self._synchronize(remote_api.XGBoosterSaveModel, request)
             else:
                 remote_api.XGBoosterSaveModel(request)
-            return remote_pb2.Status(status=0)
+                status = 0
+            return remote_pb2.Status(status=status)
 
         except:
             status = handle_exception()
@@ -612,10 +615,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                _ = self._synchronize(remote_api.XGBoosterLoadModel, request)
+                status = self._synchronize(remote_api.XGBoosterLoadModel, request)
             else:
                 remote_api.XGBoosterLoadModel(request)
-            return remote_pb2.Status(status=0)
+                status = 0
+            return remote_pb2.Status(status=status)
 
         except:
             status = handle_exception()
@@ -689,7 +693,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                ret, status= self._synchronize(remote_api.XGDMatrixNumRow, request)
+                ret, status = self._synchronize(remote_api.XGDMatrixNumRow, request)
             else:
                 ret = remote_api.XGDMatrixNumRow(request)
                 status = remote_pb2.Status(status=0)
@@ -704,17 +708,14 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                _ = self._synchronize(rabit_remote_api.RabitInit, request)
+                status = self._synchronize(rabit_remote_api.RabitInit, request)
             else:
                 rabit_remote_api.RabitInit(request)
-            return remote_pb2.Status(status=0)
+                status = 0
+            return remote_pb2.Status(status=status)
         except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Status(status=-1)
+            status = handle_exception()
+            return status
 
 
     def rpc_RabitFinalize(self, request, context):
@@ -723,17 +724,14 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                _ = self._synchronize(rabit_remote_api.RabitFinalize, request)
+                status = self._synchronize(rabit_remote_api.RabitFinalize, request)
             else:
                 rabit_remote_api.RabitFinalize(request)
-            return remote_pb2.Status(status=0)
+                status = 0
+            return remote_pb2.Status(status=status)
         except:
-            e = sys.exc_info()
-            print("Error type: " + str(e[0]))
-            print("Error value: " + str(e[1]))
-            traceback.print_tb(e[2])
-
-            return remote_pb2.Status(status=-1)
+            status = handle_exception()
+            return status
 
 def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     condition = threading.Condition()
