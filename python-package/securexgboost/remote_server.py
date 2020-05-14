@@ -726,6 +726,19 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return status
 
 def serve(enclave, num_workers=10, all_users=[], nodes=[]):
+    """
+    Parameters
+    ----------
+    enclave : Enclave
+        reference to the Enclave object
+    num_workers : int
+        number of threads to use
+    all_users : list
+        list of usernames participating in the joint computation
+    nodes : list
+        list of IP addresses of nodes in the cluster
+        passing in this argument means that this RPC server is the RPC orchestrator
+    """
     condition = threading.Condition()
     command = Command()
     globals()["all_users"] = all_users

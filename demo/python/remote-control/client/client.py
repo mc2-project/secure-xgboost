@@ -66,7 +66,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     predictions, num_preds = booster.predict(dtest, decrypt=False)
 
     # Decrypt predictions
-    print(booster.decrypt_predictions_list(predictions, num_preds))
+    print(booster.decrypt_predictions(predictions, num_preds))
 
     # Get fscores of model
     print("\nModel Feature Importance: ")

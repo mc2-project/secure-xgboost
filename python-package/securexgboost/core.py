@@ -1831,45 +1831,6 @@ class Booster(object):
             concatenated_preds = np.concatenate(preds_list)
             return concatenated_preds
 
-    #  def decrypt_predictions_list(self, encrypted_preds, num_preds):
-    #      """
-    #      Decrypt encrypted predictions
-    #  
-    #      Parameters
-    #      ----------
-    #      encrypted_preds : list
-    #          list of encrypted predictions (c_char_p)
-    #      num_preds : list
-    #          list of number of predictions in each c_char_p in encrypted_preds
-    #  
-    #      Returns
-    #      -------
-    #      preds : numpy array
-    #          plaintext predictions
-    #      """
-    #      try:
-    #          sym_key = globals()["current_user_sym_key"]
-    #      except:
-    #          raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
-    #  
-    #      # Cast arguments to proper ctypes
-    #      c_char_p_key = ctypes.c_char_p(sym_key)
-    #      preds_list = []
-    #  
-    #      for i in range(len(encrypted_preds)):
-    #          size_t_num_preds = ctypes.c_size_t(num_preds[i])
-    #  
-    #          preds = ctypes.POINTER(ctypes.c_float)()
-    #  
-    #          _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
-    #  
-    #          # Convert c pointer to numpy array
-    #          preds = ctypes2numpy(preds, num_preds[i], np.float32)
-    #          preds_list.append(preds)
-    #      
-    #      concatenated_preds = np.concatenate(preds_list)
-    #      return concatenated_preds
-
     def save_model(self, fname, username=None):
         """
         Save the model to an encrypted file at the server.
