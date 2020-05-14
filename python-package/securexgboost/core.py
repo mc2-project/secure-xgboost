@@ -166,6 +166,23 @@ def _load_lib():
 # load the XGBoost library globally
 _LIB = _load_lib()
 
+def _check_remote_call(ret):
+    """check the return value of c api call
+
+    this function will raise exception when error occurs.
+    wrap every api call with this function
+
+    parameters
+    ----------
+    ret : proto
+        return value from remote api calls
+    """
+    channel_addr = globals()["remote_addr"]
+    if channel_addr:
+        if ret.status.status != 0:
+            raise XGBoostError(ret.status.exception)
+        else:
+            return ret
 
 def _check_call(ret):
     """Check the return value of C API call
@@ -178,7 +195,6 @@ def _check_call(ret):
     ret : int
         return value from API calls
     """
-    # FIXME rpc
     if ret != 0:
         raise XGBoostError(py_str(_LIB.XGBGetLastError()))
 
@@ -499,11 +515,11 @@ class DMatrix(object):
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
                         stub = remote_pb2_grpc.RemoteStub(channel)
-                        response = stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
+                        response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
                             filenames=data,
                             usernames=usernames,
                             silent=silent,
-                            username=globals()["current_user"]))
+                            username=globals()["current_user"])))
                         handle = c_str(response.name)
                 else:
                     filenames = from_pystr_to_cstr(data)
@@ -923,9 +939,9 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
+                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
                     name=self.handle.value,
-                    username=globals()["current_user"]))
+                    username=globals()["current_user"])))
                 return response.value
         else:
             ret = c_bst_ulong()
@@ -945,9 +961,9 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
+                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
                     name=self.handle.value,
-                    username=globals()["current_user"]))
+                    username=globals()["current_user"])))
                 return response.value
         else:
             ret = c_bst_ulong()
@@ -1115,7 +1131,7 @@ class Enclave(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1))
+                response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1)))
             pem_key = response.pem_key
             key_size = response.key_size
             remote_report = response.remote_report
@@ -1262,14 +1278,14 @@ class Enclave(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
+                response = _check_remote_call(stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
                     certificate=certificate,
                     enc_sym_key=data,
                     key_size=data_len,
                     signature=signature,
-                    sig_len=sig_len))
+                    sig_len=sig_len)))
 
-                return response.status
+                return response.status.status
 
         # Else we're on the server
 
@@ -1324,10 +1340,10 @@ class Booster(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 cache_handles = [d.handle.value for d in cache]
-                response = stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
+                response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
                     cache=cache_handles,
                     length=len(cache),
-                    username=globals()["current_user"]))
+                    username=globals()["current_user"])))
             self.handle = c_str(response.name)
         else:
             dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
@@ -1482,7 +1498,7 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"]))
+                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"])))
             else:
                 _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
@@ -1509,7 +1525,7 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"]))
+                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"])))
                     return response
             else:
                 _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
@@ -1711,11 +1727,11 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_XGBoosterPredict(remote_pb2.PredictParams(booster_handle=self.handle.value,
+                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParams(booster_handle=self.handle.value,
                     dmatrix_handle=data.handle.value,
                     option_mask=option_mask,
                     ntree_limit=ntree_limit,
-                    username=username))
+                    username=username)))
 
                 enc_preds_serialized_list = response.predictions
                 length_list = [c_bst_ulong(num_pred) for num_pred in response.num_preds]
@@ -1864,10 +1880,10 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParams(
+                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParams(
                         booster_handle=self.handle.value,
                         filename=fname,
-                        username=username))
+                        username=username)))
             else:
                 _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -1896,9 +1912,9 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = stub.rpc_XGBoosterGetModelRaw(remote_pb2.ModelRawParams(
+                response = _check_remote_call(stub.rpc_XGBoosterGetModelRaw(remote_pb2.ModelRawParams(
                     booster_handle=self.handle.value,
-                    username=username))
+                    username=username)))
 
                 cptr = from_pystr_to_cstr(list(response.sarr))
                 length = c_bst_ulong(response.length)
@@ -2018,14 +2034,14 @@ class Booster(object):
                     else:
                         ftype = self.feature_types
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
+                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
                         booster_handle=self.handle.value,
                         flen=flen,
                         fname=fname,
                         ftype=ftype,
                         with_stats=with_stats,
                         dump_format=dump_format,
-                        username=globals()["current_user"]))
+                        username=globals()["current_user"])))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
@@ -2054,12 +2070,12 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParams(
+                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParams(
                         booster_handle=self.handle.value,
                         fmap=fmap,
                         with_stats=with_stats,
                         dump_format=dump_format,
-                        username=globals()["current_user"]))
+                        username=globals()["current_user"])))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
