@@ -534,9 +534,9 @@ class DMatrix(object):
                                                                   usrs,
                                                                   c_bst_ulong(len(data)),
                                                                   ctypes.c_int(silent),
-                                                                  ctypes.byref(handle)),
+                                                                  ctypes.byref(handle),
                                                                 sigs,
-                                                                sig_lens)
+                                                                sig_lens))
 
                 #_check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                 #    usrs,
@@ -1882,9 +1882,21 @@ class Booster(object):
             username = globals()["current_user"].username
         if username is None:
             raise ValueError("Please set your user with the user.set_user method or provide a username as an optional argument")
+        utils = CryptoUtils()
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+
+            user = globals()["current_user"]
+            args = "handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+            _check_call(_LIB.XGBoosterLoadModelWithSig(self.handle, c_str(fname), c_str(username), sig, sig_len))
+
+            # _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
             buf = fname
             length = c_bst_ulong(len(buf))

@@ -28,7 +28,7 @@ enclave {
                 int silent,
                 [out] char** handle,
                 [in, count=num_files] const char **sigs,
-                [in, count=num_files] bst_ulong* sig_lens);
+                [in, count=num_files] size_t* sig_lens);
 
         public int enclave_XGBoosterCreate(
                 [in, count=len] char** dmat_handles,
@@ -146,6 +146,13 @@ enclave {
                 [in, string] char* handle,
                 [in, string] const char* fname,
                 [in, string] char* username);
+
+        public int enclave_XGBoosterLoadModelWithSig(
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
 
         public int enclave_XGBoosterSaveModel(
                 [in, string] char* handle,

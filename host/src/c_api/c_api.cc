@@ -305,7 +305,7 @@ int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
                                      int silent,
                                      DMatrixHandle *out,
                                      char *sigs[],
-                                     xgboost::bst_ulong sig_lens[] ) {
+                                     size_t sig_lens[] ) {
   size_t fname_lengths[num_files];
   size_t username_lengths[num_files];
 
@@ -994,6 +994,10 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              uint8_t **out_result,
                            char* username) {
     safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result, username));
+}
+
+XGB_DLL int XGBoosterLoadModelWithSig(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
+  safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
 }
 
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username) {

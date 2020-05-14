@@ -56,12 +56,12 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_
   return XGDMatrixCreateFromEncryptedFile((const char**) filenames, usrnames, num_files, silent, out);
 }
 
-int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out, char* sigs[], bst_ulong sig_lens[]) {
-  LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
+int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out, char* sigs[], size_t sig_lens[]) {
+  LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFileWithSigs";
   char* filenames[num_files];
   char* usrnames[num_files];
   char* signatures[num_files];
-  bst_ulong signature_lengths[num_files];
+  size_t signature_lengths[num_files];
 
   for (int i = 0; i < num_files; i++) {
     const char* fname = fnames[i];
@@ -165,6 +165,11 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
 int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, char *username) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModel";
   return XGBoosterLoadModel(handle, fname, username);
+}
+
+int enclave_XGBoosterLoadModelWithSig(BoosterHandle handle, const char *fname, char *username, uint8_t *signature, size_t sig_len) {
+  LOG(DEBUG) << "Ecall: XGBoosterLoadModelWithSig";
+  return XGBoosterLoadModelWithSig(handle, fname, username, signature, sig_len);
 }
 
 int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char *username) {

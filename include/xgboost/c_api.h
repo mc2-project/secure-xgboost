@@ -173,14 +173,13 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
  * \param signature_lengths a lit of signature lengths
  * \return 0 when success, -1 when failure happens
  */
-XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
+XGB_DLL int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
                                              char* usernames[],
                                              bst_ulong num_files,
                                              int silent,
                                              DMatrixHandle *out,
                                              const char *signatures[],
-                                             xgboost::bst_ulong signature_lengths[]);
-
+                                             size_t signature_lengths[]);
 
 /*!
  * \brief Create a DMatrix from a data iterator.
@@ -511,6 +510,20 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
                              char *username);
+/*!
+ * \brief load model from existing file
+ * \param handle handle
+ * \param fname file name
+* \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterLoadModelWithSig(BoosterHandle handle,
+                               const char *fname,
+                               char *username,
+                               uint8_t *signature,
+                               size_t sig_len);
+
+
+
 /*!
  * \brief save model into existing file
  * \param handle handle

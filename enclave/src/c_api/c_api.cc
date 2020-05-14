@@ -495,7 +495,7 @@ int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
                                      int silent,
                                      DMatrixHandle *out,
                                      const char *signatures[],
-                                     xgboost::bst_ulong signature_lengths[]) {
+                                     size_t signature_lengths[]) {
     API_BEGIN();
     LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
@@ -510,7 +510,7 @@ int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
         std::ostringstream oss;
         oss << "filename " << fnames[i] << " num_files " << num_files << " silent " << silent;
         const char* buff = strdup(oss.str().c_str());
-        verified = verified && EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signatures[i], signature_lengths[i], (char *)usernames[i]);
+        verified = verified && EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), (uint8_t*) signatures[i], signature_lengths[i], (char *)usernames[i]);
     }
     if (!verified){
         return -1;
@@ -1493,6 +1493,34 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   *out_result = (uint8_t*)host_buf;
   API_END();
 }
+
+XGB_DLL int XGBoosterLoadModelWithSig(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
+    API_BEGIN();
+    CHECK_HANDLE();
+
+    // check signature
+    std::ostringstream oss;
+    oss << "handle " << handle << " filename " << fname;
+    const char* buff = strdup(oss.str().c_str());
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+    free((void*)buff); // prevent memory leak
+    if(!verified){
+        return -1;
+    }
+
+    std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
+    size_t buf_len;
+    fi->Read(&buf_len, sizeof(size_t));
+
+    std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
+    raw_str.resize(buf_len);
+    char* buf = dmlc::BeginPtr(raw_str);
+    fi->Read(buf, buf_len);
+
+    XGBoosterLoadModelFromBuffer(handle, buf, buf_len, username);
+    API_END();
+}
+
 
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username) {
   API_BEGIN();
