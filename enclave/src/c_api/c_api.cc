@@ -1983,7 +1983,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
 
     //check signature
     std::ostringstream oss;
-    for (int = 0; i <fnum; i++){
+    for (int i = 0; i <fnum; i++){
         oss << "booster_handle " << handle << " flen " << fnum << " fname " << fname[i] << " ftype " << ftype[i] << " with_stats " << with_stats << " dump_format " << format;
     }
     const char* buff = strdup(oss.str().c_str());
