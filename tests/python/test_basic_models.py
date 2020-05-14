@@ -1,5 +1,5 @@
 import numpy as np
-import xgboost as xgb
+import securexgboost as xgb
 import unittest
 import os
 import json
