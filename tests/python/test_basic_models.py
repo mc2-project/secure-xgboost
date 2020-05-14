@@ -3,7 +3,6 @@ import securexgboost as xgb
 import unittest
 import os
 import json
-import testing as tm
 import pytest
 import locale
 
