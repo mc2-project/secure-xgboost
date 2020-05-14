@@ -58,7 +58,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     }
     
     # Train and evaluate
-    num_rounds = 5 
+    num_rounds = 10 
     print("Training...")
     booster = xgb.train(params, dtrain, num_rounds)
     
@@ -70,10 +70,11 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     #  # Get encrypted predictions
     print("\n\nModel Predictions: ")
     predictions, num_preds = booster.predict(dtest, decrypt=False)
-    #  
+    
+    print(len(predictions))
     print("Num preds: ", num_preds)
     #  # Decrypt predictions
-    print(booster.decrypt_predictions(predictions, num_preds))
+    print(booster.decrypt_predictions_list(predictions, num_preds))
     #  
     # Get fscores of model
     print("\n\nModel Feature Importance: ")

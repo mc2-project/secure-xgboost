@@ -1734,13 +1734,14 @@ class Booster(object):
                     username=username)))
 
                 enc_preds_serialized_list = response.predictions
-                length_list = [c_bst_ulong(num_pred) for num_pred in response.num_preds]
+                length_list = [num_pred for num_pred in response.num_preds]
                 
                 preds = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
                 #  enc_preds_serialized = response.predictions
                 #  length = c_bst_ulong(response.num_preds)
                 #  
                 #  preds = proto_to_pointer(enc_preds_serialized)
+                return preds, length_list
         else:
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
@@ -1853,7 +1854,7 @@ class Booster(object):
             _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
 
             # Convert c pointer to numpy array
-            preds = ctypes2numpy(preds, num_preds, np.float32)
+            preds = ctypes2numpy(preds, num_preds[i], np.float32)
             preds_list.append(preds)
         
         concatenated_preds = np.concatenate(preds_list)

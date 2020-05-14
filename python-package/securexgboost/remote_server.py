@@ -334,29 +334,27 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves"))
             elif self._func == remote_api.XGBoosterPredict:
-                print("trying to aggregate predictions...")
                 statuses = [result.status.status for result in results]
                 print(statuses)
                 if -1 in statuses:
                     exceptions = [result.status.exception for result in results]
-                    print(exceptions)
                     i = statuses.index(-1)
                     self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    enc_preds_protos_list = [result.predictions for result in results]
-                    num_preds_list = [result.num_preds for result in results] 
-                    for pred in enc_preds_protos_list:
-                        print(type(pred))
-                    if len(enc_preds_protos_list) == len(num_preds_list):
-                    #      enc_preds_ndarrays = []
-                    #      for enc_preds_proto in enc_preds_protos_list:
-                    #          enc_preds_ndarray = proto_to_ndarray(enc_preds_proto)
-                    #          enc_preds_ndarrays.append(enc_preds_ndarray)
-                    #      
-                    #      concat_enc_preds_ndarrays = np.concatenate(enc_preds_ndarrays)
-                    #      enc_preds_proto = ndarray_to_proto(concat_enc_preds_ndarrays)
-                    #      total_preds = sum(num_preds_list)
-                        self._ret = (enc_preds_proto_list, total_preds_list, remote_pb2.Status(status=0))
+                    enc_preds_protos_list_list = [result.predictions for result in results]
+                    # enc_preds_ret is a list of enc_preds_protos, one for each node in the cluster
+                    enc_preds_ret = []
+                    for proto_lst in enc_preds_protos_list_list:
+                        enc_preds_ret.extend(proto_lst)
+
+                    num_preds_list_list = [result.num_preds for result in results]
+                    # num_preds_ret is a list of integers, each of which represents the number of predictions in the corresponding index in enc_preds_ret
+                    num_preds_ret = []
+                    for num_preds_lst in num_preds_list_list:
+                        num_preds_ret.extend(num_preds_lst)
+
+                    if len(enc_preds_ret) == len(num_preds_ret):
+                        self._ret = (enc_preds_ret, num_preds_ret, remote_pb2.Status(status=0))
                     else:
                         self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results"))
 
@@ -572,6 +570,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 # If we're the orchestrator, this list should already be in proto form
                 enc_preds_proto_list, num_preds_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
+                print(type(enc_preds_proto_list))
+                print(num_preds_list)
 
                 #  # If not using a cluster, make the single set of predictions into a list
                 #  if not isinstance(enc_preds_proto_list, list):
