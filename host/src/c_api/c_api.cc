@@ -1008,6 +1008,9 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char* us
     safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username));
 }
 
+XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
+  safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
+}
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                  const void* buf,

@@ -1538,6 +1538,55 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* us
   API_END();
 }
 
+XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle, const char* fname, char *username, uint8_t *signature, size_t sig_len) {
+    API_BEGIN();
+    CHECK_HANDLE();
+
+    // check signature
+    std::ostringstream oss;
+    oss << "handle " << handle << " filename " << fname;
+    const char* buff = strdup(oss.str().c_str());
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+    // TODO Add Multi User Verification + Add Verification for a list of signatures
+    free((void*)buff); // prevent memory leak
+    if(!verified){
+        return -1;
+    }
+
+    std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
+    raw_str.resize(0);
+
+    common::MemoryBufferStream fo(&raw_str);
+    auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
+    bst->LazyInit();
+    bst->learner()->Save(&fo);
+
+    size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + raw_str.length();
+    unsigned char* buf  = (unsigned char*) malloc(buf_len);
+
+    unsigned char* iv = buf;
+    unsigned char* tag = buf + CIPHER_IV_SIZE;
+    unsigned char* output = tag + CIPHER_TAG_SIZE;
+    unsigned char key[CIPHER_KEY_SIZE];
+    EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
+
+    encrypt_symm(
+            key,
+            (const unsigned char*)dmlc::BeginPtr(raw_str),
+            raw_str.length(),
+            NULL,
+            0,
+            output,
+            iv,
+            tag);
+
+    std::unique_ptr<dmlc::Stream> fs(dmlc::Stream::Create(fname, "w"));
+    fs->Write(&buf_len, sizeof(size_t));
+    fs->Write(buf, buf_len);
+    free(buf);
+    API_END();
+}
+
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *username) {
   API_BEGIN();
   CHECK_HANDLE();

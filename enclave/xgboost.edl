@@ -159,6 +159,13 @@ enclave {
                 [in, string] const char* fname,
                 [in, string] char* username);
 
+        public int enclave_XGBoosterSaveModelWithSig(
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
         public int enclave_XGBoosterDumpModel(
                 [in, string] char* handle,
                 [in, string] const char* fmap,

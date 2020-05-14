@@ -533,6 +533,23 @@ XGB_DLL int XGBoosterLoadModelWithSig(BoosterHandle handle,
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
                              char* username);
+
+/*!
+ * \brief save model into existing file
+ * \param handle handle
+ * \param fname file name
+ * \param username username
+ * \param signature user signature
+ * \param sig_len signatures length in bytes 
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle,
+                               const char *fname,
+                               char* username,
+                               uint8_t *signature,
+                               size_t sig_len);
+
+
 /*!
  * \brief load model from in memory buffer
  * \param handle handle
