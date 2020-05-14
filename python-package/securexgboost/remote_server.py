@@ -411,7 +411,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             # Get report from enclave
-            if not globals()["is_orchestrator"]:    
+            if not globals()["is_orchestrator"]:
                 # Get report from enclave
                 pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
             else:

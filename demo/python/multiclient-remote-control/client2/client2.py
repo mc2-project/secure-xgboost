@@ -17,7 +17,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     enclave_reference = xgb.Enclave(addr=channel_addr)
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave_reference.attest()
+    enclave_reference.attest(verify=False)
     print("Report successfully verified")
 
     print("Send private key to enclave")
