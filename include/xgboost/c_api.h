@@ -392,7 +392,10 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle);
  */
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
-                              const char *value);
+                              const char *value,
+                              uint8_t *nonce,
+                              size_t nonce_size,
+                              uint32_t nonce_ctr);
 
 /*!
  * \brief update the model in one round using dtrain
@@ -403,7 +406,10 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
  */
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
-                                   DMatrixHandle dtrain);
+                                   DMatrixHandle dtrain,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr);
 /*!
  * \brief update the model, by directly specify gradient and second order gradient,
  *        this can be used to replace UpdateOneIter, to support customized loss function
@@ -454,9 +460,12 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
+                             char* username,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr,
                              bst_ulong *out_len,
-                             uint8_t **out_result,
-                             char* username); 
+                             uint8_t **out_result); 
 /*!
  * \brief load model from existing file
  * \param handle handle
@@ -465,7 +474,10 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
  */
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
-                             char *username);
+                             char *username,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr);
 /*!
  * \brief save model into existing file
  * \param handle handle
@@ -474,7 +486,10 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
  */
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
-                             char* username);
+                             char* username,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr);
 /*!
  * \brief load model from in memory buffer
  * \param handle handle
@@ -510,6 +525,9 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                                const char *fmap,
                                int with_stats,
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
                                bst_ulong *out_len,
                                const char ***out_dump_array);
 
@@ -527,6 +545,9 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char *fmap,
                                  int with_stats,
                                  const char *format,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  bst_ulong *out_len,
                                  const char ***out_dump_array);
 
@@ -546,6 +567,9 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                            const char **fname,
                                            const char **ftype,
                                            int with_stats,
+                                           uint8_t *nonce,
+                                           size_t nonce_size,
+                                           uint32_t nonce_ctr,
                                            bst_ulong *out_len,
                                            const char ***out_models);
 
@@ -567,6 +591,9 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              const char **ftype,
                                              int with_stats,
                                              const char *format,
+                                             uint8_t *nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
                                              bst_ulong *out_len,
                                              const char ***out_models);
 

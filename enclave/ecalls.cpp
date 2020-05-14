@@ -75,14 +75,14 @@ int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[
   return ret;
 }
 
-int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char *value) {
+int enclave_XGBoosterSetParam(BoosterHandle handle, const char *name, const char *value, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr) {
   LOG(DEBUG) << "Ecall: XGBoosterSetParam";
-  return XGBoosterSetParam(handle, name, value);
+  return XGBoosterSetParam(handle, name, value, nonce, nonce_size, nonce_ctr);
 }
 
-int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain) {
+int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr) {
   LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
-  return XGBoosterUpdateOneIter(handle, iter, dtrain);
+  return XGBoosterUpdateOneIter(handle, iter, dtrain, nonce, nonce_size, nonce_ctr);
 }
 
 int enclave_XGBoosterBoostOneIter(BoosterHandle handle, DMatrixHandle dtrain, bst_float *grad, bst_float *hess, xgboost::bst_ulong len) {
@@ -118,33 +118,39 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
   return ret;
 }
 
-int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, char *username) {
+int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, char *username, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModel";
-  return XGBoosterLoadModel(handle, fname, username);
+  return XGBoosterLoadModel(handle, fname, username, nonce, nonce_size, nonce_ctr);
 }
 
-int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char *username) {
+int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char *username, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr) {
   LOG(DEBUG) << "Ecall: XGBoosterSaveModel";
-  return XGBoosterSaveModel(handle, fname, username);
+  return XGBoosterSaveModel(handle, fname, username, nonce, nonce_size, nonce_ctr);
 }
 
 int enclave_XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
+                       uint8_t* nonce,
+                       size_t nonce_size,
+                       uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
                        char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModel";
-  return XGBoosterDumpModel(handle, fmap, with_stats, len, (const char***) out_models);
+  return XGBoosterDumpModel(handle, fmap, with_stats, nonce, nonce_size, nonce_ctr, len, (const char***) out_models);
 }
 
 int enclave_XGBoosterDumpModelEx(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
                        const char* format,
+                       uint8_t* nonce,
+                       size_t nonce_size,
+                       uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
                        char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelEx";
-  return XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models);
+  return XGBoosterDumpModelEx(handle, fmap, with_stats, format, nonce, nonce_size, nonce_ctr, len, (const char***) out_models);
 }
 
 int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
@@ -154,6 +160,9 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    const char** ftype,
                                    size_t ftype_lengths[],
                                    int with_stats,
+                                   uint8_t* nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
@@ -175,7 +184,7 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
     ftype_cpy[i] = strndup(ftype[i], type_len);
     ftype_cpy[i][type_len] = '\0';
   }
-  int ret = XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, len, (const char***) out_models);
+  int ret = XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, nonce, nonce_size, nonce_ctr, len, (const char***) out_models);
   for (int i = 0; i < fnum; i++) {
     free(fname_cpy[i]);
     free(ftype_cpy[i]);
@@ -190,6 +199,9 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    size_t ftype_lengths[],
                                    int with_stats,
                                    const char *format,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
                                    char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
@@ -211,7 +223,7 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     ftype_cpy[i] = strndup(ftype[i], type_len);
     ftype_cpy[i][type_len] = '\0';
   }
-  int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models);
+  int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, nonce, nonce_size, nonce_ctr, len, (const char***) out_models);
   for (int i = 0; i < fnum; i++) {
     free(fname_cpy[i]);
     free(ftype_cpy[i]);
@@ -228,9 +240,9 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
   return XGBoosterLoadModelFromBuffer(handle, buf, len, username);
 }
 
-int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username) {
+int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, char *username, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *len, uint8_t **out_result) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
-  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username);
+  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, username, nonce, nonce_size, nonce_ctr, len, out_result);
 }
 
 int enclave_XGDMatrixGetFloatInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, bst_float **out_dptr) {

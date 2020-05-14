@@ -488,10 +488,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         uint32_t nonce_ctr,
         DMatrixHandle *out) {
     API_BEGIN();
-    if (!EnclaveContext::getInstance().check_seq_num(nonce, nonce_ctr)) {
-      LOG(FATAL) << "Incorrect sequence number detected. Exiting.";
-      return 1;  //  TODO(andrew): return 1 or 0 on failure?
-    }
+    CHECK_SEQUENCE_NUMBER();
     LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
     if (rabit::IsDistributed()) {
@@ -1177,8 +1174,12 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle) {
 
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
-                              const char *value) {
+                              const char *value,
+                              uint8_t *nonce,
+                              size_t nonce_size,
+                              uint32_t nonce_ctr) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER(); 
   CHECK_HANDLE();
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
@@ -1187,8 +1188,12 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
-                                   DMatrixHandle dtrain) {
+                                   DMatrixHandle dtrain,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   auto *dtr =
@@ -1250,12 +1255,16 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
-                             xgboost::bst_ulong *len,
-                            uint8_t **out_result,
-                            char* username) {
+                            char* username,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
+                            xgboost::bst_ulong *len,
+                            uint8_t **out_result) {
   std::vector<bst_float>&preds =
     XGBAPIThreadLocalStore::Get()->ret_vec_float;
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   bst->LazyInit();
@@ -1302,8 +1311,9 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   API_END();
 }
 
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username) {
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
   size_t buf_len;
@@ -1318,8 +1328,9 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* us
   API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *username) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *username, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
   raw_str.resize(0);
@@ -1483,17 +1494,25 @@ inline void XGBoostDumpModelImpl(
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
+                       uint8_t* nonce,
+                       size_t nonce_size,
+                       uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
-  return XGBoosterDumpModelEx(handle, fmap, with_stats, "text", len, out_models);
+  // TODO (andrew) : Verify that we do NOT check seq num here or else it will double increment in the enclave... 
+  return XGBoosterDumpModelEx(handle, fmap, with_stats, "text", nonce, nonce_size, nonce_ctr, len, out_models);
 }
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
                        const char *format,
+                       uint8_t *nonce,
+                       size_t nonce_size,
+                       uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   FeatureMap featmap;
   if (strlen(fmap) != 0) {
@@ -1511,10 +1530,13 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    const char** fname,
                                    const char** ftype,
                                    int with_stats,
+                                   uint8_t* nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
   return XGBoosterDumpModelExWithFeatures(handle, fnum, fname, ftype, with_stats,
-                                   "text", len, out_models);
+                                   "text", nonce, nonce_size, nonce_ctr, len, out_models);
 }
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    int fnum,
@@ -1522,9 +1544,13 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                    const char** ftype,
                                    int with_stats,
                                    const char *format,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   FeatureMap featmap;
   for (int i = 0; i < fnum; ++i) {

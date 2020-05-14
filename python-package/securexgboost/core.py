@@ -1520,7 +1520,8 @@ class Booster(object):
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"])))
             else:
-                _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
+                _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val)), 
+                                                    ctypes.byref(globals()["nonce"]), ctypes.c_size_t(globals()["nonce_size"]), ctypes.c_uint32(globals()["counter"])))
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1548,7 +1549,8 @@ class Booster(object):
                     response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"])))
                     return response
             else:
-                _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
+                _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle, 
+                                                        ctypes.byref(globals()["nonce"]), ctypes.c_size_t(globals()["nonce_size"]), ctypes.c_uint32(globals()["counter"])))
         else:
             raise NotImplementedError("Custom objective functions not supported")
             # TODO(rishabh): We do not support custom objectives currently
@@ -1758,13 +1760,19 @@ class Booster(object):
 
                 preds = proto_to_pointer(enc_preds_serialized)
         else:
+            nonce = globals()["nonce"]
+            nonce_size = globals()["nonce_size"]
+            nonce_ctr = globals()["counter"]
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
                                               ctypes.c_int(option_mask),
                                               ctypes.c_uint(ntree_limit),
+                                              c_str(username),
+                                              ctypes.byref(nonce),
+                                              ctypes.c_size_t(nonce_size),
+                                              ctypes.c_uint32(nonce_ctr),
                                               ctypes.byref(length),
-                                              ctypes.byref(preds),
-                                              c_str(username)))
+                                              ctypes.byref(preds)))
 
             # TODO(rishabh): implement this in decrypt_predictions
             #  preds = ctypes2numpy(preds, length.value, np.float32)
@@ -1862,7 +1870,11 @@ class Booster(object):
                         filename=fname,
                         username=username)))
             else:
-                _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
+                nonce = globals()["nonce"]
+                nonce_size = globals()["nonce_size"]
+                nonce_ctr = globals()["counter"]
+                _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username),
+                                                    ctypes.byref(nonce), ctypes.c_size_t(nonce_size), ctypes.c_uint32(nonce_ctr)))
         else:
             raise TypeError("fname must be a string")
 
@@ -1935,7 +1947,11 @@ class Booster(object):
     #                     filename=fname,
     #                     username=username))
     #         else:
-    #             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+    #             nonce = globals()["nonce"]
+    #             nonce_size = globals()["nonce_size"]
+    #             counter = globals()["counter"]
+    #             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username),
+    #                                                  ctypes.byref(nonce), ctypes.c_size_t(nonce_size), ctypes.c_uint32(counter)))
     #     else:
     #         buf = fname
     #         length = c_bst_ulong(len(buf))
@@ -2030,6 +2046,9 @@ class Booster(object):
                     ftype = from_pystr_to_cstr(['q'] * flen)
                 else:
                     ftype = from_pystr_to_cstr(self.feature_types)
+                nonce = globals()["nonce"]
+                nonce_size = globals()["nonce_size"]
+                nonce_ctr = globals()["counter"]
                 _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
                     self.handle,
                     ctypes.c_int(flen),
@@ -2037,6 +2056,9 @@ class Booster(object):
                     ftype,
                     ctypes.c_int(with_stats),
                     c_str(dump_format),
+                    ctypes.byref(nonce),
+                    ctypes.c_size_t(nonce_size),
+                    ctypes.c_uint32(nonce_ctr),
                     ctypes.byref(length),
                     ctypes.byref(sarr)))
         else:
@@ -2056,10 +2078,16 @@ class Booster(object):
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
+                nonce = globals()["nonce"]
+                nonce_size = globals()["nonce_size"]
+                nonce_ctr = globals()["counter"]
                 _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                       c_str(fmap),
                                                       ctypes.c_int(with_stats),
                                                       c_str(dump_format),
+                                                      ctypes.byref(nonce),
+                                                      ctypes.c_size_t(nonce_size),
+                                                      ctypes.c_uint32(nonce_ctr),
                                                       ctypes.byref(length),
                                                       ctypes.byref(sarr)))
 
@@ -2419,6 +2447,10 @@ class RemoteAPI:
         option_mask = request.option_mask
         ntree_limit = request.ntree_limit
         username = request.username
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        nonce_ctr = globals()["counter"]
+        globals()["counter"] += 1
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
@@ -2427,20 +2459,30 @@ class RemoteAPI:
             c_str(dmatrix_handle),
             ctypes.c_int(option_mask),
             ctypes.c_uint(ntree_limit),
+            c_str(username)),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
-            ctypes.byref(preds),
-            c_str(username)))
+            ctypes.byref(preds))
         return preds, length.value
 
     def XGBoosterUpdateOneIter(request):
         booster_handle = request.booster_handle
         dtrain_handle = request.dtrain_handle
         iteration = request.iteration
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        nonce_ctr = globals()["counter"]
+        globals()["counter"] += 1
 
         _check_call(_LIB.XGBoosterUpdateOneIter(
             c_str(booster_handle),
             ctypes.c_int(iteration),
-            c_str(dtrain_handle)))
+            c_str(dtrain_handle)),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr))
 
 
     def XGBoosterCreate(request):
@@ -2459,12 +2501,19 @@ class RemoteAPI:
         booster_handle = request.booster_handle
         key = request.key
         value = request.value
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        nonce_ctr = globals()["counter"]
+        globals()["counter"] += 1
 
         bst_handle = c_str(booster_handle)
         _check_call(_LIB.XGBoosterSetParam(
             c_str(booster_handle),
             c_str(key),
-            c_str(value)))
+            c_str(value),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr)))
 
 
     def XGDMatrixCreateFromEncryptedFile(request):
@@ -2485,7 +2534,7 @@ class RemoteAPI:
             ctypes.byref(nonce),
             ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(counter),
-            ctypes.byref(dmat_handle))
+            ctypes.byref(dmat_handle)))
         return dmat_handle.value.decode('utf-8')
 
 
@@ -2493,21 +2542,35 @@ class RemoteAPI:
         booster_handle = request.booster_handle
         filename = request.filename
         username = request.username
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        counter = globals()["counter"]
+        globals()["counter"] += 1
 
         _check_call(_LIB.XGBoosterSaveModel(
             c_str(booster_handle),
             c_str(filename),
-            c_str(username)))
+            c_str(username),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(counter)))
 
     def XGBoosterLoadModel(request):
         booster_handle = request.booster_handle
         filename = request.filename
         username = request.username
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        counter = globals()["counter"]
+        globals()["counter"] += 1
 
         _check_call(_LIB.XGBoosterLoadModel(
             c_str(booster_handle),
             c_str(filename),
-            c_str(username)))
+            c_str(username),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(counter)))
 
     # TODO test this
     def XGBoosterDumpModelEx(request):
@@ -2515,6 +2578,10 @@ class RemoteAPI:
         fmap = request.fmap
         with_stats = request.with_stats
         dump_format = request.dump_format
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        counter = globals()["counter"]
+        globals()["counter"] += 1
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2523,6 +2590,9 @@ class RemoteAPI:
             c_str(fmap),
             ctypes.c_int(with_stats),
             c_str(dump_format),
+            c_types.byref(nonce),
+            c_types.c_size_t(nonce_size),
+            c_types.c_uint32(counter),
             ctypes.byref(length),
             ctypes.byref(sarr)))
         return length.value, from_cstr_to_pystr(sarr, length)
@@ -2534,6 +2604,10 @@ class RemoteAPI:
         ftype = request.ftype
         with_stats = request.with_stats
         dump_format = request.dump_format
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        counter = globals()["counter"]
+        globals()["counter"] += 1
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2544,6 +2618,9 @@ class RemoteAPI:
             from_pystr_to_cstr(list(ftype)),
             ctypes.c_int(with_stats),
             c_str(dump_format),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(counter),
             ctypes.byref(length),
             ctypes.byref(sarr)))
         return length.value, from_cstr_to_pystr(sarr, length)
@@ -2552,6 +2629,10 @@ class RemoteAPI:
     def XGBoosterGetModelRaw(request):
         booster_handle = request.booster_handle
         username = request.username
+        nonce = globals()["nonce"]
+        nonce_size = globals()["nonce_size"]
+        counter = globals()["counter"]
+        globals()["counter"] += 1
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
