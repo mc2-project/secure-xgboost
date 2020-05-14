@@ -20,7 +20,7 @@ print("Remote attestation")
 
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-enclave.attest(verify=False)
+enclave.attest()
 
 print("Send private key to enclave")
 enclave.add_key()

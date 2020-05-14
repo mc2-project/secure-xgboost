@@ -11,13 +11,13 @@ username = "user1"
 xgb.init_user(username, SYM_KEY_FILE, PRIVATE_KEY_FILE, CERT_FILE)
 
 print("Creating enclave")
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity=3)
+enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-enclave.attest(verify=False)
+enclave.attest()
 
 print("Send private key to enclave")
 enclave.add_key()

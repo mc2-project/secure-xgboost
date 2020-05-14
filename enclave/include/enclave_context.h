@@ -229,12 +229,6 @@ class EnclaveContext {
     //  return true;
     //}
 
-    void sync_client_key() {
-      // The master node (rank 0) broadcasts the client key to other nodes
-      rabit::Broadcast(client_key, CIPHER_KEY_SIZE, 0);
-      client_key_is_set = true;
-    }
-
     //bool decrypt_and_save_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
     //  if (rabit::GetRank() == 0) {
     //    if (!verifySignature(data, data_len, signature, sig_len)) {
@@ -349,7 +343,6 @@ class EnclaveContext {
       uint8_t output[CIPHER_KEY_SIZE];
       unsigned char* nameptr;
       size_t name_len;
-      LOG(DEBUG) << rabit::GetRank() << " rank in decrypt_and_save()";
         
       // Only the master node verifies signature and certificate
       if (rabit::GetRank() == 0) {
@@ -395,21 +388,17 @@ class EnclaveContext {
           name_len = name.len;
       } 
 
-      // if (rabit::GetRank() != 0) {
-          // // Allocate space for name ptr
-          // nameptr = new unsigned char[100];
-      // }
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
       // FIXME: we'll likely have to broadcast the certificates themselves
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
-      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted client key";
+      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted client key";
 
       rabit::Broadcast(&name_len, sizeof(name_len), 0);
-      LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted name_len";
+      LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted username length";
 
       rabit::Broadcast(nameptr, name_len, 0);
-      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " Broadcasted username";
+      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted username";
         
       // storing user private key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);

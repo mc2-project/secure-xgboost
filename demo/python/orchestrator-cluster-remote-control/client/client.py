@@ -1,4 +1,4 @@
-"""The Python implementation of the GRPC Remote Attestation client."""
+"""The Python implementation of the client."""
 
 from __future__ import print_function
 import securexgboost as xgb
@@ -21,7 +21,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     try:
         # Note: Simulation mode does not support attestation
         # pass in `verify=False` to attest()
-        enclave_reference.attest(verify=False)
+        enclave_reference.attest()
         print("Report successfully verified")
         
         print("Send private key to enclave")
