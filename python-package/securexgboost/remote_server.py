@@ -223,7 +223,7 @@ class Command(object):
                         # Every enclave returned the same handle string
                         self._ret = (dmatrix_handles[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent dmatrix handles returned by enclaves"))
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent dmatrix handles returned by enclaves in XGDMatrixCreateFromEncryptedFile call"))
             elif self._func == remote_api.XGBoosterSetParam:
                 return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
@@ -242,7 +242,7 @@ class Command(object):
                         # Every enclave returned the same booster handle string
                         self._ret = (bst_handles[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent bst handles returned by enclaves"))
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent booster handles returned by enclaves in XGBoosterCreate call"))
             elif self._func == remote_api.XGBoosterUpdateOneIter:
                 return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
@@ -275,7 +275,7 @@ class Command(object):
                         # We cannot check if the dumps are the same because they are encrypted
                         self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results from enclaves"))
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelEx call"))
             elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
                 statuses = [result.status.status for result in results]
                 if -1 in statuses:
@@ -290,7 +290,7 @@ class Command(object):
                         # We cannot check if the dumps are the same because they are encrypted
                         self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results from enclaves"))
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelExWithFeatures call"))
             elif self._func == remote_api.XGBoosterGetModelRaw:
                 statuses = [result.status.status for result in results]
                 if -1 in statuses:
@@ -305,7 +305,7 @@ class Command(object):
                         # We cannot check if the dumps are the same because they are encrypted
                         self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results from enclaves"))
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterGetModelRaw call"))
             elif self._func == remote_api.XGDMatrixNumRow:
                 statuses = [result.status.status for result in results]
                 if -1 in statuses:
@@ -318,7 +318,7 @@ class Command(object):
                         # Each enclave agrees on the number of rows in the DMatrix
                         self._ret = (num_rows[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves")) 
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumRow call")) 
             elif self._func == remote_api.XGDMatrixNumCol:
                 statuses = [result.status.status for result in results]
                 if -1 in statuses:
@@ -331,7 +331,7 @@ class Command(object):
                         # Each enclave agrees on the number of columns in the DMatrix
                         self._ret = (num_cols[0], remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves"))
+                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumCol call"))
             elif self._func == remote_api.XGBoosterPredict:
                 statuses = [result.status.status for result in results]
                 if -1 in statuses:
@@ -354,7 +354,7 @@ class Command(object):
                     if len(enc_preds_ret) == len(num_preds_ret):
                         self._ret = (enc_preds_ret, num_preds_ret, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results"))
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results in XGBoosterPredict call"))
             else:
                 raise NotImplementedError
 
@@ -497,7 +497,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 if sum(return_codes) == 0:
                     return remote_pb2.Status(status=0)
                 else:
-                    return remote_pb2.Status(status=-1, exception="A node threw an error")
+                    return remote_pb2.Status(status=-1, exception="ERROR: A node threw an error trying to add the client key and certificate")
         except:
             status = handle_exception()
             return status
