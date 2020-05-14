@@ -31,8 +31,8 @@ enclave.add_key()
 
 
 dpath = HOME_DIR + 'demo/data/'
-dtrain = xgb.DMatrix(dpath + 'agaricus.txt.train.enc')
-dtest = xgb.DMatrix(dpath + 'agaricus.txt.test.enc')
+dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
+dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test.enc'})
 
 rng = np.random.RandomState(1994)
 
