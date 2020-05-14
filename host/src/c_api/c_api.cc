@@ -1128,6 +1128,27 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, format, len, (char***) out_models));
 }
 
+XGB_DLL int XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
+                                             int fnum,
+                                             const char** fname,
+                                             const char** ftype,
+                                             int with_stats,
+                                             const char *format,
+                                             xgboost::bst_ulong* len,
+                                             const char*** out_models,
+                                             char *username,
+                                             uint8_t *signature,
+                                             size_t sig_len) {
+    size_t fname_lengths[fnum];
+    size_t ftype_lengths[fnum];
+    for (int i = 0; i < fnum; i++) {
+        fname_lengths[i] = strlen(fname[i]);
+        ftype_lengths[i] = strlen(ftype[i]);
+    }
+    safe_ecall(enclave_XGBoosterDumpModelExWithFeaturesWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, format, len, (char***) out_models, username, signature, sig_len));
+}
+
+
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
                      const char** out,

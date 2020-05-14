@@ -1966,6 +1966,64 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
   API_END();
 }
 
+
+XGB_DLL int XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
+                                             int fnum,
+                                             const char** fname,
+                                             const char** ftype,
+                                             int with_stats,
+                                             const char *format,
+                                             xgboost::bst_ulong* len,
+                                             const char*** out_models,
+                                             char *username,
+                                             uint8_t *signature,
+                                             size_t sig_len) {
+    API_BEGIN();
+    CHECK_HANDLE();
+
+    //check signature
+    std::ostringstream oss;
+    for (int = 0; i <fnum; i++){
+        oss << "booster_handle " << handle << " flen " << fnum << " fname " << fname[i] << " ftype " << ftype[i] << " with_stats " << with_stats << " dump_format " << format;
+    }
+    const char* buff = strdup(oss.str().c_str());
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+    free((void*)buff); // prevent memory leak
+    if(!verified){
+        return -1;
+    }
+
+
+    FeatureMap featmap;
+    for (int i = 0; i < fnum; ++i) {
+        featmap.PushBack(i, fname[i], ftype[i]);
+    }
+    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+    API_END();
+}
+
+XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
+                             const char* key,
+                             const char** out,
+                             int* success) {
+#ifdef __ENCLAVE__
+    auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
+#else
+    auto* bst = static_cast<Booster*>(handle);
+#endif
+    std::string& ret_str = XGBAPIThreadLocalStore::Get()->ret_str;
+    API_BEGIN();
+    CHECK_HANDLE();
+    if (bst->learner()->GetAttr(key, &ret_str)) {
+        *out = ret_str.c_str();
+        *success = 1;
+    } else {
+        *out = nullptr;
+        *success = 0;
+    }
+    API_END();
+}
+
 /* TODO(rishabhp): Enable this
  *
  * XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,

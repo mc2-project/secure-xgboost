@@ -693,6 +693,33 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
  * \param format the format to dump the model in
  * \param out_len length of output array
  * \param out_models pointer to hold representing dump of each model
+ * \param username
+ * \param signature signature of this call
+ * \param sign_len length of the signature
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
+                                             int fnum,
+                                             const char **fname,
+                                             const char **ftype,
+                                             int with_stats,
+                                             const char *format,
+                                             bst_ulong *out_len,
+                                             const char ***out_models,
+                                             char *username,
+                                             uint8_t *signature,
+                                             size_t sig_len);
+
+/*!
+ * \brief dump model, return array of strings representing model dump
+ * \param handle handle
+ * \param fnum number of features
+ * \param fname names of features
+ * \param ftype types of features
+ * \param with_stats whether to dump with statistics
+ * \param format the format to dump the model in
+ * \param out_len length of output array
+ * \param out_models pointer to hold representing dump of each model
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,

@@ -215,6 +215,22 @@ enclave {
                 [out] bst_ulong* len,
                 [out] char*** out_models);
 
+        public int enclave_XGBoosterDumpModelExWithFeaturesWithSig(
+                [in, string] char* handle,
+                unsigned int fnum,
+                [in, count=fnum] const char** fname,
+                [in, count=fnum] size_t* fname_lengths,
+                [in, count=fnum] const char** ftype,
+                [in, count=fnum] size_t* ftype_lengths,
+                int with_stats,
+                [in, string] const char* format,
+                [out] bst_ulong* len,
+                [out] char*** out_models,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
+
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
                 [out] bst_ulong *out_len,

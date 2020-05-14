@@ -285,6 +285,47 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   }
   return ret;
 }
+
+int enclave_XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
+                                             unsigned int fnum,
+                                             const char** fname,
+                                             size_t fname_lengths[],
+                                             const char** ftype,
+                                             size_t ftype_lengths[],
+                                             int with_stats,
+                                             const char *format,
+                                             xgboost::bst_ulong* len,
+                                             char*** out_models,
+                                             char *username,
+                                             uint8_t *signature,
+                                             size_t sig_len) {
+    LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeaturesWithSig";
+
+    // Validate buffers and copy to enclave memory
+    char* fname_cpy[fnum];
+    char* ftype_cpy[fnum];
+    size_t name_len;
+    size_t type_len;
+    for (int i = 0; i < fnum; i++) {
+        name_len = fname_lengths[i];
+        type_len = ftype_lengths[i];
+
+        check_host_buffer(fname[i], name_len);
+        check_host_buffer(ftype[i], type_len);
+
+        fname_cpy[i] = strndup(fname[i], name_len);
+        fname_cpy[i][name_len] = '\0';
+        ftype_cpy[i] = strndup(ftype[i], type_len);
+        ftype_cpy[i][type_len] = '\0';
+    }
+    int ret = XGBoosterDumpModelExWithFeaturesWithSig(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models, username, signature, sig_len);
+    for (int i = 0; i < fnum; i++) {
+        free(fname_cpy[i]);
+        free(ftype_cpy[i]);
+    }
+    return ret;
+}
+
 int enclave_XGBoosterGetModelRawWithSig(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username, uint8_t *signature, size_t sig_len) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
   return XGBoosterGetModelRawWithSig(handle, out_len, (const char**)out_dptr, username, signature, sig_len);

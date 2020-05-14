@@ -2003,7 +2003,21 @@ class Booster(object):
                 ftype = from_pystr_to_cstr(['q'] * flen)
             else:
                 ftype = from_pystr_to_cstr(self.feature_types)
-            _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            args = ""
+            for i in range(flen):
+                args += "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', with_stats, dump_format)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterDumpModelExWithFeaturesWithSig(
                 self.handle,
                 ctypes.c_int(flen),
                 fname,
@@ -2011,7 +2025,21 @@ class Booster(object):
                 ctypes.c_int(with_stats),
                 c_str(dump_format),
                 ctypes.byref(length),
-                ctypes.byref(sarr)))
+                ctypes.byref(sarr),
+                c_str(user.username),
+                sig,
+                sig_len))
+
+            #_check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+            #    self.handle,
+            #    ctypes.c_int(flen),
+            #    fname,
+            #    ftype,
+            #    ctypes.c_int(with_stats),
+            #    c_str(dump_format),
+            #    ctypes.byref(length),
+            #    ctypes.byref(sarr)))
+
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
