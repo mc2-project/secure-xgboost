@@ -249,10 +249,10 @@ message Integer {
 // Encrypted predictions served by enclave, to be decrypted at client
 message Predictions {
     // Encrypted predictions
-    repeated numproto.protobuf.NDArray predictions = 1;
+    numproto.protobuf.NDArray predictions = 1;
 
     // Length of predictions
-    repeated uint32 num_preds = 2;
+    uint32 num_preds = 2;
 
     // Status
     Status status = 3;

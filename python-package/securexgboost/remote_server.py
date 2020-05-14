@@ -226,7 +226,7 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent dmatrix handles returned by enclaves"))
             elif self._func == remote_api.XGBoosterSetParam:
-                return_codes = [result.status for result in results]
+                return_codes = [result.status.status for result in results]
                 print("Return codes: ", return_codes)
                 if sum(return_codes) == 0:
                     self._ret = 0
@@ -246,19 +246,19 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent bst handles returned by enclaves"))
             elif self._func == remote_api.XGBoosterUpdateOneIter:
-                return_codes = [result.status for result in results]
+                return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
                     self._ret = 0
                 else:
                     self._ret = -1
             elif self._func == remote_api.XGBoosterSaveModel:
-                return_codes = [result.status for result in results]
+                return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
                     self._ret = 0
                 else:
                     self._ret = -1
             elif self._func == remote_api.XGBoosterLoadModel:
-                return_codes = [result.status for result in results]
+                return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
                     self._ret = 0
                 else:
@@ -336,12 +336,27 @@ class Command(object):
                         self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves"))
             elif self._func == remote_api.XGBoosterPredict:
                 print("trying to aggregate predictions...")
-                enc_preds_protos_list = [result.predictions for result in results]
-                num_preds_list = [result.num_preds for result in results] 
-                if len(enc_preds_protos_list) == len(num_preds_list):
-                    self._ret = (enc_preds_protos_list, num_preds_list)
+                statuses = [result.status.status for result in results]
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
-                    self._ret = (None, None)
+                    print(results[0].predictions)
+                    enc_preds_protos_list = [result.predictions for result in results]
+                    num_preds_list = [result.num_preds for result in results] 
+                    if len(enc_preds_protos_list) == len(num_preds_list):
+                        enc_preds_ndarrays = []
+                        for enc_preds_proto in enc_preds_protos_list:
+                            enc_preds_ndarray = proto_to_ndarray(enc_preds_proto)
+                            enc_preds_ndarrays.append(enc_preds_ndarray)
+                        
+                        concat_enc_preds_ndarrays = np.concatenate(enc_preds_ndarrays)
+                        enc_preds_proto = ndarray_to_proto(concat_enc_preds_ndarrays)
+                        total_preds = sum(num_preds_list)
+                        self._ret = (enc_preds_proto, total_preds, remote_pb2.Status(status=0))
+                    else:
+                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results"))
 
 
     def result(self, username):
@@ -478,7 +493,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 for future in futures:
                     results.append(future.result())
 
-                return_codes = [result.status for result in results]
+                return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
                     return remote_pb2.Status(status=0)
                 else:
@@ -554,7 +569,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 # If we're the orchestrator, this list should already be in proto form
-                enc_preds_proto_list, num_preds_list = self._synchronize(remote_api.XGBoosterPredict, request)
+                enc_preds_proto, num_preds, status = self._synchronize(remote_api.XGBoosterPredict, request)
 
                 #  # If not using a cluster, make the single set of predictions into a list
                 #  if not isinstance(enc_preds_proto_list, list):
@@ -565,10 +580,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 # If we're not the orchestrator, we're just running this on our partition of the data
                 enc_preds, num_preds = remote_api.XGBoosterPredict(request)
                 enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
-                enc_preds_proto_list = [enc_preds]
-                num_preds_list = [num_preds]
-
-            status = remote_pb2.Status(status=0)
+                #  enc_preds_proto_list = [enc_preds]
+                #  num_preds_list = [num_preds]
+                status = remote_pb2.Status(status=0)
             return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=status)
         except:
             status = handle_exception()

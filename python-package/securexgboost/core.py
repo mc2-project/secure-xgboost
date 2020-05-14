@@ -1733,10 +1733,14 @@ class Booster(object):
                     ntree_limit=ntree_limit,
                     username=username)))
 
-                enc_preds_serialized_list = response.predictions
-                length_list = [c_bst_ulong(num_pred) for num_pred in response.num_preds]
+                #  enc_preds_serialized_list = response.predictions
+                #  length_list = [c_bst_ulong(num_pred) for num_pred in response.num_preds]
+                #  
+                #  preds = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
+                enc_preds_serialized = response.predictions
+                length = c_bst_ulong(response.num_preds)
 
-                preds = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
+                preds = proto_to_pointer(enc_preds_serialized)
         else:
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
@@ -1769,13 +1773,15 @@ class Booster(object):
             #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
             #      else:
             #          preds = preds.reshape(nrow, chunk_size)
+        #  if decrypt:
+        #      if not isinstance(preds, list):
+        #          # We didn't do RPC, and the predictions aren't a list of ctype ptrs
+        #          preds = self.decrypt_predictions(preds, length.value)
+        #      else:
+        #          # We did RPC, and the predictions are a list of ctype ptrs
+        #          preds = self.decrypt_predictions_list(preds, length_list)
         if decrypt:
-            if not isinstance(preds, list):
-                # We didn't do RPC, and the predictions aren't a list of ctype ptrs
-                preds = self.decrypt_predictions(preds, length.value)
-            else:
-                # We did RPC, and the predictions are a list of ctype ptrs
-                preds = self.decrypt_predictions_list(preds, length_list)
+            preds = self.decrypt_predictions(preds, length.value)
         return preds, length.value
 
     # TODO(rishabh): change encrypted_preds to Python type from ctype
