@@ -6,7 +6,7 @@ dist: bionic
 env:
   matrix:
     # cmake test
-    - TASK=cmake_test
+    # - TASK=cmake_test
     # python test
     - TASK=python_test
 
