@@ -192,7 +192,6 @@ class Command(object):
                         ntree_limit=ntree_limit,
                         username=username
                         ))
-                    print("orchestrator made predict rpc call")
                 futures.append(response_future)
         
             results = []
@@ -335,7 +334,6 @@ class Command(object):
                         self._ret = (None, remote_pb2.Status(status=-1, exception="Inconsistent numbers from enclaves"))
             elif self._func == remote_api.XGBoosterPredict:
                 statuses = [result.status.status for result in results]
-                print(statuses)
                 if -1 in statuses:
                     exceptions = [result.status.exception for result in results]
                     i = statuses.index(-1)
@@ -357,6 +355,8 @@ class Command(object):
                         self._ret = (enc_preds_ret, num_preds_ret, remote_pb2.Status(status=0))
                     else:
                         self._ret = (None, None, remote_pb2.Status(status=-1, exception="Inconsistent results"))
+            else:
+                raise NotImplementedError
 
 
     def result(self, username):
@@ -572,14 +572,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 # If we're the orchestrator, this list should already be in proto form
                 enc_preds_proto_list, num_preds_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
-                print(type(enc_preds_proto_list))
-                print(num_preds_list)
-
-                #  # If not using a cluster, make the single set of predictions into a list
-                #  if not isinstance(enc_preds_proto_list, list):
-                #      enc_preds_proto_list = [enc_preds_proto_list]
-                #  if not isinstance(num_preds_list, list):
-                #      num_preds_list = [num_preds_list]
             else:
                 # If we're not the orchestrator, we're just running this on our partition of the data
                 enc_preds, num_preds = remote_api.XGBoosterPredict(request)
@@ -749,7 +741,6 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
         nodes = [addr + ":50051" for addr in nodes]
         globals()["nodes"] = nodes
         globals()["is_orchestrator"] = True
-        print(nodes)
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)

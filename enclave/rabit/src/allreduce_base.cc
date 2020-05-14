@@ -14,7 +14,6 @@
 #include <fstream>
 #include "./allreduce_base.h"
 #include "ssl_socket.h"
-#include <xgboost/logging.h>
 
 namespace rabit {
 namespace engine {
@@ -659,8 +658,6 @@ AllreduceBase::TryAllreduceTree(void *sendrecvbuf_,
  */
 AllreduceBase::ReturnType
 AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
-  LOG(DEBUG) << "Rank "  << this->rank << " in TryBroadcast";
-
   RefLinkVector &links = tree_links;
   if (links.size() == 0 || total_size == 0) return kSuccess;
   utils::Check(root < world_size,
@@ -681,8 +678,6 @@ AllreduceBase::TryBroadcast(void *sendrecvbuf_, size_t total_size, int root) {
     size_in = total_size;
     in_link = -1;
   }
-  LOG(DEBUG) << "Rank " << this->rank << " finished initializing link statistics";
-
   // while we have not passed the messages out
   while (true) {
     bool finished = true;
