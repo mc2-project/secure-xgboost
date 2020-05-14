@@ -406,9 +406,9 @@ class DMatrix(object):
         """
         Parameters
         ----------
-        data_dict : dict [str, str]
+        data_dict : dict, {str: str}
             The keys are usernames. The values are absolute paths to the training data of the corresponding user.
-        silent : boolean, optional
+        silent : bool, optional
             Whether to print messages during construction
         feature_names : list, optional
             Set names for features.
@@ -1098,11 +1098,14 @@ class Enclave(object):
         Verify remote attestation report of enclave and get its public key.
         The report and public key are saved as instance attributes.
 
+
         Parameters
         ----------
         verify: bool
             Whether to verify the enclave report or not
-            .. note:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
+        
+
+        .. warning:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
         """
         channel_addr = globals()["remote_addr"]
         if channel_addr:

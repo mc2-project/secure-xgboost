@@ -1,7 +1,7 @@
 ###########################
 Python Package Introduction
 ###########################
-This document gives a basic walkthrough of securexgboost python package. There's also a `sample Jupyter notebook <https://nbviewer.jupyter.org/github/mc2-project/mc2-xgboost/blob/master/demo/python/jupyter/e2e-demo.ipynb>`_ at ``demo/python/jupyter/e2e-demo.ipynb``.
+This document gives a basic walkthrough of the Secure XGBoost python package. There's also a `sample Jupyter notebook <https://nbviewer.jupyter.org/github/mc2-project/mc2-xgboost/blob/master/demo/python/jupyter/e2e-demo.ipynb>`_ at ``demo/python/jupyter/e2e-demo.ipynb``.
 
 **List of other Helpful Links**
 
@@ -41,9 +41,7 @@ The data is stored in a :py:class:`DMatrix <securexgboost.DMatrix>` object.
     dtrain = xgb.DMatrix('train.csv?format=csv&label_column=0')
     dtest = xgb.DMatrix('test.csv?format=csv&label_column=0')
 
-  .. note:: Categorical features not supported
-
-    Note that Secure XGBoost does not support categorical features.
+  .. note:: Secure XGBoost does not support categorical features.
 
 Setting Parameters
 ------------------
@@ -83,22 +81,22 @@ Training a model requires a parameter list and data set.
   num_round = 10
   bst = xgb.train(param, dtrain, num_round, evallist)
 
-Methods including `update` and `boost` from `securexgboost.Booster` are designed for
-internal usage only.  The wrapper function `securexgboost.train` does some
+Methods including ``update`` and ``boost`` from :py:class:`securexgboost.Booster` are designed for
+internal usage only.  The wrapper function ``securexgboost.train`` does some
 pre-configuration including setting up caches and some other parameters.
 
-Early Stopping
---------------
-If you have a validation set, you can use early stopping to find the optimal number of boosting rounds.
-Early stopping requires at least one set in ``evals``. If there's more than one, it will use the last.
-
-.. code-block:: python
-
-  train(..., evals=evals, early_stopping_rounds=10)
-
-The model will train until the validation score stops improving. Validation error needs to decrease at least every ``early_stopping_rounds`` to continue training.
-
-This works with both metrics to minimize (RMSE, log loss, etc.) and to maximize (MAP, NDCG, AUC). Note that if you specify more than one evaluation metric the last one in ``param['eval_metric']`` is used for early stopping.
+.. .. Early Stopping
+.. --------------
+.. If you have a validation set, you can use early stopping to find the optimal number of boosting rounds.
+.. Early stopping requires at least one set in ``evals``. If there's more than one, it will use the last.
+..
+.. .. code-block:: python
+..
+..   train(..., evals=evals, early_stopping_rounds=10)
+..
+.. The model will train until the validation score stops improving. Validation error needs to decrease at least every ``early_stopping_rounds`` to continue training.
+..
+.. This works with both metrics to minimize (RMSE, log loss, etc.) and to maximize (MAP, NDCG, AUC). Note that if you specify more than one evaluation metric the last one in ``param['eval_metric']`` is used for early stopping.
 
 Prediction
 ----------
@@ -106,8 +104,6 @@ A model that has been trained or loaded can perform predictions on data sets.
 
 .. code-block:: python
 
-  # 7 entities, each contains 10 features
-  data = np.random.rand(7, 10)
-  dtest = xgb.DMatrix(data)
+  dtest = xgb.DMatrix('test.svm.txt')
   ypred = bst.predict(dtest)
 
