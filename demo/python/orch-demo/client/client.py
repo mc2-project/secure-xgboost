@@ -51,11 +51,11 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
                 "min_child_weight": "1",
                 "gamma": "0.1",
                 "max_depth": "3",
-                "verbosity": "3" 
+                "verbosity": "0" 
         }
         
         # Train and evaluate
-        num_rounds = 10 
+        num_rounds = 5 
         print("Training...")
         booster = xgb.train(params, dtrain, num_rounds)
         
