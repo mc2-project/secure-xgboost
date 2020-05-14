@@ -62,11 +62,6 @@ def captured_output():
 
 
 class TestBasic(unittest.TestCase):
-    def test_compat(self):
-        from securexgboost.compat import lazy_isinstance
-        a = np.array([1, 2, 3])
-        assert lazy_isinstance(a, 'numpy', 'ndarray')
-        assert not lazy_isinstance(a, 'numpy', 'dataframe')
 
     def test_basic(self):
         dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
@@ -91,4 +86,13 @@ class TestBasic(unittest.TestCase):
                   if int(preds[i] > 0.5) != labels[i]) / float(len(preds))
         # error must be smaller than 10%
         assert err < 0.1
+
+        #TODO: implement bst.save_model
+        # save model
+        bst.save_model('xgb.model')
+        # load model and data in
+        bst2 = xgb.Booster(model_file='xgb.model')
+        preds2 = bst2.predict(dtest)
+        # assert they are the same
+        assert np.sum(np.abs(preds2 - preds)) == 0
 
