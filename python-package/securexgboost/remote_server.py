@@ -733,6 +733,7 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     # Sort node IPs to ensure that first element in list is rank 0
     # Above is true because of how tracker assigns ranks
     # Nodes will be passed in if this is the orchestrator
+    # FIXME: ensure that the IPs passed in as `nodes` to this function are the same as in hosts.config
     if nodes == []:
         # This is a node in the cluster, i.e. not an orchestrator
         globals()["is_orchestrator"] = False
@@ -741,6 +742,8 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
         nodes = [addr + ":50051" for addr in nodes]
         globals()["nodes"] = nodes
         globals()["is_orchestrator"] = True
+
+        print("Hello from the orchestrator!")
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)

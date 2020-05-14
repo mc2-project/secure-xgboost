@@ -1737,10 +1737,11 @@ class Booster(object):
                 length_list = [num_pred for num_pred in response.num_preds]
                 
                 preds = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
-                #  enc_preds_serialized = response.predictions
-                #  length = c_bst_ulong(response.num_preds)
-                #  
-                #  preds = proto_to_pointer(enc_preds_serialized)
+
+                if decrypt:
+                    preds = self.decrypt_predictions(preds, length_list)
+                    return preds, sum(length_list)
+
                 return preds, length_list
         else:
             _check_call(_LIB.XGBoosterPredict(self.handle,
@@ -1774,16 +1775,9 @@ class Booster(object):
             #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
             #      else:
             #          preds = preds.reshape(nrow, chunk_size)
-        if decrypt:
-            if not isinstance(preds, list):
-                # We didn't do RPC, and the predictions aren't a list of ctype ptrs
+            if decrypt:
                 preds = self.decrypt_predictions(preds, length.value)
-            else:
-                # We did RPC, and the predictions are a list of ctype ptrs
-                preds = self.decrypt_predictions_list(preds, length_list)
-        #  if decrypt:
-        #      preds = self.decrypt_predictions(preds, length.value)
-        return preds, length.value
+            return preds, length.value
 
     # TODO(rishabh): change encrypted_preds to Python type from ctype
     def decrypt_predictions(self, encrypted_preds, num_preds):
@@ -1811,54 +1805,70 @@ class Booster(object):
 
         # Cast arguments to proper ctypes
         c_char_p_key = ctypes.c_char_p(sym_key)
-        size_t_num_preds = ctypes.c_size_t(num_preds)
 
-        preds = ctypes.POINTER(ctypes.c_float)()
-
-        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
-
-        # Convert c pointer to numpy array
-        preds = ctypes2numpy(preds, num_preds, np.float32)
-        return preds
-
-    def decrypt_predictions_list(self, encrypted_preds, num_preds):
-        """
-        Decrypt encrypted predictions
-
-        Parameters
-        ----------
-        encrypted_preds : list
-            list of encrypted predictions (c_char_p)
-        num_preds : list
-            list of number of predictions in each c_char_p in encrypted_preds
-
-        Returns
-        -------
-        preds : numpy array
-            plaintext predictions
-        """
-        try:
-            sym_key = globals()["current_user_sym_key"]
-        except:
-            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
-
-        # Cast arguments to proper ctypes
-        c_char_p_key = ctypes.c_char_p(sym_key)
-        preds_list = []
-
-        for i in range(len(encrypted_preds)):
-            size_t_num_preds = ctypes.c_size_t(num_preds[i])
+        if not isinstance(encrypted_preds, list):
+            size_t_num_preds = ctypes.c_size_t(num_preds)
 
             preds = ctypes.POINTER(ctypes.c_float)()
 
-            _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
+            _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
 
             # Convert c pointer to numpy array
-            preds = ctypes2numpy(preds, num_preds[i], np.float32)
-            preds_list.append(preds)
-        
-        concatenated_preds = np.concatenate(preds_list)
-        return concatenated_preds
+            preds = ctypes2numpy(preds, num_preds, np.float32)
+            return preds
+        else:
+            preds_list = []
+            for i in range(len(encrypted_preds)):
+                size_t_num_preds = ctypes.c_size_t(num_preds[i])
+                preds = ctypes.POINTER(ctypes.c_float)()
+
+                _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
+
+                # Convert c pointer to numpy array
+                preds = ctypes2numpy(preds, num_preds[i], np.float32)
+                preds_list.append(preds)
+
+            concatenated_preds = np.concatenate(preds_list)
+            return concatenated_preds
+
+    #  def decrypt_predictions_list(self, encrypted_preds, num_preds):
+    #      """
+    #      Decrypt encrypted predictions
+    #  
+    #      Parameters
+    #      ----------
+    #      encrypted_preds : list
+    #          list of encrypted predictions (c_char_p)
+    #      num_preds : list
+    #          list of number of predictions in each c_char_p in encrypted_preds
+    #  
+    #      Returns
+    #      -------
+    #      preds : numpy array
+    #          plaintext predictions
+    #      """
+    #      try:
+    #          sym_key = globals()["current_user_sym_key"]
+    #      except:
+    #          raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+    #  
+    #      # Cast arguments to proper ctypes
+    #      c_char_p_key = ctypes.c_char_p(sym_key)
+    #      preds_list = []
+    #  
+    #      for i in range(len(encrypted_preds)):
+    #          size_t_num_preds = ctypes.c_size_t(num_preds[i])
+    #  
+    #          preds = ctypes.POINTER(ctypes.c_float)()
+    #  
+    #          _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
+    #  
+    #          # Convert c pointer to numpy array
+    #          preds = ctypes2numpy(preds, num_preds[i], np.float32)
+    #          preds_list.append(preds)
+    #      
+    #      concatenated_preds = np.concatenate(preds_list)
+    #      return concatenated_preds
 
     def save_model(self, fname, username=None):
         """
