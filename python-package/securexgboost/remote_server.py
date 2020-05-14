@@ -336,13 +336,17 @@ class Command(object):
             elif self._func == remote_api.XGBoosterPredict:
                 print("trying to aggregate predictions...")
                 statuses = [result.status.status for result in results]
+                print(statuses)
                 if -1 in statuses:
                     exceptions = [result.status.exception for result in results]
+                    print(exceptions)
                     i = statuses.index(-1)
                     self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
                 else:
                     enc_preds_protos_list = [result.predictions for result in results]
                     num_preds_list = [result.num_preds for result in results] 
+                    for pred in enc_preds_protos_list:
+                        print(type(pred))
                     if len(enc_preds_protos_list) == len(num_preds_list):
                     #      enc_preds_ndarrays = []
                     #      for enc_preds_proto in enc_preds_protos_list:
@@ -578,7 +582,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 # If we're not the orchestrator, we're just running this on our partition of the data
                 enc_preds, num_preds = remote_api.XGBoosterPredict(request)
                 enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
-                enc_preds_proto_list = [enc_preds]
+                enc_preds_proto_list = [enc_preds_proto]
                 num_preds_list = [num_preds]
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status)
