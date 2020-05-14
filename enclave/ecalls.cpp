@@ -85,7 +85,7 @@ int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[], size_
     signatures[i][sig_l] = '\0';
 
   }
-  return XGDMatrixCreateFromEncryptedFile((const char**) filenames, usrnames, num_files, silent, out, (const char**) signatures, signature_lengths);
+  return XGDMatrixCreateFromEncryptedFileWithSigs((const char**) filenames, usrnames, num_files, silent, out, (const char**) signatures, signature_lengths);
 }
 
 
@@ -272,9 +272,14 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   }
   return ret;
 }
-int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username) {
+int enclave_XGBoosterGetModelRawWithSig(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username, uint8_t *signature, size_t sig_len) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
-  return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr, username);
+  return XGBoosterGetModelRawWithSig(handle, out_len, (const char**)out_dptr, username, signature, sig_len);
+}
+
+int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username) {
+    LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
+    return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr, username);
 }
 
 int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char *username) {

@@ -210,6 +210,14 @@ enclave {
                 [out] char **out_dptr,
                 [in, string] char* username);
 
+        public int enclave_XGBoosterGetModelRawWithSig(
+                [in, string] char* handle,
+                [out] bst_ulong *out_len,
+                [out] char **out_dptr,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
         public int enclave_XGBoosterLoadModelFromBuffer(
                 [in, string] char* handle,
                 [in, size=len] const void* buf,

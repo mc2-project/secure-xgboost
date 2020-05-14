@@ -540,7 +540,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
  * \param fname file name
  * \param username username
  * \param signature user signature
- * \param sig_len signatures length in bytes 
+ * \param sig_len signatures length in bytes
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle,
@@ -573,6 +573,25 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
                                  char *username);
+
+/*!
+ * \brief save model into binary raw bytes, return header of the array
+ * user must copy the result out, before next xgboost call
+ * \param handle handle
+ * \param out_len the argument to hold the output length
+ * \param out_dptr the argument to hold the output data pointer
+ * \param username adding username
+ * \param signature adding signature
+ * \param sig_len adding signature made by user
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterGetModelRawWithSig(BoosterHandle handle,
+                                 bst_ulong *out_len,
+                                 const char **out_dptr,
+                                 char *username,
+                                 uint8_t *signature,
+                                 size_t sig_len);
+
 /*!
  * \brief dump model, return array of strings representing model dump
  * \param handle handle

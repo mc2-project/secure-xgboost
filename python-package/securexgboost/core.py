@@ -1865,10 +1865,24 @@ class Booster(object):
             raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
-        _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
+
+        utils=CryptoUtils()
+        user = globals()["current_user"]
+        args = "handle {}".format(self.handle.value.decode('utf-8'))
+        print(args)
+        c_args = ctypes.c_char_p(args.encode('utf-8'))
+        data_size = len(args)
+        sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+        sig = proto_to_pointer(sig)
+        sig_len = ctypes.c_size_t(sig_len)
+
+        _check_call(_LIB.XGBoosterGetModelRawWithSig(self.handle,
                                               ctypes.byref(length),
                                               ctypes.byref(cptr),
-                                              c_str(username)))
+                                              c_str(username),
+                                              sig,
+                                              sig_len))
+
         return ctypes2buffer(cptr, length.value)
 
     def load_model(self, fname, username=None):

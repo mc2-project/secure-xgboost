@@ -997,7 +997,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterLoadModelWithSig(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
-  safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
+  safe_ecall(enclave_XGBoosterLoadModelWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
 }
 
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username) {
@@ -1009,7 +1009,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char* us
 }
 
 XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
-  safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
+  safe_ecall(enclave_XGBoosterSaveModelWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
 }
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
@@ -1024,6 +1024,14 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                          const char** out_dptr,
                        char* username) {
   safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr, username));
+}
+XGB_DLL int XGBoosterGetModelRawWithSig(BoosterHandle handle,
+                                 xgboost::bst_ulong* out_len,
+                                 const char** out_dptr,
+                                 char* username,
+                                 uint8 *signature,
+                                 size_t sig_len) {
+  safe_ecall(enclave_XGBoosterGetModelRawWithSig(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr, username, signature, sig_len));
 }
 
 /* TODO(rishabhp): Enable this

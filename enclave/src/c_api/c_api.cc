@@ -1655,6 +1655,63 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
   API_END();
 }
 
+XGB_DLL int XGBoosterGetModelRawWithSig(BoosterHandle handle,
+                                 xgboost::bst_ulong* out_len,
+                                 const char** out_dptr,
+                                 char* username,
+                                 uint8_t *signature,
+                                 size_t sig_len) {
+    std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
+    raw_str.resize(0);
+
+    API_BEGIN();
+    CHECK_HANDLE();
+
+    // check signature
+    std::ostringstream oss;
+    oss << "handle " << handle;
+    const char* buff = strdup(oss.str().c_str());
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+    free((void*)buff); // prevent memory leak
+    if(!verified){
+        return -1;
+    }
+    // end of signature checking
+    common::MemoryBufferStream fo(&raw_str);
+#ifdef __ENCLAVE__
+    auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
+#else
+    auto *bst = static_cast<Booster*>(handle);
+#endif
+    bst->LazyInit();
+    bst->learner()->Save(&fo);
+    int buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + raw_str.length();
+    unsigned char* buf  = (unsigned char*) malloc(buf_len);
+
+    unsigned char* iv = buf;
+    unsigned char* tag = buf + CIPHER_IV_SIZE;
+    unsigned char* output = tag + CIPHER_TAG_SIZE;
+    unsigned char key[CIPHER_KEY_SIZE];
+    EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
+
+    encrypt_symm(
+            key,
+            (const unsigned char*)dmlc::BeginPtr(raw_str),
+            raw_str.length(),
+            NULL,
+            0,
+            output,
+            iv,
+            tag);
+
+    unsigned char* host_buf  = (unsigned char*) oe_host_malloc(buf_len);
+    memcpy(host_buf, buf, buf_len);
+    free(buf);
+    *out_dptr = (const char*)host_buf;
+    *out_len = static_cast<xgboost::bst_ulong>(raw_str.length()) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE;
+    API_END();
+}
+
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                          xgboost::bst_ulong* out_len,
                          const char** out_dptr,
