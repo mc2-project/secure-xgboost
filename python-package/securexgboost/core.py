@@ -1416,7 +1416,15 @@ class Booster(object):
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(0), ctypes.byref(handle)))
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(handle, ptr, length))
+
+            user = globals()["current_user"]
+            utils = CryptoUtils()
+            sig, sig_len = utils.sign_data(user.private_key, ptr, len(buf), pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterLoadModelFromBufferWithSig(handle, ptr, length, c_str(user.username), sig, sig_len))
+
             state['handle'] = handle
         self.__dict__.update(state)
         self.set_param({'seed': 0})
@@ -1925,7 +1933,14 @@ class Booster(object):
             buf = fname
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            sig, sig_len = utils.sign_data(user.private_key, ptr, len(buf), pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterLoadModelFromBufferWithSig(self.handle, ptr, length, c_str(username), sig, sig_len))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
@@ -2000,12 +2015,27 @@ class Booster(object):
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
-            _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
+            # generate signature
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            args = "booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, with_stats, dump_format)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterDumpModelExWithSig(self.handle,
                                                   c_str(fmap),
                                                   ctypes.c_int(with_stats),
                                                   c_str(dump_format),
                                                   ctypes.byref(length),
-                                                  ctypes.byref(sarr)))
+                                                  ctypes.byref(sarr),
+                                                  c_str(user.username),
+                                                  sig,
+                                                  sig_len))
 
 
         key = ctypes.c_char_p(key)

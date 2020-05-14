@@ -549,12 +549,29 @@ XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle,
                                uint8_t *signature,
                                size_t sig_len);
 
+/*!
+ * \brief load model from in memory buffer
+ * \param handle handle
+ * \param buf pointer to the buffer
+ * \param len the length of the buffer
+ * \param username username
+ * \param signature signature
+ * \param sig_len length of signature in bytes
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterLoadModelFromBufferWithSig(BoosterHandle handle,
+                                         const void *buf,
+                                         bst_ulong len,
+                                         char* username,
+                                         uint8_t *signature,
+                                         size_t sig_len);
 
 /*!
  * \brief load model from in memory buffer
  * \param handle handle
  * \param buf pointer to the buffer
  * \param len the length of the buffer
+ * \param username username
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
@@ -623,6 +640,29 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char *format,
                                  bst_ulong *out_len,
                                  const char ***out_dump_array);
+
+/*!
+ * \brief dump model, return array of strings representing model dump
+ * \param handle handle
+ * \param fmap  name to fmap can be empty string
+ * \param with_stats whether to dump with statistics
+ * \param format the format to dump the model in
+ * \param out_len length of output array
+ * \param out_dump_array pointer to hold representing dump of each model
+ * \param username user requesting dump model
+ * \param signature user generated signature
+ * \param sig_len user signature length
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterDumpModelExWithSig(BoosterHandle handle,
+                                 const char *fmap,
+                                 int with_stats,
+                                 const char *format,
+                                 bst_ulong *out_len,
+                                 const char ***out_dump_array,
+                                 char *username,
+                                 uint8_t *signature,
+                                 size_t sig_len);
 
 /*!
  * \brief dump model, return array of strings representing model dump

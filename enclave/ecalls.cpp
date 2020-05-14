@@ -201,6 +201,19 @@ int enclave_XGBoosterDumpModelEx(BoosterHandle handle,
   return XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models);
 }
 
+int enclave_XGBoosterDumpModelExWithSig(BoosterHandle handle,
+                                 const char* fmap,
+                                 int with_stats,
+                                 const char* format,
+                                 xgboost::bst_ulong* len,
+                                 char*** out_models,
+                                 char *username,
+                                 uint8_t *signature,
+                                 size_t sig_len) {
+    LOG(DEBUG) << "Ecall: XGBoosterDumpModelExWithSig";
+    return XGBoosterDumpModelExWithSig(handle, fmap, with_stats, format, len, (const char***) out_models, username, signature, sig_len);
+}
+
 int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    unsigned int fnum,
                                    const char** fname,
@@ -285,6 +298,11 @@ int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_l
 int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char *username) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
   return XGBoosterLoadModelFromBuffer(handle, buf, len, username);
+}
+
+int enclave_XGBoosterLoadModelFromBufferWithSig(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char *username, uint8_t *signature, size_t sig_len) {
+    LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBufferWithSig";
+    return XGBoosterLoadModelFromBufferWithSig(handle, buf, len, username, signature, sig_len);
 }
 
 int enclave_XGBoosterPredictWithSig(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username, uint8_t *signature,

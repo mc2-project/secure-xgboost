@@ -1624,6 +1624,49 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *us
   API_END();
 }
 
+XGB_DLL int XGBoosterLoadModelFromBufferWithSig(BoosterHandle handle,
+                                         const void* buf,
+                                         xgboost::bst_ulong len,
+                                         char *username,
+                                         uint8_t *signature,
+                                         size_t sig_len) {
+    API_BEGIN();
+    CHECK_HANDLE();
+
+    // checking for signaturing
+
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buf, len, (uint8_t*) signature, sig_len, username);
+    if (!verified){
+        return -1;
+    }
+
+    len -= (CIPHER_IV_SIZE + CIPHER_TAG_SIZE);
+
+    unsigned char* iv = const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(buf));
+    unsigned char* tag = iv + CIPHER_IV_SIZE;
+    unsigned char* data = tag + CIPHER_TAG_SIZE;
+    unsigned char* output = (unsigned char*) malloc (len);
+    unsigned char key[CIPHER_KEY_SIZE];
+    EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
+
+    decrypt_symm(
+            key,
+            data,
+            len,
+            iv,
+            tag,
+            NULL,
+            0,
+            output);
+
+    common::MemoryFixSizeBuffer fs((void*)output, len);  // NOLINT(*)
+    static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle))->LoadModel(&fs);
+    free(output);
+    API_END();
+}
+
+
+
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                  const void* buf,
                                  xgboost::bst_ulong len,
@@ -1839,6 +1882,38 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
   }
   XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
   API_END();
+}
+
+XGB_DLL int XGBoosterDumpModelExWithSig(BoosterHandle handle,
+                                 const char* fmap,
+                                 int with_stats,
+                                 const char *format,
+                                 xgboost::bst_ulong* len,
+                                 const char*** out_models,
+                                 char *username,
+                                 uint8_t *signature,
+                                 size_t sig_len) {
+    API_BEGIN();
+    CHECK_HANDLE();
+    std::ostringstream oss;
+    oss << "booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
+    const char* buff = strdup(oss.str().c_str());
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
+    free((void*)buff); // prevent memory leak
+    if(!verified){
+        return -1;
+    }
+    // check for signature
+
+    FeatureMap featmap;
+    if (strlen(fmap) != 0) {
+        std::unique_ptr<dmlc::Stream> fs(
+                dmlc::Stream::Create(fmap, "r"));
+        dmlc::istream is(fs.get());
+        featmap.LoadText(is);
+    }
+    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+    API_END();
 }
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
