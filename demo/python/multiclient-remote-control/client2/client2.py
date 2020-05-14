@@ -17,7 +17,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     enclave_reference = xgb.Enclave(addr=channel_addr)
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave_reference.attest(verify=False)
+    enclave_reference.attest()
     print("Report successfully verified")
 
     print("Send private key to enclave")
@@ -62,7 +62,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     predictions, num_preds = booster.predict(dtest2, decrypt=False)
 
     # Decrypt predictions
-    print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[0])
+    print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[:10])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
