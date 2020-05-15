@@ -513,6 +513,7 @@ int XGDMatrixCreateFromEncryptedFileWithSig(const char *fnames[],
         oss << "filename " << fnames[i] << " num_files " << num_files << " silent " << silent;
     }
     const char* buff = strdup(oss.str().c_str());
+    LOG(DEBUG) << "buff reads" << buff; 
     bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), (uint8_t*) signature, sig_len, username);
     if (!verified){
         return -1;
