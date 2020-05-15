@@ -1767,7 +1767,6 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         utils = CryptoUtils()
-        ## TODO: how to join the argument
         args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
         print(args)
         c_args = ctypes.c_char_p(args.encode('utf-8'))
