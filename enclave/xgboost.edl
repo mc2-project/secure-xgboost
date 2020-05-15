@@ -19,6 +19,18 @@ enclave {
                 int silent,
                 [out] char** handle);
 
+        public int enclave_XGDMatrixCreateFromEncryptedFileWithSig(
+                [in, count=num_files] const char **fnames,
+                [in, count=num_files] size_t* fname_lengths,
+                [in, count=num_files] char** usernames,
+                [in, count=num_files] size_t* username_lengths,
+                bst_ulong num_files,
+                int silent,
+                [out] char** handle,
+                [in, string] char *username,
+                [in, count=sig_len] uint8_t *sig,
+                size_t sig_len);
+
         public int enclave_XGBoosterCreate(
                 [in, count=len] char** dmat_handles,
                 [in, count=len] size_t* handle_lengths,
@@ -136,10 +148,24 @@ enclave {
                 [in, string] const char* fname,
                 [in, string] char* username);
 
+        public int enclave_XGBoosterLoadModelWithSig(
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
         public int enclave_XGBoosterSaveModel(
                 [in, string] char* handle,
                 [in, string] const char* fname,
                 [in, string] char* username);
+
+        public int enclave_XGBoosterSaveModelWithSig(
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
 
         public int enclave_XGBoosterDumpModel(
                 [in, string] char* handle,
@@ -155,6 +181,17 @@ enclave {
                 [in, string] const char* format,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
+
+        public int enclave_XGBoosterDumpModelExWithSig(
+                [in, string] char* handle,
+                [in, string] const char* fmap,
+                int with_stats,
+                [in, string] const char* format,
+                [out] bst_ulong* len,
+                [out] char*** out_models,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
 
         public int enclave_XGBoosterDumpModelWithFeatures(
                 [in, string] char* handle,
@@ -179,17 +216,48 @@ enclave {
                 [out] bst_ulong* len,
                 [out] char*** out_models);
 
+        public int enclave_XGBoosterDumpModelExWithFeaturesWithSig(
+                [in, string] char* handle,
+                unsigned int fnum,
+                [in, count=fnum] const char** fname,
+                [in, count=fnum] size_t* fname_lengths,
+                [in, count=fnum] const char** ftype,
+                [in, count=fnum] size_t* ftype_lengths,
+                int with_stats,
+                [in, string] const char* format,
+                [out] bst_ulong* len,
+                [out] char*** out_models,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
                 [out] bst_ulong *out_len,
                 [out] char **out_dptr,
                 [in, string] char* username);
 
+        public int enclave_XGBoosterGetModelRawWithSig(
+                [in, string] char* handle,
+                [out] bst_ulong *out_len,
+                [out] char **out_dptr,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
+
         public int enclave_XGBoosterLoadModelFromBuffer(
                 [in, string] char* handle,
                 [in, size=len] const void* buf,
                 bst_ulong len,
                 [in, string] char* username);
+
+        public int enclave_XGBoosterLoadModelFromBufferWithSig(
+                [in, string] char* handle,
+                [in, size=len] const void* buf,
+                bst_ulong len,
+                [in, string] char* username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
 
         public int enclave_XGDMatrixFree(
                 [in, string] char* handle);

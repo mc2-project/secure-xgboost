@@ -361,6 +361,8 @@ class User(object):
     This should store all the user information.
     Make sure you call Set_user to set the default in the global variable
     """
+    all_users = {}
+
     def __init__(self, username, private_key, certificate):
         """
         Parameters
@@ -376,6 +378,9 @@ class User(object):
         self.private_key = private_key
         self.certificate = certificate
         self.crypto = CryptoUtils()
+        # adding itself to global user pool
+        User.all_users[username] = self
+
 
     def set_user(self):
         """
@@ -506,11 +511,37 @@ class DMatrix(object):
             if encrypted:
                 filenames = c_array(ctypes.c_char_p, [c_str(path) for path in data])
                 usrs = c_array(ctypes.c_char_p, [c_str(usr) for usr in usernames])
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
-                    usrs,
-                    c_bst_ulong(len(data)),
-                    ctypes.c_int(silent),
-                    ctypes.byref(handle)))
+
+                # add signature for each user
+                utils = CryptoUtils()
+
+                args = ""
+                for i, username in enumerate(usernames):
+
+                    args = args + "filename {} num_files {} silent {}".format(data[i], len(data), int(silent))
+                    print(args)
+
+                c_args = ctypes.c_char_p(args.encode('utf-8'))
+                data_size = len(args)
+                sig, sig_len = utils.sign_data(globals()["current_user"].private_key, c_args, data_size, pointer = True)
+                sig = proto_to_pointer(sig)
+                sig_len = ctypes.c_size_t(sig_len)
+
+                _check_call(_LIB.XGDMatrixCreateFromEncryptedFileWithSig(filenames,
+                                                                  usrs,
+                                                                  c_bst_ulong(len(data)),
+                                                                  ctypes.c_int(silent),
+                                                                  ctypes.byref(handle),
+                                                                c_str(globals()["current_user"].username),
+                                                                sig,
+                                                                sig_len))
+
+                #_check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
+                #    usrs,
+                #    c_bst_ulong(len(data)),
+                #    ctypes.c_int(silent),
+                #    ctypes.byref(handle)))
+
             else:
                 _check_call(_LIB.XGDMatrixCreateFromFile(c_str(data),
                     ctypes.c_int(silent),
@@ -1383,7 +1414,15 @@ class Booster(object):
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(0), ctypes.byref(handle)))
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(handle, ptr, length))
+
+            user = globals()["current_user"]
+            utils = CryptoUtils()
+            sig, sig_len = utils.sign_data(user.private_key, ptr, len(buf), pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterLoadModelFromBufferWithSig(handle, ptr, length, c_str(user.username), sig, sig_len))
+
             state['handle'] = handle
         self.__dict__.update(state)
         self.set_param({'seed': 0})
@@ -1525,7 +1564,8 @@ class Booster(object):
 
             utils = CryptoUtils()
             user = globals()["current_user"]
-            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), iteration, dtrain.handle.value.decode('utf-8'))
+            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
+
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
 
@@ -1730,8 +1770,8 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         utils = CryptoUtils()
-        ## TODO: how to join the argument
-        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), option_mask, ntree_limit)
+        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
+
         print(args)
         c_args = ctypes.c_char_p(args.encode('utf-8'))
 
@@ -1801,7 +1841,17 @@ class Booster(object):
         if username is None:
             raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
-            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
+
+            user = globals()["current_user"]
+            args = "handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterSaveModelWithSig(self.handle, c_str(fname), c_str(username), sig, sig_len))
         else:
             raise TypeError("fname must be a string")
 
@@ -1822,10 +1872,24 @@ class Booster(object):
             raise ValueError("Please set your user with the User.set_user method or provide a username as an optional argument")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
-        _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
+
+        utils=CryptoUtils()
+        user = globals()["current_user"]
+        args = "handle {}".format(self.handle.value.decode('utf-8'))
+        print(args)
+        c_args = ctypes.c_char_p(args.encode('utf-8'))
+        data_size = len(args)
+        sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+        sig = proto_to_pointer(sig)
+        sig_len = ctypes.c_size_t(sig_len)
+
+        _check_call(_LIB.XGBoosterGetModelRawWithSig(self.handle,
                                               ctypes.byref(length),
                                               ctypes.byref(cptr),
-                                              c_str(username)))
+                                              c_str(username),
+                                              sig,
+                                              sig_len))
+
         return ctypes2buffer(cptr, length.value)
 
     def load_model(self, fname, username=None):
@@ -1849,14 +1913,34 @@ class Booster(object):
             username = globals()["current_user"].username
         if username is None:
             raise ValueError("Please set your user with the user.set_user method or provide a username as an optional argument")
+        utils = CryptoUtils()
+
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
-            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+
+            user = globals()["current_user"]
+            args = "handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+            _check_call(_LIB.XGBoosterLoadModelWithSig(self.handle, c_str(fname), c_str(username), sig, sig_len))
+
+            # _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
             buf = fname
             length = c_bst_ulong(len(buf))
             ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            sig, sig_len = utils.sign_data(user.private_key, ptr, len(buf), pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterLoadModelFromBufferWithSig(self.handle, ptr, length, c_str(username), sig, sig_len))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
@@ -1919,7 +2003,21 @@ class Booster(object):
                 ftype = from_pystr_to_cstr(['q'] * flen)
             else:
                 ftype = from_pystr_to_cstr(self.feature_types)
-            _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            args = ""
+            for i in range(flen):
+                args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', int(with_stats), dump_format)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterDumpModelExWithFeaturesWithSig(
                 self.handle,
                 ctypes.c_int(flen),
                 fname,
@@ -1927,16 +2025,45 @@ class Booster(object):
                 ctypes.c_int(with_stats),
                 c_str(dump_format),
                 ctypes.byref(length),
-                ctypes.byref(sarr)))
+                ctypes.byref(sarr),
+                c_str(user.username),
+                sig,
+                sig_len))
+
+            #_check_call(_LIB.XGBoosterDumpModelExWithFeatures(
+            #    self.handle,
+            #    ctypes.c_int(flen),
+            #    fname,
+            #    ftype,
+            #    ctypes.c_int(with_stats),
+            #    c_str(dump_format),
+            #    ctypes.byref(length),
+            #    ctypes.byref(sarr)))
+
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
-            _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
+            # generate signature
+
+            utils = CryptoUtils()
+            user = globals()["current_user"]
+            args = "booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
+            print(args)
+            c_args = ctypes.c_char_p(args.encode('utf-8'))
+            data_size = len(args)
+            sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
+            sig = proto_to_pointer(sig)
+            sig_len = ctypes.c_size_t(sig_len)
+
+            _check_call(_LIB.XGBoosterDumpModelExWithSig(self.handle,
                                                   c_str(fmap),
                                                   ctypes.c_int(with_stats),
                                                   c_str(dump_format),
                                                   ctypes.byref(length),
-                                                  ctypes.byref(sarr)))
+                                                  ctypes.byref(sarr),
+                                                  c_str(user.username),
+                                                  sig,
+                                                  sig_len))
 
 
         key = ctypes.c_char_p(key)

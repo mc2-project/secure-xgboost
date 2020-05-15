@@ -164,6 +164,23 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         bst_ulong num_files,
         int silent,
         DMatrixHandle *out);
+/*!
+ * \brief load a data matrix from an encrypted file
+ * \param fname the name of the encrypted file
+ * \param silent whether print messages during loading
+ * \param out a loaded data matrix
+ * \param signature user_signature
+ * \param sig_len signature length
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGDMatrixCreateFromEncryptedFileWithSig(const char *fnames[],
+                                             char* usernames[],
+                                             bst_ulong num_files,
+                                             int silent,
+                                             DMatrixHandle *out,
+                                             char *username,
+                                             uint8_t *signature,
+                                             size_t sig_len);
 
 /*!
  * \brief Create a DMatrix from a data iterator.
@@ -495,6 +512,20 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
                              char *username);
 /*!
+ * \brief load model from existing file
+ * \param handle handle
+ * \param fname file name
+* \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterLoadModelWithSig(BoosterHandle handle,
+                               const char *fname,
+                               char *username,
+                               uint8_t *signature,
+                               size_t sig_len);
+
+
+
+/*!
  * \brief save model into existing file
  * \param handle handle
  * \param fname file name
@@ -503,11 +534,45 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
                              char* username);
+
+/*!
+ * \brief save model into existing file
+ * \param handle handle
+ * \param fname file name
+ * \param username username
+ * \param signature user signature
+ * \param sig_len signatures length in bytes
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterSaveModelWithSig(BoosterHandle handle,
+                               const char *fname,
+                               char* username,
+                               uint8_t *signature,
+                               size_t sig_len);
+
 /*!
  * \brief load model from in memory buffer
  * \param handle handle
  * \param buf pointer to the buffer
  * \param len the length of the buffer
+ * \param username username
+ * \param signature signature
+ * \param sig_len length of signature in bytes
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterLoadModelFromBufferWithSig(BoosterHandle handle,
+                                         const void *buf,
+                                         bst_ulong len,
+                                         char* username,
+                                         uint8_t *signature,
+                                         size_t sig_len);
+
+/*!
+ * \brief load model from in memory buffer
+ * \param handle handle
+ * \param buf pointer to the buffer
+ * \param len the length of the buffer
+ * \param username username
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
@@ -526,6 +591,25 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
                                  char *username);
+
+/*!
+ * \brief save model into binary raw bytes, return header of the array
+ * user must copy the result out, before next xgboost call
+ * \param handle handle
+ * \param out_len the argument to hold the output length
+ * \param out_dptr the argument to hold the output data pointer
+ * \param username adding username
+ * \param signature adding signature
+ * \param sig_len adding signature made by user
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterGetModelRawWithSig(BoosterHandle handle,
+                                 bst_ulong *out_len,
+                                 const char **out_dptr,
+                                 char *username,
+                                 uint8_t *signature,
+                                 size_t sig_len);
+
 /*!
  * \brief dump model, return array of strings representing model dump
  * \param handle handle
@@ -561,6 +645,29 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
 /*!
  * \brief dump model, return array of strings representing model dump
  * \param handle handle
+ * \param fmap  name to fmap can be empty string
+ * \param with_stats whether to dump with statistics
+ * \param format the format to dump the model in
+ * \param out_len length of output array
+ * \param out_dump_array pointer to hold representing dump of each model
+ * \param username user requesting dump model
+ * \param signature user generated signature
+ * \param sig_len user signature length
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterDumpModelExWithSig(BoosterHandle handle,
+                                 const char *fmap,
+                                 int with_stats,
+                                 const char *format,
+                                 bst_ulong *out_len,
+                                 const char ***out_dump_array,
+                                 char *username,
+                                 uint8_t *signature,
+                                 size_t sig_len);
+
+/*!
+ * \brief dump model, return array of strings representing model dump
+ * \param handle handle
  * \param fnum number of features
  * \param fname names of features
  * \param ftype types of features
@@ -576,6 +683,33 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                            int with_stats,
                                            bst_ulong *out_len,
                                            const char ***out_models);
+
+/*!
+ * \brief dump model, return array of strings representing model dump
+ * \param handle handle
+ * \param fnum number of features
+ * \param fname names of features
+ * \param ftype types of features
+ * \param with_stats whether to dump with statistics
+ * \param format the format to dump the model in
+ * \param out_len length of output array
+ * \param out_models pointer to hold representing dump of each model
+ * \param username
+ * \param signature signature of this call
+ * \param sign_len length of the signature
+ * \return 0 when success, -1 when failure happens
+ */
+XGB_DLL int XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
+                                             int fnum,
+                                             const char **fname,
+                                             const char **ftype,
+                                             int with_stats,
+                                             const char *format,
+                                             bst_ulong *out_len,
+                                             const char ***out_models,
+                                             char *username,
+                                             uint8_t *signature,
+                                             size_t sig_len);
 
 /*!
  * \brief dump model, return array of strings representing model dump
