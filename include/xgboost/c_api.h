@@ -168,8 +168,8 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                              int silent,
                                              DMatrixHandle *out,
                                              char *username,
-                                             uint8_t *signature,
-                                             size_t sig_len);
+                                             uint8_t* signatures[],
+                                             size_t* sig_lengths);
 
 /*!
  * \brief Create a DMatrix from a data iterator.
@@ -400,8 +400,8 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value,
                               const char *username,
-                              uint8_t *signature,
-                              size_t sig_len);
+                              uint8_t* signatures[],
+                              size_t* sig_lengths);
 
 /*!
  * \brief update the model in one round using dtrain
@@ -417,8 +417,8 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain,
                                    char *username,
-                                   uint8_t *signature,
-                                   size_t sig_len) ;
+                                   uint8_t* signatures[],
+                                   size_t* sig_lengths) ;
 
 /*!
  * \brief update the model, by directly specify gradient and second order gradient,
@@ -477,8 +477,8 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              bst_ulong *out_len,
                              uint8_t **out_result,
                              char* username,
-                             uint8_t *signature,
-                             size_t sig_len);
+                             uint8_t* signatures[],
+                             size_t* sig_lengths);
 
 /*!
  * \brief load model from existing file
@@ -492,8 +492,8 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
                              char *username,
-                             uint8_t *signature,
-                             size_t sig_len);
+                             uint8_t* signatures[],
+                             size_t* sig_lengths);
 
 /*!
  * \brief save model into existing file
@@ -507,8 +507,8 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
                                char* username,
-                               uint8_t *signature,
-                               size_t sig_len);
+                               uint8_t* signatures[],
+                               size_t* sig_lengths);
 
 /*!
  * \brief load model from in memory buffer
@@ -524,8 +524,8 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          const void *buf,
                                          bst_ulong len,
                                          char* username,
-                                         uint8_t *signature,
-                                         size_t sig_len);
+                                         uint8_t* signatures[],
+                                         size_t* sig_lengths);
 
 /*!
  * \brief save model into binary raw bytes, return header of the array
@@ -542,8 +542,8 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
                                  char *username,
-                                 uint8_t *signature,
-                                 size_t sig_len);
+                                 uint8_t* signatures[],
+                                 size_t* sig_lengths);
 
 /*!
  * \brief dump model, return array of strings representing model dump
@@ -580,8 +580,8 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  bst_ulong *out_len,
                                  const char ***out_dump_array,
                                  char *username,
-                                 uint8_t *signature,
-                                 size_t sig_len);
+                                 uint8_t* signatures[],
+                                 size_t* sig_lengths);
 
 /*!
  * \brief dump model, return array of strings representing model dump
@@ -626,8 +626,8 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              bst_ulong *out_len,
                                              const char ***out_models,
                                              char *username,
-                                             uint8_t *signature,
-                                             size_t sig_len);
+                                             uint8_t* signatures[],
+                                             size_t* sig_lengths);
 
 /*!
  * \brief Get string attribute from Booster.

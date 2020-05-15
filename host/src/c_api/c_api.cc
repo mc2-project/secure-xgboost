@@ -289,8 +289,8 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      int silent,
                                      DMatrixHandle *out,
                                      char *username,
-                                     uint8_t *sig,
-                                     size_t sig_len) {
+                                     uint8_t* signatures[],
+                                     size_t* sig_lengths) {
   size_t fname_lengths[num_files];
   size_t username_lengths[num_files];
 
@@ -299,7 +299,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     username_lengths[i] = strlen(usernames[i]);
   }
 
-  safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out, username, sig, sig_len));
+  safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 
@@ -909,18 +909,18 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value,
                               const char *username,
-                              uint8_t *signature,
-                              size_t sig_len) {
-    safe_ecall(enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value, username, signature, sig_len));
+                              uint8_t* signatures[],
+                              size_t* sig_lengths) {
+    safe_ecall(enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain,
                                    char *username,
-                                   uint8_t *signature,
-                                   size_t sig_len) {
-    safe_ecall(enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain, username, signature, sig_len));
+                                   uint8_t* signatures[],
+                                   size_t* sig_lengths) {
+    safe_ecall(enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 XGB_DLL int XGBoosterBoostOneIter(BoosterHandle handle,
@@ -953,35 +953,35 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              xgboost::bst_ulong *len,
                              uint8_t **out_result,
                              char* username,
-                             uint8_t *signature,
-                             size_t sig_len) {
-    safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result, username, signature, sig_len));
+                             uint8_t* signatures[],
+                             size_t* sig_lengths) {
+    safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, len, out_result, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
-  safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* username, uint8_t* signatures[], size_t* sig_lengths) {
+  safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char* username, uint8_t *signature, size_t sig_len) {
-  safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signature, sig_len));
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char* username, uint8_t* signatures[], size_t* sig_lengths) {
+  safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          const void* buf,
                                          xgboost::bst_ulong len,
                                          char* username,
-                                         uint8_t *signature,
-                                         size_t sig_len) {
-  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len, username, signature, sig_len));
+                                         uint8_t* signatures[],
+                                         size_t* sig_lengths) {
+  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  xgboost::bst_ulong* out_len,
                                  const char** out_dptr,
                                  char* username,
-                                 uint8_t *signature,
-                                 size_t sig_len) {
-  safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr, username, signature, sig_len));
+                                 uint8_t* signatures[],
+                                 size_t* sig_lengths) {
+  safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 /* TODO(rishabhp): Enable this
@@ -1022,9 +1022,9 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  xgboost::bst_ulong* len,
                                  const char*** out_models,
                                  char* username,
-                                 uint8_t *signature,
-                                 size_t sig_len){
-  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, len, (char***) out_models, username, signature, sig_len));
+                                 uint8_t* signatures[],
+                                 size_t* sig_lengths){
+  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, len, (char***) out_models, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 
@@ -1053,15 +1053,15 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              xgboost::bst_ulong* len,
                                              const char*** out_models,
                                              char *username,
-                                             uint8_t *signature,
-                                             size_t sig_len) {
+                                             uint8_t* signatures[],
+                                             size_t* sig_lengths) {
     size_t fname_lengths[fnum];
     size_t ftype_lengths[fnum];
     for (int i = 0; i < fnum; i++) {
         fname_lengths[i] = strlen(fname[i]);
         ftype_lengths[i] = strlen(ftype[i]);
     }
-    safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, format, len, (char***) out_models, username, signature, sig_len));
+    safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, format, len, (char***) out_models, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 
@@ -1332,7 +1332,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
 
 //XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
 //    // FIXME return value / error handling
-//  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
+//  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signatures, sig_lengths, NUM_CLIENTS));
 //}
 
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {

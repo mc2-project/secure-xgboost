@@ -6,8 +6,38 @@
 
 #include "xgboost_t.h"
 #include <xgboost/common/common.h>
+#include <enclave/attestation.h>
 
 #include <string>
+
+void copy_sigs_to_enclave(uint8_t* dst[], uint8_t* src[], size_t lengths[]) {
+  for (int i = 0; i < NUM_CLIENTS; i++) {
+    check_host_buffer(src[i], lengths[i]);
+    dst[i] = (uint8_t*) malloc(lengths[i] * sizeof(uint8_t));
+    memcpy(dst[i], src[i], lengths[i]);
+  }
+}
+
+void copy_arr_to_enclave(char* dst[], size_t num, char* src[], size_t lengths[]) {
+  for (int i = 0; i < num; i++) {
+    size_t nlen = lengths[i];
+    check_host_buffer(src[i], nlen);
+    dst[i] = strndup(src[i], nlen);
+    dst[i][nlen] = '\0';
+  }
+}
+
+void free_sigs(uint8_t* sigs[]) {
+  for (int i = 0; i < NUM_CLIENTS; i++) {
+    free(sigs[i]);
+  }
+}
+
+void free_array(char* arr[], size_t len) {
+  for (int i = 0; i < len; i++) {
+    free(arr[i]);
+  }
+}
 
 void enclave_init(int log_verbosity) {
   std::vector<std::pair<std::string, std::string> > args;
@@ -36,27 +66,22 @@ int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle
   return XGDMatrixCreateFromFile(fname, silent, out);
 }
 
-int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out, char *username, uint8_t *signature, size_t sig_len) {
+int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
-  char* filenames[num_files];
-  char* usrnames[num_files];
+  char* fnames_cpy[num_files];
+  char* usernames_cpy[num_files];
+  uint8_t* sigs[NUM_CLIENTS];
 
+  copy_arr_to_enclave(fnames_cpy, num_files, (char**)fnames, fname_lengths);
+  copy_arr_to_enclave(usernames_cpy, num_files, usernames, username_lengths);
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
 
-  for (int i = 0; i < num_files; i++) {
-    const char* fname = fnames[i];
-    size_t nlen = fname_lengths[i];
-    check_host_buffer(fname, nlen);
-    filenames[i] = strndup(fname, nlen);
-    filenames[i][nlen] = '\0';
+  int ret = XGDMatrixCreateFromEncryptedFile((const char**) fnames_cpy, usernames_cpy, num_files, silent, out, username, sigs, sig_lengths);
 
-    const char* uname = usernames[i];
-    size_t namelen = username_lengths[i];
-    check_host_buffer(uname, namelen);
-    usrnames[i] = strndup(uname, namelen);
-    usrnames[i][namelen] = '\0';
-
-  }
-  return XGDMatrixCreateFromEncryptedFile((const char**) filenames, usrnames, num_files, silent, out, username, signature, sig_len);
+  free_array(fnames_cpy, num_files);
+  free_array(usernames_cpy, num_files);
+  free_sigs(sigs);
+  return ret;
 }
 
 int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, BoosterHandle* out) {
@@ -64,28 +89,28 @@ int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[
 
   // Validate buffers and copy to enclave memory
   DMatrixHandle dmats[len];
-  for (int i = 0; i < len; i++) {
-    char* name = dmat_handles[i];
-    size_t nlen = handle_lengths[i];
-    check_host_buffer(name, nlen);
-    dmats[i] = strndup(name, nlen);
-    dmats[i][nlen] = '\0';
-  }
+  copy_arr_to_enclave(dmats, len, dmat_handles, handle_lengths);
   int ret = XGBoosterCreate(dmats, len, out);
-  for (int i = 0; i < len; i++) {
-    free(dmats[i]);
-  }
+  free_array(dmats, len);
   return ret;
 }
 
-int enclave_XGBoosterSetParam(BoosterHandle handle, const char* name, const char* value, const char* username, uint8_t *signature, size_t sig_len){
+int enclave_XGBoosterSetParam(BoosterHandle handle, const char* name, const char* value, const char* username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs){
   LOG(DEBUG) << "Ecall: XGBoosterSetParam";
-  return XGBoosterSetParam(handle, name, value, username, signature, sig_len);
+  uint8_t* sigs[NUM_CLIENTS];
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+  int ret = XGBoosterSetParam(handle, name, value, username, sigs, sig_lengths);
+  free_sigs(sigs);
+  return ret;
 }
 
-int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain, char *username, uint8_t *signature, size_t sig_len) {
+int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
-  return XGBoosterUpdateOneIter(handle, iter, dtrain, username, signature, sig_len);
+  uint8_t* sigs[NUM_CLIENTS];
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+  int ret = XGBoosterUpdateOneIter(handle, iter, dtrain, username, sigs, sig_lengths);
+  free_sigs(sigs);
+  return ret;
 }
 
 int enclave_XGBoosterBoostOneIter(BoosterHandle handle, DMatrixHandle dtrain, bst_float *grad, bst_float *hess, xgboost::bst_ulong len) {
@@ -99,36 +124,33 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
   // Validate buffers and copy to enclave memory
   char* dmats[len];
   char* eval_names[len];
-  for (int i = 0; i < len; i++) {
-    char* name = dmat_handles[i];
-    size_t nlen = handle_lengths[i];
-    check_host_buffer(name, nlen);
-    dmats[i] = strndup(name, nlen);
-    dmats[i][nlen] = '\0';
-  }
-  for (int i = 0; i < len; i++) {
-    const char* name = evnames[i];
-    size_t nlen = names_lengths[i];
-    check_host_buffer(name, nlen);
-    eval_names[i] = strndup(name, nlen);
-    eval_names[i][nlen] = '\0';
-  }
+
+  copy_arr_to_enclave(dmats, len, dmat_handles, handle_lengths);
+  copy_arr_to_enclave(eval_names, len, (char**)evnames, names_lengths);
+
   int ret = XGBoosterEvalOneIter(handle, iter, dmats, (const char**) eval_names, len, (const char**) out_str);
-  for (int i = 0; i < len; i++) {
-    free(dmats[i]);
-    free(eval_names[i]);
-  }
+
+  free_array(dmats, len);
+  free_array(eval_names, len);
   return ret;
 }
 
-int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, char *username, uint8_t *signature, size_t sig_len) {
+int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModel";
-  return XGBoosterLoadModel(handle, fname, username, signature, sig_len);
+  uint8_t* sigs[NUM_CLIENTS];
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+  int ret = XGBoosterLoadModel(handle, fname, username, sigs, sig_lengths);
+  free_sigs(sigs);
+  return ret;
 }
 
-int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char *username, uint8_t *signature, size_t sig_len) {
+int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterSaveModel";
-  return XGBoosterSaveModel(handle, fname, username, signature, sig_len);
+  uint8_t* sigs[NUM_CLIENTS];
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+  int ret = XGBoosterSaveModel(handle, fname, username, sigs, sig_lengths);
+  free_sigs(sigs);
+  return ret;
 }
 
 int enclave_XGBoosterDumpModel(BoosterHandle handle,
@@ -147,10 +169,14 @@ int enclave_XGBoosterDumpModelEx(BoosterHandle handle,
                                  xgboost::bst_ulong* len,
                                  char*** out_models,
                                  char *username,
-                                 uint8_t *signature,
-                                 size_t sig_len) {
+                                 uint8_t* signatures[],
+                                 size_t sig_lengths[], size_t num_sigs) {
     LOG(DEBUG) << "Ecall: XGBoosterDumpModelEx";
-    return XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models, username, signature, sig_len);
+    uint8_t* sigs[NUM_CLIENTS];
+    copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+    int ret = XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models, username, sigs, sig_lengths);
+    free_sigs(sigs);
+    return ret;
 }
 
 int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
@@ -167,25 +193,14 @@ int enclave_XGBoosterDumpModelWithFeatures(BoosterHandle handle,
   // Validate buffers and copy to enclave memory
   char* fname_cpy[fnum];
   char* ftype_cpy[fnum];
-  size_t name_len;
-  size_t type_len;
-  for (int i = 0; i < fnum; i++) {
-    name_len = fname_lengths[i];
-    type_len = ftype_lengths[i];
 
-    check_host_buffer(fname[i], name_len);
-    check_host_buffer(ftype[i], type_len);
+  copy_arr_to_enclave(fname_cpy, fnum, (char**)fname, fname_lengths);
+  copy_arr_to_enclave(ftype_cpy, fnum, (char**)ftype, ftype_lengths);
 
-    fname_cpy[i] = strndup(fname[i], name_len);
-    fname_cpy[i][name_len] = '\0';
-    ftype_cpy[i] = strndup(ftype[i], type_len);
-    ftype_cpy[i][type_len] = '\0';
-  }
   int ret = XGBoosterDumpModelWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, len, (const char***) out_models);
-  for (int i = 0; i < fnum; i++) {
-    free(fname_cpy[i]);
-    free(ftype_cpy[i]);
-  }
+
+  free_array(fname_cpy, fnum);
+  free_array(ftype_cpy, fnum);
   return ret;
 }
 int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
@@ -199,50 +214,53 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              xgboost::bst_ulong* len,
                                              char*** out_models,
                                              char *username,
-                                             uint8_t *signature,
-                                             size_t sig_len) {
+                                             uint8_t* signatures[],
+                                             size_t sig_lengths[], size_t num_sigs) {
     LOG(DEBUG) << "Ecall: XGBoosterDumpModelWithFeatures";
 
     // Validate buffers and copy to enclave memory
     char* fname_cpy[fnum];
     char* ftype_cpy[fnum];
-    size_t name_len;
-    size_t type_len;
-    for (int i = 0; i < fnum; i++) {
-        name_len = fname_lengths[i];
-        type_len = ftype_lengths[i];
+    uint8_t* sigs[NUM_CLIENTS];
 
-        check_host_buffer(fname[i], name_len);
-        check_host_buffer(ftype[i], type_len);
+    copy_arr_to_enclave(fname_cpy, fnum, (char**)fname, fname_lengths);
+    copy_arr_to_enclave(ftype_cpy, fnum, (char**)ftype, ftype_lengths);
+    copy_sigs_to_enclave(sigs, signatures, sig_lengths);
 
-        fname_cpy[i] = strndup(fname[i], name_len);
-        fname_cpy[i][name_len] = '\0';
-        ftype_cpy[i] = strndup(ftype[i], type_len);
-        ftype_cpy[i][type_len] = '\0';
-    }
-    int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models, username, signature, sig_len);
-    for (int i = 0; i < fnum; i++) {
-        free(fname_cpy[i]);
-        free(ftype_cpy[i]);
-    }
+    int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, len, (const char***) out_models, username, sigs, sig_lengths);
+
+    free_array(fname_cpy, fnum);
+    free_array(ftype_cpy, fnum);
+    free_sigs(sigs);
     return ret;
 }
 
-int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username, uint8_t *signature, size_t sig_len) {
+int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterGetModelRaw";
-  return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr, username, signature, sig_len);
+  uint8_t* sigs[NUM_CLIENTS];
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+  int ret = XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr, username, sigs, sig_lengths);
+  free_sigs(sigs);
+  return ret;
 }
 
-int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char *username, uint8_t *signature, size_t sig_len) {
+int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
     LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
-    return XGBoosterLoadModelFromBuffer(handle, buf, len, username, signature, sig_len);
+    uint8_t* sigs[NUM_CLIENTS];
+    copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+    int ret = XGBoosterLoadModelFromBuffer(handle, buf, len, username, sigs, sig_lengths);
+    free_sigs(sigs);
+    return ret;
 }
 
 
-int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username, uint8_t *signature,
-size_t sig_len) {
+int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result, char *username, uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
-  return XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username, signature, sig_len);
+  uint8_t* sigs[NUM_CLIENTS];
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+  int ret = XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result, username, sigs, sig_lengths);
+  free_sigs(sigs);
+  return ret;
 }
 
 int enclave_XGDMatrixGetFloatInfo(const DMatrixHandle handle, const char* field, bst_ulong *out_len, bst_float **out_dptr) {
@@ -303,15 +321,6 @@ int enclave_get_remote_report_with_pubkey(
   LOG(DEBUG) << "Ecall: enclave_get_remote_report_with_pubkey";
   return get_remote_report_with_pubkey(pem_key, key_size, remote_report, remote_report_size);
 }
-
-//int enclave_add_client_key(
-//        uint8_t* data,
-//        size_t data_len,
-//        uint8_t* signature,
-//        size_t sig_len) {
-//    LOG(DEBUG) << "Ecall: add_client_key";
-//    return add_client_key(data, data_len, signature, sig_len);
-//}
 
 int enclave_add_client_key_with_certificate(
         char * cert,
