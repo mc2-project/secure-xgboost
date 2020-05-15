@@ -13,26 +13,28 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     xgb.init_user(username, sym_key_file, priv_key_file, cert_file)
 
     xgb.rabit.init()
+
     # Remote attestation
     print("Remote attestation")
-    enclave_reference = xgb.Enclave(addr=channel_addr)
+    enclave = xgb.Enclave(addr=channel_addr)
+
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave_reference.attest()
+    enclave.attest(verify=False)
     print("Report successfully verified")
 
     print("Send private key to enclave")
-    enclave_reference.add_key()
+    enclave.add_key()
 
     print("Load training matrices")
-    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-remote-control/data/c2_train.enc"}, encrypted=True)
+    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_train.enc"}, encrypted=True)
     if not dtrain:
         print("Error loading data")
         return
 
     print("Creating test matrix")
-    dtest1 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c1_test.enc"})
-    dtest2 = xgb.DMatrix({"user2": HOME_DIR + "demo/python/multiclient-remote-control/data/c2_test.enc"})
+    dtest1 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_test.enc"})
+    dtest2 = xgb.DMatrix({"user2": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_test.enc"})
 
     if not dtest1 or not dtest2:
         print("Error creating dtest")
@@ -48,7 +50,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
             "min_child_weight": "1",
             "gamma": "0.1",
             "max_depth": "3",
-            "verbosity": "0" 
+            "verbosity": "3" 
     }
 
     # Train and evaluate

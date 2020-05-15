@@ -3,7 +3,10 @@ import os
 
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../../../"
 
+with open("../hosts.config") as f:
+    nodes = f.readlines()
+nodes = [x.strip().split(":")[0] for x in nodes]
 
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity=0)
 print("Waiting for client...")
-xgb.serve(enclave, all_users=["user1"], nodes=["172.31.15.184", "172.31.2.61"])
+xgb.serve(enclave, all_users=["user1"], nodes=nodes)
