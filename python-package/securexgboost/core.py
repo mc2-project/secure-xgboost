@@ -516,7 +516,7 @@ class DMatrix(object):
                 args = ""
                 for i, username in enumerate(usernames):
 
-                    args += "filename {} num_files {} silent {}".format(data[i], len(data), silent)
+                    args = args + "filename {} num_files {} silent {}".format(data[i], len(data), silent)
                     print(args)
 
                 c_args = ctypes.c_char_p(args.encode('utf-8'))
@@ -2005,7 +2005,7 @@ class Booster(object):
             user = globals()["current_user"]
             args = ""
             for i in range(flen):
-                args += "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', with_stats, dump_format)
+                args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', with_stats, dump_format)
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
             data_size = len(args)
