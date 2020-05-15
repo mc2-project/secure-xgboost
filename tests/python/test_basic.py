@@ -162,7 +162,7 @@ class TestBasic(unittest.TestCase):
         data = np.random.randn(100, 2)
         target = np.array([0, 1] * 50)
         dump_svmlight_file(data, target, temp_name) 
-        encrypt_file(temp_name, temp_enc_name, sym_key_file)
+        xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
         features = ['Feature1', 'Feature2']
 
         #TODO: support for label
@@ -217,7 +217,7 @@ class TestBasic(unittest.TestCase):
             X = np.random.randn(row, cols)
             y = np.random.randn(row).astype('f')
             dump_svmlight_file(X, y, temp_name) 
-            encrypt_file(temp_name, temp_enc_name, sym_key_file)
+            xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
             #TODO(rishabh):  implement get_label()
             """
             dm = xgb.DMatrix({username: temp_enc_name})
