@@ -14,13 +14,16 @@ from pathlib import Path
 
 import securexgboost as xgb
 import os
-
+from sklearn.datasets import dump_svmlight_file
 
 username = "user1"
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 sym_key_file = HOME_DIR + "demo/data/key_zeros.txt"
 pub_key_file = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
 cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
+
+temp_name = HOME_DIR + "demo/data/temp_file.txt"
+temp_enc_name = HOME_DIR + "demo/data/temp_file.txt.enc"
 
 print("Init user parameters")
 xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
@@ -158,11 +161,13 @@ class TestBasic(unittest.TestCase):
     def test_dump(self):
         data = np.random.randn(100, 2)
         target = np.array([0, 1] * 50)
+        dump_svmlight_file(data, target, temp_name) 
+        encrypt_file(temp_name, temp_enc_name, sym_key_file)
         features = ['Feature1', 'Feature2']
 
         #TODO: support for label
         """
-        dm = xgb.DMatrix(data, label=target, feature_names=features)
+        dm = xgb.DMatrix({username: temp_enc_name}, label=target, feature_names=features)
         params = {'objective': 'binary:logistic',
                   'eval_metric': 'logloss',
                   'eta': 0.3,
@@ -203,6 +208,31 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(xgb.core.XGBoostError, xgb.Booster,
                           model_file=u'不正なパス')
         """
+
+    def test_dmatrix_numpy_init_omp(self):
+
+        rows = [1000, 11326, 15000]
+        cols = 50
+        for row in rows:
+            X = np.random.randn(row, cols)
+            y = np.random.randn(row).astype('f')
+            dump_svmlight_file(X, y, temp_name) 
+            encrypt_file(temp_name, temp_enc_name, sym_key_file)
+            #TODO(rishabh):  implement get_label()
+            """
+            dm = xgb.DMatrix({username: temp_enc_name})
+            np.testing.assert_array_equal(dm.get_label(), y)
+            assert dm.num_row() == row
+            assert dm.num_col() == cols
+            """
+
+            #TODO(rishabh): implement nthread?
+            """
+            dm = xgb.DMatrix({username: temp_enc_name}, nthread=10)
+            np.testing.assert_array_equal(dm.get_label(), y)
+            assert dm.num_row() == row
+            assert dm.num_col() == cols
+            """
 
     def test_cv(self):
         dm = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
