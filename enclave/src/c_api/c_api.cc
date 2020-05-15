@@ -1944,6 +1944,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   API_END();
 }
 
+/* redundant definition
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
                      const char* key,
                      const char** out,
@@ -1965,7 +1966,7 @@ XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
   }
   API_END();
 }
-
+*/
 
 XGB_DLL int XGBoosterDumpModelExWithFeaturesWithSig(BoosterHandle handle,
                                              int fnum,
