@@ -516,7 +516,7 @@ class DMatrix(object):
                 args = ""
                 for i, username in enumerate(usernames):
 
-                    args = args + "filename {} num_files {} silent {}".format(data[i], len(data), silent)
+                    args = args + "filename {} num_files {} silent {}".format(data[i], len(data), int(silent))
                     print(args)
 
                 c_args = ctypes.c_char_p(args.encode('utf-8'))
