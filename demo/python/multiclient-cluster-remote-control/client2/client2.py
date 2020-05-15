@@ -12,11 +12,12 @@ username = "user2"
 def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     xgb.init_user(username, sym_key_file, priv_key_file, cert_file)
 
+    enclave = xgb.Enclave(addr=channel_addr)
+
     xgb.rabit.init()
 
     # Remote attestation
     print("Remote attestation")
-    enclave = xgb.Enclave(addr=channel_addr)
 
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
