@@ -231,7 +231,6 @@ enclave {
                 [in, count=sig_len] uint8_t *signature,
                 size_t sig_len);
 
-
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
                 [out] bst_ulong *out_len,

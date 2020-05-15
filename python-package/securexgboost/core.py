@@ -362,6 +362,7 @@ class User(object):
     Make sure you call Set_user to set the default in the global variable
     """
     all_users = {}
+
     def __init__(self, username, private_key, certificate):
         """
         Parameters
@@ -379,6 +380,7 @@ class User(object):
         self.crypto = CryptoUtils()
         # adding itself to global user pool
         User.all_users[username] = self
+
 
     def set_user(self):
         """
@@ -1563,6 +1565,7 @@ class Booster(object):
             utils = CryptoUtils()
             user = globals()["current_user"]
             args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
+
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
 
@@ -1768,6 +1771,7 @@ class Booster(object):
 
         utils = CryptoUtils()
         args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
+
         print(args)
         c_args = ctypes.c_char_p(args.encode('utf-8'))
 
@@ -1910,6 +1914,7 @@ class Booster(object):
         if username is None:
             raise ValueError("Please set your user with the user.set_user method or provide a username as an optional argument")
         utils = CryptoUtils()
+
         if isinstance(fname, STRING_TYPES):
             # assume file name, cannot use os.path.exist to check, file can be from URL.
 
