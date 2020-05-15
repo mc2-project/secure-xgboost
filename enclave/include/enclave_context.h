@@ -147,7 +147,7 @@ class EnclaveContext {
     bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
           mbedtls_pk_context _pk_context;
 
-      unsigned char hash[32];
+      unsigned char hash[SHA_DIGEST_SIZE];
       int ret = 1;
 
       mbedtls_pk_init(&_pk_context);
@@ -166,6 +166,34 @@ class EnclaveContext {
 
       if (verifySignature(_pk_context, data, data_len, signature, sig_len) != 0) {
         LOG(FATAL) << "Signature verification failed";
+      }
+      return true;
+    }
+
+    bool verifyClientSignatures(uint8_t* data, size_t data_len, uint8_t* signatures[], size_t sig_lengths[]){
+      mbedtls_pk_context _pk_context;
+
+      unsigned char hash[SHA_DIGEST_SIZE];
+      int ret = 1;
+
+      int i = 0;
+      // FIXME: Currently we expect sigs to be in same order as users
+      for (auto username: CLIENT_NAMES) {
+        mbedtls_pk_init(&_pk_context);
+        char* cert = get_client_cert((char*)username.c_str());
+        mbedtls_x509_crt user_cert;
+        mbedtls_x509_crt_init(&user_cert);
+        if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert, strlen(cert) + 1)) != 0) {
+          LOG(FATAL) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+        }
+
+        uint8_t* signature = signatures[i];
+        size_t sig_len = sig_lengths[i];
+        _pk_context = user_cert.pk;
+        if (verifySignature(_pk_context, data, data_len, signature, sig_len) != 0) {
+          LOG(FATAL) << "Signature verification failed";
+        }
+        i++;
       }
       return true;
     }

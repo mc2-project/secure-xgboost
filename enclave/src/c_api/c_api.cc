@@ -395,9 +395,9 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     for (xgboost::bst_ulong i = 0; i < num_files; i++) {
         oss << "filename " << fnames[i] << " num_files " << num_files << " silent " << silent;
     }
-    const char* buff = strdup(oss.str().c_str());
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), (uint8_t*) signature, sig_len, username);
+    char* buff = strdup(oss.str().c_str());
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    free(buff);
 
     // FIXME consistently use uint8_t* for key bytes
     char* keys[num_files];
@@ -1135,8 +1135,9 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
   data[strlen(name)] = (uint8_t) ',';
   memcpy((uint8_t *)data+strlen(name)+1,value,strlen(value)+1);
   data[data_len] = 0;
-  // FIXME: SIG VERIFICATION
-  //EnclaveContext::getInstance().verifySignatureWithUserName(data, data_len, signature, sig_len, (char *)username);
+  // FIXME: Signature should include handle
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)data, data_len, signatures, sig_lengths);
+
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
   API_END();
@@ -1155,10 +1156,9 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
-  const char* buff = strdup(oss.str().c_str());
-  // FIXME: SIG VERIFICATION
-  //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-  free((void*)buff); // prevent memory leak
+  char* buff = strdup(oss.str().c_str());
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+  free(buff);
 
 #ifdef __ENCLAVE__
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
@@ -1250,11 +1250,9 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
-  const char* buff = strdup(oss.str().c_str());
-  // FIXME: SIG VERIFICATION
-  //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-  // TODO Add Multi User Verification + Add Verification for a list of signatures
-  free((void*)buff); // prevent memory leak
+  char* buff = strdup(oss.str().c_str());
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+  free(buff); // prevent memory leak
 
   std::vector<bst_float>&preds =
     XGBAPIThreadLocalStore::Get()->ret_vec_float;
@@ -1314,10 +1312,9 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char* us
     // signature verification
     std::ostringstream oss;
     oss << "handle " << handle << " filename " << fname;
-    const char* buff = strdup(oss.str().c_str());
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-    free((void*)buff); // prevent memory leak
+    char* buff = strdup(oss.str().c_str());
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    free(buff);
 
     std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
     size_t buf_len;
@@ -1360,11 +1357,9 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char *us
     // check signature
     std::ostringstream oss;
     oss << "handle " << handle << " filename " << fname;
-    const char* buff = strdup(oss.str().c_str());
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-    // TODO Add Multi User Verification + Add Verification for a list of signatures
-    free((void*)buff); // prevent memory leak
+    char* buff = strdup(oss.str().c_str());
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    free(buff);
 
     std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
     raw_str.resize(0);
@@ -1410,8 +1405,8 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
     CHECK_HANDLE();
 
     // signature verification
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buf, len, (uint8_t*) signature, sig_len, username);
+    // FIXME: Signature should include handle
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buf, len, signatures, sig_lengths);
 
     len -= (CIPHER_IV_SIZE + CIPHER_TAG_SIZE);
 
@@ -1453,11 +1448,9 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     // check signature
     std::ostringstream oss;
     oss << "handle " << handle;
-    const char* buff = strdup(oss.str().c_str());
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-    free((void*)buff); // prevent memory leak
-    // end of signature checking
+    char* buff = strdup(oss.str().c_str());
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    free(buff);
 
     common::MemoryBufferStream fo(&raw_str);
 #ifdef __ENCLAVE__
@@ -1577,10 +1570,9 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
     CHECK_HANDLE();
     std::ostringstream oss;
     oss << "booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
-    const char* buff = strdup(oss.str().c_str());
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-    free((void*)buff); // prevent memory leak
+    char* buff = strdup(oss.str().c_str());
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    free(buff);
 
     FeatureMap featmap;
     if (strlen(fmap) != 0) {
@@ -1649,10 +1641,9 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     for (int i = 0; i <fnum; i++){
         oss << "booster_handle " << handle << " flen " << fnum << " fname " << fname[i] << " ftype " << ftype[i] << " with_stats " << with_stats << " dump_format " << format;
     }
-    const char* buff = strdup(oss.str().c_str());
-    // FIXME: SIG VERIFICATION
-    //EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), signature, sig_len, (char *)username);
-    free((void*)buff); // prevent memory leak
+    char* buff = strdup(oss.str().c_str());
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    free(buff);
 
     FeatureMap featmap;
     for (int i = 0; i < fnum; ++i) {
