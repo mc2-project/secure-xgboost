@@ -178,7 +178,7 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
                                              bst_ulong num_files,
                                              int silent,
                                              DMatrixHandle *out,
-                                             const char *signatures[],
+                                             char *signatures[],
                                              size_t signature_lengths[]);
 
 /*!

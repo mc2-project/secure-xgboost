@@ -85,7 +85,7 @@ int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[], size_
     signatures[i][sig_l] = '\0';
 
   }
-  return XGDMatrixCreateFromEncryptedFileWithSigs((const char**) filenames, usrnames, num_files, silent, out, (const char**) signatures, signature_lengths);
+  return XGDMatrixCreateFromEncryptedFileWithSigs((const char**) filenames, usrnames, num_files, silent, out, (char**) signatures, signature_lengths);
 }
 
 

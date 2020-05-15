@@ -494,7 +494,7 @@ int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
                                      xgboost::bst_ulong num_files,
                                      int silent,
                                      DMatrixHandle *out,
-                                     const char *signatures[],
+                                     char *signatures[],
                                      size_t signature_lengths[]) {
     API_BEGIN();
     LOG(DEBUG) << "File: " << std::string(fnames[0]);

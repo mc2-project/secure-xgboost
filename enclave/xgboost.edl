@@ -27,7 +27,7 @@ enclave {
                 bst_ulong num_files,
                 int silent,
                 [out] char** handle,
-                [in, count=num_files] const char **sigs,
+                [in, count=num_files] char **sigs,
                 [in, count=num_files] size_t* sig_lens);
 
         public int enclave_XGBoosterCreate(
