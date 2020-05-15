@@ -17,15 +17,6 @@ enclave {
                 [in, count=num_files] size_t* username_lengths,
                 bst_ulong num_files,
                 int silent,
-                [out] char** handle);
-
-        public int enclave_XGDMatrixCreateFromEncryptedFileWithSig(
-                [in, count=num_files] const char **fnames,
-                [in, count=num_files] size_t* fname_lengths,
-                [in, count=num_files] char** usernames,
-                [in, count=num_files] size_t* username_lengths,
-                bst_ulong num_files,
-                int silent,
                 [out] char** handle,
                 [in, string] char *username,
                 [in, count=sig_len] uint8_t *sig,
@@ -40,28 +31,18 @@ enclave {
         public int enclave_XGBoosterSetParam(
                 [in, string] char* handle,
                 [in, string] const char *name,
-                [in, string] const char *value);
-
-        public int enclave_XGBoosterSetParamWithSig(
-                [in, string] char* handle,
-                [in, string] const char *name,
                 [in, string] const char *value,
                 [in, string] const char *username,
-                [in, count=sig_len] uint8_t *signature,
-                size_t sig_len);
-
-        public int enclave_XGBoosterUpdateOneIterWithSig(
-                [in, string] char* handle,
-                int iter,
-                [in, string] char* dtrain,
-                [in, string] char *username,
                 [in, count=sig_len] uint8_t *signature,
                 size_t sig_len);
 
         public int enclave_XGBoosterUpdateOneIter(
                 [in, string] char* handle,
                 int iter,
-                [in, string] char* dtrain);
+                [in, string] char* dtrain,
+                [in, string] char *username,
+                [in, count=sig_len] uint8_t *signature,
+                size_t sig_len);
 
         public int enclave_XGBoosterBoostOneIter(
                 [in, string] char* handle,
@@ -80,7 +61,7 @@ enclave {
                 bst_ulong len,
                 [out] char** out_str);
 
-        public int enclave_XGBoosterPredictWithSig(
+        public int enclave_XGBoosterPredict(
                 [in, string] char* handle,
                 [in, string] char* dmat,
                 int option_mask,
@@ -90,15 +71,6 @@ enclave {
                 [in, string] char* username,
                 [in, count=sig_len] uint8_t *signature,
                 size_t sig_len);
-
-        public int enclave_XGBoosterPredict(
-                [in, string] char* handle,
-                [in, string] char* dmat,
-                int option_mask,
-                unsigned ntree_limit,
-                [out] bst_ulong *out_len,
-                [out] uint8_t **out_result,
-                [in, string] char* username);
 
         public int enclave_XGDMatrixGetFloatInfo(
                 [in, string] char* handle,
@@ -146,21 +118,11 @@ enclave {
         public int enclave_XGBoosterLoadModel(
                 [in, string] char* handle,
                 [in, string] const char* fname,
-                [in, string] char* username);
-
-        public int enclave_XGBoosterLoadModelWithSig(
-                [in, string] char* handle,
-                [in, string] const char* fname,
                 [in, string] char* username,
                 [in, count=sig_len] uint8_t *signature,
                 size_t sig_len);
 
         public int enclave_XGBoosterSaveModel(
-                [in, string] char* handle,
-                [in, string] const char* fname,
-                [in, string] char* username);
-
-        public int enclave_XGBoosterSaveModelWithSig(
                 [in, string] char* handle,
                 [in, string] const char* fname,
                 [in, string] char* username,
@@ -175,14 +137,6 @@ enclave {
                 [out] char*** out_models);
 
         public int enclave_XGBoosterDumpModelEx(
-                [in, string] char* handle,
-                [in, string] const char* fmap,
-                int with_stats,
-                [in, string] const char* format,
-                [out] bst_ulong* len,
-                [out] char*** out_models);
-
-        public int enclave_XGBoosterDumpModelExWithSig(
                 [in, string] char* handle,
                 [in, string] const char* fmap,
                 int with_stats,
@@ -214,18 +168,6 @@ enclave {
                 int with_stats,
                 [in, string] const char* format,
                 [out] bst_ulong* len,
-                [out] char*** out_models);
-
-        public int enclave_XGBoosterDumpModelExWithFeaturesWithSig(
-                [in, string] char* handle,
-                unsigned int fnum,
-                [in, count=fnum] const char** fname,
-                [in, count=fnum] size_t* fname_lengths,
-                [in, count=fnum] const char** ftype,
-                [in, count=fnum] size_t* ftype_lengths,
-                int with_stats,
-                [in, string] const char* format,
-                [out] bst_ulong* len,
                 [out] char*** out_models,
                 [in, string] char* username,
                 [in, count=sig_len] uint8_t *signature,
@@ -235,23 +177,11 @@ enclave {
                 [in, string] char* handle,
                 [out] bst_ulong *out_len,
                 [out] char **out_dptr,
-                [in, string] char* username);
-
-        public int enclave_XGBoosterGetModelRawWithSig(
-                [in, string] char* handle,
-                [out] bst_ulong *out_len,
-                [out] char **out_dptr,
                 [in, string] char* username,
                 [in, count=sig_len] uint8_t *signature,
                 size_t sig_len);
 
         public int enclave_XGBoosterLoadModelFromBuffer(
-                [in, string] char* handle,
-                [in, size=len] const void* buf,
-                bst_ulong len,
-                [in, string] char* username);
-
-        public int enclave_XGBoosterLoadModelFromBufferWithSig(
                 [in, string] char* handle,
                 [in, size=len] const void* buf,
                 bst_ulong len,

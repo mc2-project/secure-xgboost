@@ -527,14 +527,14 @@ class DMatrix(object):
                 sig = proto_to_pointer(sig)
                 sig_len = ctypes.c_size_t(sig_len)
 
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFileWithSig(filenames,
+                _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                                                                   usrs,
                                                                   c_bst_ulong(len(data)),
                                                                   ctypes.c_int(silent),
                                                                   ctypes.byref(handle),
-                                                                c_str(globals()["current_user"].username),
-                                                                sig,
-                                                                sig_len))
+                                                                  c_str(globals()["current_user"].username),
+                                                                  sig,
+                                                                  sig_len))
 
                 #_check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                 #    usrs,
@@ -1421,7 +1421,7 @@ class Booster(object):
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
-            _check_call(_LIB.XGBoosterLoadModelFromBufferWithSig(handle, ptr, length, c_str(user.username), sig, sig_len))
+            _check_call(_LIB.XGBoosterLoadModelFromBuffer(handle, ptr, length, c_str(user.username), sig, sig_len))
 
             state['handle'] = handle
         self.__dict__.update(state)
@@ -1538,7 +1538,7 @@ class Booster(object):
             sig, sig_len = user.sign_statement(key+","+str(val))
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
-            _check_call(_LIB.XGBoosterSetParamWithSig(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len))
+            _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val)), c_str(user.username), sig, sig_len))
             ## send it with signatures
             # _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
 
@@ -1573,7 +1573,7 @@ class Booster(object):
             sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
-            _check_call(_LIB.XGBoosterUpdateOneIterWithSig(self.handle, ctypes.c_int(iteration),
+            _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration),
                                                     dtrain.handle,
                                                     c_str(user.username),
                                                     sig,
@@ -1779,7 +1779,7 @@ class Booster(object):
         sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
         sig = proto_to_pointer(sig)
         sig_len = ctypes.c_size_t(sig_len)
-        _check_call(_LIB.XGBoosterPredictWithSig(self.handle, data.handle,
+        _check_call(_LIB.XGBoosterPredict(self.handle, data.handle,
                                           ctypes.c_int(option_mask),
                                           ctypes.c_uint(ntree_limit),
                                           ctypes.byref(length),
@@ -1851,7 +1851,7 @@ class Booster(object):
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
-            _check_call(_LIB.XGBoosterSaveModelWithSig(self.handle, c_str(fname), c_str(username), sig, sig_len))
+            _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username), sig, sig_len))
         else:
             raise TypeError("fname must be a string")
 
@@ -1883,7 +1883,7 @@ class Booster(object):
         sig = proto_to_pointer(sig)
         sig_len = ctypes.c_size_t(sig_len)
 
-        _check_call(_LIB.XGBoosterGetModelRawWithSig(self.handle,
+        _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
                                               ctypes.byref(length),
                                               ctypes.byref(cptr),
                                               c_str(username),
@@ -1926,7 +1926,7 @@ class Booster(object):
             sig, sig_len = utils.sign_data(user.private_key, c_args, data_size, pointer = True)
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
-            _check_call(_LIB.XGBoosterLoadModelWithSig(self.handle, c_str(fname), c_str(username), sig, sig_len))
+            _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username), sig, sig_len))
 
             # _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
         else:
@@ -1940,7 +1940,7 @@ class Booster(object):
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
-            _check_call(_LIB.XGBoosterLoadModelFromBufferWithSig(self.handle, ptr, length, c_str(username), sig, sig_len))
+            _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username), sig, sig_len))
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
@@ -2017,7 +2017,7 @@ class Booster(object):
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
-            _check_call(_LIB.XGBoosterDumpModelExWithFeaturesWithSig(
+            _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
                 self.handle,
                 ctypes.c_int(flen),
                 fname,
@@ -2055,7 +2055,7 @@ class Booster(object):
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
-            _check_call(_LIB.XGBoosterDumpModelExWithSig(self.handle,
+            _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                   c_str(fmap),
                                                   ctypes.c_int(with_stats),
                                                   c_str(dump_format),
