@@ -19,7 +19,7 @@ enclave {
                 int silent,
                 [out] char** handle);
 
-        public int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(
+        public int enclave_XGDMatrixCreateFromEncryptedFileWithSig(
                 [in, count=num_files] const char **fnames,
                 [in, count=num_files] size_t* fname_lengths,
                 [in, count=num_files] char** usernames,
@@ -27,8 +27,9 @@ enclave {
                 bst_ulong num_files,
                 int silent,
                 [out] char** handle,
-                [in, count=num_files] char **sigs,
-                [in, count=num_files] size_t* sig_lens);
+                [in, string] char *username,
+                [in, count=sig_len] uint8_t *sig,
+                size_t sig_len);
 
         public int enclave_XGBoosterCreate(
                 [in, count=len] char** dmat_handles,

@@ -56,12 +56,11 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_
   return XGDMatrixCreateFromEncryptedFile((const char**) filenames, usrnames, num_files, silent, out);
 }
 
-int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out, char* sigs[], size_t sig_lens[]) {
-  LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFileWithSigs";
+int enclave_XGDMatrixCreateFromEncryptedFileWithSig(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, DMatrixHandle *out, char *username, uint8_t *signature, size_t sig_len) {
+  LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFileWithSig";
   char* filenames[num_files];
   char* usrnames[num_files];
-  char* signatures[num_files];
-  size_t signature_lengths[num_files];
+
 
   for (int i = 0; i < num_files; i++) {
     const char* fname = fnames[i];
@@ -76,16 +75,8 @@ int enclave_XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[], size_
     usrnames[i] = strndup(uname, namelen);
     usrnames[i][namelen] = '\0';
 
-    // additional sanitization
-    const char* s = sigs[i];
-    size_t sig_l = sig_lens[i];
-    signature_lengths[i] = sig_l;
-    check_host_buffer(s, sig_l);
-    signatures[i] = strndup(s, sig_l);
-    signatures[i][sig_l] = '\0';
-
   }
-  return XGDMatrixCreateFromEncryptedFileWithSigs((const char**) filenames, usrnames, num_files, silent, out, (char**) signatures, signature_lengths);
+  return XGDMatrixCreateFromEncryptedFileWithSig((const char**) filenames, usrnames, num_files, silent, out, username, signature, sig_len);
 }
 
 

@@ -512,31 +512,27 @@ class DMatrix(object):
 
                 # add signature for each user
                 utils = CryptoUtils()
-                sigs = []
-                sig_lens = []
 
+                args = ""
                 for i, username in enumerate(usernames):
 
-                    args = "filename {} num_files {} silent {}".format(data[i], len(data), silent)
+                    args += "filename {} num_files {} silent {}".format(data[i], len(data), silent)
                     print(args)
-                    c_args = ctypes.c_char_p(args.encode('utf-8'))
-                    data_size = len(args)
-                    sig, sig_len = utils.sign_data(User.all_users[username].private_key, c_args, data_size, pointer = True)
-                    sig = proto_to_pointer(sig)
-                    sig_len = ctypes.c_size_t(sig_len)
-                    sigs.append(sig)
-                    sig_lens.append(sig_len)
 
-                sigs = c_array(ctypes.c_char_p, sigs)
-                sig_lens = c_array(ctypes.c_size_t, sig_lens)
+                c_args = ctypes.c_char_p(args.encode('utf-8'))
+                data_size = len(args)
+                sig, sig_len = utils.sign_data(globals()["current_user"].private_key, c_args, data_size, pointer = True)
+                sig = proto_to_pointer(sig)
+                sig_len = ctypes.c_size_t(sig_len)
 
-                _check_call(_LIB.XGDMatrixCreateFromEncryptedFileWithSigs(filenames,
+                _check_call(_LIB.XGDMatrixCreateFromEncryptedFileWithSig(filenames,
                                                                   usrs,
                                                                   c_bst_ulong(len(data)),
                                                                   ctypes.c_int(silent),
                                                                   ctypes.byref(handle),
-                                                                sigs,
-                                                                sig_lens))
+                                                                globals()["current_user"].username,
+                                                                sig,
+                                                                sig_len))
 
                 #_check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                 #    usrs,

@@ -489,13 +489,14 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
   API_END();
 }
 
-int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
+int XGDMatrixCreateFromEncryptedFileWithSig(const char *fnames[],
                                      char* usernames[],
                                      xgboost::bst_ulong num_files,
                                      int silent,
                                      DMatrixHandle *out,
-                                     char *signatures[],
-                                     size_t signature_lengths[]) {
+                                     char *username,
+                                     uint8_t *signature,
+                                     size_t sig_len) {
     API_BEGIN();
     LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
@@ -505,13 +506,14 @@ int XGDMatrixCreateFromEncryptedFileWithSigs(const char *fnames[],
         load_row_split = true;
     }
     //signature verification for all users
-    bool verified = true;
-    for (xgboost::bst_ulong i = 0; i < num_files; ++i) {
-        std::ostringstream oss;
+
+    std::ostringstream oss;
+    for (xgboost::bst_ulong i = 0; i < num_files; i++) {
+
         oss << "filename " << fnames[i] << " num_files " << num_files << " silent " << silent;
-        const char* buff = strdup(oss.str().c_str());
-        verified = verified && EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), (uint8_t*) signatures[i], signature_lengths[i], (char *)usernames[i]);
     }
+    const char* buff = strdup(oss.str().c_str());
+    bool verified = EnclaveContext::getInstance().verifySignatureWithUserName((uint8_t*)buff, strlen(buff), (uint8_t*) signature, sig_len, username);
     if (!verified){
         return -1;
     }
