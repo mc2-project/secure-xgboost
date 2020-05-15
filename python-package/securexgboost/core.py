@@ -530,7 +530,7 @@ class DMatrix(object):
                                                                   c_bst_ulong(len(data)),
                                                                   ctypes.c_int(silent),
                                                                   ctypes.byref(handle),
-                                                                globals()["current_user"].username,
+                                                                c_str(globals()["current_user"].username),
                                                                 sig,
                                                                 sig_len))
 
