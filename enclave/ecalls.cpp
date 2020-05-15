@@ -177,7 +177,7 @@ int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, char *us
   return XGBoosterSaveModel(handle, fname, username);
 }
 
-int enclave_XGBoosterSaveModelWithSig(BoosterHandle handle, const char *fname, char *username, uint8_t *signature, size_t sig_len)) {
+int enclave_XGBoosterSaveModelWithSig(BoosterHandle handle, const char *fname, char *username, uint8_t *signature, size_t sig_len) {
   LOG(DEBUG) << "Ecall: XGBoosterSaveModelWithSig";
   return XGBoosterSaveModelWithSig(handle, fname, username, signature, sig_len);
 }
