@@ -1562,7 +1562,7 @@ class Booster(object):
 
             utils = CryptoUtils()
             user = globals()["current_user"]
-            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), iteration, dtrain.handle.value.decode('utf-8'))
+            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
 
@@ -1768,7 +1768,7 @@ class Booster(object):
 
         utils = CryptoUtils()
         ## TODO: how to join the argument
-        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), option_mask, ntree_limit)
+        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
         print(args)
         c_args = ctypes.c_char_p(args.encode('utf-8'))
 
@@ -2005,7 +2005,7 @@ class Booster(object):
             user = globals()["current_user"]
             args = ""
             for i in range(flen):
-                args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', with_stats, dump_format)
+                args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', int(with_stats), dump_format)
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
             data_size = len(args)
@@ -2043,7 +2043,7 @@ class Booster(object):
 
             utils = CryptoUtils()
             user = globals()["current_user"]
-            args = "booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, with_stats, dump_format)
+            args = "booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
             print(args)
             c_args = ctypes.c_char_p(args.encode('utf-8'))
             data_size = len(args)
