@@ -8,14 +8,6 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 2. Next install the Secure XGBoost dependencies
 3. Then build Secure XGBoost from source. 
 
-.. note:: Use of Git submodules
-
-  XGBoost uses Git submodules to manage dependencies. So when you clone the repo, remember to specify ``--recursive`` option:
-
-  .. code-block:: bash
-
-   git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
-
 Please refer to the `Troubleshooting`_ section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
 to open an issue on `GitHub <https://github.com/mc2-project/mc2-xgboost/issues>`_.
@@ -44,7 +36,9 @@ Installing the Open Enclave SDK
    - Open Enclave version 0.8.2
    - Intel SGX DCAP Driver version 1.21
    
-   Follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ to install the Intel SGX DCAP driver, and the Open Enclave packages and dependencies. 
+   If building on an SGX-enabled machine, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ to install the Open Enclave packages and dependencies, and the SGX DCAP driver. 
+
+   .. note:: You may also build the SDK in "simulation mode" on a machine without SGX support (e.g., for local development and testing). To build in simulation mode, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Simulation.md>`_ instead. Notably, these instructions require that you skip the driver installation step.
 
    Alternatively, you may also acquire a VM with the required features pre-installed from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.8.2, and the DCAP driver to version 1.21:
 
@@ -63,6 +57,7 @@ Installing the Open Enclave SDK
 
    If not, follow `these <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ instructions to update.
 
+
 2. Configure environment variables for Open Enclave SDK for Linux:
 
    .. code-block:: bash
@@ -71,7 +66,8 @@ Installing the Open Enclave SDK
 
    Consider adding this line to your ``~/.bashrc`` to make the environment variables persist across sessions.
 
-3. Starting from version 0.8.2, the Open Enclave SDK supports mitigation against the `LVI vulnerability <https://software.intel.com/security-software-guidance/software-guidance/load-value-injection>`_.
+
+3. Starting from version 0.8.2, the Open Enclave SDK supports mitigation against the `LVI vulnerability <https://software.intel.com/security-software-guidance/software-guidance/load-value-injection>`_ that affects SGX enclaves.
 
    To enable LVI mitigation, you need to additionally install LVI mitigated versions of the Open Enclave libraries. Follow the instructions for Linux prerequisites described `here <https://github.com/openenclave/openenclave/tree/0.8.2/samples/helloworld#build-and-run-with-lvi-mitigation>`_.
 
@@ -79,17 +75,20 @@ Installing the Open Enclave SDK
 Installing Secure XGBoost Dependencies 
 **************************************
 
-.. code-block:: bash
+1. Install ``cmake >= v3.11``. E.g., the following commands install ``cmake v3.15.6``.
 
-   sudo apt-get install -y libmbedtls-dev python3-pip
-   pip3 install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes   
+   .. code-block:: bash
 
-Install cmake >= v3.11. E.g., the following commands install cmake v3.15.6.
+      wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
+      sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-.. code-block:: bash
+2. Install the remaining dependencies.
 
-   wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
-   sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
+   .. code-block:: bash
+
+      sudo apt-get install -y libmbedtls-dev python3-pip
+      pip3 install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes   
+
 
 ***********************
 Building Secure XGBoost
@@ -160,48 +159,27 @@ The Python package is located at ``python-package/``.
 
 1. Install system-wide, which requires root permission:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-  cd python-package; sudo python3 setup.py install
+     cd python-package; sudo python3 setup.py install
 
 .. note:: Re-compiling Secure XGBoost
 
   If you recompiled Secure XGBoost, then you need to reinstall it again to make the new library take effect.
-
-2. Set the environment variable ``PYTHONPATH`` to tell Python where to find
-   the RPC library. For example, assume we cloned ``secure-xgboost`` on the home directory
-   ``~``. then we can added the following line in ``~/.bashrc``.
-
-.. code-block:: bash
-
-   export PYTHONPATH=/path/to/mc2-xgboost/rpc
 
 
 ***************
 Troubleshooting
 ***************
 
-1. Compile failed after ``git pull``
-
-   Please first update the submodules, clean all and recompile:
-
-   .. code-block:: bash
-
-     git submodule update && make clean_all && make -j4
-
-2. ``Makefile: dmlc-core/make/dmlc.mk: No such file or directory``
-
-   We need to recursively clone the submodule:
+1. Can't find ``<openenclave/host.h>`` (no such file or directory).
+   
+   Please configure environment variables for Open Enclave SDK for Linux as described in the installation step:
 
    .. code-block:: bash
 
-     git submodule init
-     git submodule update
+      source /opt/openenclave/share/openenclave/openenclaverc
 
-   Alternatively, do another clone
-
-   .. code-block:: bash
-
-      git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
+   Consider adding this line to your ``~/.bashrc`` to make the environment variables persist across sessions.
 
 

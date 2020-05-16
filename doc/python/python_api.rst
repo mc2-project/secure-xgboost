@@ -1,6 +1,6 @@
 Python API Reference
 ====================
-This page gives the Python API reference of xgboost, please also refer to Python Package Introduction for more information about python package.
+This page gives the Python API reference of Secure XGBoost, please also refer to the Python Package Introduction for more information.
 
 .. contents::
   :backlinks: none
@@ -19,10 +19,6 @@ Core Data Structure
     :show-inheritance:
 
 .. autoclass:: securexgboost.Enclave
-    :members:
-    :show-inheritance:
-
-.. autoclass:: securexgboost.CryptoUtils
     :members:
     :show-inheritance:
 

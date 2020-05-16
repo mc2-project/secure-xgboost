@@ -13,6 +13,14 @@
 #include "mbedtls/error.h"
 #include "mbedtls/pk_internal.h"
 
+// needed for certificate
+#include "mbedtls/platform.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+
+
 class EnclaveContext {
   // FIXME Embed root CA for clients
 
@@ -29,6 +37,7 @@ class EnclaveContext {
       */
     std::unordered_map<std::string, void*> booster_map;
     std::unordered_map<std::string, void*> dmatrix_map;
+    std::unordered_map<std::string, std::vector<std::string>> dmatrix_owner_map;
     int booster_ctr;
     int dmatrix_ctr;
 
@@ -82,13 +91,19 @@ class EnclaveContext {
     }
 
     // Note: Returned handle needs to be freed
-    DMatrixHandle add_dmatrix(void* dmatrix) {
+    DMatrixHandle add_dmatrix(void* dmatrix, char* usernames[], int len) {
       std::ostringstream oss;
       oss << "DMatrix_" << ++dmatrix_ctr;
       auto str = oss.str();
       dmatrix_map[str] = dmatrix;
+
+      std::vector<std::string> v(usernames, usernames + len);
+      dmatrix_owner_map[str] = v;
+
       DMatrixHandle handle = strdup(str.c_str());
       LOG(DEBUG) << "Added dmatrix " << handle;
+      debug_print_dmatrix_map();
+      debug_print_dmatrix_owner_map();
       return handle;
     }
 
@@ -97,7 +112,8 @@ class EnclaveContext {
       std::string str(handle);
       std::unordered_map<std::string, void*>::const_iterator iter = booster_map.find(str);
       if (iter == booster_map.end()) {
-        LOG(FATAL) << "No such booster oject";
+        debug_print_booster_map();
+        LOG(FATAL) << "No such booster oject: " << handle;
         return NULL;
       } else {
         return iter->second;
@@ -109,10 +125,57 @@ class EnclaveContext {
       std::string str(handle);
       std::unordered_map<std::string, void*>::const_iterator iter = dmatrix_map.find(str);
       if (iter == dmatrix_map.end()) {
-        LOG(FATAL) << "No such dmatrix oject";
+        debug_print_dmatrix_map();
+        LOG(FATAL) << "No such dmatrix oject: " << handle;
+        return NULL;
       } else {
         return iter->second;
       }
+    }
+
+    std::vector<std::string> get_dmatrix_owners(DMatrixHandle handle) {
+      LOG(DEBUG) << "Getting dmatrix " << handle;
+      std::string str(handle);
+      auto iter = dmatrix_owner_map.find(str);
+      if (iter == dmatrix_owner_map.end()) {
+        debug_print_dmatrix_owner_map();
+        LOG(FATAL) << "No such dmatrix oject: " << handle;
+      } else {
+        return iter->second;
+      }
+    }
+
+    void debug_print_dmatrix_map() {
+      std::ostringstream oss;
+      oss << "DMatrix map---------------" << "\n";
+      for(auto elem : dmatrix_map) {
+        oss << elem.first << " " << elem.second << "\n";
+      }
+      oss << "--------------------------" << "\n";
+      LOG(DEBUG) << oss.str();
+    }
+
+    void debug_print_dmatrix_owner_map() {
+      std::ostringstream oss;
+      oss << "DMatrix owner map---------------" << "\n";
+      for(auto elem : dmatrix_owner_map) {
+        oss << elem.first << "\n";
+        for(auto name : elem.second) {
+          oss << "\t" << name << "\n";
+        }
+      }
+      oss << "--------------------------" << "\n";
+      LOG(DEBUG) << oss.str();
+    }
+
+    void debug_print_booster_map() {
+      std::ostringstream oss;
+      oss << "Booster map---------------" << "\n";
+      for(auto elem : booster_map) {
+        oss << elem.first << " " << elem.second << "\n";
+      }
+      oss << "--------------------------" << "\n";
+      LOG(DEBUG) << oss.str();
     }
 
     void del_booster(BoosterHandle handle) {
@@ -143,6 +206,14 @@ class EnclaveContext {
         return (char*) iter->second.data();
       }
     }
+
+    /*
+     *void sync_client_key() {
+     *  // The master node (rank 0) broadcasts the client key to other nodes
+     *  rabit::Broadcast(client_key, CIPHER_KEY_SIZE, 0);
+     *  client_key_is_set = true;
+     *}
+     */
 
     bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
           mbedtls_pk_context _pk_context;
@@ -196,12 +267,6 @@ class EnclaveContext {
         i++;
       }
       return true;
-    }
-
-    void sync_client_key() {
-      // The master node (rank 0) broadcasts the client key to other nodes
-      rabit::Broadcast(client_key, CIPHER_KEY_SIZE, 0);
-      client_key_is_set = true;
     }
 
     bool verifySignatureWithCertificate(char* cert,
@@ -263,7 +328,6 @@ class EnclaveContext {
 
       int res = 0;
       mbedtls_rsa_context* rsa_context;
-
       mbedtls_pk_rsa(m_pk_context)->len = data_len;
       rsa_context = mbedtls_pk_rsa(m_pk_context);
       rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
@@ -329,15 +393,13 @@ class EnclaveContext {
       // Initialize entropy.
       res = mbedtls_ctr_drbg_seed(&m_ctr_drbg_context, mbedtls_entropy_func, &m_entropy_context, NULL, 0);
       if (res != 0) {
-        LOG(INFO) << "mbedtls_ctr_drbg_seed failed.";
-        return false;
+        LOG(FATAL) << "mbedtls_ctr_drbg_seed failed with " << res;
       }
 
       // Initialize RSA context.
       res = mbedtls_pk_setup(&m_pk_context, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA));
       if (res != 0) {
-        LOG(INFO) << "mbedtls_pk_setup failed " << res;
-        return false;
+        LOG(FATAL) << "mbedtls_pk_setup failed with " << res;
       }
 
       // Generate an ephemeral 2048-bit RSA key pair with
@@ -350,25 +412,14 @@ class EnclaveContext {
           65537);
 
       if (res != 0) {
-        LOG(INFO) << "mbedtls_rsa_gen_key failed " << res;
-        return false;
+        LOG(FATAL) << "mbedtls_rsa_gen_key failed with " << res;
       }
 
       // Write out the public key in PEM format for exchange with other enclaves.
       res = mbedtls_pk_write_pubkey_pem(&m_pk_context, m_public_key, sizeof(m_public_key));
       if (res != 0) {
-        LOG(INFO) << "mbedtls_pk_write_pubkey_pem failed " << res;
-        return false;
+        LOG(FATAL) << "mbedtls_pk_write_pubkey_pem failed with " << res;
       }
-
-      // FIXME
-      // Write out the private key in PEM format for exchange with other enclaves.
-      //res = mbedtls_pk_write_key_pem(&m_pk_context, m_private_key, sizeof(m_private_key));
-      //if (res != 0) {
-      //  LOG(INFO) << "mbedtls_pk_write_pubkey_pem failed " << res;
-      //  return false;
-      //}
-      //return true;
     }
 };
 

@@ -291,15 +291,15 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      char *username,
                                      uint8_t* signatures[],
                                      size_t* sig_lengths) {
-  size_t fname_lengths[num_files];
-  size_t username_lengths[num_files];
+    size_t fname_lengths[num_files];
+    size_t username_lengths[num_files];
 
-  for (int i = 0; i < num_files; i++) {
-    fname_lengths[i] = strlen(fnames[i]);
-    username_lengths[i] = strlen(usernames[i]);
-  }
+    for (int i = 0; i < num_files; i++) {
+      fname_lengths[i] = strlen(fnames[i]);
+      username_lengths[i] = strlen(usernames[i]);
+    }
 
-  safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out, username, signatures, sig_lengths, NUM_CLIENTS));
+    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out, username, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 
@@ -1277,8 +1277,8 @@ bool attest_remote_report(
   // signing key that was used to sign an enclave. Check that the enclave was
   // signed by an trusted entity.
   if (!verify_mrsigner(
-        (char*)ENCLAVE_PUBLIC_KEY,
-        sizeof(ENCLAVE_PUBLIC_KEY),
+        (char*)MRSIGNER_PUBLIC_KEY,
+        sizeof(MRSIGNER_PUBLIC_KEY),
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
     std::cout << "failed:mrsigner not equal!" << std::endl;
@@ -1330,13 +1330,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
   return 0;
 }
 
-//XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-//    // FIXME return value / error handling
-//  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signatures, sig_lengths, NUM_CLIENTS));
-//}
-
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-    // FIXME return value / error handling
   safe_ecall(enclave_add_client_key_with_certificate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret,cert,cert_len,data, data_len, signature, sig_len));
 }
 

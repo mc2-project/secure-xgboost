@@ -230,8 +230,8 @@ oe_result_t enclave_identity_verifier_callback(
 
   // The signer ID for the enclave, for SGX enclaves, this is the MRSIGNER value
   if (!verify_mrsigner(
-        (char*)ENCLAVE_PUBLIC_KEY,
-        sizeof(ENCLAVE_PUBLIC_KEY),
+        (char*)MRSIGNER_PUBLIC_KEY,
+        sizeof(MRSIGNER_PUBLIC_KEY),
         identity->signer_id,
         sizeof(identity->signer_id))) {
     printf( "failed:mrsigner not equal!\n");
