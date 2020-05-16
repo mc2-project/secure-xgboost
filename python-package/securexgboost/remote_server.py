@@ -47,6 +47,8 @@ class Command(object):
         self._params = None
         self._ret = None
         self._usernames = []
+        self._signatures = []
+        self._sig_lengths = []
         self._retrieved = []
 
     def submit(self, func, params, username):
@@ -56,6 +58,8 @@ class Command(object):
         else:
             assert self._func == func
         self._usernames.append(username)
+        self._signatures.append(params.signature)
+        self._sig_lengths.append(params.sig_len)
 
     def is_ready(self):
         for user in globals()["all_users"]:
@@ -64,7 +68,7 @@ class Command(object):
         return True
 
     def invoke(self):
-        self._ret = self._func(self._params)
+        self._ret = self._func(self._params, self._signatures, self._sig_lengths)
 
     def result(self, username):
         self._retrieved.append(username)

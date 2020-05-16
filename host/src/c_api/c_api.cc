@@ -298,6 +298,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
       fname_lengths[i] = strlen(fnames[i]);
       username_lengths[i] = strlen(usernames[i]);
     }
+    std::cout << username << std::endl;
 
     safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out, username, signatures, sig_lengths, NUM_CLIENTS));
 }
@@ -1427,6 +1428,9 @@ XGB_DLL int sign_data(char *keyfile, uint8_t* data, size_t data_size, uint8_t* s
     printf( " failed\n  ! mbedtls_pk_sign returned %d\n\n", ret );
     return ret;
   }
+  for (int i = 0; i < *sig_len + 32; i++)
+    std::cout << (int)signature[i] << " ";
+  std::cout << " ---- " << *sig_len << std::endl;
   return 0;
 }
 

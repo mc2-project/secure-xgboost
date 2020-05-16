@@ -200,6 +200,10 @@ static int verifySignature(mbedtls_pk_context pk, uint8_t* data, size_t data_len
     LOG(FATAL) << "verification failed -- Could not hash";
   }
 
+  for (int i = 0; i < sig_len + 32; i++)
+    std::cout << (int)signature[i] << " ";
+  std::cout << " ---- " << sig_len << std::endl;
+
   if((ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0 ) {
     LOG(FATAL) << "verification failed -- mbedtls_pk_verify returned " << ret;
   }

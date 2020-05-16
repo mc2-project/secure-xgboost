@@ -38,7 +38,7 @@ static const char* CA_CERT = "-----BEGIN CERTIFICATE-----\n"
 "ko6CD0TAPKr7JWDfUPSP/g==\n"
 "-----END CERTIFICATE-----";
 
-static const int NUM_CLIENTS = 2;
-static const std::vector<std::string> CLIENT_NAMES = {"user1", "user2"};
+static const int NUM_CLIENTS = 1;
+static const std::vector<std::string> CLIENT_NAMES = {"user1"};
 
 #endif

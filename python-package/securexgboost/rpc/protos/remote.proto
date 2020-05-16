@@ -127,6 +127,8 @@ message DMatrixAttrs {
     repeated string usernames = 2;
     uint32 silent = 3;
     string username = 4;
+    numproto.protobuf.NDArray signature = 5;
+    uint32 sig_len = 6;
 }
 
 // Params for the constructor of a Booster
@@ -134,6 +136,8 @@ message BoosterAttrs {
     repeated string cache = 1;
     uint64 length = 2;
     string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
 }
 
 // Booster parameter
@@ -142,6 +146,8 @@ message BoosterParam {
     string key = 2;
     string value = 3;
     string username = 4;
+    numproto.protobuf.NDArray signature = 5;
+    uint32 sig_len = 6;
 }
 
 // Params for training
@@ -150,6 +156,8 @@ message BoosterUpdateParams {
     string dtrain_handle = 2;
     uint32 iteration = 3;
     string username = 4;
+    numproto.protobuf.NDArray signature = 5;
+    uint32 sig_len = 6;
 }
 
 // Params for eval
@@ -158,6 +166,8 @@ message BoosterEvalSetParams {
     repeated Pair evals = 2;
     uint32 iteration = 3;
     string username = 4;
+    numproto.protobuf.NDArray signature = 5;
+    uint32 sig_len = 6;
 }
 
 // Params for prediction
@@ -167,6 +177,8 @@ message PredictParams {
     uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
     string username = 5;
+    numproto.protobuf.NDArray signature = 6;
+    uint32 sig_len = 7;
 }
 
 // Params for save model
@@ -174,6 +186,8 @@ message SaveModelParams {
     string booster_handle = 1;
     string filename = 2;
     string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
 }
 
 // Params for load model
@@ -190,6 +204,8 @@ message DumpModelParams {
     uint32 with_stats = 3;
     string dump_format = 4;
     string username = 5;
+    numproto.protobuf.NDArray signature = 6;
+    uint32 sig_len = 7;
 }
 
 // Params for dump model with features
@@ -201,12 +217,16 @@ message DumpModelWithFeaturesParams {
     uint32 with_stats = 5;
     string dump_format = 6;
     string username = 7;
+    numproto.protobuf.NDArray signature = 8;
+    uint32 sig_len = 9;
 }
 
 // Params for dump model
 message ModelRawParams {
     string booster_handle = 1;
     string username = 2;
+    numproto.protobuf.NDArray signature = 3;
+    uint32 sig_len = 4;
 }
 
 // Model dump
@@ -229,8 +249,10 @@ message Name {
     // Name that the server assigned the handle
     string name = 1;
     string username = 2;
+    numproto.protobuf.NDArray signature = 3;
+    uint32 sig_len = 4;
     // Status of call (for returned Name)
-    Status status = 3;
+    Status status = 5;
 }
 
 // Integer
