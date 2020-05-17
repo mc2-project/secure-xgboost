@@ -13,6 +13,9 @@ sym_key_file = HOME_DIR + "demo/data/key_zeros.txt"
 pub_key_file = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
 cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
 
+temp_name = HOME_DIR + "demo/data/temp_file.txt"
+temp_enc_name = HOME_DIR + "demo/data/temp_file.txt.enc"
+
 print("Init user parameters")
 xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
 
