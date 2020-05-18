@@ -27,6 +27,9 @@ before_install:
   # Setup OE environment variables
   - source /opt/openenclave/share/openenclave/openenclaverc
 
+before_install:
+  - if [ "${TASK}" != "python_sdist_test" ]; then export PYTHONPATH=${PYTHONPATH}:${PWD}/python-package; fi
+
 install:
   - source tests/travis/setup.sh
 
