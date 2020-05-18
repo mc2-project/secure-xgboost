@@ -1,6 +1,6 @@
 # coding: utf-8
-from xgboost.compat import SKLEARN_INSTALLED, PANDAS_INSTALLED
-from xgboost.compat import CUDF_INSTALLED, DASK_INSTALLED
+from securexgboost.compat import SKLEARN_INSTALLED, PANDAS_INSTALLED
+from securexgboost.compat import CUDF_INSTALLED, DASK_INSTALLED
 
 
 def no_sklearn():
