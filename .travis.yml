@@ -28,6 +28,7 @@ before_install:
   - source /opt/openenclave/share/openenclave/openenclaverc
   # Append to $PYTHONPATH
   - if [ "${TASK}" != "python_sdist_test" ]; then export PYTHONPATH=${PYTHONPATH}:${PWD}/python-package; fi
+  - export PYTHONPATH=${PYTHONPATH}:${PWD}/tests/python
 
 install:
   - source tests/travis/setup.sh
