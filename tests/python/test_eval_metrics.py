@@ -40,7 +40,7 @@ rng = np.random.RandomState(1337)
 
 
 class TestEvalMetrics(unittest.TestCase):
-     xgb_params_01 = {
+    xgb_params_01 = {
         'verbosity': 0,
         'nthread': 1,
         'eval_metric': 'error'
