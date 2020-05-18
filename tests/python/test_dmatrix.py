@@ -41,7 +41,7 @@ rng = np.random.RandomState(1994)
 
 class TestDMatrix(unittest.TestCase):
     def test_dmatrix_dimensions(self):
-        data = np.random.randn(5, 4)
+        data = np.random.randn(5, 5)
         target = np.random.randn(5)
         dump_svmlight_file(data, target, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
@@ -93,7 +93,7 @@ class TestDMatrix(unittest.TestCase):
         """
 
     def test_feature_names_slice(self):
-        data = np.random.randn(5, 4)
+        data = np.random.randn(5, 5)
         target = np.random.randn(5)
         dump_svmlight_file(data, target, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
@@ -161,7 +161,7 @@ class TestDMatrix(unittest.TestCase):
             scores = bst.get_fscore()
             assert list(sorted(k for k in scores)) == features
 
-            dummy_X = np.random.randn(5, 4)
+            dummy_X = np.random.randn(5, 5)
             dummy_Y = np.random.randn(5)
             dump_svmlight_file(dummy_X, dummy_Y, temp_name) 
             xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
