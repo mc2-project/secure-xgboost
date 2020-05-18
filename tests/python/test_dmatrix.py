@@ -49,8 +49,8 @@ class TestDMatrix(unittest.TestCase):
         assert dm.num_row() == 5
         assert dm.num_col() == 5
 
-        data = np.random.randn(2, 1)
-        target = np.random.randn(2, 1)
+        data = np.random.randn(2, 2)
+        target = np.random.randn(2)
         dump_svmlight_file(data, target, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
         dm = xgb.DMatrix({username: temp_enc_name})
