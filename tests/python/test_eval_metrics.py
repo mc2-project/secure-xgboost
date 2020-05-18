@@ -107,8 +107,8 @@ class TestEvalMetrics(unittest.TestCase):
         dump_svmlight_file(Xv, yv, temp_name_v) 
         xgb.encrypt_file(temp_name_v, temp_enc_name_v, sym_key_file)
  
-        dtrain = xgb.DMatrix({username: temp_name_t})
-        dvalid = xgb.DMatrix({username: temp_name_v})
+        dtrain = xgb.DMatrix({username: temp_enc_name_t})
+        dvalid = xgb.DMatrix({username: temp_enc_name_v})
 
         watchlist = [(dtrain, 'train'), (dvalid, 'val')]
 

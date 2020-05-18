@@ -929,6 +929,7 @@ class DMatrix(object):
         -------
         number of rows : int
         """
+        channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
