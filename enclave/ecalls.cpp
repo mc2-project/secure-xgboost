@@ -88,18 +88,26 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_
   return ret;
 }
 
-int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, BoosterHandle* out) {
+int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, BoosterHandle* out, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterCreate";
-
   // Validate buffers and copy to enclave memory
   DMatrixHandle dmats[len];
+  char* signers_cpy[NUM_CLIENTS];
+  uint8_t* sigs[NUM_CLIENTS];
+
   copy_arr_to_enclave(dmats, len, dmat_handles, handle_lengths);
-  int ret = XGBoosterCreate(dmats, len, out);
+  copy_arr_to_enclave(signers_cpy, NUM_CLIENTS, signers, signer_lengths);
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+
+  int ret = XGBoosterCreate(dmats, len, out, signers_cpy, sigs, sig_lengths);
+
   free_array(dmats, len);
+  free_array(signers_cpy, NUM_CLIENTS);
+  free_sigs(sigs);
   return ret;
 }
 
-int enclave_XGBoosterSetParam(BoosterHandle handle, const char* name, const char* value, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs){
+int enclave_XGBoosterSetParam(BoosterHandle handle, const char* name, const char* value, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterSetParam";
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];

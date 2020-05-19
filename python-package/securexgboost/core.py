@@ -1357,6 +1357,9 @@ class Booster(object):
                 raise TypeError('invalid cache item: {}'.format(type(d).__name__))
             self._validate_features(d)
 
+        args = "XGBoosterCreate"
+        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+
         channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
@@ -1365,7 +1368,9 @@ class Booster(object):
                 response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
                     cache=cache_handles,
                     length=len(cache),
-                    username=globals()["current_user"])))
+                    username=globals()["current_user"],
+                    signature=sig,
+                    sig_len=sig_len)))
             self.handle = c_str(response.name)
         else:
             dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
@@ -2501,17 +2506,19 @@ class RemoteAPI:
             c_lengths))
 
 
-    # FIXME: Fix this API
     def XGBoosterCreate(request, signers, signatures, sig_lengths):
         cache = list(request.cache)
         length = request.length
-        # c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         bst_handle = ctypes.c_char_p()
         _check_call(_LIB.XGBoosterCreate(
             from_pystr_to_cstr(cache),
             c_bst_ulong(length),
-            ctypes.byref(bst_handle))),
+            ctypes.byref(bst_handle),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return bst_handle.value.decode('utf-8')
 
 

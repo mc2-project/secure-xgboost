@@ -897,12 +897,19 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
 
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     xgboost::bst_ulong len,
-                    BoosterHandle *out) {
+                    BoosterHandle *out,
+                    char **signers,
+                    uint8_t* signatures[],
+                    size_t* sig_lengths) {
   size_t handle_lengths[len];
+  size_t signer_lengths[NUM_CLIENTS];
   for (int i = 0; i < len; i++) {
     handle_lengths[i] = strlen(dmats[i]);
   }
-  safe_ecall(enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, const_cast<char**>(dmats), handle_lengths, len, out));
+  for (int i = 0; i < NUM_CLIENTS; i++) {
+    signer_lengths[i] = strlen(signers[i]);
+  }
+  safe_ecall(enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, const_cast<char**>(dmats), handle_lengths, len, out, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 XGB_DLL int XGBoosterFree(BoosterHandle handle) {

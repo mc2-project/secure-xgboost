@@ -1066,8 +1066,18 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 // xgboost implementation
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     xgboost::bst_ulong len,
-                    BoosterHandle *out) {
+                    BoosterHandle *out,
+                    char **signers,
+                    uint8_t** signatures,
+                    size_t* sig_lengths) {
   API_BEGIN();
+
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGBoosterCreate";
+  char* buff = strdup(oss.str().c_str());
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+
   std::vector<std::shared_ptr<DMatrix> > mats;
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
     void* mat = EnclaveContext::getInstance().get_dmatrix(dmats[i]);

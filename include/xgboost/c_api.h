@@ -373,11 +373,17 @@ XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
  * \param dmats matrices that are set to be cached
  * \param len length of dmats
  * \param out handle to the result booster
+ * \param signers list of usernames of signing clients
+ * \param signature user_signature
+ * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                             bst_ulong len,
-                            BoosterHandle *out);
+                            BoosterHandle *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths);
 
 /*!
  * \brief free obj in handle
