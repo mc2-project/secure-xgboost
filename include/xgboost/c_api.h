@@ -354,18 +354,30 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
  * \brief get number of rows.
  * \param handle the handle to the DMatrix
  * \param out The address to hold number of rows.
+ * \param signers list of usernames of signing clients
+ * \param signature user_signature
+ * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumRow(DMatrixHandle handle,
-                            bst_ulong *out);
+                            bst_ulong *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths);
 /*!
  * \brief get number of columns
  * \param handle the handle to the DMatrix
  * \param out The output of number of columns
+ * \param signers list of usernames of signing clients
+ * \param signature user_signature
+ * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
-                            bst_ulong *out);
+                            bst_ulong *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths);
 // --- start XGBoost class
 
 /*!

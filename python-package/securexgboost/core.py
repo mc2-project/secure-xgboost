@@ -942,12 +942,17 @@ class DMatrix(object):
         -------
         number of rows : int
         """
+        args = "XGDMatrixNumRow " + self.handle.value.decode('utf-8')
+        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
                     name=self.handle.value,
-                    username=globals()["current_user"])))
+                    username=globals()["current_user"],
+                    signature=sig,
+                    sig_len=sig_len)))
                 return response.value
         else:
             ret = c_bst_ulong()
@@ -955,7 +960,6 @@ class DMatrix(object):
                                              ctypes.byref(ret)))
             return ret.value
 
-    # FIXME: Add signatures
     def num_col(self):
         """Get the number of columns (features) in the DMatrix.
 
@@ -963,13 +967,18 @@ class DMatrix(object):
         -------
         number of columns : int
         """
+        args = "XGDMatrixNumCol " + self.handle.value.decode('utf-8')
+        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+
         channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
                     name=self.handle.value,
-                    username=globals()["current_user"])))
+                    username=globals()["current_user"],
+                    signature=sig,
+                    sig_len=sig_len)))
                 return response.value
         else:
             ret = c_bst_ulong()
@@ -2645,26 +2654,31 @@ class RemoteAPI:
         return length.value, from_cstr_to_pystr(sarr, length)
 
 
-    # FIXME: Fix this API
     def XGDMatrixNumCol(request, signers, signatures, sig_lengths):
         dmatrix_handle = request.name
-        # c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumCol(
             c_str(dmatrix_handle),
-            ctypes.byref(ret)))
+            ctypes.byref(ret),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return ret.value
 
 
-    # FIXME: Fix this API
-    def XGDMatrixNumRow(request):
+    def XGDMatrixNumRow(request, signers, signatures, sig_lengths):
         dmatrix_handle = request.name
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumRow(
             c_str(dmatrix_handle),
-            ctypes.byref(ret)))
+            ctypes.byref(ret),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return ret.value
 
 

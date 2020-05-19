@@ -350,14 +350,34 @@ int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle, const char* field, const 
   return XGDMatrixSetUIntInfo(handle, field, info, len);
 }
 
-int enclave_XGDMatrixNumRow(const DMatrixHandle handle, bst_ulong *out) {
+int enclave_XGDMatrixNumRow(const DMatrixHandle handle, bst_ulong *out, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGDMatrixNumRow";
-  return XGDMatrixNumRow(handle, out);
+  char* signers_cpy[NUM_CLIENTS];
+  uint8_t* sigs[NUM_CLIENTS];
+
+  copy_arr_to_enclave(signers_cpy, NUM_CLIENTS, signers, signer_lengths);
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+
+  int ret = XGDMatrixNumRow(handle, out, signers_cpy, sigs, sig_lengths);
+
+  free_array(signers_cpy, NUM_CLIENTS);
+  free_sigs(sigs);
+  return ret;
 }
 
-int enclave_XGDMatrixNumCol(const DMatrixHandle handle, bst_ulong *out) {
+int enclave_XGDMatrixNumCol(const DMatrixHandle handle, bst_ulong *out, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGDMatrixNumCol";
-  return XGDMatrixNumCol(handle, out);
+  char* signers_cpy[NUM_CLIENTS];
+  uint8_t* sigs[NUM_CLIENTS];
+
+  copy_arr_to_enclave(signers_cpy, NUM_CLIENTS, signers, signer_lengths);
+  copy_sigs_to_enclave(sigs, signatures, sig_lengths);
+
+  int ret = XGDMatrixNumCol(handle, out, signers_cpy, sigs, sig_lengths);
+
+  free_array(signers_cpy, NUM_CLIENTS);
+  free_sigs(sigs);
+  return ret;
 }
 
 int enclave_XGBoosterGetAttr(BoosterHandle handle, const char* key, char** out, int* success) {

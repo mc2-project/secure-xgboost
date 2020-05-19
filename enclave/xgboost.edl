@@ -111,11 +111,21 @@ enclave {
 
         public int enclave_XGDMatrixNumRow(
                 [in, string] char* handle,
-                [out] bst_ulong *out);
+                [out] bst_ulong *out,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
 
         public int enclave_XGDMatrixNumCol(
                 [in, string] char* handle,
-                [out] bst_ulong *out);
+                [out] bst_ulong *out,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
 
         public int enclave_XGBoosterGetAttr(
                 [in, string] char* handle,

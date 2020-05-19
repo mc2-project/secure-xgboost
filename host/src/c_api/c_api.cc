@@ -854,13 +854,27 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
-                            xgboost::bst_ulong *out) {
-  safe_ecall(enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
+                            xgboost::bst_ulong *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths) {
+  size_t signer_lengths[NUM_CLIENTS];
+  for (int i = 0; i < NUM_CLIENTS; i++) {
+    signer_lengths[i] = strlen(signers[i]);
+  }
+  safe_ecall(enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
-                            xgboost::bst_ulong *out) {
-  safe_ecall(enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
+                            xgboost::bst_ulong *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths) {
+  size_t signer_lengths[NUM_CLIENTS];
+  for (int i = 0; i < NUM_CLIENTS; i++) {
+    signer_lengths[i] = strlen(signers[i]);
+  }
+  safe_ecall(enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 // xgboost implementation

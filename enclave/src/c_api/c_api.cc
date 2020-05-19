@@ -1044,9 +1044,18 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
-                            xgboost::bst_ulong *out) {
+                            xgboost::bst_ulong *out,
+                            char **signers,
+                            uint8_t** signatures,
+                            size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGDMatrixNumRow " << handle;
+  char* buff = strdup(oss.str().c_str());
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<xgboost::bst_ulong>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_row_);
@@ -1054,9 +1063,18 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
-                            xgboost::bst_ulong *out) {
+                            xgboost::bst_ulong *out,
+                            char **signers,
+                            uint8_t** signatures,
+                            size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGDMatrixNumCol " << handle;
+  char* buff = strdup(oss.str().c_str());
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
