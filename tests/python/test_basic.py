@@ -76,7 +76,7 @@ class TestBasic(unittest.TestCase):
         num_round = 2
         bst = xgb.train(param, dtrain, num_round, watchlist)
 
-        preds = bst.predict(dtrain)
+        preds = bst.predict(dtrain)[0]
         # TODO(rishabh): support for get_label()
         """
         labels = dtrain.get_label()
@@ -85,7 +85,7 @@ class TestBasic(unittest.TestCase):
         # error must be smaller than 10%
         assert err < 0.1
 
-        preds = bst.predict(dtest)
+        preds = bst.predict(dtest)[0]
         labels = dtest.get_label()
         err = sum(1 for i in range(len(preds))
                   if int(preds[i] > 0.5) != labels[i]) / float(len(preds))
@@ -102,7 +102,7 @@ class TestBasic(unittest.TestCase):
         # load model and data in
         bst2 = xgb.Booster(model_file='xgb.model')
         dtest2 = xgb.DMatrix('dtest.buffer')
-        preds2 = bst2.predict(dtest2)
+        preds2 = bst2.predict(dtest2)[0]
         # assert they are the same
         assert np.sum(np.abs(preds2 - preds)) == 0
         """
@@ -136,7 +136,7 @@ class TestBasic(unittest.TestCase):
         num_round = 2
         bst = xgb.train(param, dtrain, num_round, watchlist)
         # this is prediction
-        preds = bst.predict(dtest)
+        preds = bst.predict(dtest)[0]
 
         #TODO(rishabh): support for get_label(), save_binary()
         """
@@ -153,7 +153,7 @@ class TestBasic(unittest.TestCase):
         # load model and data in
         bst2 = xgb.Booster(model_file='xgb.model')
         dtest2 = xgb.DMatrix('dtest.buffer')
-        preds2 = bst2.predict(dtest2)
+        preds2 = bst2.predict(dtest2)[0]
         # assert they are the same
         assert np.sum(np.abs(preds2 - preds)) == 0
         """

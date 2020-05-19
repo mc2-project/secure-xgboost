@@ -49,7 +49,7 @@ class TestModels(unittest.TestCase):
         num_round = 4
         bst = xgb.train(param, dtrain, num_round, watchlist)
         assert isinstance(bst, xgb.core.Booster)
-        preds = bst.predict(dtest)
+        preds = bst.predict(dtest)[0]
         #TODO(rishabh): implement get_label()
         """
         labels = dtest.get_label()
@@ -68,7 +68,7 @@ class TestModels(unittest.TestCase):
         num_round = 2
         bst = xgb.train(param, dtrain, num_round, watchlist)
         # this is prediction
-        preds = bst.predict(dtest, ntree_limit=num_round)
+        preds = bst.predict(dtest, ntree_limit=num_round)[0]
         #TODO(rishabh): implement get_label()
         """
         labels = dtest.get_label()
@@ -88,7 +88,7 @@ class TestModels(unittest.TestCase):
         # load model and data in
         bst2 = xgb.Booster(params=param, model_file='xgb.model.dart')
         dtest2 = xgb.DMatrix('dtest.buffer')
-        preds2 = bst2.predict(dtest2, ntree_limit=num_round)
+        preds2 = bst2.predict(dtest2, ntree_limit=num_round)[0]
         # assert they are the same
         assert np.sum(np.abs(preds2 - preds)) == 0
         """
@@ -107,7 +107,7 @@ class TestModels(unittest.TestCase):
         """
         bst = xgb.train(param, dtrain, num_round, watchlist,
                         feval=my_logloss)
-        preds3 = bst.predict(dtest, ntree_limit=num_round)
+        preds3 = bst.predict(dtest, ntree_limit=num_round)[0]
         assert all(preds3 == preds)
         """
 
@@ -124,7 +124,7 @@ class TestModels(unittest.TestCase):
             param['sample_type'] = p[0]
             param['normalize_type'] = p[1]
             bst = xgb.train(param, dtrain, num_round, watchlist)
-            preds = bst.predict(dtest, ntree_limit=num_round)
+            preds = bst.predict(dtest, ntree_limit=num_round)[0]
             err = sum(1 for i in range(len(preds))
                       if int(preds[i] > 0.5) != labels[i]) / float(len(preds))
             assert err < 0.1
@@ -233,12 +233,12 @@ class TestModels(unittest.TestCase):
         """
         margined.set_base_margin(predt_0)
         bst = xgb.train({'tree_method': 'hist'}, margined, 1)
-        predt_1 = bst.predict(margined)
+        predt_1 = bst.predict(margined)[0]
 
         assert np.any(np.abs(predt_1 - predt_0) > 1e-6)
 
         bst = xgb.train({'tree_method': 'hist'}, dtrain, 2)
-        predt_2 = bst.predict(dtrain)
+        predt_2 = bst.predict(dtrain)[0]
         assert np.all(np.abs(predt_2 - predt_1) < 1e-6)
         """
 
@@ -263,7 +263,7 @@ class TestModels(unittest.TestCase):
         """
         bst = xgb.train(param, dtrain, num_round, watchlist, logregobj, evalerror)
         assert isinstance(bst, xgb.core.Booster)
-        preds = bst.predict(dtest)
+        preds = bst.predict(dtest)[0]
         labels = dtest.get_label()
         err = sum(1 for i in range(len(preds))
                   if int(preds[i] > 0.5) != labels[i]) / float(len(preds))
@@ -289,7 +289,7 @@ class TestModels(unittest.TestCase):
         #TODO(rishabh): support custom objective and loss in train()
         """
         bst2 = xgb.train(param, dtrain, num_round, watchlist, logregobj, neg_evalerror, maximize=True)
-        preds2 = bst2.predict(dtest)
+        preds2 = bst2.predict(dtest)[0]
         err2 = sum(1 for i in range(len(preds2))
                    if int(preds2[i] > 0.5) != labels[i]) / float(len(preds2))
         assert err == err2

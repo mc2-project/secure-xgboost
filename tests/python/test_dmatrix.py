@@ -70,7 +70,7 @@ class TestDMatrix(unittest.TestCase):
             {'num_class': 3, 'objective': 'multi:softprob'}, d,
             num_boost_round=2, evals=[(d, 'd')], evals_result=eval_res_0)
 
-        predt = booster.predict(d)
+        predt = booster.predict(d)[0]
         predt = predt.reshape(100 * 3, 1)
         d.set_base_margin(predt)
         """
@@ -166,7 +166,7 @@ class TestDMatrix(unittest.TestCase):
             dump_svmlight_file(dummy_X, dummy_Y, temp_name) 
             xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
             dm = xgb.DMatrix({username: temp_enc_name}, feature_names=features)
-            bst.predict(dm)
+            bst.predict(dm)[0]
 
             # different feature name must raises error
             dm = xgb.DMatrix({username: temp_enc_name}, feature_names=list('abcde'))

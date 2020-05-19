@@ -116,12 +116,12 @@ class TestInteractionConstraints(unittest.TestCase):
         """
         params['grow_policy'] = 'lossguide'
         bst = xgb.train(params, dtrain, num_boost_round)
-        pred_dtest = (bst.predict(dtest) < 0.5)
+        pred_dtest = (bst.predict(dtest)[0] < 0.5)
         assert accuracy_score(dtest.get_label(), pred_dtest) < 0.1
 
         params['grow_policy'] = 'depthwise'
         bst = xgb.train(params, dtrain, num_boost_round)
-        pred_dtest = (bst.predict(dtest) < 0.5)
+        pred_dtest = (bst.predict(dtest)[0] < 0.5)
         assert accuracy_score(dtest.get_label(), pred_dtest) < 0.1
         """
 

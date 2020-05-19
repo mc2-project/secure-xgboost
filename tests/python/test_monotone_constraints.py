@@ -57,7 +57,7 @@ def is_correctly_constrained(learner):
         monotonically_increasing_dset = xgb.DMatrix({username: temp_enc_name})
         monotonically_increasing_y = learner.predict(
             monotonically_increasing_dset
-        )
+        )[0]
 
         monotonically_decreasing_x = np.column_stack((fixed_x, variable_x))
         y = np.repeat(0, n) # label shouldn't matter
@@ -66,7 +66,7 @@ def is_correctly_constrained(learner):
         monotonically_decreasing_dset = xgb.DMatrix({username: temp_enc_name})
         monotonically_decreasing_y = learner.predict(
             monotonically_decreasing_dset
-        )
+        )[0]
 
         if not (
             is_increasing(monotonically_increasing_y) and
@@ -143,8 +143,8 @@ class TestMonotoneConstraints(unittest.TestCase):
     @pytest.mark.skipif(**tm.no_sklearn())
     def test_training_accuracy(self):
         from sklearn.metrics import accuracy_score
-        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train?indexing_mode=1'})
-        dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test?indexing_mode=1'})
+        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc?indexing_mode=1'})
+        dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test.enc?indexing_mode=1'})
         params = {'eta': 1, 'max_depth': 6, 'objective': 'binary:logistic',
                   'tree_method': 'hist', 'monotone_constraints': '(1, 0)'}
         num_boost_round = 5
