@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='remote',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=b'\n\x0cremote.proto\x12\x06remote\x1a\rndarray.proto\"+\n\tStatusMsg\x12\x1e\n\x06status\x18\x01 \x01(\x0b\x32\x0e.remote.Status\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\xff\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x14\n\x0cpem_key_size\x18\x02 \x01(\r\x12,\n\x08symm_key\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x15\n\rsymm_key_size\x18\x04 \x01(\r\x12\x31\n\rremote_report\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x06 \x01(\r\x12\x1e\n\x06status\x18\x07 \x01(\x0b\x32\x0e.remote.Status\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"\x96\x01\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\x7f\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"\x94\x01\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\xa9\x01\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\xa8\x01\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\x1b\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x0c.remote.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\xbb\x01\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08username\x18\x05 \x01(\t\x12-\n\tsignature\x18\x06 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x07 \x01(\r\"\x8d\x01\n\x0fSaveModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"M\n\x0fLoadModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\"\xb2\x01\n\x0f\x44umpModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66map\x18\x02 \x01(\t\x12\x12\n\nwith_stats\x18\x03 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x04 \x01(\t\x12\x10\n\x08username\x18\x05 \x01(\t\x12-\n\tsignature\x18\x06 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x07 \x01(\r\"\xdc\x01\n\x1b\x44umpModelWithFeaturesParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66len\x18\x02 \x01(\r\x12\r\n\x05\x66name\x18\x03 \x03(\t\x12\r\n\x05\x66type\x18\x04 \x03(\t\x12\x12\n\nwith_stats\x18\x05 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x06 \x01(\t\x12\x10\n\x08username\x18\x07 \x01(\t\x12-\n\tsignature\x18\x08 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\t \x01(\r\"z\n\x0eModelRawParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\"D\n\x04\x44ump\x12\x0c\n\x04sarr\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x86\x01\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x1e\n\x06status\x18\x05 \x01(\x0b\x32\x0e.remote.Status\"8\n\x07Integer\x12\r\n\x05value\x18\x01 \x01(\r\x12\x1e\n\x06status\x18\x02 \x01(\x0b\x32\x0e.remote.Status\"q\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\xad\x08\n\x06Remote\x12\x45\n!rpc_get_remote_report_with_pubkey\x12\x0e.remote.Status\x1a\x0e.remote.Report\"\x00\x12?\n\x12rpc_add_client_key\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12P\n#rpc_add_client_key_with_certificate\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12L\n$rpc_XGDMatrixCreateFromEncryptedFile\x12\x14.remote.DMatrixAttrs\x1a\x0c.remote.Name\"\x00\x12;\n\x13rpc_XGBoosterCreate\x12\x14.remote.BoosterAttrs\x1a\x0c.remote.Name\"\x00\x12\x42\n\x15rpc_XGBoosterSetParam\x12\x14.remote.BoosterParam\x1a\x11.remote.StatusMsg\"\x00\x12N\n\x1arpc_XGBoosterUpdateOneIter\x12\x1b.remote.BoosterUpdateParams\x1a\x11.remote.StatusMsg\"\x00\x12\x44\n\x14rpc_XGBoosterPredict\x12\x15.remote.PredictParams\x1a\x13.remote.Predictions\"\x00\x12\x46\n\x16rpc_XGBoosterSaveModel\x12\x17.remote.SaveModelParams\x1a\x11.remote.StatusMsg\"\x00\x12\x46\n\x16rpc_XGBoosterLoadModel\x12\x17.remote.LoadModelParams\x1a\x11.remote.StatusMsg\"\x00\x12\x43\n\x18rpc_XGBoosterDumpModelEx\x12\x17.remote.DumpModelParams\x1a\x0c.remote.Dump\"\x00\x12[\n$rpc_XGBoosterDumpModelExWithFeatures\x12#.remote.DumpModelWithFeaturesParams\x1a\x0c.remote.Dump\"\x00\x12\x42\n\x18rpc_XGBoosterGetModelRaw\x12\x16.remote.ModelRawParams\x1a\x0c.remote.Dump\"\x00\x12\x36\n\x13rpc_XGDMatrixNumCol\x12\x0c.remote.Name\x1a\x0f.remote.Integer\"\x00\x12\x36\n\x13rpc_XGDMatrixNumRow\x12\x0c.remote.Name\x1a\x0f.remote.Integer\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x0cremote.proto\x12\x06remote\x1a\rndarray.proto\"+\n\tStatusMsg\x12\x1e\n\x06status\x18\x01 \x01(\x0b\x32\x0e.remote.Status\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\xff\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x14\n\x0cpem_key_size\x18\x02 \x01(\r\x12,\n\x08symm_key\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x15\n\rsymm_key_size\x18\x04 \x01(\r\x12\x31\n\rremote_report\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x06 \x01(\r\x12\x1e\n\x06status\x18\x07 \x01(\x0b\x32\x0e.remote.Status\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"\x96\x01\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\x7f\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"\x94\x01\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\xa9\x01\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\xa8\x01\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\x1b\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x0c.remote.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\xbb\x01\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08username\x18\x05 \x01(\t\x12-\n\tsignature\x18\x06 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x07 \x01(\r\"\x8d\x01\n\x0fSaveModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"\x8d\x01\n\x0fLoadModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"\xb2\x01\n\x0f\x44umpModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66map\x18\x02 \x01(\t\x12\x12\n\nwith_stats\x18\x03 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x04 \x01(\t\x12\x10\n\x08username\x18\x05 \x01(\t\x12-\n\tsignature\x18\x06 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x07 \x01(\r\"\xdc\x01\n\x1b\x44umpModelWithFeaturesParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66len\x18\x02 \x01(\r\x12\r\n\x05\x66name\x18\x03 \x03(\t\x12\r\n\x05\x66type\x18\x04 \x03(\t\x12\x12\n\nwith_stats\x18\x05 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x06 \x01(\t\x12\x10\n\x08username\x18\x07 \x01(\t\x12-\n\tsignature\x18\x08 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\t \x01(\r\"z\n\x0eModelRawParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\"D\n\x04\x44ump\x12\x0c\n\x04sarr\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x86\x01\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x1e\n\x06status\x18\x05 \x01(\x0b\x32\x0e.remote.Status\"8\n\x07Integer\x12\r\n\x05value\x18\x01 \x01(\r\x12\x1e\n\x06status\x18\x02 \x01(\x0b\x32\x0e.remote.Status\"q\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x01(\r\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r2\xad\x08\n\x06Remote\x12\x45\n!rpc_get_remote_report_with_pubkey\x12\x0e.remote.Status\x1a\x0e.remote.Report\"\x00\x12?\n\x12rpc_add_client_key\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12P\n#rpc_add_client_key_with_certificate\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12L\n$rpc_XGDMatrixCreateFromEncryptedFile\x12\x14.remote.DMatrixAttrs\x1a\x0c.remote.Name\"\x00\x12;\n\x13rpc_XGBoosterCreate\x12\x14.remote.BoosterAttrs\x1a\x0c.remote.Name\"\x00\x12\x42\n\x15rpc_XGBoosterSetParam\x12\x14.remote.BoosterParam\x1a\x11.remote.StatusMsg\"\x00\x12N\n\x1arpc_XGBoosterUpdateOneIter\x12\x1b.remote.BoosterUpdateParams\x1a\x11.remote.StatusMsg\"\x00\x12\x44\n\x14rpc_XGBoosterPredict\x12\x15.remote.PredictParams\x1a\x13.remote.Predictions\"\x00\x12\x46\n\x16rpc_XGBoosterSaveModel\x12\x17.remote.SaveModelParams\x1a\x11.remote.StatusMsg\"\x00\x12\x46\n\x16rpc_XGBoosterLoadModel\x12\x17.remote.LoadModelParams\x1a\x11.remote.StatusMsg\"\x00\x12\x43\n\x18rpc_XGBoosterDumpModelEx\x12\x17.remote.DumpModelParams\x1a\x0c.remote.Dump\"\x00\x12[\n$rpc_XGBoosterDumpModelExWithFeatures\x12#.remote.DumpModelWithFeaturesParams\x1a\x0c.remote.Dump\"\x00\x12\x42\n\x18rpc_XGBoosterGetModelRaw\x12\x16.remote.ModelRawParams\x1a\x0c.remote.Dump\"\x00\x12\x36\n\x13rpc_XGDMatrixNumCol\x12\x0c.remote.Name\x1a\x0f.remote.Integer\"\x00\x12\x36\n\x13rpc_XGDMatrixNumRow\x12\x0c.remote.Name\x1a\x0f.remote.Integer\"\x00\x62\x06proto3'
   ,
   dependencies=[ndarray__pb2.DESCRIPTOR,])
 
@@ -710,6 +710,20 @@ _LOADMODELPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='signature', full_name='remote.LoadModelParams.signature', index=3,
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sig_len', full_name='remote.LoadModelParams.sig_len', index=4,
+      number=5, type=13, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -722,8 +736,8 @@ _LOADMODELPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1666,
-  serialized_end=1743,
+  serialized_start=1667,
+  serialized_end=1808,
 )
 
 
@@ -795,8 +809,8 @@ _DUMPMODELPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1746,
-  serialized_end=1924,
+  serialized_start=1811,
+  serialized_end=1989,
 )
 
 
@@ -882,8 +896,8 @@ _DUMPMODELWITHFEATURESPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1927,
-  serialized_end=2147,
+  serialized_start=1992,
+  serialized_end=2212,
 )
 
 
@@ -934,8 +948,8 @@ _MODELRAWPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2149,
-  serialized_end=2271,
+  serialized_start=2214,
+  serialized_end=2336,
 )
 
 
@@ -979,8 +993,8 @@ _DUMP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2273,
-  serialized_end=2341,
+  serialized_start=2338,
+  serialized_end=2406,
 )
 
 
@@ -1017,8 +1031,8 @@ _PAIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2343,
-  serialized_end=2371,
+  serialized_start=2408,
+  serialized_end=2436,
 )
 
 
@@ -1076,8 +1090,8 @@ _NAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2374,
-  serialized_end=2508,
+  serialized_start=2439,
+  serialized_end=2573,
 )
 
 
@@ -1114,8 +1128,8 @@ _INTEGER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2510,
-  serialized_end=2566,
+  serialized_start=2575,
+  serialized_end=2631,
 )
 
 
@@ -1159,8 +1173,8 @@ _PREDICTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2568,
-  serialized_end=2681,
+  serialized_start=2633,
+  serialized_end=2746,
 )
 
 
@@ -1190,8 +1204,8 @@ _CLUSTERPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2683,
-  serialized_end=2719,
+  serialized_start=2748,
+  serialized_end=2784,
 )
 
 _STATUSMSG.fields_by_name['status'].message_type = _STATUS
@@ -1209,6 +1223,7 @@ _BOOSTEREVALSETPARAMS.fields_by_name['evals'].message_type = _PAIR
 _BOOSTEREVALSETPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _PREDICTPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _SAVEMODELPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
+_LOADMODELPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _DUMPMODELPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _DUMPMODELWITHFEATURESPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _MODELRAWPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
@@ -1396,8 +1411,8 @@ _REMOTE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=2722,
-  serialized_end=3791,
+  serialized_start=2787,
+  serialized_end=3856,
   methods=[
   _descriptor.MethodDescriptor(
     name='rpc_get_remote_report_with_pubkey',

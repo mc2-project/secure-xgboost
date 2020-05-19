@@ -201,6 +201,8 @@ message LoadModelParams {
     string booster_handle = 1;
     string filename = 2;
     string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
 }
 
 // Params for dump model

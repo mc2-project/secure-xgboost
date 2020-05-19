@@ -397,7 +397,6 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      uint8_t** signatures,
                                      size_t* sig_lengths) {
     API_BEGIN();
-    LOG(DEBUG) << "File: " << std::string(fnames[0]);
     bool load_row_split = false;
     if (rabit::IsDistributed()) {
         LOG(INFO) << "XGBoost distributed mode detected, "
@@ -407,8 +406,9 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
 
     //signature verification
     std::ostringstream oss;
+    oss << "XGDMatrixCreateFromEncryptedFile";
     for (xgboost::bst_ulong i = 0; i < num_files; i++) {
-        oss << "username " << usernames[i] << " filename " << fnames[i];
+        oss << " username " << usernames[i] << " filename " << fnames[i];
     }
     oss << " silent " << silent;
     char* buff = strdup(oss.str().c_str());
@@ -1102,7 +1102,7 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 
   // signature verification
   std::ostringstream oss;
-  oss << handle << " " << name << "," << value;
+  oss << "XGBoosterSetParam " << handle << " " << name << "," << value;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1123,7 +1123,7 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
 
   // signature verification
   std::ostringstream oss;
-  oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
+  oss << "XGBoosterUpdateOneIter booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff);
@@ -1197,7 +1197,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 
   // signature verification
   std::ostringstream oss;
-  oss << "booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
+  oss << "XGBoosterPredict booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff); // prevent memory leak
@@ -1256,7 +1256,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char** s
 
     // signature verification
     std::ostringstream oss;
-    oss << "handle " << handle << " filename " << fname;
+    oss << "XGBoosterLoadModel handle " << handle << " filename " << fname;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1289,6 +1289,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char** s
         output);
 
     common::MemoryFixSizeBuffer fs((void*)output, buf_len);  // NOLINT(*)
+
     static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle))->LoadModel(&fs);
     free(output);
     API_END();
@@ -1300,7 +1301,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char **s
 
     // check signature
     std::ostringstream oss;
-    oss << "handle " << handle << " filename " << fname;
+    oss << "XGBoosterSaveModel handle " << handle << " filename " << fname;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1387,7 +1388,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
 
     // check signature
     std::ostringstream oss;
-    oss << "handle " << handle;
+    oss << "XGBoosterGetModelRaw handle " << handle;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1497,7 +1498,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
     API_BEGIN();
     CHECK_HANDLE();
     std::ostringstream oss;
-    oss << "booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
+    oss << "XGBoosterDumpModelEx booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1562,7 +1563,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
 
     //check signature
     std::ostringstream oss;
-    oss << "booster_handle " << handle << " flen " << fnum << " with_stats " << with_stats << " dump_format " << format;
+    oss << "XGBoosterDumpModelExWithFeatures booster_handle " << handle << " flen " << fnum << " with_stats " << with_stats << " dump_format " << format;
     for (int i = 0; i <fnum; i++){
         oss << " fname " << fname[i] << " ftype " << ftype[i];
     }

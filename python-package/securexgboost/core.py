@@ -505,9 +505,9 @@ class DMatrix(object):
             handle = ctypes.c_char_p()
             if encrypted:
 
-                args = ""
+                args = "XGDMatrixCreateFromEncryptedFile"
                 for username, filename in zip(usernames, data):
-                    args = args + "username {} filename {}".format(username, filename)
+                    args = args + " username {} filename {}".format(username, filename)
                 args = args + " silent {}".format(int(silent))
 
                 sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
@@ -1379,9 +1379,7 @@ class Booster(object):
         else:
             self.booster = 'gbtree'
         if model_file is not None:
-            raise NotImplementedError("Created a booster from file not currently supported")
-            # TODO(rishabh): Add model_file support
-            # self.load_model(model_file)
+            self.load_model(model_file)
 
     def __del__(self):
         if self.handle is not None:
@@ -1524,7 +1522,7 @@ class Booster(object):
             raise ValueError("Please set your user with User.set_user function")
 
         for key, val in params:
-            args = self.handle.value.decode('utf-8') + " " + key + "," + str(val)
+            args = "XGBoosterSetParam " + self.handle.value.decode('utf-8') + " " + key + "," + str(val)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
             channel_addr = globals()["remote_addr"]
@@ -1556,7 +1554,7 @@ class Booster(object):
         self._validate_features(dtrain)
         
         if fobj is None:
-            args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
+            args = "XGBoosterUpdateOneIter booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
 
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
@@ -1764,7 +1762,7 @@ class Booster(object):
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
-        args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
+        args = "XGBoosterPredict booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
         sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
         channel_addr = globals()["remote_addr"]
@@ -1881,10 +1879,8 @@ class Booster(object):
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
 
-            args = "handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
+            args = "XGBoosterSaveModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
-            sig = proto_to_pointer(sig)
-            sig_len = ctypes.c_size_t(sig_len)
 
             channel_addr = globals()["remote_addr"]
             if channel_addr:
@@ -1893,7 +1889,9 @@ class Booster(object):
                     response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParams(
                         booster_handle=self.handle.value,
                         filename=fname,
-                        username=username)))
+                        username=username,
+                        signature=sig,
+                        sig_len=sig_len)))
             else:
                 # FIXME: Pass signature
                 _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
@@ -1921,10 +1919,8 @@ class Booster(object):
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
 
-        args = "handle {}".format(self.handle.value.decode('utf-8'))
+        args = "XGBoosterGetModelRaw handle {}".format(self.handle.value.decode('utf-8'))
         sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
-        sig = proto_to_pointer(sig)
-        sig_len = ctypes.c_size_t(sig_len)
 
         channel_addr = globals()["remote_addr"]
         if channel_addr:
@@ -1947,45 +1943,52 @@ class Booster(object):
         return ctypes2buffer(cptr, length.value)
 
 
-    # TODO(rishabh): Fix this API for the multiparty case
-    # def load_model(self, fname, username=None):
-    #     """
-    #     Load the model from a file.
-    # 
-    #     The model is loaded from an XGBoost internal binary format which is
-    #     universal among the various XGBoost interfaces. Auxiliary attributes of
-    #     the Python Booster object (such as feature_names) will not be loaded.
-    #     To preserve all attributes, pickle the Booster object.
-    # 
-    #     Parameters
-    #     ----------
-    #     fname : string or a memory buffer
-    #         Input file name or memory buffer(see also save_raw)
-    #     username: string
-    #         Used to find the encryption key
-    #     """
-    #     # check the global variable for current_user
-    #     if username is None and "current_user" in globals():
-    #         username = globals()["current_user"]
-    #     if username is None:
-    #         raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
-    #     if isinstance(fname, STRING_TYPES):
-    #         # assume file name, cannot use os.path.exist to check, file can be from URL.
-    #         channel_addr = globals()["remote_addr"]
-    #         if channel_addr:
-    #             with grpc.insecure_channel(channel_addr) as channel:
-    #                 stub = remote_pb2_grpc.RemoteStub(channel)
-    #                 response = stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParams(
-    #                     booster_handle=self.handle.value,
-    #                     filename=fname,
-    #                     username=username))
-    #         else:
-    #             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
-    #     else:
-    #         buf = fname
-    #         length = c_bst_ulong(len(buf))
-    #         ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
-    #         _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
+    def load_model(self, fname, username=None):
+        """
+        Load the model from a file.
+    
+        The model is loaded from an XGBoost internal binary format which is
+        universal among the various XGBoost interfaces. Auxiliary attributes of
+        the Python Booster object (such as feature_names) will not be loaded.
+        To preserve all attributes, pickle the Booster object.
+    
+        Parameters
+        ----------
+        fname : string or a memory buffer
+            Input file name or memory buffer(see also save_raw)
+        username: string
+            Used to find the encryption key
+        """
+        # check the global variable for current_user
+        if username is None and "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+        if isinstance(fname, STRING_TYPES):
+            # assume file name, cannot use os.path.exist to check, file can be from URL.
+            args = "XGBoosterLoadModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
+            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+
+            channel_addr = globals()["remote_addr"]
+            if channel_addr:
+                with grpc.insecure_channel(channel_addr) as channel:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = _check_remote_call(stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParams(
+                        booster_handle=self.handle.value,
+                        filename=fname,
+                        username=username,
+                        signature=sig,
+                        sig_len=sig_len)))
+            else:
+                _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+        else:
+            # FIXME: Remote execution for non-file type
+            raise "NotImplementedError"
+            # buf = fname
+            # length = c_bst_ulong(len(buf))
+            # ptr = (ctypes.c_char * len(buf)).from_buffer(buf)
+            # _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
+
 
     def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
         """
@@ -2056,7 +2059,7 @@ class Booster(object):
                     else:
                         ftype = self.feature_types
 
-                    args = "booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
+                    args = "XGBoosterDumpModelExWithFeatures booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
                     for i in range(flen):
                         args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
                     sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
@@ -2096,10 +2099,8 @@ class Booster(object):
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
 
-            args = "booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
+            args = "XGBoosterDumpModelEx booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
-            sig = proto_to_pointer(sig)
-            sig_len = ctypes.c_size_t(sig_len)
 
             channel_addr = globals()["remote_addr"]
             if channel_addr:
