@@ -36,8 +36,8 @@ enclave.add_key()
 class TestOMP(unittest.TestCase):
     def test_omp(self):
         dpath = HOME_DIR + 'demo/data/'
-        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train'})
-        dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test'})
+        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
+        dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test.enc'})
 
         param = {'booster': 'gbtree',
                  'objective': 'binary:logistic',

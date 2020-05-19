@@ -44,7 +44,7 @@ rng = np.random.RandomState(1994)
 class TestTreesToDataFrame(unittest.TestCase):
 
     def build_model(self, max_depth, num_round):
-        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train'})
+        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
         param = {'max_depth': max_depth, 'objective': 'binary:logistic',
                  'verbosity': 1}
         num_round = num_round
