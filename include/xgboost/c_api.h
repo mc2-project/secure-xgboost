@@ -157,9 +157,9 @@ XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
  * \param fname the name of the encrypted file
  * \param silent whether print messages during loading
  * \param out a loaded data matrix
- * \param username user invoking the API
- * \param signature user_signature
- * \param sig_len signature length
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
@@ -167,7 +167,7 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                              bst_ulong num_files,
                                              int silent,
                                              DMatrixHandle *out,
-                                             char *username,
+                                             char **signers,
                                              uint8_t* signatures[],
                                              size_t* sig_lengths);
 
@@ -399,7 +399,7 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle);
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value,
-                              const char *username,
+                              char **signers,
                               uint8_t* signatures[],
                               size_t* sig_lengths);
 
@@ -416,7 +416,7 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain,
-                                   char *username,
+                                   char **signers,
                                    uint8_t* signatures[],
                                    size_t* sig_lengths) ;
 
@@ -476,7 +476,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              unsigned ntree_limit,
                              bst_ulong *out_len,
                              uint8_t **out_result,
-                             char* username,
+                             char **signers,
                              uint8_t* signatures[],
                              size_t* sig_lengths);
 

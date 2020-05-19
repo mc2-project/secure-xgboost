@@ -18,7 +18,8 @@ enclave {
                 bst_ulong num_files,
                 int silent,
                 [out] char** handle,
-                [in, string] char *username,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
                 [in, count=num_sigs] size_t* sig_lengths,
                 size_t num_sigs);
@@ -33,7 +34,8 @@ enclave {
                 [in, string] char* handle,
                 [in, string] const char *name,
                 [in, string] const char *value,
-                [in, string] const char *username,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
                 [in, count=num_sigs] size_t* sig_lengths,
                 size_t num_sigs);
@@ -42,7 +44,8 @@ enclave {
                 [in, string] char* handle,
                 int iter,
                 [in, string] char* dtrain,
-                [in, string] char *username,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
                 [in, count=num_sigs] size_t* sig_lengths,
                 size_t num_sigs);
@@ -71,7 +74,8 @@ enclave {
                 unsigned ntree_limit,
                 [out] bst_ulong *out_len,
                 [out] uint8_t **out_result,
-                [in, string] char* username,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
                 [in, count=num_sigs] size_t* sig_lengths,
                 size_t num_sigs);

@@ -377,7 +377,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      xgboost::bst_ulong num_files,
                                      int silent,
                                      DMatrixHandle *out,
-                                     char *username,
+                                     char **signers,
                                      uint8_t** signatures,
                                      size_t* sig_lengths) {
     API_BEGIN();
@@ -395,7 +395,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         oss << "filename " << fnames[i] << " num_files " << num_files << " silent " << silent;
     }
     char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
 
     // FIXME consistently use uint8_t* for key bytes
@@ -1077,21 +1077,18 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle) {
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                                     const char *name,
                                     const char *value,
-                                    const char *username,
+                                    char **signers,
                                     uint8_t** signatures,
                                     size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
 
   // signature verification
-  size_t data_len = strlen(name) + strlen(value) + 2 ;
-  uint8_t data[data_len + 1];
-  memcpy((uint8_t *)data, name, strlen(name));
-  data[strlen(name)] = (uint8_t) ',';
-  memcpy((uint8_t *)data+strlen(name)+1,value,strlen(value)+1);
-  data[data_len] = 0;
+  std::ostringstream oss;
+  oss << name << "," << value;
+  char* buff = strdup(oss.str().c_str());
   // FIXME: Signature should include handle
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)data, data_len, signatures, sig_lengths);
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
@@ -1102,7 +1099,7 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain,
-                                   char *username,
+                                   char **signers,
                                    uint8_t** signatures,
                                    size_t* sig_lengths) {
   API_BEGIN();
@@ -1112,7 +1109,7 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
   std::ostringstream oss;
   oss << "booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
   char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff);
 
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
@@ -1176,7 +1173,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              unsigned ntree_limit,
                              xgboost::bst_ulong *len,
                              uint8_t **out_result,
-                             char* username,
+                             char** signers,
                              uint8_t** signatures,
                              size_t* sig_lengths) {
   API_BEGIN();
@@ -1186,7 +1183,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   std::ostringstream oss;
   oss << "booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
   char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signatures, sig_lengths);
+  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff); // prevent memory leak
 
   std::vector<bst_float>&preds =

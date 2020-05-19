@@ -508,13 +508,9 @@ class DMatrix(object):
                 args = ""
                 for i, username in enumerate(usernames):
                     args = args + "filename {} num_files {} silent {}".format(data[i], len(data), int(silent))
-                    print(args)
 
-                c_args = ctypes.c_char_p(args.encode('utf-8'))
-                data_size = len(args)
-                sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
+                sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
-                print(sig, sig_len)
                 channel_addr = globals()["remote_addr"]
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
@@ -1512,10 +1508,8 @@ class Booster(object):
             raise ValueError("Please set your user with User.set_user function")
 
         for key, val in params:
-
-            sig, sig_len = user.sign_statement(key+","+str(val))
-            sig = proto_to_pointer(sig)
-            sig_len = ctypes.c_size_t(sig_len)
+            args = key + "," + str(val)
+            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
             channel_addr = globals()["remote_addr"]
             if channel_addr:
@@ -1548,13 +1542,7 @@ class Booster(object):
         if fobj is None:
             args = "booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
 
-            print(args)
-            c_args = ctypes.c_char_p(args.encode('utf-8'))
-
-            data_size = len(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
-            sig = proto_to_pointer(sig)
-            sig_len = ctypes.c_size_t(sig_len)
+            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
             channel_addr = globals()["remote_addr"]
             if channel_addr:
@@ -1761,12 +1749,7 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         args = "booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
-        print(args)
-        c_args = ctypes.c_char_p(args.encode('utf-8'))
-        data_size = len(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
-        sig = proto_to_pointer(sig)
-        sig_len = ctypes.c_size_t(sig_len)
+        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
         channel_addr = globals()["remote_addr"]
         if channel_addr:
@@ -1883,10 +1866,7 @@ class Booster(object):
         if isinstance(fname, STRING_TYPES):  # assume file name
 
             args = "handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            print(args)
-            c_args = ctypes.c_char_p(args.encode('utf-8'))
-            data_size = len(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
+            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
@@ -1926,10 +1906,7 @@ class Booster(object):
         cptr = ctypes.POINTER(ctypes.c_char)()
 
         args = "handle {}".format(self.handle.value.decode('utf-8'))
-        print(args)
-        c_args = ctypes.c_char_p(args.encode('utf-8'))
-        data_size = len(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
+        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
         sig = proto_to_pointer(sig)
         sig_len = ctypes.c_size_t(sig_len)
 
@@ -2066,10 +2043,7 @@ class Booster(object):
                     args = ""
                     for i in range(flen):
                         args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', int(with_stats), dump_format)
-                    print(args)
-                    c_args = ctypes.c_char_p(args.encode('utf-8'))
-                    data_size = len(args)
-                    sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
+                    sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
                     sig = proto_to_pointer(sig)
                     sig_len = ctypes.c_size_t(sig_len)
 
@@ -2109,10 +2083,7 @@ class Booster(object):
                 raise ValueError("No such file: {0}".format(fmap))
 
             args = "booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
-            print(args)
-            c_args = ctypes.c_char_p(args.encode('utf-8'))
-            data_size = len(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], c_args, data_size)
+            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
             sig = proto_to_pointer(sig)
             sig_len = ctypes.c_size_t(sig_len)
 
@@ -2472,12 +2443,12 @@ class RemoteAPI:
         return pem_key, key_size, remote_report, remote_report_size
 
 
-    def XGBoosterPredict(request, signatures, sig_lengths):
+    def XGBoosterPredict(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         dmatrix_handle = request.dmatrix_handle
         option_mask = request.option_mask
         ntree_limit = request.ntree_limit
-        username = request.username
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
@@ -2488,66 +2459,77 @@ class RemoteAPI:
             ctypes.c_uint(ntree_limit),
             ctypes.byref(length),
             ctypes.byref(preds),
-            c_str(username)))
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return preds, length.value
 
-    def XGBoosterUpdateOneIter(request, signatures, sig_lengths):
+    def XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         dtrain_handle = request.dtrain_handle
         iteration = request.iteration
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         _check_call(_LIB.XGBoosterUpdateOneIter(
             c_str(booster_handle),
             ctypes.c_int(iteration),
-            c_str(dtrain_handle)))
+            c_str(dtrain_handle),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
 
 
-    def XGBoosterCreate(request, signatures, sig_lengths):
+    # FIXME: Fix this API
+    def XGBoosterCreate(request, signers, signatures, sig_lengths):
         cache = list(request.cache)
         length = request.length
+        # c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         bst_handle = ctypes.c_char_p()
         _check_call(_LIB.XGBoosterCreate(
             from_pystr_to_cstr(cache),
             c_bst_ulong(length),
-            ctypes.byref(bst_handle)))
+            ctypes.byref(bst_handle))),
         return bst_handle.value.decode('utf-8')
 
 
-    def XGBoosterSetParam(request, signatures, sig_lengths):
+    def XGBoosterSetParam(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         key = request.key
         value = request.value
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         bst_handle = c_str(booster_handle)
         _check_call(_LIB.XGBoosterSetParam(
             c_str(booster_handle),
             c_str(key),
-            c_str(value)))
+            c_str(value),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
 
 
-    def XGDMatrixCreateFromEncryptedFile(request, signatures, sig_lengths):
+    def XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths):
         filenames = list(request.filenames)
         usernames = list(request.usernames)
         silent = request.silent
         c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         dmat_handle = ctypes.c_char_p()
-        # FIXME
-        dummy = c_str("user1")
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
             from_pystr_to_cstr(filenames),
             from_pystr_to_cstr(usernames),
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
             ctypes.byref(dmat_handle),
-            dummy,
+            from_pystr_to_cstr(signers),
             c_signatures,
             c_lengths))
         return dmat_handle.value.decode('utf-8')
 
 
-    def XGBoosterSaveModel(request, signatures, sig_lengths):
+    # FIXME: Fix this API
+    def XGBoosterSaveModel(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         filename = request.filename
         username = request.username
@@ -2557,6 +2539,8 @@ class RemoteAPI:
             c_str(filename),
             c_str(username)))
 
+
+    # FIXME: Fix this API
     def XGBoosterLoadModel(request, signatures, sig_lengths):
         booster_handle = request.booster_handle
         filename = request.filename
@@ -2567,12 +2551,13 @@ class RemoteAPI:
             c_str(filename),
             c_str(username)))
 
-    # TODO test this
-    def XGBoosterDumpModelEx(request, signatures, sig_lengths):
+
+    def XGBoosterDumpModelEx(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         fmap = request.fmap
         with_stats = request.with_stats
         dump_format = request.dump_format
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2582,16 +2567,21 @@ class RemoteAPI:
             ctypes.c_int(with_stats),
             c_str(dump_format),
             ctypes.byref(length),
-            ctypes.byref(sarr)))
+            ctypes.byref(sarr),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return length.value, from_cstr_to_pystr(sarr, length)
 
-    def XGBoosterDumpModelExWithFeatures(request, signatures, sig_lengths):
+
+    def XGBoosterDumpModelExWithFeatures(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         flen = request.flen
         fname = request.fname
         ftype = request.ftype
         with_stats = request.with_stats
         dump_format = request.dump_format
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2603,10 +2593,14 @@ class RemoteAPI:
             ctypes.c_int(with_stats),
             c_str(dump_format),
             ctypes.byref(length),
-            ctypes.byref(sarr)))
+            ctypes.byref(sarr),
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return length.value, from_cstr_to_pystr(sarr, length)
 
-    # TODO test this
+
+    # FIXME: Fix this API
     def XGBoosterGetModelRaw(request, signatures, sig_lengths):
         booster_handle = request.booster_handle
         username = request.username
@@ -2618,14 +2612,18 @@ class RemoteAPI:
             c_str(username)))
         return length.value, from_cstr_to_pystr(sarr, length)
 
-    def XGDMatrixNumCol(request, signatures, sig_lengths):
+
+    # FIXME: Fix this API
+    def XGDMatrixNumCol(request, signers, signatures, sig_lengths):
         dmatrix_handle = request.name
+        # c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumCol(
             c_str(dmatrix_handle),
             ctypes.byref(ret)))
         return ret.value
+
 
     def XGDMatrixNumRow(request):
         dmatrix_handle = request.name
@@ -2635,6 +2633,7 @@ class RemoteAPI:
             c_str(dmatrix_handle),
             ctypes.byref(ret)))
         return ret.value
+
 
 ##########################################
 # Crypto APIs
@@ -2741,6 +2740,7 @@ def sign_data(key, data, data_size):
     # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
     if isinstance(data, str):
         data = c_str(data)
+    # FIXME use positive check instead of negative check
     elif not isinstance(data, ctypes.c_char_p):
         data = proto_to_pointer(data)
 

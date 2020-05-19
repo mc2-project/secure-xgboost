@@ -68,7 +68,7 @@ class Command(object):
         return True
 
     def invoke(self):
-        self._ret = self._func(self._params, self._signatures, self._sig_lengths)
+        self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
 
     def result(self, username):
         self._retrieved.append(username)
