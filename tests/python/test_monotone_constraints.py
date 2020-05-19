@@ -71,7 +71,7 @@ def is_correctly_constrained(learner):
 
     for i in range(n):
         fixed_x = fixed_xs_values[i] * np.ones((n, 1))
-        y = np.repeat(1, n)
+        y = np.random.randn(n)
         monotonically_increasing_x = np.column_stack((variable_x, fixed_x))
         dump_svmlight_file(monotonically_increasing_x, y, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
