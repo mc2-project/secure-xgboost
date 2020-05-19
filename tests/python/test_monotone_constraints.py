@@ -34,49 +34,6 @@ enclave.add_key()
 
 dpath = HOME_DIR + 'demo/data/'
 
-
-def is_increasing(y):
-    return np.count_nonzero(np.diff(y) < 0.0) == 0
-
-
-def is_decreasing(y):
-    return np.count_nonzero(np.diff(y) > 0.0) == 0
-
-
-def is_correctly_constrained(learner):
-    n = 100
-    variable_x = np.linspace(0, 1, n).reshape((n, 1))
-    fixed_xs_values = np.linspace(0, 1, n)
-
-    for i in range(n):
-        fixed_x = fixed_xs_values[i] * np.ones((n, 1))
-        monotonically_increasing_x = np.column_stack((variable_x, fixed_x))
-        y = np.repeat(0, n) # label shouldn't matter
-        dump_svmlight_file(monotonically_increasing_x, y, temp_name) 
-        xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
-        monotonically_increasing_dset = xgb.DMatrix({username: temp_enc_name})
-        monotonically_increasing_y = learner.predict(
-            monotonically_increasing_dset
-        )[0]
-
-        monotonically_decreasing_x = np.column_stack((fixed_x, variable_x))
-        y = np.repeat(0, n) # label shouldn't matter
-        dump_svmlight_file(monotonically_decreasing_x, y, temp_name) 
-        xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
-        monotonically_decreasing_dset = xgb.DMatrix({username: temp_enc_name})
-        monotonically_decreasing_y = learner.predict(
-            monotonically_decreasing_dset
-        )[0]
-
-        if not (
-            is_increasing(monotonically_increasing_y) and
-            is_decreasing(monotonically_decreasing_y)
-        ):
-            return False
-
-    return True
-
-
 number_of_dpoints = 1000
 x1_positively_correlated_with_y = np.random.random(size=number_of_dpoints)
 x2_negatively_correlated_with_y = np.random.random(size=number_of_dpoints)
@@ -97,6 +54,46 @@ dump_svmlight_file(X, y, temp_name)
 xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
  
 training_dset = xgb.DMatrix({username: temp_enc_name})
+
+
+def is_increasing(y):
+    return np.count_nonzero(np.diff(y) < 0.0) == 0
+
+
+def is_decreasing(y):
+    return np.count_nonzero(np.diff(y) > 0.0) == 0
+
+
+def is_correctly_constrained(learner):
+    n = 100
+    variable_x = np.linspace(0, 1, n).reshape((n, 1))
+    fixed_xs_values = np.linspace(0, 1, n)
+
+    for i in range(n):
+        fixed_x = fixed_xs_values[i] * np.ones((n, 1))
+        monotonically_increasing_x = np.column_stack((variable_x, fixed_x))
+        dump_svmlight_file(monotonically_increasing_x, y, temp_name) 
+        xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
+        monotonically_increasing_dset = xgb.DMatrix({username: temp_enc_name})
+        monotonically_increasing_y = learner.predict(
+            monotonically_increasing_dset
+        )[0]
+
+        monotonically_decreasing_x = np.column_stack((fixed_x, variable_x))
+        dump_svmlight_file(monotonically_decreasing_x, y, temp_name) 
+        xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
+        monotonically_decreasing_dset = xgb.DMatrix({username: temp_enc_name})
+        monotonically_decreasing_y = learner.predict(
+            monotonically_decreasing_dset
+        )[0]
+
+        if not (
+            is_increasing(monotonically_increasing_y) and
+            is_decreasing(monotonically_decreasing_y)
+        ):
+            return False
+
+    return True
 
 
 class TestMonotoneConstraints(unittest.TestCase):

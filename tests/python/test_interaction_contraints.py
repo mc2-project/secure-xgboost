@@ -70,7 +70,7 @@ class TestInteractionConstraints(unittest.TestCase):
         #   by the same amount
         def f(x):
             tX = np.column_stack((x1, x2, np.repeat(x, 1000)))
-            ty = np.repeat(0, 1000) # label shouldn't matter
+            y = np.repeat(0, 1000) # label shouldn't matter
 
             dump_svmlight_file(tX, ty, temp_name) 
             xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
