@@ -712,7 +712,9 @@ XGB_DLL int get_remote_report_with_pubkey(
 
 XGB_DLL int verify_remote_report_and_set_pubkey(
     uint8_t* pem_key,
-    size_t key_size,
+    size_t pem_key_size,
+    uint8_t* symm_key,
+    size_t symm_key_size,
     uint8_t* remote_report,
     size_t remote_report_size);
 

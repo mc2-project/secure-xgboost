@@ -525,16 +525,19 @@ class DMatrix(object):
                             sig_len=sig_len)))
                         handle = c_str(response.name)
                 else:
-                    # FIXME Pass signature
-                    # sig = proto_to_pointer(sig)
-                    # sig_len = ctypes.c_size_t(sig_len)
+                    c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                    signers = from_pystr_to_cstr([globals()["current_user"]])
+
                     filenames = from_pystr_to_cstr(data)
                     usrs = from_pystr_to_cstr(usernames)
                     _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                         usrs,
                         c_bst_ulong(len(data)),
                         ctypes.c_int(silent),
-                        ctypes.byref(handle)))
+                        ctypes.byref(handle),
+                        signers,
+                        c_signatures,
+                        c_lengths))
             else:
                 raise NotImplementedError("Loading from unencrypted files not supported.")
                 # FIXME implement RPC for this
@@ -955,9 +958,14 @@ class DMatrix(object):
                     sig_len=sig_len)))
                 return response.value
         else:
+            c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+            signers = from_pystr_to_cstr([globals()["current_user"]])
             ret = c_bst_ulong()
             _check_call(_LIB.XGDMatrixNumRow(self.handle,
-                                             ctypes.byref(ret)))
+                                             ctypes.byref(ret),
+                                             signers,
+                                             c_signatures,
+                                             c_lengths))
             return ret.value
 
     def num_col(self):
@@ -981,9 +989,14 @@ class DMatrix(object):
                     sig_len=sig_len)))
                 return response.value
         else:
+            c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+            signers = from_pystr_to_cstr([globals()["current_user"]])
             ret = c_bst_ulong()
             _check_call(_LIB.XGDMatrixNumCol(self.handle,
-                                             ctypes.byref(ret)))
+                                             ctypes.byref(ret),
+                                             signers,
+                                             c_signatures,
+                                             c_lengths))
             return ret.value
 
     # def slice(self, rindex):
@@ -1162,9 +1175,10 @@ class Enclave(object):
             self._set_report_attrs(pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
-            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.pem_key_size), cyptes.byref(self.symm_key), ctypes.byref(self.symm_key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.pem_key_size), ctypes.byref(self.symm_key), ctypes.byref(self.symm_key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
             # return self._get_report_attrs()
 
+        globals()["enclave_sym_key"] = self.symm_key
         if (verify):
             self._verify_report()
 
@@ -1172,7 +1186,7 @@ class Enclave(object):
         """
         Verify the received attestation report and set the public key.
         """
-        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
+        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.pem_key_size, self.symm_key, self.symm_key_size, self.remote_report, self.remote_report_size))
 
     def _set_report_attrs(self, pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size):
         """
@@ -1192,7 +1206,6 @@ class Enclave(object):
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
         self.remote_report_size = ctypes.c_size_t(remote_report_size)
 
-        globals()["enclave_sym_key"] = self.symm_key
 
 
     def _get_report_attrs(self):
@@ -1382,10 +1395,15 @@ class Booster(object):
                     sig_len=sig_len)))
             self.handle = c_str(response.name)
         else:
+            c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+            signers = from_pystr_to_cstr([globals()["current_user"]])
             dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
             self.handle = ctypes.c_char_p()
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
-                                             ctypes.byref(self.handle)))
+                                             ctypes.byref(self.handle),
+                                             signers,
+                                             c_signatures,
+                                             c_lengths))
         self.set_param({'seed': 0})
         self.set_param(params or {})
         if (params is not None) and ('booster' in params):
@@ -1545,8 +1563,9 @@ class Booster(object):
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"], signature=sig, sig_len=sig_len)))
             else:
-                # FIXME: Pass signature
-                _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val))))
+                c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                signers = from_pystr_to_cstr([globals()["current_user"]])
+                _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val)), signers, c_signatures, c_lengths))
 
 
     def update(self, dtrain, iteration, fobj=None):
@@ -1579,8 +1598,9 @@ class Booster(object):
                     response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"], signature=sig, sig_len=sig_len)))
                     return response
             else:
-                # FIXME: Pass signature
-                _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle))
+                c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                signers = from_pystr_to_cstr([globals()["current_user"]])
+                _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle, signers, c_signatures, c_lengths))
         else:
             raise NotImplementedError("Custom objective functions not supported")
             # TODO(rishabh): We do not support custom objectives currently
@@ -1796,14 +1816,17 @@ class Booster(object):
 
                 preds = proto_to_pointer(enc_preds_serialized)
         else:
-            # FIXME: Pass signature
+            c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+            signers = from_pystr_to_cstr([globals()["current_user"]])
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
                                               ctypes.c_int(option_mask),
                                               ctypes.c_uint(ntree_limit),
                                               ctypes.byref(length),
                                               ctypes.byref(preds),
-                                              c_str(username)))
+                                              signers,
+                                              c_signatures,
+                                              c_lengths))
 
             # TODO(rishabh): implement this in decrypt_predictions
             #  preds = ctypes2numpy(preds, length.value, np.float32)
@@ -1907,8 +1930,9 @@ class Booster(object):
                         signature=sig,
                         sig_len=sig_len)))
             else:
-                # FIXME: Pass signature
-                _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username)))
+                c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                signers = from_pystr_to_cstr([globals()["current_user"]])
+                _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), signers, c_signatures, c_lengths))
         else:
             raise TypeError("fname must be a string")
 
@@ -1949,11 +1973,14 @@ class Booster(object):
                 cptr = from_pystr_to_cstr(list(response.sarr))
                 length = c_bst_ulong(response.length)
         else:
-            # FIXME: Pass verification
+            c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+            signers = from_pystr_to_cstr([globals()["current_user"]])
             _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
                                                   ctypes.byref(length),
                                                   ctypes.byref(cptr),
-                                                  c_str(username)))
+                                                  signers,
+                                                  c_signatures,
+                                                  c_lengths))
         return ctypes2buffer(cptr, length.value)
 
 
@@ -1994,7 +2021,9 @@ class Booster(object):
                         signature=sig,
                         sig_len=sig_len)))
             else:
-                _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username)))
+                c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                signers = from_pystr_to_cstr([globals()["current_user"]])
+                _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), signers, c_signatures, c_lengths))
         else:
             # FIXME: Remote execution for non-file type
             raise "NotImplementedError"
@@ -2061,23 +2090,22 @@ class Booster(object):
         if self.feature_names is not None and fmap == '':
             flen = len(self.feature_names)
 
+            fname = self.feature_names
+            if self.feature_types is None:
+                # use quantitative as default
+                # {'q': quantitative, 'i': indicator}
+                ftype = ['q'] * flen
+            else:
+                ftype = self.feature_types
+
+            args = "XGBoosterDumpModelExWithFeatures booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
+            for i in range(flen):
+                args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
+            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
             channel_addr = globals()["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
-                    fname = self.feature_names
-                    if self.feature_types is None:
-                        # use quantitative as default
-                        # {'q': quantitative, 'i': indicator}
-                        ftype = ['q'] * flen
-                    else:
-                        ftype = self.feature_types
-
-                    args = "XGBoosterDumpModelExWithFeatures booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
-                    for i in range(flen):
-                        args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
-                    sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
-
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
                         booster_handle=self.handle.value,
@@ -2092,23 +2120,20 @@ class Booster(object):
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
-                fname = from_pystr_to_cstr(self.feature_names)
-
-                if self.feature_types is None:
-                    # use quantitative as default
-                    # {'q': quantitative, 'i': indicator}
-                    ftype = from_pystr_to_cstr(['q'] * flen)
-                else:
-                    ftype = from_pystr_to_cstr(self.feature_types)
+                c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                signers = from_pystr_to_cstr([globals()["current_user"]])
                 _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
                     self.handle,
                     ctypes.c_int(flen),
-                    fname,
-                    ftype,
+                    from_pystr_to_cstr(fname),
+                    from_pystr_to_cstr(ftype),
                     ctypes.c_int(with_stats),
                     c_str(dump_format),
                     ctypes.byref(length),
-                    ctypes.byref(sarr)))
+                    ctypes.byref(sarr),
+                    signers,
+                    c_signatures,
+                    c_lengths))
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
@@ -2131,13 +2156,17 @@ class Booster(object):
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
-                # FIXME: Pass signature
+                c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
+                signers = from_pystr_to_cstr([globals()["current_user"]])
                 _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                       c_str(fmap),
                                                       ctypes.c_int(with_stats),
                                                       c_str(dump_format),
                                                       ctypes.byref(length),
-                                                      ctypes.byref(sarr)))
+                                                      ctypes.byref(sarr),
+                                                      signers,
+                                                      c_signatures,
+                                                      c_lengths))
 
         if decrypt:
             self.decrypt_dump(sarr, length)

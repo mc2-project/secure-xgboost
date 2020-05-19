@@ -1381,13 +1381,18 @@ exit:
 
 XGB_DLL int verify_remote_report_and_set_pubkey(
     uint8_t* pem_key,
-    size_t key_size,
+    size_t pem_key_size,
+    uint8_t* symm_key,
+    size_t symm_key_size,
     uint8_t* remote_report,
     size_t remote_report_size) {
   // Attest the remote report and accompanying key.
-  if (!attest_remote_report(remote_report, remote_report_size, pem_key, key_size)) {
+  size_t data_size = pem_key_size + symm_key_size;
+  uint8_t data[data_size];
+  memcpy(data, pem_key, pem_key_size);
+  memcpy(data + pem_key_size, symm_key, symm_key_size);
+  if (!attest_remote_report(remote_report, remote_report_size, data, data_size)) {
     std::cout << "verify_report_and_set_pubkey failed." << std::endl;
-    return -1;
   }
   std::cout << "verify_report_and_set_pubkey succeeded." << std::endl;
   return 0;
