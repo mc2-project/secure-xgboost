@@ -506,8 +506,9 @@ class DMatrix(object):
             if encrypted:
 
                 args = ""
-                for i, username in enumerate(usernames):
-                    args = args + "filename {} num_files {} silent {}".format(data[i], len(data), int(silent))
+                for username, filename in zip(usernames, data):
+                    args = args + "username {} filename {}".format(username, filename)
+                args = args + " silent {}".format(int(silent))
 
                 sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
@@ -1523,7 +1524,7 @@ class Booster(object):
             raise ValueError("Please set your user with User.set_user function")
 
         for key, val in params:
-            args = key + "," + str(val)
+            args = self.handle.value.decode('utf-8') + " " + key + "," + str(val)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
             channel_addr = globals()["remote_addr"]
@@ -2055,9 +2056,9 @@ class Booster(object):
                     else:
                         ftype = self.feature_types
 
-                    args = ""
+                    args = "booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
                     for i in range(flen):
-                        args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, fname[i], ftype[i], int(with_stats), dump_format)
+                        args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
                     sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
                     stub = remote_pb2_grpc.RemoteStub(channel)

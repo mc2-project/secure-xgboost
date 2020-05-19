@@ -408,8 +408,9 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     //signature verification
     std::ostringstream oss;
     for (xgboost::bst_ulong i = 0; i < num_files; i++) {
-        oss << "filename " << fnames[i] << " num_files " << num_files << " silent " << silent;
+        oss << "username " << usernames[i] << " filename " << fnames[i];
     }
+    oss << " silent " << silent;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1101,9 +1102,8 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 
   // signature verification
   std::ostringstream oss;
-  oss << name << "," << value;
+  oss << handle << " " << name << "," << value;
   char* buff = strdup(oss.str().c_str());
-  // FIXME: Signature should include handle
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
   void* bst = EnclaveContext::getInstance().get_booster(handle);
@@ -1249,6 +1249,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   API_END();
 }
 
+// TODO(rishabh): Server can replace file contents
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char** signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
     CHECK_HANDLE();
@@ -1341,8 +1342,11 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
     API_BEGIN();
     CHECK_HANDLE();
 
-    // signature verification
-    // FIXME: Signature should include handle
+    // check signature
+    std::ostringstream oss;
+    oss << "handle " << handle;
+    char* buff = strdup(oss.str().c_str());
+    // FIXME: Add buf to signature
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buf, len, signers, signatures, sig_lengths);
 
     len -= (CIPHER_IV_SIZE + CIPHER_TAG_SIZE);
@@ -1558,8 +1562,9 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
 
     //check signature
     std::ostringstream oss;
+    oss << "booster_handle " << handle << " flen " << fnum << " with_stats " << with_stats << " dump_format " << format;
     for (int i = 0; i <fnum; i++){
-        oss << "booster_handle " << handle << " flen " << fnum << " fname " << fname[i] << " ftype " << ftype[i] << " with_stats " << with_stats << " dump_format " << format;
+        oss << " fname " << fname[i] << " ftype " << ftype[i];
     }
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
