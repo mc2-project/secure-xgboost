@@ -398,7 +398,7 @@ class EnclaveContext {
     /**
      * Generate an ephemeral symmetric key for the enclave
      */
-    bool generate_public_key() {
+    bool generate_symm_key() {
       generate_random(m_symm_key, CIPHER_KEY_SIZE);
     }
 

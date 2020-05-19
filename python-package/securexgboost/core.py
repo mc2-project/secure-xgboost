@@ -240,7 +240,7 @@ def c_array(ctype, values):
     return (ctype * len(values))(*values)
 
 
-def pointer_to_proto(pointer, pointer_len, nptype=np.uint32):
+def pointer_to_proto(pointer, pointer_len, nptype=np.uint8):
     """
     Convert C u_int or float pointer to proto for RPC serialization
 
@@ -259,7 +259,7 @@ def pointer_to_proto(pointer, pointer_len, nptype=np.uint32):
     proto = ndarray_to_proto(ndarray)
     return proto
 
-def proto_to_pointer(proto, ctype=ctypes.c_uint):
+def proto_to_pointer(proto, ctype=ctypes.c_uint8):
     """
     Convert a serialized NDArray to a C pointer
 
@@ -1113,9 +1113,11 @@ class Enclave(object):
         else:
             globals()["remote_addr"] = None;
             _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
-        self.pem_key = ctypes.POINTER(ctypes.c_uint)()
-        self.key_size = ctypes.c_size_t()
-        self.remote_report = ctypes.POINTER(ctypes.c_uint)()
+        self.pem_key = ctypes.POINTER(ctypes.c_uint8)()
+        self.pem_key_size = ctypes.c_size_t()
+        self.symm_key = ctypes.POINTER(ctypes.c_uint8)()
+        self.symm_key_size = ctypes.c_size_t()
+        self.remote_report = ctypes.POINTER(ctypes.c_uint8)()
         self.remote_report_size = ctypes.c_size_t()
 
     # TODO(rishabh): user-defined parameters for verification
@@ -1141,14 +1143,16 @@ class Enclave(object):
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1)))
             pem_key = response.pem_key
-            key_size = response.key_size
+            pem_key_size = response.pem_key_size
+            symm_key = response.symm_key
+            symm_key_size = response.symm_key_size
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
-            self._set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
+            self._set_report_attrs(pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
-            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.pem_key_size), cyptes.byref(self.symm_key), ctypes.byref(self.symm_key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
             # return self._get_report_attrs()
 
         if (verify):
@@ -1160,19 +1164,26 @@ class Enclave(object):
         """
         _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.key_size, self.remote_report, self.remote_report_size))
 
-    def _set_report_attrs(self, pem_key, key_size, remote_report, remote_report_size):
+    def _set_report_attrs(self, pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size):
         """
         Set the enclave public key and remote report
 
         To be used by RPC client during verification
         """
         pem_key_ndarray = proto_to_ndarray(pem_key)
-        self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
-        self.key_size = ctypes.c_size_t(key_size)
+        self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
+        self.pem_key_size = ctypes.c_size_t(pem_key_size)
+
+        symm_key_ndarray = proto_to_ndarray(symm_key)
+        self.symm_key = symm_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
+        self.symm_key_size = ctypes.c_size_t(symm_key_size)
 
         remote_report_ndarray = proto_to_ndarray(remote_report)
-        self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+        self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
         self.remote_report_size = ctypes.c_size_t(remote_report_size)
+
+        globals()["enclave_sym_key"] = self.symm_key
+
 
     def _get_report_attrs(self):
         """
@@ -1190,16 +1201,20 @@ class Enclave(object):
         remote_report_size : int
         """
         # Convert pem_key to serialized numpy array
-        pem_key = ctypes2numpy(self.pem_key, self.key_size.value, np.uint32)
+        pem_key = ctypes2numpy(self.pem_key, self.pem_key_size.value, np.uint8)
         pem_key = ndarray_to_proto(pem_key)
-        key_size = self.key_size.value
+        pem_key_size = self.pem_key_size.value
+
+        symm_key = ctypes2numpy(self.symm_key, self.symm_key_size.value, np.uint8)
+        symm_key = ndarray_to_proto(symm_key)
+        symm_key_size = self.symm_key_size.value
 
         # Convert remote_report to serialized numpy array
-        remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint32)
+        remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint8)
         remote_report = ndarray_to_proto(remote_report)
         remote_report_size = self.remote_report_size.value
 
-        return pem_key, key_size, remote_report, remote_report_size
+        return pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size
 
     def add_key(self):
         """
@@ -1208,7 +1223,7 @@ class Enclave(object):
         The signed message is sent to the enclave.
         """
 
-        enclave_pem_key, enclave_key_size, _, _ = self._get_report_attrs()
+        enclave_pem_key, enclave_key_size, _, _, _, _ = self._get_report_attrs()
 
         try:
             sym_key = globals()["current_user_sym_key"]
@@ -2042,10 +2057,8 @@ class Booster(object):
 
                     args = ""
                     for i in range(flen):
-                        args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, self.feature_names[i], self.feature_types[i] or 'q', int(with_stats), dump_format)
+                        args = args + "booster_handle {} flen {} fname {} ftype {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, fname[i], ftype[i], int(with_stats), dump_format)
                     sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
-                    sig = proto_to_pointer(sig)
-                    sig_len = ctypes.c_size_t(sig_len)
 
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
@@ -2119,7 +2132,7 @@ class Booster(object):
         """ Decrypt the models obtained from get_dump()
         """ 
         try:
-            sym_key = globals()["current_user_sym_key"]
+            sym_key = globals()["enclave_sym_key"]
         except:
             raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
         _check_call(_LIB.decrypt_dump(sym_key, sarr, length))
@@ -2422,25 +2435,32 @@ def py2c_sigs(signatures, sig_lengths):
 
 class RemoteAPI:
     def get_remote_report_with_pubkey(request):
-        pem_key = ctypes.POINTER(ctypes.c_uint)()
-        key_size = ctypes.c_size_t()
-        remote_report = ctypes.POINTER(ctypes.c_uint)()
+        pem_key = ctypes.POINTER(ctypes.c_uint8)()
+        pem_key_size = ctypes.c_size_t()
+        symm_key = ctypes.POINTER(ctypes.c_uint8)()
+        symm_key_size = ctypes.c_size_t()
+        remote_report = ctypes.POINTER(ctypes.c_uint8)()
         remote_report_size = ctypes.c_size_t()
         _check_call(_LIB.get_remote_report_with_pubkey(
             ctypes.byref(pem_key),
-            ctypes.byref(key_size),
+            ctypes.byref(pem_key_size),
+            ctypes.byref(symm_key),
+            ctypes.byref(symm_key_size),
             ctypes.byref(remote_report),
             ctypes.byref(remote_report_size)))
 
-        key_size = key_size.value
+        pem_key_size = pem_key_size.value
+        symm_key_size = symm_key_size.value
         remote_report_size = remote_report_size.value
 
-        pem_key = ctypes2numpy(pem_key, key_size, np.uint32)
+        pem_key = ctypes2numpy(pem_key, pem_key_size, np.uint8)
         pem_key = ndarray_to_proto(pem_key)
-        remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint32)
+        symm_key = ctypes2numpy(symm_key, symm_key_size, np.uint8)
+        symm_key = ndarray_to_proto(symm_key)
+        remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint8)
         remote_report = ndarray_to_proto(remote_report)
 
-        return pem_key, key_size, remote_report, remote_report_size
+        return pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size
 
 
     def XGBoosterPredict(request, signers, signatures, sig_lengths):
@@ -2528,28 +2548,30 @@ class RemoteAPI:
         return dmat_handle.value.decode('utf-8')
 
 
-    # FIXME: Fix this API
     def XGBoosterSaveModel(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         filename = request.filename
-        username = request.username
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         _check_call(_LIB.XGBoosterSaveModel(
             c_str(booster_handle),
             c_str(filename),
-            c_str(username)))
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
 
 
-    # FIXME: Fix this API
-    def XGBoosterLoadModel(request, signatures, sig_lengths):
+    def XGBoosterLoadModel(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
         filename = request.filename
-        username = request.username
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         _check_call(_LIB.XGBoosterLoadModel(
             c_str(booster_handle),
             c_str(filename),
-            c_str(username)))
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
 
 
     def XGBoosterDumpModelEx(request, signers, signatures, sig_lengths):
@@ -2600,16 +2622,17 @@ class RemoteAPI:
         return length.value, from_cstr_to_pystr(sarr, length)
 
 
-    # FIXME: Fix this API
-    def XGBoosterGetModelRaw(request, signatures, sig_lengths):
+    def XGBoosterGetModelRaw(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_handle
-        username = request.username
+        c_signatures, c_lengths = py2c_sigs(signatures, sig_lengths)
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
         _check_call(_LIB.XGBoosterGetModelRaw(
             c_str(booster_handle),
-            c_str(username)))
+            from_pystr_to_cstr(signers),
+            c_signatures,
+            c_lengths))
         return length.value, from_cstr_to_pystr(sarr, length)
 
 
@@ -2625,6 +2648,7 @@ class RemoteAPI:
         return ret.value
 
 
+    # FIXME: Fix this API
     def XGDMatrixNumRow(request):
         dmatrix_handle = request.name
 
@@ -2709,7 +2733,7 @@ def encrypt_data_with_pk(data, data_len, pem_key, key_size):
     pem_key_len = ctypes.c_size_t(key_size)
 
     # Allocate memory that will be used to store the encrypted_data and encrypted_data_size
-    encrypted_data = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint))
+    encrypted_data = np.zeros(1024).ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
     encrypted_data_size = ctypes.c_size_t(1024)
 
     # Encrypt the data with pk pem_key

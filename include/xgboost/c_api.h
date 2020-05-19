@@ -391,7 +391,7 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle);
  * \param handle handle
  * \param name  parameter name
  * \param value value of parameter
- * \param username user invoking the API
+ * \param signers list of usernames of signing clients
  * \param signature user_signature
  * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
@@ -408,7 +408,7 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
  * \param handle handle
  * \param iter current iteration rounds
  * \param dtrain training data
- * \param username user invoking the API
+ * \param signers list of usernames of signing clients
  * \param signature user_signature
  * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
@@ -465,7 +465,7 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
  *    when the parameter is set to 0, we will use all the trees
  * \param out_len used to store length of returning result
  * \param out_result used to set a pointer to array
- * \param username user invoking the API
+ * \param signers list of usernames of signing clients
  * \param signature user_signature
  * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
@@ -484,14 +484,14 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
  * \brief load model from existing file
  * \param handle handle
  * \param fname file name
- * \param username user invoking the API
+ * \param signers list of usernames of signing clients
  * \param signature user_signature
  * \param sig_len signature length
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
-                             char *username,
+                             char **signers,
                              uint8_t* signatures[],
                              size_t* sig_lengths);
 
@@ -499,14 +499,14 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
  * \brief save model into existing file
  * \param handle handle
  * \param fname file name
- * \param username username
+ * \param signers list of usernames of signing clients
  * \param signature user signature
  * \param sig_len signatures length in bytes
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
-                               char* username,
+                               char** signers,
                                uint8_t* signatures[],
                                size_t* sig_lengths);
 
@@ -515,7 +515,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
  * \param handle handle
  * \param buf pointer to the buffer
  * \param len the length of the buffer
- * \param username username
+ * \param signers list of usernames of signing clients
  * \param signature signature
  * \param sig_len length of signature in bytes
  * \return 0 when success, -1 when failure happens
@@ -523,7 +523,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          const void *buf,
                                          bst_ulong len,
-                                         char* username,
+                                         char** signers,
                                          uint8_t* signatures[],
                                          size_t* sig_lengths);
 
@@ -533,7 +533,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
  * \param handle handle
  * \param out_len the argument to hold the output length
  * \param out_dptr the argument to hold the output data pointer
- * \param username adding username
+ * \param signers list of usernames of signing clients
  * \param signature adding signature
  * \param sig_len adding signature made by user
  * \return 0 when success, -1 when failure happens
@@ -541,7 +541,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
-                                 char *username,
+                                 char **signers,
                                  uint8_t* signatures[],
                                  size_t* sig_lengths);
 
@@ -568,7 +568,7 @@ XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
  * \param format the format to dump the model in
  * \param out_len length of output array
  * \param out_dump_array pointer to hold representing dump of each model
- * \param username user requesting dump model
+ * \param signers list of usernames of signing clients
  * \param signature user generated signature
  * \param sig_len user signature length
  * \return 0 when success, -1 when failure happens
@@ -579,7 +579,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char *format,
                                  bst_ulong *out_len,
                                  const char ***out_dump_array,
-                                 char *username,
+                                 char **signers,
                                  uint8_t* signatures[],
                                  size_t* sig_lengths);
 
@@ -612,7 +612,7 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
  * \param format the format to dump the model in
  * \param out_len length of output array
  * \param out_models pointer to hold representing dump of each model
- * \param username
+ * \param signers list of usernames of signing clients
  * \param signature signature of this call
  * \param sign_len length of the signature
  * \return 0 when success, -1 when failure happens
@@ -625,7 +625,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              const char *format,
                                              bst_ulong *out_len,
                                              const char ***out_models,
-                                             char *username,
+                                             char **signers,
                                              uint8_t* signatures[],
                                              size_t* sig_lengths);
 
@@ -686,7 +686,9 @@ XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
 XGB_DLL int get_remote_report_with_pubkey(
     uint8_t** pem_key,
-    size_t* key_size,
+    size_t* pem_key_size,
+    uint8_t** symm_key,
+    size_t* symm_key_size,
     uint8_t** remote_report,
     size_t* remote_report_size);
 

@@ -89,16 +89,22 @@ message Report {
   numproto.protobuf.NDArray pem_key = 1;
 
   // Size of public key
-  uint32 key_size = 2;
+  uint32 pem_key_size = 2;
+
+  // Symmetric key of enclave 
+  numproto.protobuf.NDArray symm_key = 3;
+
+  // Size of symmetric key
+  uint32 symm_key_size = 4;
 
   // Remote report of enclave
-  numproto.protobuf.NDArray remote_report = 3;
+  numproto.protobuf.NDArray remote_report = 5;
 
   // Size of remote report
-  uint32 remote_report_size = 4;
+  uint32 remote_report_size = 6;
 
   // Status of call
-  Status status = 5;
+  Status status = 7;
 }
 
 // Message from client to enclaves with information on how to retrieve

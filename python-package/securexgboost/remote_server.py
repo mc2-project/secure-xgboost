@@ -122,10 +122,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             # Get report from enclave
-            pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
+            pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
 
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
+            return remote_pb2.Report(pem_key=pem_key, pem_key_size=pem_key_size, symm_key=symm_key, symm_key_size=symm_key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Report(status=status)
