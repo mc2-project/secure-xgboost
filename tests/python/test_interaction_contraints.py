@@ -69,14 +69,15 @@ class TestInteractionConstraints(unittest.TestCase):
         # Set all observations to have the same x3 values then increment
         #   by the same amount
         def f(x):
-            tmat = xgb.DMatrix(
-                np.column_stack((x1, x2, np.repeat(x, 1000))))
+            tX = np.column_stack((x1, x2, np.repeat(x, 1000)))
             ty = np.repeat(0, 1000) # label shouldn't matter
 
-            dump_svmlight_file(tmat, ty, temp_name) 
+            dump_svmlight_file(tX, ty, temp_name) 
             xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
-            return bst.predict(temp_enc_name)
+            tmat = xgb.DMatrix({username: temp_enc_name})
+
+            return bst.predict(tmat)
 
         preds = [f(x) for x in [1, 2, 3]]
 
