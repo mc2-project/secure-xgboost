@@ -77,7 +77,7 @@ class TestInteractionConstraints(unittest.TestCase):
 
             tmat = xgb.DMatrix({username: temp_enc_name})
 
-            return bst.predict(tmat)
+            return bst.predict(tmat)[0]
 
         preds = [f(x) for x in [1, 2, 3]]
 
