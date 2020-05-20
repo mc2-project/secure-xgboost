@@ -17,12 +17,46 @@
 #include <mbedtls/error.h>
 
 #include <dmlc/logging.h>
+#include <xgboost/logging.h>
 
 #define CIPHER_KEY_SIZE 32
 #define CIPHER_IV_SIZE  12
 #define CIPHER_TAG_SIZE 16
 #define SHA_DIGEST_SIZE 32
 #define CIPHER_PK_SIZE 512
+
+static int generate_random(unsigned char* key, unsigned int key_len) {
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_entropy_context entropy;
+    const char pers[] = "Generate random key for MC^2";
+    int ret = 0;
+
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    memset(key, 0, key_len);
+
+    // mbedtls_ctr_drbg_seed seeds and sets up the CTR_DRBG entropy source for
+    // future reseeds.
+    ret = mbedtls_ctr_drbg_seed(
+        &ctr_drbg,
+        mbedtls_entropy_func,
+        &entropy,
+        (unsigned char*)pers,
+        sizeof(pers));
+    if (ret != 0) {
+        LOG(FATAL) << "mbedtls_ctr_drbg_init failed with " << -ret;
+    }
+
+    // mbedtls_ctr_drbg_random uses CTR_DRBG to generate random data
+    ret = mbedtls_ctr_drbg_random(&ctr_drbg, key, key_len);
+    if (ret != 0) {
+        LOG(FATAL) << "mbedtls_ctr_drbg_random failed with " << -ret;
+    }
+
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    return ret;
+}
 
 static int cipher_init(mbedtls_gcm_context* gcm, unsigned char* key) {
   // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()

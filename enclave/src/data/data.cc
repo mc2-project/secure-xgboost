@@ -383,7 +383,6 @@ DMatrix* DMatrix::Load(std::vector<const std::string>& uris,
           CHECK_EQ(parser->total_rows_global, sum);
       }
   }
-
 #if false // FIXME: currently disabled to prevent OE errors if file not found
   // backward compatiblity code.
   if (!load_row_split) {
