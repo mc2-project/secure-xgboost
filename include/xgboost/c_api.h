@@ -354,6 +354,9 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumRow(DMatrixHandle handle,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             bst_ulong *out);
 /*!
  * \brief get number of columns
@@ -362,6 +365,9 @@ XGB_DLL int XGDMatrixNumRow(DMatrixHandle handle,
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             bst_ulong *out);
 // --- start XGBoost class
 
@@ -374,6 +380,9 @@ XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
  */
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                             bst_ulong len,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             BoosterHandle *out);
 
 /*!
@@ -510,6 +519,9 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
                                  char *username);
