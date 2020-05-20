@@ -1138,8 +1138,6 @@ class Enclave(object):
             _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
         self.pem_key = ctypes.POINTER(ctypes.c_uint8)()
         self.pem_key_size = ctypes.c_size_t()
-        self.symm_key = ctypes.POINTER(ctypes.c_uint8)()
-        self.symm_key_size = ctypes.c_size_t()
         self.remote_report = ctypes.POINTER(ctypes.c_uint8)()
         self.remote_report_size = ctypes.c_size_t()
 
@@ -1167,18 +1165,15 @@ class Enclave(object):
                 response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=1)))
             pem_key = response.pem_key
             pem_key_size = response.pem_key_size
-            symm_key = response.symm_key
-            symm_key_size = response.symm_key_size
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
-            self._set_report_attrs(pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size)
+            self._set_report_attrs(pem_key, pem_key_size, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
-            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.pem_key_size), ctypes.byref(self.symm_key), ctypes.byref(self.symm_key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
+            _check_call(_LIB.get_remote_report_with_pubkey(ctypes.byref(self.pem_key), ctypes.byref(self.pem_key_size), ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
             # return self._get_report_attrs()
 
-        globals()["enclave_sym_key"] = self.symm_key
         if (verify):
             self._verify_report()
 
@@ -1186,9 +1181,9 @@ class Enclave(object):
         """
         Verify the received attestation report and set the public key.
         """
-        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.pem_key_size, self.symm_key, self.symm_key_size, self.remote_report, self.remote_report_size))
+        _check_call(_LIB.verify_remote_report_and_set_pubkey(self.pem_key, self.pem_key_size, self.remote_report, self.remote_report_size))
 
-    def _set_report_attrs(self, pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size):
+    def _set_report_attrs(self, pem_key, pem_key_size, remote_report, remote_report_size):
         """
         Set the enclave public key and remote report
 
@@ -1197,10 +1192,6 @@ class Enclave(object):
         pem_key_ndarray = proto_to_ndarray(pem_key)
         self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
         self.pem_key_size = ctypes.c_size_t(pem_key_size)
-
-        symm_key_ndarray = proto_to_ndarray(symm_key)
-        self.symm_key = symm_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
-        self.symm_key_size = ctypes.c_size_t(symm_key_size)
 
         remote_report_ndarray = proto_to_ndarray(remote_report)
         self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
@@ -1228,16 +1219,12 @@ class Enclave(object):
         pem_key = ndarray_to_proto(pem_key)
         pem_key_size = self.pem_key_size.value
 
-        symm_key = ctypes2numpy(self.symm_key, self.symm_key_size.value, np.uint8)
-        symm_key = ndarray_to_proto(symm_key)
-        symm_key_size = self.symm_key_size.value
-
         # Convert remote_report to serialized numpy array
         remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint8)
         remote_report = ndarray_to_proto(remote_report)
         remote_report_size = self.remote_report_size.value
 
-        return pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size
+        return pem_key, pem_key_size, remote_report, remote_report_size
 
     def add_key(self):
         """
@@ -1246,7 +1233,7 @@ class Enclave(object):
         The signed message is sent to the enclave.
         """
 
-        enclave_pem_key, enclave_key_size, _, _, _, _ = self._get_report_attrs()
+        enclave_pem_key, enclave_key_size, _, _ = self._get_report_attrs()
 
         try:
             sym_key = globals()["current_user_sym_key"]
@@ -1262,6 +1249,8 @@ class Enclave(object):
         sig, sig_size = sign_data(priv_key, enc_sym_key, enc_sym_key_size)
         # Send the encrypted key to the enclave
         self._add_client_key_with_certificate(cert, enc_sym_key, enc_sym_key_size, sig, sig_size)
+
+        self._get_enclave_symm_key()
 
     # def _add_client_key(self, enc_sym_key, enc_len, signature, sig_len):
     #     """
@@ -1350,6 +1339,45 @@ class Enclave(object):
 
         # Add client key
         _LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len)
+
+
+    def _get_enclave_symm_key(self):
+        """
+        Get enclave's symmetric key used to encrypt output common to all clients
+        """
+        if "current_user" in globals():
+            username = globals()["current_user"]
+        if username is None:
+            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+        channel_addr = globals()["remote_addr"]
+        if channel_addr:
+            with grpc.insecure_channel(channel_addr) as channel:
+                stub = remote_pb2_grpc.RemoteStub(channel)
+                response = _check_remote_call(stub.rpc_get_enclave_symm_key(remote_pb2.Name(
+                    username=username)))
+
+                enc_key_serialized = response.key
+                enc_key_size = ctypes.c_size_t(response.size)
+                enc_key = proto_to_pointer(enc_key_serialized)
+        else:
+            enc_key = ctypes.POINTER(ctypes.c_uint8)()
+            enc_key_size = ctypes.c_size_t()
+            _check_call(_LIB.get_enclave_symm_key(
+                c_str(username),
+                ctypes.byref(enc_key),
+                ctypes.byref(enc_key_size)))
+
+        
+        # Decrypt the key and save it
+        try:
+            sym_key = globals()["current_user_sym_key"]
+        except:
+            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+        c_char_p_key = ctypes.c_char_p(sym_key)
+        enclave_symm_key = ctypes.POINTER(ctypes.c_uint8)()
+
+        _check_call(_LIB.decrypt_enclave_key(c_char_p_key, enc_key, enc_key_size, ctypes.byref(enclave_symm_key)))
+        globals()["enclave_sym_key"] = enclave_symm_key
 
 
 class Booster(object):
@@ -2482,30 +2510,32 @@ class RemoteAPI:
     def get_remote_report_with_pubkey(request):
         pem_key = ctypes.POINTER(ctypes.c_uint8)()
         pem_key_size = ctypes.c_size_t()
-        symm_key = ctypes.POINTER(ctypes.c_uint8)()
-        symm_key_size = ctypes.c_size_t()
         remote_report = ctypes.POINTER(ctypes.c_uint8)()
         remote_report_size = ctypes.c_size_t()
         _check_call(_LIB.get_remote_report_with_pubkey(
             ctypes.byref(pem_key),
             ctypes.byref(pem_key_size),
-            ctypes.byref(symm_key),
-            ctypes.byref(symm_key_size),
             ctypes.byref(remote_report),
             ctypes.byref(remote_report_size)))
 
         pem_key_size = pem_key_size.value
-        symm_key_size = symm_key_size.value
         remote_report_size = remote_report_size.value
 
         pem_key = ctypes2numpy(pem_key, pem_key_size, np.uint8)
         pem_key = ndarray_to_proto(pem_key)
-        symm_key = ctypes2numpy(symm_key, symm_key_size, np.uint8)
-        symm_key = ndarray_to_proto(symm_key)
         remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint8)
         remote_report = ndarray_to_proto(remote_report)
 
-        return pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size
+        return pem_key, pem_key_size, remote_report, remote_report_size
+
+    def get_enclave_symm_key(request):
+        enc_key = ctypes.POINTER(ctypes.c_uint8)()
+        enc_key_size = ctypes.c_size_t()
+        _check_call(_LIB.get_enclave_symm_key(
+            c_str(request.username),
+            ctypes.byref(enc_key),
+            ctypes.byref(enc_key_size)))
+        return enc_key, enc_key_size.value
 
 
     def XGBoosterPredict(request, signers, signatures, sig_lengths):

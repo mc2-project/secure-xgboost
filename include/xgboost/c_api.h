@@ -705,16 +705,12 @@ XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 XGB_DLL int get_remote_report_with_pubkey(
     uint8_t** pem_key,
     size_t* pem_key_size,
-    uint8_t** symm_key,
-    size_t* symm_key_size,
     uint8_t** remote_report,
     size_t* remote_report_size);
 
 XGB_DLL int verify_remote_report_and_set_pubkey(
     uint8_t* pem_key,
     size_t pem_key_size,
-    uint8_t* symm_key,
-    size_t symm_key_size,
     uint8_t* remote_report,
     size_t remote_report_size);
 
@@ -732,6 +728,11 @@ XGB_DLL int add_client_key_with_certificate(
     size_t data_len,
     uint8_t* signature,
     size_t sig_len);
+
+XGB_DLL int get_enclave_symm_key(
+    char* username,
+    uint8_t** out,
+    size_t* out_size);
 
 XGB_DLL int encrypt_data_with_pk(
     char* data,
@@ -753,6 +754,12 @@ XGB_DLL int decrypt_predictions(
     uint8_t* encrypted_preds,
     size_t preds_len,
     bst_float** preds);
+
+XGB_DLL int decrypt_enclave_key(
+    char* key,
+    uint8_t* encrypted_key,
+    size_t len,
+    uint8_t** out_key);
 
 XGB_DLL int encrypt_file(
     char* fname,

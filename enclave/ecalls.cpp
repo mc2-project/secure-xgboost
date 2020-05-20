@@ -403,12 +403,10 @@ int enclave_XGBoosterFree(BoosterHandle handle) {
 int enclave_get_remote_report_with_pubkey(
         uint8_t** pem_key,
         size_t* pem_key_size,
-        uint8_t** symm_key,
-        size_t* symm_key_size,
         uint8_t** remote_report,
         size_t* remote_report_size) {
   LOG(DEBUG) << "Ecall: enclave_get_remote_report_with_pubkey";
-  return get_remote_report_with_pubkey(pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size);
+  return get_remote_report_with_pubkey(pem_key, pem_key_size, remote_report, remote_report_size);
 }
 
 int enclave_add_client_key_with_certificate(
@@ -420,6 +418,11 @@ int enclave_add_client_key_with_certificate(
         size_t sig_len) {
     LOG(DEBUG) << "Ecall: add_client_key_with_certificate";
     return add_client_key_with_certificate(cert, cert_len, data, data_len, signature, sig_len);
+}
+
+int enclave_get_enclave_symm_key(char* username, uint8_t** out, size_t* out_size) {
+  LOG(DEBUG) << "Ecall: get_enclave_symm_key";
+  return get_enclave_symm_key(username, out, out_size);
 }
 
 void enclave_RabitInit(int argc, char **argv, size_t arg_lengths[]) {

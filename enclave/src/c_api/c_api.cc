@@ -278,8 +278,6 @@ bool generate_remote_report(
 int get_remote_report_with_pubkey(
     uint8_t** pem_key,
     size_t* pem_key_size,
-    uint8_t** symm_key,
-    size_t* symm_key_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
   // FIXME: Encrypt the symmetric key
@@ -287,32 +285,25 @@ int get_remote_report_with_pubkey(
   uint8_t* report = NULL;
   size_t report_size = 0;
   uint8_t* pem_key_buf = NULL;
-  uint8_t* symm_key_buf = NULL;
   int ret = 1;
 
   uint8_t* _pem_key = EnclaveContext::getInstance().get_public_key();
-  uint8_t* _symm_key = EnclaveContext::getInstance().get_symm_key();
 
 #ifdef __ENCLAVE_SIMULATION__
   pem_key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
-  symm_key_buf = (uint8_t*)oe_host_malloc(CIPHER_KEY_SIZE);
-  if (pem_key_buf == NULL || symm_key_buf == NULL) {
+  if (pem_key_buf == NULL) {
     ret = OE_OUT_OF_MEMORY;
     return ret;
   }
   memcpy(pem_key_buf, _pem_key, CIPHER_PK_SIZE);
-  memcpy(symm_key_buf, _symm_key, CIPHER_KEY_SIZE);
 
   *pem_key = pem_key_buf;
   *pem_key_size = CIPHER_PK_SIZE;
-  *symm_key = symm_key_buf;
-  *symm_key_size = CIPHER_KEY_SIZE;
 
   ret = 0;
 #else
-  uint8_t* data[CIPHER_PK_SIZE + CIPHER_KEY_SIZE];
+  uint8_t* data[CIPHER_PK_SIZE];
   memcpy(data, _pem_key, CIPHER_PK_SIZE);
-  memcpy(data + CIPHER_PK_SIZE, _symm_key, CIPHER_KEY_SIZE);
   if (generate_remote_report(data, CIPHER_PK_SIZE + CIPHER_KEY_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
@@ -327,8 +318,7 @@ int get_remote_report_with_pubkey(
     oe_free_report(report);
 
     pem_key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
-    symm_key_buf = (uint8_t*)oe_host_malloc(CIPHER_KEY_SIZE);
-    if (pem_key_buf == NULL || symm_key_buf == NULL) {
+    if (pem_key_buf == NULL) {
       ret = OE_OUT_OF_MEMORY;
       if (report)
         oe_free_report(report);
@@ -337,12 +327,9 @@ int get_remote_report_with_pubkey(
       return ret;
     }
     memcpy(pem_key_buf, _pem_key, CIPHER_PK_SIZE);
-    memcpy(symm_key_buf, _symm_key, CIPHER_KEY_SIZE);
 
     *pem_key = pem_key_buf;
     *pem_key_size = CIPHER_PK_SIZE;
-    *symm_key = symm_key_buf;
-    *symm_key_size = CIPHER_KEY_SIZE;
 
     ret = 0;
     LOG(INFO) << "get_remote_report_with_pubkey succeeded";
@@ -362,6 +349,38 @@ int add_client_key_with_certificate(char * cert,
     API_BEGIN();
     EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len);
     API_END();
+}
+
+int get_enclave_symm_key(char* username, uint8_t** out, size_t* out_size) {
+  API_BEGIN();
+  unsigned char key[CIPHER_KEY_SIZE];
+  EnclaveContext::getInstance().get_client_key((uint8_t*)key, username);
+  uint8_t* pt = EnclaveContext::getInstance().get_symm_key();
+
+  size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + CIPHER_KEY_SIZE;
+  unsigned char* buf  = (unsigned char*) malloc(buf_len);
+
+  unsigned char* iv = buf;
+  unsigned char* tag = buf + CIPHER_IV_SIZE;
+  unsigned char* output = tag + CIPHER_TAG_SIZE;
+
+  encrypt_symm(
+      key,
+      (const unsigned char*)pt,
+      CIPHER_KEY_SIZE,
+      NULL,
+      0,
+      output,
+      iv,
+      tag);
+
+  unsigned char* host_buf  = (unsigned char*) oe_host_malloc(buf_len);
+  memcpy(host_buf, buf, buf_len);
+  free(buf);
+  *out = (uint8_t*)host_buf;
+  *out_size = CIPHER_KEY_SIZE;
+
+  API_END();
 }
 
 /*! \brief entry to to easily hold returning information */

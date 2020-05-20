@@ -122,10 +122,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             # Get report from enclave
-            pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
+            pem_key, pem_key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
 
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Report(pem_key=pem_key, pem_key_size=pem_key_size, symm_key=symm_key, symm_key_size=symm_key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
+            return remote_pb2.Report(pem_key=pem_key, pem_key_size=pem_key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Report(status=status)
@@ -170,6 +170,21 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         except:
             status = handle_exception()
             return status
+
+    def rpc_get_enclave_symm_key(self, request, context):
+        """
+        Calls get_remote_report_with_pubkey()
+        """
+        try:
+            # Get report from enclave
+            enc_key, enc_key_size = remote_api.get_enclave_symm_key(request)
+            enc_key_proto = pointer_to_proto(enc_key, enc_key_size + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
+
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
+        except:
+            status = handle_exception()
+            return remote_pb2.Report(status=status)
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         """

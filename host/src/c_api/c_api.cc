@@ -1211,11 +1211,9 @@ int ocall_rabit__IsDistributed() {
 XGB_DLL int get_remote_report_with_pubkey(
     uint8_t** pem_key,
     size_t* pem_key_size,
-    uint8_t** symm_key,
-    size_t* symm_key_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
-  safe_ecall(enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, pem_key_size, symm_key, symm_key_size, remote_report, remote_report_size));
+  safe_ecall(enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, pem_key_size, remote_report, remote_report_size));
 }
 
 bool verify_mrsigner(
@@ -1382,15 +1380,12 @@ exit:
 XGB_DLL int verify_remote_report_and_set_pubkey(
     uint8_t* pem_key,
     size_t pem_key_size,
-    uint8_t* symm_key,
-    size_t symm_key_size,
     uint8_t* remote_report,
     size_t remote_report_size) {
   // Attest the remote report and accompanying key.
-  size_t data_size = pem_key_size + symm_key_size;
-  uint8_t data[data_size];
+  size_t data_size = pem_key_size;
+  uint8_t data[pem_key_size];
   memcpy(data, pem_key, pem_key_size);
-  memcpy(data + pem_key_size, symm_key, symm_key_size);
   if (!attest_remote_report(remote_report, remote_report_size, data, data_size)) {
     std::cout << "verify_report_and_set_pubkey failed." << std::endl;
   }
@@ -1400,6 +1395,10 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
 
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
   safe_ecall(enclave_add_client_key_with_certificate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret,cert,cert_len,data, data_len, signature, sig_len));
+}
+
+XGB_DLL int get_enclave_symm_key(char *username, uint8_t** out, size_t* out_size) {
+  safe_ecall(enclave_get_enclave_symm_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, username, out, out_size));
 }
 
 XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_t key_size, uint8_t* encrypted_data, size_t* encrypted_data_size) {
@@ -1516,6 +1515,26 @@ XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_
             output);
     *preds = reinterpret_cast<float*>(output);
     return 0;
+}
+
+XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, uint8_t** out_key) {
+
+  unsigned char* iv = (unsigned char*)encrypted_key;
+  unsigned char* tag = iv + CIPHER_IV_SIZE;
+  unsigned char* data = tag + CIPHER_TAG_SIZE;
+  unsigned char* output = (unsigned char*) malloc(len);
+
+  decrypt_symm(
+      (uint8_t*) key,
+      data,
+      len,
+      iv,
+      tag,
+      NULL,
+      0,
+      output);
+  *out_key = reinterpret_cast<uint8_t*>(output);
+  return 0;
 }
 
 XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {

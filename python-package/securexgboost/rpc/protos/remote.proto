@@ -30,6 +30,9 @@ service Remote {
   // Send symmetric key encrypted with enclave public key, signature, certificate
   rpc rpc_add_client_key_with_certificate(DataMetadata) returns (StatusMsg) {}
 
+  // Get enclave's symmetric key, encypted with the client's symmetric key
+  rpc rpc_get_enclave_symm_key(Name) returns (EnclaveKey) {}
+
   // Send params of a DMatrix to the server for initialization
   // Returns the name assigned to this DMatrix
   rpc rpc_XGDMatrixCreateFromEncryptedFile(DMatrixAttrs) returns (Name) {}
@@ -91,20 +94,14 @@ message Report {
   // Size of public key
   uint32 pem_key_size = 2;
 
-  // Symmetric key of enclave 
-  numproto.protobuf.NDArray symm_key = 3;
-
-  // Size of symmetric key
-  uint32 symm_key_size = 4;
-
   // Remote report of enclave
-  numproto.protobuf.NDArray remote_report = 5;
+  numproto.protobuf.NDArray remote_report = 3;
 
   // Size of remote report
-  uint32 remote_report_size = 6;
+  uint32 remote_report_size = 4;
 
   // Status of call
-  Status status = 7;
+  Status status = 5;
 }
 
 // Message from client to enclaves with information on how to retrieve
@@ -268,6 +265,18 @@ message Integer {
     uint32 value = 1;
     // Status of call (for returned Integer)
     Status status = 2;
+}
+
+// Enclave's symmetric key (encrypted)
+message EnclaveKey {
+    // Encrypted key
+    numproto.protobuf.NDArray key = 1;
+
+    // Encrypted key size
+    uint32 size = 2;  
+
+    // Status
+    Status status = 3;
 }
 
 // Encrypted predictions served by enclave, to be decrypted at client

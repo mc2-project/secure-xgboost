@@ -29,6 +29,11 @@ class RemoteStub(object):
         request_serializer=remote__pb2.DataMetadata.SerializeToString,
         response_deserializer=remote__pb2.StatusMsg.FromString,
         )
+    self.rpc_get_enclave_symm_key = channel.unary_unary(
+        '/remote.Remote/rpc_get_enclave_symm_key',
+        request_serializer=remote__pb2.Name.SerializeToString,
+        response_deserializer=remote__pb2.EnclaveKey.FromString,
+        )
     self.rpc_XGDMatrixCreateFromEncryptedFile = channel.unary_unary(
         '/remote.Remote/rpc_XGDMatrixCreateFromEncryptedFile',
         request_serializer=remote__pb2.DMatrixAttrs.SerializeToString,
@@ -112,6 +117,13 @@ class RemoteServicer(object):
 
   def rpc_add_client_key_with_certificate(self, request, context):
     """Send symmetric key encrypted with enclave public key, signature, certificate
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_get_enclave_symm_key(self, request, context):
+    """Get enclave's symmetric key, encypted with the client's symmetric key
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -220,6 +232,11 @@ def add_RemoteServicer_to_server(servicer, server):
           servicer.rpc_add_client_key_with_certificate,
           request_deserializer=remote__pb2.DataMetadata.FromString,
           response_serializer=remote__pb2.StatusMsg.SerializeToString,
+      ),
+      'rpc_get_enclave_symm_key': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_get_enclave_symm_key,
+          request_deserializer=remote__pb2.Name.FromString,
+          response_serializer=remote__pb2.EnclaveKey.SerializeToString,
       ),
       'rpc_XGDMatrixCreateFromEncryptedFile': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGDMatrixCreateFromEncryptedFile,
