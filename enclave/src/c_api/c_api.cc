@@ -1125,9 +1125,13 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             xgboost::bst_ulong *out) {
   API_BEGIN();
   CHECK_HANDLE();
+  CHECK_SEQUENCE_NUMBER();
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<xgboost::bst_ulong>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_row_);
@@ -1135,9 +1139,13 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             xgboost::bst_ulong *out) {
   API_BEGIN();
   CHECK_HANDLE();
+  CHECK_SEQUENCE_NUMBER();
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
@@ -1147,8 +1155,12 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 // xgboost implementation
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     xgboost::bst_ulong len,
+                    uint8_t *nonce,
+                    size_t nonce_size,
+                    uint32_t nonce_ctr,
                     BoosterHandle *out) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   std::vector<std::shared_ptr<DMatrix> > mats;
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
     void* mat = EnclaveContext::getInstance().get_dmatrix(dmats[i]);
@@ -1398,6 +1410,9 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
+                         uint8_t* nonce,
+                         size_t nonce_size,
+                         uint32_t nonce_ctr,
                          xgboost::bst_ulong* out_len,
                          const char** out_dptr,
                          char* username) {
@@ -1406,6 +1421,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
 
   API_BEGIN();
   CHECK_HANDLE();
+  CHECK_SEQUENCE_NUMBER();
   common::MemoryBufferStream fo(&raw_str);
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   bst->LazyInit();

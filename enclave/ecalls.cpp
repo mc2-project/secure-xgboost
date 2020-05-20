@@ -56,7 +56,7 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *filenames[], size_t fna
   return XGDMatrixCreateFromEncryptedFile((const char**) _filenames, _usernames, num_files, silent, nonce, nonce_ctr, nonce_size, out);
 }
 
-int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, BoosterHandle* out) {
+int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, BoosterHandle* out) {
   LOG(DEBUG) << "Ecall: XGBoosterCreate";
 
   // Validate buffers and copy to enclave memory
@@ -68,7 +68,7 @@ int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[
     dmats[i] = strndup(name, nlen);
     dmats[i][nlen] = '\0';
   }
-  int ret = XGBoosterCreate(dmats, len, out);
+  int ret = XGBoosterCreate(dmats, len, nonce, nonce_size, nonce_ctr, out);
   for (int i = 0; i < len; i++) {
     free(dmats[i]);
   }
@@ -230,9 +230,9 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
   }
   return ret;
 }
-int enclave_XGBoosterGetModelRaw(BoosterHandle handle, xgboost::bst_ulong *out_len, char **out_dptr, char *username) {
+int enclave_XGBoosterGetModelRaw(BoosterHandle handle, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, xgboost::bst_ulong *out_len, char **out_dptr, char *username) {
   LOG(DEBUG) << "Ecall: XGBoosterSerializeToBuffer";
-  return XGBoosterGetModelRaw(handle, out_len, (const char**)out_dptr, username);
+  return XGBoosterGetModelRaw(handle, nonce, nonce_size, nonce_ctr, out_len, (const char**)out_dptr, username);
 }
 
 int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, char *username) {
@@ -265,14 +265,14 @@ int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle, const char* field, const 
   return XGDMatrixSetUIntInfo(handle, field, info, len);
 }
 
-int enclave_XGDMatrixNumRow(const DMatrixHandle handle, bst_ulong *out) {
+int enclave_XGDMatrixNumRow(const DMatrixHandle handle, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *out) {
   LOG(DEBUG) << "Ecall: XGDMatrixNumRow";
-  return XGDMatrixNumRow(handle, out);
+  return XGDMatrixNumRow(handle, nonce, nonce_size, nonce_ctr, out);
 }
 
-int enclave_XGDMatrixNumCol(const DMatrixHandle handle, bst_ulong *out) {
+int enclave_XGDMatrixNumCol(const DMatrixHandle handle, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *out) {
   LOG(DEBUG) << "Ecall: XGDMatrixNumCol";
-  return XGDMatrixNumCol(handle, out);
+  return XGDMatrixNumCol(handle, nonce, nonce_size, nonce_ctr, out);
 }
 
 int enclave_XGBoosterGetAttr(BoosterHandle handle, const char* key, char** out, int* success) {

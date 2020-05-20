@@ -26,6 +26,9 @@ enclave {
                 [in, count=len] char** dmat_handles, 
                 [in, count=len] size_t* handle_lengths, 
                 bst_ulong len, 
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] char** handle);
         
         public int enclave_XGBoosterSetParam(
@@ -99,10 +102,16 @@ enclave {
         
         public int enclave_XGDMatrixNumRow(
                 [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out);
         
         public int enclave_XGDMatrixNumCol(
                 [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out);
         
         public int enclave_XGBoosterGetAttr(
@@ -184,6 +193,9 @@ enclave {
         
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out_len,
                 [out] char **out_dptr,
                 [in, string] char* username);

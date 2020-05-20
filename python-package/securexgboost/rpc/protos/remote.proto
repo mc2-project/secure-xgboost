@@ -101,11 +101,22 @@ message Report {
   Status status = 5;
 
   // Session nonce
-  numproto.protobuf.NDArray nonce = 5;
+  numproto.protobuf.NDArray nonce = 6;
 
   // Size of nonce
-  uint32 nonce_size = 6;
+  uint32 nonce_size = 7;
 
+}
+
+message SequenceNumber {
+    // k byte random number generated at the start of the session
+    numproto.protobuf.NDArray nonce = 1;
+    
+    // Size of nonce (k = 12, or CIPHER_IV_SIZE)
+    uint32 nonce_size = 2;
+
+    // 4 byte counter that increments with each synchronized function call
+    uint32 nonce_ctr = 3;
 }
 
 // Message from client to enclaves with information on how to retrieve
@@ -133,13 +144,27 @@ message DMatrixAttrs {
     repeated string filenames = 1;
     repeated string usernames = 2;
     uint32 silent = 3;
-    string username = 4;
+    string username = 4; [deprecated] // moved to DMatrixAttrsRequest
+}
+
+// Wrapper around DMatrixAttrs to include sequence number
+message DMatrixAttrsRequest {
+    DMatrixAttrs attrs = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Params for the constructor of a Booster
 message BoosterAttrs {
     repeated string cache = 1;
     uint64 length = 2;
+    string username = 3; [deprecated] // moved to BoosterAttrsRequest
+}
+
+// Wrapper around BoosterAttrs to include sequence number
+message BoosterAttrsRequest {
+    BoosterAttrs attrs = 1;
+    SequenceNumber seq_num = 2;
     string username = 3;
 }
 
@@ -148,7 +173,14 @@ message BoosterParam {
     string booster_handle = 1;
     string key = 2;
     string value = 3;
-    string username = 4;
+    string username = 4; [deprecated] // moved to BoosterParamRequest
+}
+
+// Wrapper around BoosterParam to include sequence number
+message BoosterParamRequest {
+    BoosterParam booster_param = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Params for training
@@ -156,7 +188,13 @@ message BoosterUpdateParams {
     string booster_handle = 1;
     string dtrain_handle = 2;
     uint32 iteration = 3;
-    string username = 4;
+    string username = 4; [deprecated] // moved to BoosterUpdateParamsRequest
+}
+
+message BoosterUpdateParamsRequest {
+    BoosterUpdateParams booster_update_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Params for eval
@@ -173,13 +211,27 @@ message PredictParams {
     string dmatrix_handle = 2;
     uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
-    string username = 5;
+    string username = 5; [deprecated] // moved to PredictParamsRequest
+}
+
+// Wrapper around PredictParams to include sequence number
+message PredictParamsRequest {
+    PredictParams predict_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Params for save model
 message SaveModelParams {
     string booster_handle = 1;
     string filename = 2;
+    string username = 3; [deprecated]  // moved to SaveModelParamsRequest
+}
+
+// Wrapper around SaveModelParams to include sequence number
+message SaveModelParamsRequest {
+    SaveModelParams save_model_params = 1;
+    SequenceNumber seq_num = 2;
     string username = 3;
 }
 
@@ -190,6 +242,13 @@ message LoadModelParams {
     string username = 3;
 }
 
+// Wrapper around LoadModelParams to include sequence number
+message LoadModelParamsRequest {
+    LoadModelParams load_model_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+}
+
 // Params for dump model
 message DumpModelParams {
     string booster_handle = 1;
@@ -197,6 +256,13 @@ message DumpModelParams {
     uint32 with_stats = 3;
     string dump_format = 4;
     string username = 5;
+}
+
+// Wrapper around DumpModelParams to include sequence number
+message DumpModelParamsRequest {
+    DumpModelParams dump_model_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Params for dump model with features
@@ -210,10 +276,22 @@ message DumpModelWithFeaturesParams {
     string username = 7;
 }
 
+message DumpModelWithFeaturesParamsRequest {
+    DumpModelWithFeaturesParams dump_model_with_features_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+}
+
 // Params for dump model
 message ModelRawParams {
     string booster_handle = 1;
     string username = 2;
+}
+
+message ModelRawParamsRequest {
+    ModelRawParams model_raw_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Model dump
@@ -238,6 +316,18 @@ message Name {
     string username = 2;
     // Status of call (for returned Name)
     Status status = 3;
+}
+
+message NumColRequest {
+    Name name = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+}
+
+message NumRowRequest {
+    Name name = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
 }
 
 // Integer

@@ -178,6 +178,7 @@ def _check_remote_call(ret):
         return value from remote api calls
     """
     channel_addr = globals()["remote_addr"]
+    globals()["nonce_ctr"] += 1
     if channel_addr:
         if ret.status.status != 0:
             raise XGBoostError(ret.status.exception)
@@ -509,25 +510,30 @@ class DMatrix(object):
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
                         stub = remote_pb2_grpc.RemoteStub(channel)
-                        response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrs(
+                        dmatrix_attrs = remote_pb2.DMatrixAttrs(
                             filenames=data,
                             usernames=usernames,
-                            silent=silent,
-                            username=globals()["current_user"])))
+                            silent=silent)
+                        seq_num = remote_pb2.SequenceNumber(
+                            nonce=globals()["nonce"],
+                            nonce_size=globals()["nonce_size"],
+                            nonce_ctr=globals()["nonce_ctr"]
+                        )
+                        response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrsRequest(attrs=dmatrix_attrs, seq_num=seq_num, username=globals()["current_user"])))
                         handle = c_str(response.name)
                 else:
                     filenames = from_pystr_to_cstr(data)
                     usrs = from_pystr_to_cstr(usernames)
                     nonce = globals()["nonce"]
                     nonce_size = globals()["nonce_size"]
-                    counter = globals()["counter"]
+                    nonce_ctr = globals()["nonce_ctr"]
                     _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                         usrs,
                         c_bst_ulong(len(data)),
                         ctypes.c_int(silent),
                         ctypes.byref(nonce),
                         ctypes.c_size_t(nonce_size),
-                        ctypes.c_uint32(counter),
+                        ctypes.c_uint32(nonce_ctr),
                         ctypes.byref(handle)))
             else:
                 raise NotImplementedError("Loading from unencrypted files not supported.")
@@ -939,13 +945,16 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.Name(
-                    name=self.handle.value,
-                    username=globals()["current_user"])))
+                name_proto = remote_pb2.Name(name=self.handle.value)
+                seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])
+                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.NumRowRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"])))
                 return response.value
         else:
             ret = c_bst_ulong()
             _check_call(_LIB.XGDMatrixNumRow(self.handle,
+                                             ctypes.byref(globals()["nonce"]),
+                                             ctypes.c_size_t(globals()["nonce_size"]),
+                                             ctypes.c_uint32(globals()["nonce_ctr"]),
                                              ctypes.byref(ret)))
             return ret.value
 
@@ -961,13 +970,16 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.Name(
-                    name=self.handle.value,
-                    username=globals()["current_user"])))
+                name_proto = remote_pb2.Name(name=self.handle.value)
+                seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])
+                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"]))
                 return response.value
         else:
             ret = c_bst_ulong()
             _check_call(_LIB.XGDMatrixNumCol(self.handle,
+                                             ctypes.byref(globals()["nonce"]),
+                                             ctypes.c_size_t(globals()["nonce_size"]),
+                                             ctypes.c_uint32(globals()["nonce_ctr"]),
                                              ctypes.byref(ret)))
             return ret.value
 
@@ -1114,7 +1126,7 @@ class Enclave(object):
         self.remote_report_size = ctypes.c_size_t()
         globals()["nonce"] = ctypes.POINTER(ctypes.c_uint)()
         globals()["nonce_size"] = ctypes.c_size_t()
-        globals()["counter"] = 0 # TODO(andrew): maybe not needed?
+        globals()["nonce_ctr"] = 0 # TODO(andrew): maybe not needed?
 
     # TODO(rishabh): user-defined parameters for verification
     # (e.g. mrsigner / mrenclave values)
@@ -1360,15 +1372,17 @@ class Booster(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 cache_handles = [d.handle.value for d in cache]
-                response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrs(
+                booster_attrs = remote_pb2.BoosterAttrs(
                     cache=cache_handles,
-                    length=len(cache),
-                    username=globals()["current_user"])))
+                    length=len(cache))
+                seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])
+                response = _check_remote_call(stub.rpc_XGBoosterCreate(attrs=booster_attrs, seq_num=seq_num, username=globals()["current_user"]))
             self.handle = c_str(response.name)
         else:
             dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
             self.handle = ctypes.c_char_p()
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
+                                             globals()["nonce"], globals()["nonce_size"], globals()["nonce_ctr"]
                                              ctypes.byref(self.handle)))
         self.set_param({'seed': 0})
         self.set_param(params or {})
@@ -1518,10 +1532,13 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val), username=globals()["current_user"])))
+                    booster_param = remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)) 
+                    seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])
+                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParamRequest(booster_param=booster_param, seq_num=seq_num, username=globals()["current_user"])))
+                                                
             else:
                 _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val)), 
-                                                    ctypes.byref(globals()["nonce"]), ctypes.c_size_t(globals()["nonce_size"]), ctypes.c_uint32(globals()["counter"])))
+                                                    ctypes.byref(globals()["nonce"]), ctypes.c_size_t(globals()["nonce_size"]), ctypes.c_uint32(globals()["nonce_ctr"])))
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1546,11 +1563,15 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value, dtrain_handle=dtrain.handle.value, iteration=iteration, username=globals()["current_user"])))
+                    booster_update_params = remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value,
+                                                                           dtrain_handle=dtrain.handle.value,
+                                                                           iteration=iteration)
+                    seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])    
+                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParamsRequest(booster_update_params=booster_update_params, seq_num=seq_num, username=globals()["current_user"])))
                     return response
             else:
                 _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle, 
-                                                        ctypes.byref(globals()["nonce"]), ctypes.c_size_t(globals()["nonce_size"]), ctypes.c_uint32(globals()["counter"])))
+                                                        ctypes.byref(globals()["nonce"]), ctypes.c_size_t(globals()["nonce_size"]), ctypes.c_uint32(globals()["nonce_ctr"])))
         else:
             raise NotImplementedError("Custom objective functions not supported")
             # TODO(rishabh): We do not support custom objectives currently
@@ -1749,11 +1770,13 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParams(booster_handle=self.handle.value,
+                predict_params = remote_pb2.PredictParams(booster_handle=self.handle.value,
                     dmatrix_handle=data.handle.value,
                     option_mask=option_mask,
                     ntree_limit=ntree_limit,
-                    username=username)))
+                    username=username)
+                seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])
+                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=globals()["current_user"])))
 
                 enc_preds_serialized = response.predictions
                 length = c_bst_ulong(response.num_preds)
@@ -1762,7 +1785,7 @@ class Booster(object):
         else:
             nonce = globals()["nonce"]
             nonce_size = globals()["nonce_size"]
-            nonce_ctr = globals()["counter"]
+            nonce_ctr = globals()["nonce_ctr"]
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
                                               ctypes.c_int(option_mask),
@@ -1865,14 +1888,19 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParams(
+                    save_model_params = remote_pb2.SaveModelParams(
                         booster_handle=self.handle.value,
                         filename=fname,
-                        username=username)))
+                        username=username)
+                    seq_num = remote_pb2.SequenceNumber(
+                        nonce=globals()["nonce"],
+                        nonce_size=globals()["nonce_size"],
+                        nonce_ctr=globals()["nonce_ctr"])
+                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(save_model_params=save_model_params, seq_num=seq_num, username=globals()["current_user"])))
             else:
                 nonce = globals()["nonce"]
                 nonce_size = globals()["nonce_size"]
-                nonce_ctr = globals()["counter"]
+                nonce_ctr = globals()["nonce_ctr"]
                 _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname), c_str(username),
                                                     ctypes.byref(nonce), ctypes.c_size_t(nonce_size), ctypes.c_uint32(nonce_ctr)))
         else:
@@ -1901,17 +1929,20 @@ class Booster(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_XGBoosterGetModelRaw(remote_pb2.ModelRawParams(
-                    booster_handle=self.handle.value,
-                    username=username)))
-
+                model_raw_params = remote_pb2.ModelRawParams(booster_handle=self.handle.value)
+                seq_num = remote_pb2.SequenceNumber(nonce=globals()["nonce"], nonce_size=globals()["nonce_size"], nonce_ctr=globals()["nonce_ctr"])
+                response = _check_remote_call(stub.rpc_XGBoosterGetModelRawParams(model_raw_params=model_raw_params, seq_num=seq_num, username=username))
                 cptr = from_pystr_to_cstr(list(response.sarr))
                 length = c_bst_ulong(response.length)
         else:
             _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
+                                                  ctypes.byref(globals()["nonce"]),
+                                                  ctypes.c_size_t(globals()["nonce_size"]),
+                                                  ctypes.c_uint32(globals()["nonce_ctr"]),
                                                   ctypes.byref(length),
                                                   ctypes.byref(cptr),
-                                                  c_str(username)))
+                                                  c_str(username))
+)))))
         return ctypes2buffer(cptr, length.value)
 
     # TODO(rishabh): Fix this API for the multiparty case
@@ -1949,9 +1980,9 @@ class Booster(object):
     #         else:
     #             nonce = globals()["nonce"]
     #             nonce_size = globals()["nonce_size"]
-    #             counter = globals()["counter"]
+    #             nonce_ctr = globals()["nonce_ctr"]
     #             _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), c_str(username),
-    #                                                  ctypes.byref(nonce), ctypes.c_size_t(nonce_size), ctypes.c_uint32(counter)))
+    #                                                  ctypes.byref(nonce), ctypes.c_size_t(nonce_size), ctypes.c_uint32(nonce_ctr)))
     #     else:
     #         buf = fname
     #         length = c_bst_ulong(len(buf))
@@ -2027,14 +2058,21 @@ class Booster(object):
                     else:
                         ftype = self.feature_types
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParams(
+                    dump_model_with_features_params = remote_pb2.DumpModelWithFeaturesParams(
                         booster_handle=self.handle.value,
                         flen=flen,
                         fname=fname,
                         ftype=ftype,
                         with_stats=with_stats,
-                        dump_format=dump_format,
-                        username=globals()["current_user"])))
+                        dump_format=dump_format)
+                    seq_num = remote_pb2.SequenceNumber(
+                        nonce=globals()["nonce"],
+                        nonce_size = globals()["nonce_size"],
+                        nonce_ctr = globals()["nonce_ctr"]
+                    )
+                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParamsRequest(
+                        dump_model_with_features_params=dump_model_with_features_params, seq_num=seq_num, username=globals()["current_user"]
+                    )))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
@@ -2048,7 +2086,7 @@ class Booster(object):
                     ftype = from_pystr_to_cstr(self.feature_types)
                 nonce = globals()["nonce"]
                 nonce_size = globals()["nonce_size"]
-                nonce_ctr = globals()["counter"]
+                nonce_ctr = globals()["nonce_ctr"]
                 _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
                     self.handle,
                     ctypes.c_int(flen),
@@ -2069,18 +2107,23 @@ class Booster(object):
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParams(
+                    dump_model_params = remote_pb2.DumpModelParams(
                         booster_handle=self.handle.value,
                         fmap=fmap,
                         with_stats=with_stats,
-                        dump_format=dump_format,
-                        username=globals()["current_user"])))
+                        dump_format=dump_format)
+                    seq_num = remote_pb2.SequenceNumber(
+                        nonce=globals()["nonce"],
+                        nonce_size=globals()["nonce_size"],
+                        nonce_ctr=globals()["nonce_ctr"]
+                    )
+                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParamsRequest(dump_model_params=dump_model_params, seq_num=seq_num, username=globals()["current_user"])))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
             else:
                 nonce = globals()["nonce"]
                 nonce_size = globals()["nonce_size"]
-                nonce_ctr = globals()["counter"]
+                nonce_ctr = globals()["nonce_ctr"]
                 _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                       c_str(fmap),
                                                       ctypes.c_int(with_stats),
@@ -2442,15 +2485,14 @@ class RemoteAPI:
         return pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size
 
     def XGBoosterPredict(request):
-        booster_handle = request.booster_handle
-        dmatrix_handle = request.dmatrix_handle
-        option_mask = request.option_mask
-        ntree_limit = request.ntree_limit
+        booster_handle = request.predict_params.booster_handle
+        dmatrix_handle = request.predict_params.dmatrix_handle
+        option_mask = request.predict_params.option_mask
+        ntree_limit = request.predict_params.ntree_limit
         username = request.username
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        nonce_ctr = globals()["counter"]
-        globals()["counter"] += 1
+        nonce = request.seq_num.nonce,
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
@@ -2468,13 +2510,12 @@ class RemoteAPI:
         return preds, length.value
 
     def XGBoosterUpdateOneIter(request):
-        booster_handle = request.booster_handle
-        dtrain_handle = request.dtrain_handle
-        iteration = request.iteration
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        nonce_ctr = globals()["counter"]
-        globals()["counter"] += 1
+        booster_handle = request.booster_update_params.booster_handle
+        dtrain_handle = request.booster_update_params.dtrain_handle
+        iteration = request.booster_update_params.iteration
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         _check_call(_LIB.XGBoosterUpdateOneIter(
             c_str(booster_handle),
@@ -2486,25 +2527,30 @@ class RemoteAPI:
 
 
     def XGBoosterCreate(request):
-        cache = list(request.cache)
-        length = request.length
+        cache = list(request.attrs.cache)
+        length = request.attrs.length
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         bst_handle = ctypes.c_char_p()
         _check_call(_LIB.XGBoosterCreate(
             from_pystr_to_cstr(cache),
             c_bst_ulong(length),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr),
             ctypes.byref(bst_handle)))
         return bst_handle.value.decode('utf-8')
 
 
     def XGBoosterSetParam(request):
-        booster_handle = request.booster_handle
-        key = request.key
-        value = request.value
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        nonce_ctr = globals()["counter"]
-        globals()["counter"] += 1
+        booster_handle = request.booster_param.booster_handle
+        key = request.booster_param.key
+        value = request.booster_param.value
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         bst_handle = c_str(booster_handle)
         _check_call(_LIB.XGBoosterSetParam(
@@ -2517,13 +2563,12 @@ class RemoteAPI:
 
 
     def XGDMatrixCreateFromEncryptedFile(request):
-        filenames = list(request.filenames)
-        usernames = list(request.usernames)
-        silent = request.silent
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        counter = globals()["counter"]
-        globals()["counter"] += 1
+        filenames = list(request.attrs.filenames)
+        usernames = list(request.attrs.usernames)
+        silent = request.attrs.silent
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         dmat_handle = ctypes.c_char_p()
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
@@ -2533,19 +2578,18 @@ class RemoteAPI:
             ctypes.c_int(silent),
             ctypes.byref(nonce),
             ctypes.c_size_t(nonce_size),
-            ctypes.c_uint32(counter),
+            ctypes.c_uint32(nonce_ctr),
             ctypes.byref(dmat_handle)))
         return dmat_handle.value.decode('utf-8')
 
 
     def XGBoosterSaveModel(request):
-        booster_handle = request.booster_handle
-        filename = request.filename
-        username = request.username
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        counter = globals()["counter"]
-        globals()["counter"] += 1
+        booster_handle = request.save_model_params.booster_handle
+        filename = request.save_model_params.filename
+        username = request.save_model_params.username
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         _check_call(_LIB.XGBoosterSaveModel(
             c_str(booster_handle),
@@ -2553,16 +2597,15 @@ class RemoteAPI:
             c_str(username),
             ctypes.byref(nonce),
             ctypes.c_size_t(nonce_size),
-            ctypes.c_uint32(counter)))
+            ctypes.c_uint32(nonce_ctr)))
 
     def XGBoosterLoadModel(request):
-        booster_handle = request.booster_handle
-        filename = request.filename
+        booster_handle = request.load_model_params.booster_handle
+        filename = request.load_model_params.filename
         username = request.username
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        counter = globals()["counter"]
-        globals()["counter"] += 1
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         _check_call(_LIB.XGBoosterLoadModel(
             c_str(booster_handle),
@@ -2570,18 +2613,17 @@ class RemoteAPI:
             c_str(username),
             ctypes.byref(nonce),
             ctypes.c_size_t(nonce_size),
-            ctypes.c_uint32(counter)))
+            ctypes.c_uint32(nonce_ctr)))
 
     # TODO test this
     def XGBoosterDumpModelEx(request):
-        booster_handle = request.booster_handle
-        fmap = request.fmap
-        with_stats = request.with_stats
-        dump_format = request.dump_format
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        counter = globals()["counter"]
-        globals()["counter"] += 1
+        booster_handle = request.dump_model_params.booster_handle
+        fmap = request.dump_model_params.fmap
+        with_stats = request.dump_model_params.with_stats
+        dump_format = request.dump_model_params.dump_format
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2592,22 +2634,21 @@ class RemoteAPI:
             c_str(dump_format),
             c_types.byref(nonce),
             c_types.c_size_t(nonce_size),
-            c_types.c_uint32(counter),
+            c_types.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr)))
         return length.value, from_cstr_to_pystr(sarr, length)
 
     def XGBoosterDumpModelExWithFeatures(request):
-        booster_handle = request.booster_handle
-        flen = request.flen
-        fname = request.fname
-        ftype = request.ftype
-        with_stats = request.with_stats
-        dump_format = request.dump_format
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        counter = globals()["counter"]
-        globals()["counter"] += 1
+        booster_handle = request.dump_model_with_features_params.booster_handle
+        flen = request.dump_model_with_features_params.flen
+        fname = request.dump_model_with_features_params.fname
+        ftype = request.dump_model_with_features_params.ftype
+        with_stats = request.dump_model_with_features_params.with_stats
+        dump_format = request.dump_model_with_features_params.dump_format
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2620,43 +2661,59 @@ class RemoteAPI:
             c_str(dump_format),
             ctypes.byref(nonce),
             ctypes.c_size_t(nonce_size),
-            ctypes.c_uint32(counter),
+            ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr)))
         return length.value, from_cstr_to_pystr(sarr, length)
 
     # TODO test this
     def XGBoosterGetModelRaw(request):
-        booster_handle = request.booster_handle
+        booster_handle = request.model_raw_params.booster_handle
         username = request.username
-        nonce = globals()["nonce"]
-        nonce_size = globals()["nonce_size"]
-        counter = globals()["counter"]
-        globals()["counter"] += 1
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
         _check_call(_LIB.XGBoosterGetModelRaw(
             c_str(booster_handle),
-            c_str(username)))
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr),
+            ctypes.byref(length),
+            ctypes.byref(sarr),
+            ctypes.c_str(username)))
         return length.value, from_cstr_to_pystr(sarr, length)
 
     def XGDMatrixNumCol(request):
-        dmatrix_handle = request.name
+        dmatrix_handle = request.name.name
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr
 
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumCol(
             c_str(dmatrix_handle),
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr),
             ctypes.byref(ret)))
         return ret.value
 
     def XGDMatrixNumRow(request):
-        dmatrix_handle = request.name
+        dmatrix_handle = request.name.name
+        nonce = request.seq_num.nonce
+        nonce_size = request.seq_num.nonce_size
+        nonce_ctr = request.seq_num.nonce_ctr        
 
         ret = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumRow(
             c_str(dmatrix_handle),
-            ctypes.byref(ret)))
+            ctypes.byref(nonce),
+            ctypes.c_size_t(nonce_size),
+            ctypes.c_uint32(nonce_ctr),
+            ctypes.byref(ret))
         return ret.value
 
 ##########################################
