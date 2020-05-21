@@ -1388,9 +1388,11 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
   memcpy(data, pem_key, pem_key_size);
   if (!attest_remote_report(remote_report, remote_report_size, data, data_size)) {
     std::cout << "verify_report_and_set_pubkey failed." << std::endl;
+    return -1;
+  } else {
+    std::cout << "verify_report_and_set_pubkey succeeded." << std::endl;
+    return 0;
   }
-  std::cout << "verify_report_and_set_pubkey succeeded." << std::endl;
-  return 0;
 }
 
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {

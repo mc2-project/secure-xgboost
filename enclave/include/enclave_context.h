@@ -242,10 +242,6 @@ class EnclaveContext {
       return true;
     }
 
-    bool verifyClientSignatures(uint8_t* data, size_t data_len, uint8_t* signatures[], size_t sig_lengths[]){
-      return true;
-    }
-
     bool verifyClientSignatures(uint8_t* data, size_t data_len, char* signers[], uint8_t* signatures[], size_t sig_lengths[]){
       mbedtls_pk_context _pk_context;
 

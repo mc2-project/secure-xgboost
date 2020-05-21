@@ -25,6 +25,12 @@
 #define SHA_DIGEST_SIZE 32
 #define CIPHER_PK_SIZE 512
 
+static int print_bytes(uint8_t* data, size_t len) {
+  for (int i = 0; i < len; i++)
+    std::cout << (int) data[i] << " ";
+  std::cout << std::endl;
+}
+
 static int generate_random(unsigned char* key, unsigned int key_len) {
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_entropy_context entropy;

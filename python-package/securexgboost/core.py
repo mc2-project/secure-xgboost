@@ -502,6 +502,10 @@ class DMatrix(object):
         #                   DeprecationWarning)
 
         if isinstance(data, list):
+
+            # Normalize file paths (otherwise signatures might differ)
+            data = [os.path.realpath(path) for path in data]
+
             handle = ctypes.c_char_p()
             if encrypted:
 
@@ -1944,6 +1948,9 @@ class Booster(object):
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):  # assume file name
 
+            # Normalize file paths (otherwise signatures might differ)
+            fname = os.path.realpath(fname)
+
             args = "XGBoosterSaveModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
@@ -2034,6 +2041,10 @@ class Booster(object):
         if username is None:
             raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
         if isinstance(fname, STRING_TYPES):
+
+            # Normalize file paths (otherwise signatures might differ)
+            fname = os.path.realpath(fname)
+
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             args = "XGBoosterLoadModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
@@ -2500,9 +2511,9 @@ def py2c_sigs(signatures, sig_lengths):
     num = len(signatures)
     c_signatures = (ctypes.POINTER(ctypes.c_uint8) * num)()
     c_lengths = (ctypes.c_size_t * num)()
-    for i in range(num):
-        c_signatures[i] = proto_to_pointer(signatures[i], ctypes.c_uint8)
-        c_lengths[i] = ctypes.c_size_t(sig_lengths[i])
+
+    c_signatures[:] = [proto_to_pointer(signatures[i], ctypes.c_uint8) for i in range(num)]
+    c_lengths[:] = [ctypes.c_size_t(sig_lengths[i]) for i in range(num)]
     return c_signatures, c_lengths
 
 
