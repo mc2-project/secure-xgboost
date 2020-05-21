@@ -114,7 +114,7 @@ class TestSHAP(unittest.TestCase):
 
         bst = xgb.train(param, xgb.DMatrix({username: temp_enc_name}), 1)
 
-        dump_svmlight_file(X[0:1, :], y, temp_name) 
+        dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
         out = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)
@@ -257,7 +257,7 @@ class TestSHAP(unittest.TestCase):
         bst = xgb.train(param, xgb.DMatrix({username: temp_enc_name}), 1)
         brute_force = shap_values(parse_model(bst), X[0, :])
 
-        dump_svmlight_file(X[0:1, :], y, temp_name) 
+        dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
         fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)
@@ -281,7 +281,7 @@ class TestSHAP(unittest.TestCase):
         bst = xgb.train(param, xgb.DMatrix({username: temp_enc_name}), 1)
         brute_force = shap_values(parse_model(bst), X[0, :])
 
-        dump_svmlight_file(X[0:1, :], y, temp_name) 
+        dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
         fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)
@@ -307,7 +307,7 @@ class TestSHAP(unittest.TestCase):
         brute_force = shap_values(parse_model(bst), X[0, :])
         brute_force[-1] += base_score
 
-        dump_svmlight_file(X[0:1, :], y, temp_name) 
+        dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
         fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}),pred_contribs=True)
