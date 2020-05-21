@@ -75,7 +75,7 @@ def is_correctly_constrained(learner):
         monotonically_increasing_x = np.column_stack((variable_x, fixed_x))
         dump_svmlight_file(monotonically_increasing_x, y, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
-        monotonically_increasing_dset = xgb.DMatrix({username: temp_enc_name})
+        monotonically_increasing_dset = xgb.DMatrix({username: temp_enc_name}, feature_names=['f0', 'f1'])
         monotonically_increasing_y = learner.predict(
             monotonically_increasing_dset
         )[0]
