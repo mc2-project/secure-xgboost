@@ -2,12 +2,8 @@ import testing as tm
 import unittest
 import pytest
 import numpy as np
-
-try:
-    from regression_test_utilities import run_suite, parameter_combinations, \
-        assert_results_non_increasing
-except ImportError:
-    None
+from regression_test_utilities import run_suite, parameter_combinations, \
+    assert_results_non_increasing
 
 import securexgboost as xgb
 import os
