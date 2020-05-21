@@ -136,6 +136,7 @@ class TestDMatrix(unittest.TestCase):
     def test_feature_names(self):
         data = np.random.randn(100, 5)
         target = np.array([0, 1] * 50)
+
         dump_svmlight_file(data, target, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
  
@@ -143,11 +144,7 @@ class TestDMatrix(unittest.TestCase):
                  [u'要因1', u'要因2', u'要因3', u'要因4', u'要因5']]
 
         for features in cases:
-            pass
-            #TODO(rishabh): implement label
-            """
-            dm = xgb.DMatrix({username: temp_enc_name}, label=target,
-                             feature_names=features)
+            dm = xgb.DMatrix({username: temp_enc_name}, feature_names=features)
             assert dm.feature_names == features
             assert dm.num_row() == 100
             assert dm.num_col() == 5
@@ -163,15 +160,16 @@ class TestDMatrix(unittest.TestCase):
 
             dummy_X = np.random.randn(5, 5)
             dummy_Y = np.random.randn(5)
+
             dump_svmlight_file(dummy_X, dummy_Y, temp_name) 
             xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
+
             dm = xgb.DMatrix({username: temp_enc_name}, feature_names=features)
             bst.predict(dm)[0]
 
             # different feature name must raises error
             dm = xgb.DMatrix({username: temp_enc_name}, feature_names=list('abcde'))
             self.assertRaises(ValueError, bst.predict, dm)
-            """
 
     def test_get_info(self):
         dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})

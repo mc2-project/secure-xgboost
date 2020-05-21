@@ -16,6 +16,7 @@ import securexgboost as xgb
 import os
 from sklearn.datasets import dump_svmlight_file
 
+
 username = "user1"
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 sym_key_file = HOME_DIR + "demo/data/key_zeros.txt"
@@ -161,21 +162,18 @@ class TestBasic(unittest.TestCase):
     def test_dump(self):
         data = np.random.randn(100, 2)
         target = np.array([0, 1] * 50)
+
         dump_svmlight_file(data, target, temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
+
         features = ['Feature1', 'Feature2']
 
-        #TODO: support for label
-        """
-        dm = xgb.DMatrix({username: temp_enc_name}, label=target, feature_names=features)
+        dm = xgb.DMatrix({username: temp_enc_name}, feature_names=features)
         params = {'objective': 'binary:logistic',
                   'eval_metric': 'logloss',
                   'eta': 0.3,
                   'max_depth': 1}
-        """
 
-        #TODO: uncomment after above implemented
-        """
         bst = xgb.train(params, dm, num_boost_round=1)
 
         # number of feature importances should == number of features
@@ -197,7 +195,6 @@ class TestBasic(unittest.TestCase):
         dump4 = bst.get_dump(dump_format="json", with_stats=True)
         dump4j = json.loads(dump4[0])
         self.assertIn("gain", dump4j, "Expected 'gain' to be dumped in JSON.")
-        """
 
     def test_load_file_invalid(self):
         # TODO(rishabh): implement load_model()
@@ -226,7 +223,7 @@ class TestBasic(unittest.TestCase):
             assert dm.num_col() == cols
             """
 
-            #TODO(rishabh): implement nthread?
+            #TODO(rishabh): implement nthread
             """
             dm = xgb.DMatrix({username: temp_enc_name}, nthread=10)
             np.testing.assert_array_equal(dm.get_label(), y)
@@ -285,15 +282,21 @@ class TestBasic(unittest.TestCase):
                   'reg:squarederror'}
         N = 100
         F = 3
-        #TODO: add support for passing in unencrypted numpy arrays into DMatrix init
-        """
-        dm = xgb.DMatrix(data=np.random.randn(N, F), label=np.arange(N))
+        X = np.random.randn(N, F)
+        y = np.arange(N)
+
+        dump_svmlight_file(X, y, temp_name) 
+        xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
+
+        dm = xgb.DMatrix({username: temp_enc_name})
         folds = [
             # Train        Test
             ([1, 3], [5, 8]),
             ([7, 9], [23, 43, 11]),
         ]
 
+        #TODO(rishabh): implement get_label(), cv()
+        """
         # Use callback to log the test labels in each fold
         def cb(cbackenv):
             print([fold.dtest.get_label() for fold in cbackenv.cvfolds])
