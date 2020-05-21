@@ -133,7 +133,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
     def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
         pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
 
-        return remote_pb2.Report(pem_key=pem_key, key_size=key_size,
+        return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
             nonce=nonce, nonce_size=nonce_size,
             remote_report=remote_report, remote_report_size=remote_report_size)
 

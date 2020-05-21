@@ -878,7 +878,7 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             xgboost::bst_ulong *out,
                             char **signers,
                             uint8_t* signatures[],
-                            size_t* sig_lengths) {
+                            size_t* sig_lengths) {                          
   size_t signer_lengths[NUM_CLIENTS];
   for (int i = 0; i < NUM_CLIENTS; i++) {
     signer_lengths[i] = strlen(signers[i]);
@@ -1451,7 +1451,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
     uint8_t* remote_report,
     size_t remote_report_size) {
   // Attest the remote report and accompanying key.
-  size_t key_and_nonce_size = CIPHER_KEY_SIZE + CIPHER_IV_SIZE;
+  size_t key_and_nonce_size = key_size + nonce_size;
   uint8_t key_and_nonce[key_and_nonce_size];
   memcpy(key_and_nonce, pem_key, CIPHER_KEY_SIZE);
   memcpy(key_and_nonce + CIPHER_KEY_SIZE, nonce, CIPHER_IV_SIZE);

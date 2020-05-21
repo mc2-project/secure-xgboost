@@ -24,6 +24,8 @@ service Remote {
   // Status is a just a dummy argument and won't be used by the server
   rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
 
+  rpc rpc_get_remote_report_with_pubkey_and_nonce(Status) returns (Report) {}
+
   // Send symmetric key encrypted with enclave public key, signature
   rpc rpc_add_client_key(DataMetadata) returns (StatusMsg) {}
 
@@ -147,7 +149,7 @@ message DMatrixAttrs {
     repeated string filenames = 1;
     repeated string usernames = 2;
     uint32 silent = 3;
-    string username = 4; [deprecated] // moved to DMatrixAttrsRequest
+    string username = 4; // [deprecated] moved to DMatrixAttrsRequest
 }
 
 // Wrapper around DMatrixAttrs to include sequence number
@@ -163,7 +165,7 @@ message DMatrixAttrsRequest {
 message BoosterAttrs {
     repeated string cache = 1;
     uint64 length = 2;
-    string username = 3; [deprecated] // moved to BoosterAttrsRequest
+    string username = 3; // [deprecated] moved to BoosterAttrsRequest
 }
 
 // Wrapper around BoosterAttrs to include sequence number
@@ -180,7 +182,7 @@ message BoosterParam {
     string booster_handle = 1;
     string key = 2;
     string value = 3;
-    string username = 4; [deprecated] // moved to BoosterParamRequest
+    string username = 4; // [deprecated] moved to BoosterParamRequest
 }
 
 // Wrapper around BoosterParam to include sequence number
@@ -197,7 +199,7 @@ message BoosterUpdateParams {
     string booster_handle = 1;
     string dtrain_handle = 2;
     uint32 iteration = 3;
-    string username = 4; [deprecated] // moved to BoosterUpdateParamsRequest
+    string username = 4; // [deprecated] moved to BoosterUpdateParamsRequest
 }
 
 message BoosterUpdateParamsRequest {
@@ -224,7 +226,7 @@ message PredictParams {
     string dmatrix_handle = 2;
     uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
-    string username = 5; [deprecated] // moved to PredictParamsRequest
+    string username = 5; // [deprecated] moved to PredictParamsRequest
 }
 
 // Wrapper around PredictParams to include sequence number
@@ -240,7 +242,7 @@ message PredictParamsRequest {
 message SaveModelParams {
     string booster_handle = 1;
     string filename = 2;
-    string username = 3; [deprecated]  // moved to SaveModelParamsRequest
+    string username = 3; // [deprecated]  moved to SaveModelParamsRequest
 }
 
 // Wrapper around SaveModelParams to include sequence number

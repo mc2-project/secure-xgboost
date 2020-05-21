@@ -353,7 +353,6 @@ int get_remote_report_with_pubkey_and_nonce(
     size_t* nonce_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
-  
   uint8_t* report = NULL;
   size_t report_size = 0;
   uint8_t* key_buf = NULL;
@@ -376,9 +375,7 @@ int get_remote_report_with_pubkey_and_nonce(
   uint8_t* nonce_buf = (uint8_t*)oe_host_malloc(CIPHER_IV_SIZE);
   if (nonce_buf == NULL) {
     ret = OE_OUT_OF_MEMORY;
-    if (*remote_report)
-      oe_host_free(*remote_report);
-    goto done;
+    return ret;
   }
   memcpy(nonce_buf, enclave_nonce, CIPHER_IV_SIZE);
 
@@ -389,9 +386,9 @@ int get_remote_report_with_pubkey_and_nonce(
 
 #else
   uint8_t report_data[CIPHER_PK_SIZE + CIPHER_IV_SIZE];
-  memcpy(report_data, public_key, CIPHER_PK_SIZE);
-  memcpy(report_data + CIPHER_PK_SIZE, enclave_nonce, CIPHER_IV_SIZE);
-  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE, &report, &report_size)) {
+  std::copy(public_key, public_key + CIPHER_PK_SIZE, report_data);
+  std::copy(enclave_nonce, enclave_nonce + CIPHER_IV_SIZE, report_data + CIPHER_PK_SIZE);
+  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE + CIPHER_KEY_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
     if (*remote_report == NULL) {
@@ -541,6 +538,11 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         oss << " username " << usernames[i] << " filename " << fnames[i];
     }
     oss << " silent " << silent;
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1187,6 +1189,11 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "XGDMatrixNumRow " << handle;
+  oss << " nonce ";
+  for (int i = 0; i < nonce_size; i ++) {
+    oss << (int) nonce[i] << " ";
+  }
+  oss << " nonce_ctr " << nonce_ctr;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1210,9 +1217,13 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "XGDMatrixNumCol " << handle;
+  oss << " nonce ";
+  for (int i = 0; i < nonce_size; i ++) {
+    oss << (int) nonce[i] << " ";
+  }
+  oss << " nonce_ctr " << nonce_ctr;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
@@ -1235,6 +1246,11 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterCreate";
+  oss << " nonce ";
+  for (int i = 0; i < nonce_size; i ++) {
+    oss << (int) nonce[i] << " ";
+  }
+  oss << " nonce_ctr " << nonce_ctr;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1277,6 +1293,11 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterSetParam " << handle << " " << name << "," << value;
+  oss << " nonce ";
+  for (int i = 0; i < nonce_size; i ++) {
+    oss << (int) nonce[i] << " ";
+  }
+  oss << " nonce_ctr " << nonce_ctr;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1302,6 +1323,11 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterUpdateOneIter booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
+  oss << " nonce ";
+  for (int i = 0; i < nonce_size; i ++) {
+    oss << (int) nonce[i] << " ";
+  }
+  oss << " nonce_ctr " << nonce_ctr;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff);
@@ -1380,6 +1406,11 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterPredict booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
+  oss << " nonce ";
+  for (int i = 0; i < nonce_size; i ++) {
+    oss << (int) nonce[i] << " ";
+  }
+  oss << " nonce_ctr " << nonce_ctr;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff); // prevent memory leak
@@ -1440,6 +1471,11 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t*
     // signature verification
     std::ostringstream oss;
     oss << "XGBoosterLoadModel handle " << handle << " filename " << fname;
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1486,6 +1522,11 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t*
     // check signature
     std::ostringstream oss;
     oss << "XGBoosterSaveModel handle " << handle << " filename " << fname;
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1577,6 +1618,11 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     // check signature
     std::ostringstream oss;
     oss << "XGBoosterGetModelRaw handle " << handle;
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1694,6 +1740,11 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
     CHECK_HANDLE();
     std::ostringstream oss;
     oss << "XGBoosterDumpModelEx booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1773,6 +1824,11 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     for (int i = 0; i <fnum; i++){
         oss << " fname " << fname[i] << " ftype " << ftype[i];
     }
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);

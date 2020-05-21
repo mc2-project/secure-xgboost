@@ -93,6 +93,8 @@ class EnclaveContext {
 
     // Checks equality of received and expected nonce and nonce counter and increments nonce counter.
     bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
+      //LOG(DEBUG) << "received counter = " << recv_nonce_ctr;
+      //LOG(DEBUG) << "expected counter = " << m_nonce_ctr;
       bool retval = recv_nonce_ctr == m_nonce_ctr;
       if (!retval) return retval;
       for (int i = 0; i < CIPHER_IV_SIZE; i++) {
@@ -469,18 +471,19 @@ class EnclaveContext {
      * Generate a session nonce for the enclave to be used by clients. 
      */
     bool generate_nonce() {
-      mbedtls_ctr_drbg_context ctr_drbg;
-      mbedtls_entropy_context entropy;
-      mbedtls_entropy_init( &entropy );
-      mbedtls_ctr_drbg_init( &ctr_drbg );
+      generate_random(m_nonce, CIPHER_IV_SIZE);
+      // mbedtls_ctr_drbg_context ctr_drbg;
+      // mbedtls_entropy_context entropy;
+      // mbedtls_entropy_init( &entropy );
+      // mbedtls_ctr_drbg_init( &ctr_drbg );
 
-      std::string pers = "generate nonce for secure xgboost";
-      // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
-      int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
+      // std::string pers = "generate nonce for secure xgboost";
+      // // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
+      // int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
       
-      uint8_t* nonce;
-      ret = mbedtls_ctr_drbg_random( &ctr_drbg, (unsigned char *)nonce, CIPHER_IV_SIZE );
-      memcpy(&m_nonce[0], nonce, CIPHER_IV_SIZE);
+      // uint8_t* nonce;
+      // ret = mbedtls_ctr_drbg_random( &ctr_drbg, (unsigned char *)nonce, CIPHER_IV_SIZE );
+      // memcpy(&m_nonce[0], nonce, CIPHER_IV_SIZE);
     } 
 };
 

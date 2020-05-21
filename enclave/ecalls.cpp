@@ -12,7 +12,6 @@
 
 void copy_sigs_to_enclave(uint8_t* dst[], uint8_t* src[], size_t lengths[]) {
   for (int i = 0; i < NUM_CLIENTS; i++) {
-    LOG(DEBUG) << "Checking bounds of length " << lengths[i];
     check_host_buffer(src[i], lengths[i]);
     dst[i] = (uint8_t*) malloc(lengths[i] * sizeof(uint8_t));
     memcpy(dst[i], src[i], lengths[i]);
