@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.sparse import csr_matrix
-import xgboost
 import os
 import unittest
 import itertools
