@@ -87,8 +87,8 @@ class TestSHAP(unittest.TestCase):
             bst = xgb.train(params, dtrain, num_boost_round=num_rounds)
 
             # predict
-            preds = bst.predict(dtest)
-            contribs = bst.predict(dtest, pred_contribs=True)
+            preds = bst.predict(dtest)[0]
+            contribs = bst.predict(dtest, pred_contribs=True)[0]
 
             # result should be (number of features + BIAS) * number of rows
             assert contribs.shape == (dtest.num_row(), dtest.num_col() + 1)
@@ -117,7 +117,7 @@ class TestSHAP(unittest.TestCase):
         dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
-        out = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)
+        out = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)[0]
         assert out[0, 0] == 0.375
         assert out[0, 1] == 0.375
         assert out[0, 2] == 0.25
@@ -260,11 +260,11 @@ class TestSHAP(unittest.TestCase):
         dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
-        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)
+        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)[0]
         assert np.linalg.norm(brute_force - fast_method[0, :]) < 1e-4
 
         brute_force = interaction_values(parse_model(bst), X[0, :])
-        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_interactions=True)
+        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_interactions=True)[0]
         assert np.linalg.norm(brute_force - fast_method[0, :, :]) < 1e-4
 
         # test a random function
@@ -284,11 +284,11 @@ class TestSHAP(unittest.TestCase):
         dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
-        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)
+        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)[0]
         assert np.linalg.norm(brute_force - fast_method[0, :]) < 1e-4
 
         brute_force = interaction_values(parse_model(bst), X[0, :])
-        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_interactions=True)
+        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_interactions=True)[0]
         assert np.linalg.norm(brute_force - fast_method[0, :, :]) < 1e-4
 
         # test another larger more complex random function
@@ -310,10 +310,10 @@ class TestSHAP(unittest.TestCase):
         dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
-        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}),pred_contribs=True)
+        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}),pred_contribs=True)[0]
         assert np.linalg.norm(brute_force - fast_method[0, :]) < 1e-4
 
         brute_force = interaction_values(parse_model(bst), X[0, :])
         brute_force[-1, -1] += base_score
-        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_interactions=True)
+        fast_method = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_interactions=True)[0]
         assert np.linalg.norm(brute_force - fast_method[0, :, :]) < 1e-4
