@@ -78,8 +78,8 @@ class TestSHAP(unittest.TestCase):
         fscores = bst.get_fscore()
         assert scores1 == fscores
 
-        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train'})
-        dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test'})
+        dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
+        dtest = xgb.DMatrix({username: dpath + 'agaricus.txt.test.enc'})
 
         def fn(max_depth, num_rounds):
             # train

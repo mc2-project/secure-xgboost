@@ -124,7 +124,7 @@ class TestRanking(unittest.TestCase):
         """
         from sklearn.datasets import load_svmlight_files
         # download the test data
-        cls.dpath = HOME_DIR + 'demo/rank/'
+        cls.dpath = 'demo/rank/'
         src = 'https://s3-us-west-2.amazonaws.com/xgboost-examples/MQ2008.zip'
         target = cls.dpath + '/MQ2008.zip'
         urllib.request.urlretrieve(url=src, filename=target)
