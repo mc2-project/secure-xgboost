@@ -504,7 +504,7 @@ class DMatrix(object):
         if isinstance(data, list):
 
             # Normalize file paths (otherwise signatures might differ)
-            data = [os.path.realpath(path) for path in data]
+            data = [os.path.normpath(path) for path in data]
 
             handle = ctypes.c_char_p()
             if encrypted:
@@ -1949,7 +1949,7 @@ class Booster(object):
         if isinstance(fname, STRING_TYPES):  # assume file name
 
             # Normalize file paths (otherwise signatures might differ)
-            fname = os.path.realpath(fname)
+            fname = os.path.normpath(fname)
 
             args = "XGBoosterSaveModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
@@ -2043,7 +2043,7 @@ class Booster(object):
         if isinstance(fname, STRING_TYPES):
 
             # Normalize file paths (otherwise signatures might differ)
-            fname = os.path.realpath(fname)
+            fname = os.path.normpath(fname)
 
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             args = "XGBoosterLoadModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
