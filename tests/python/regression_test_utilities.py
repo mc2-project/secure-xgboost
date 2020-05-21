@@ -3,7 +3,7 @@ import itertools as it
 import numpy as np
 import os
 import sys
-import xgboost as xgb
+import securexgboost as xgb
 
 try:
     from sklearn import datasets
