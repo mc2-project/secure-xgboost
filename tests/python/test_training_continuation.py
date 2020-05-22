@@ -98,7 +98,7 @@ class TestTrainingContinuation(unittest.TestCase):
 
         gbdt_02 = xgb.train(xgb_params_01, dtrain_2class,
                             num_boost_round=0)
-        gbdt_02.save_model('xgb_tc.model')
+        gbdt_02.save_model(HOME_DIR + 'xgb_tc.model')
 
         #TODO(rishabh): add support for xgb_model
         """
