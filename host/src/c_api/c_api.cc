@@ -1248,14 +1248,6 @@ int ocall_rabit__IsDistributed() {
     return rabit::IsDistributed();
 }
 
-XGB_DLL int get_remote_report_with_pubkey(
-    uint8_t** pem_key,
-    size_t* pem_key_size,
-    uint8_t** remote_report,
-    size_t* remote_report_size) {
-  safe_ecall(enclave_get_remote_report_with_pubkey(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, pem_key_size, remote_report, remote_report_size));
-}
-
 XGB_DLL int get_remote_report_with_pubkey_and_nonce(
     uint8_t** pem_key,
     size_t* key_size,
@@ -1462,11 +1454,6 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
   std::cout << "verify_report_and_set_pubkey_and_nonce succeeded." << std::endl;
   return 0;
 }
-
-//XGB_DLL int add_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-//    // FIXME return value / error handling
-//  safe_ecall(enclave_add_client_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, data, data_len, signature, sig_len));
-//}
 
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
   safe_ecall(enclave_add_client_key_with_certificate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret,cert,cert_len,data, data_len, signature, sig_len));

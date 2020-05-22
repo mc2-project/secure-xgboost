@@ -22,8 +22,6 @@ package remote;
 service Remote {
   // Get attestation report
   // Status is a just a dummy argument and won't be used by the server
-  rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
-
   rpc rpc_get_remote_report_with_pubkey_and_nonce(Status) returns (Report) {}
 
   // Send symmetric key encrypted with enclave public key, signature

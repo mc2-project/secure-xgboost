@@ -14,11 +14,6 @@ class RemoteStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.rpc_get_remote_report_with_pubkey = channel.unary_unary(
-        '/remote.Remote/rpc_get_remote_report_with_pubkey',
-        request_serializer=remote__pb2.Status.SerializeToString,
-        response_deserializer=remote__pb2.Report.FromString,
-        )
     self.rpc_get_remote_report_with_pubkey_and_nonce = channel.unary_unary(
         '/remote.Remote/rpc_get_remote_report_with_pubkey_and_nonce',
         request_serializer=remote__pb2.Status.SerializeToString,
@@ -105,17 +100,10 @@ class RemoteServicer(object):
   """Interface exported by the server.
   """
 
-  def rpc_get_remote_report_with_pubkey(self, request, context):
+  def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
     """Get attestation report
     Status is a just a dummy argument and won't be used by the server
     """
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
@@ -230,11 +218,6 @@ class RemoteServicer(object):
 
 def add_RemoteServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'rpc_get_remote_report_with_pubkey': grpc.unary_unary_rpc_method_handler(
-          servicer.rpc_get_remote_report_with_pubkey,
-          request_deserializer=remote__pb2.Status.FromString,
-          response_serializer=remote__pb2.Report.SerializeToString,
-      ),
       'rpc_get_remote_report_with_pubkey_and_nonce': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_get_remote_report_with_pubkey_and_nonce,
           request_deserializer=remote__pb2.Status.FromString,

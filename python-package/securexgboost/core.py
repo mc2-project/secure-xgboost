@@ -376,6 +376,18 @@ def proto_to_pointer(proto, ctype=ctypes.c_uint8):
 # 
 #     return array
 
+def add_nonce_to_args(args):
+    nonce_arg = " nonce "
+    for i in range(globals()["nonce_size"].value):
+        nonce_arg += str(globals()["nonce"][i]) + " "
+    nonce_arg += " nonce_ctr {}".format(globals()["nonce_ctr"])
+    return args + nonce_arg
+
+def get_seq_num_proto():
+    return remote_pb2.SequenceNumber(
+                            nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
+                            nonce_size=globals()["nonce_size"].value,
+                            nonce_ctr=globals()["nonce_ctr"])
 
 def init_user(user_name, sym_key_file, priv_key_file, cert_file):
     """
@@ -521,11 +533,7 @@ class DMatrix(object):
                             filenames=data,
                             usernames=usernames,
                             silent=silent)
-                        seq_num = remote_pb2.SequenceNumber(
-                            nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
-                            nonce_size=globals()["nonce_size"].value,
-                            nonce_ctr=globals()["nonce_ctr"]
-                        )
+                        seq_num = get_seq_num_proto() 
                         response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrsRequest(attrs=dmatrix_attrs,
                                                                                                                                 seq_num=seq_num,
                                                                                                                                 username=globals()["current_user"],
@@ -969,7 +977,7 @@ class DMatrix(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 name_proto = remote_pb2.Name(name=self.handle.value)
-                seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.NumRowRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
                 return response.value
@@ -1003,7 +1011,7 @@ class DMatrix(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 name_proto = remote_pb2.Name(name=self.handle.value)
-                seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
                 globals()["nonce_ctr"] += 1
@@ -1242,7 +1250,7 @@ class Enclave(object):
 
         To be called by the RPC service
 
-        Must be called after get_remote_report_with_pubkey() is called
+        Must be called after get_remote_report_with_pubkey_and_nonce() is called
 
         Returns
         -------
@@ -1463,7 +1471,7 @@ class Booster(object):
                 booster_attrs = remote_pb2.BoosterAttrs(
                     cache=cache_handles,
                     length=len(cache))
-                seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                seq_num = get_seq_num_proto()
                 response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrsRequest(attrs=booster_attrs, seq_num=seq_num, username=globals()["current_user"],
                                                                                                       signature=sig, sig_len=sig_len)))
                 globals()["nonce_ctr"] += 1
@@ -1639,7 +1647,7 @@ class Booster(object):
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     booster_param = remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)) 
-                    seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                    seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParamRequest(booster_param=booster_param, seq_num=seq_num, username=globals()["current_user"],
                                                                                                             signature=sig, sig_len=sig_len)))
                     globals()["nonce_ctr"] += 1                            
@@ -1680,7 +1688,7 @@ class Booster(object):
                     booster_update_params = remote_pb2.BoosterUpdateParams(booster_handle=self.handle.value,
                                                                            dtrain_handle=dtrain.handle.value,
                                                                            iteration=iteration)
-                    seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])    
+                    seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParamsRequest(booster_update_params=booster_update_params, seq_num=seq_num, username=globals()["current_user"],
                                                                                                                         signature=sig, sig_len=sig_len)))
                     globals()["nonce_ctr"] += 1
@@ -1900,7 +1908,7 @@ class Booster(object):
                     option_mask=option_mask,
                     ntree_limit=ntree_limit,
                     username=username)
-                seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=globals()["current_user"],
                                                                                                         signature=sig, sig_len=sig_len)))
                 globals()["nonce_ctr"] += 1
@@ -2028,10 +2036,7 @@ class Booster(object):
                         booster_handle=self.handle.value,
                         filename=fname,
                         username=username)
-                    seq_num = remote_pb2.SequenceNumber(
-                        nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
-                        nonce_size=globals()["nonce_size"].value,
-                        nonce_ctr=globals()["nonce_ctr"])
+                    seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(save_model_params=save_model_params, seq_num=seq_num, username=globals()["current_user"],
                                                                                                                 signature=sig, sig_len=sig_len)))
                     globals()["nonce_ctr"] += 1
@@ -2078,7 +2083,7 @@ class Booster(object):
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 model_raw_params = remote_pb2.ModelRawParams(booster_handle=self.handle.value)
-                seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterGetModelRawParams(model_raw_params=model_raw_params, seq_num=seq_num, username=username,
                                                                                   signature=sig, sig_len=sig_len))
                 globals()["nonce_ctr"] += 1
@@ -2135,7 +2140,7 @@ class Booster(object):
                         booster_handle=self.handle.value,
                         filename=fname,
                         username=username)
-                    seq_num = remote_pb2.SequenceNumber(nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value), nonce_size=globals()["nonce_size"].value, nonce_ctr=globals()["nonce_ctr"])
+                    seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParamsRequest(load_model_params=load_model_params,
                                                                                                                 seq_num=seq_num,
                                                                                                                 username=globals()["current_user"],
@@ -2241,11 +2246,7 @@ class Booster(object):
                         ftype=ftype,
                         with_stats=with_stats,
                         dump_format=dump_format)
-                    seq_num = remote_pb2.SequenceNumber(
-                        nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
-                        nonce_size = globals()["nonce_size"].value,
-                        nonce_ctr = globals()["nonce_ctr"]
-                    )
+                    seq_num = get_seq_num_proto()
                     response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParamsRequest(
                         dump_model_with_features_params=dump_model_with_features_params, seq_num=seq_num, username=globals()["current_user"],
                         signature=sig, sig_len=sig_len)))
@@ -2291,11 +2292,7 @@ class Booster(object):
                         fmap=fmap,
                         with_stats=with_stats,
                         dump_format=dump_format)
-                    seq_num = remote_pb2.SequenceNumber(
-                        nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
-                        nonce_size=globals()["nonce_size"].value,
-                        nonce_ctr=globals()["nonce_ctr"]
-                    )
+                    seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParamsRequest(dump_model_params=dump_model_params, seq_num=seq_num, username=globals()["current_user"],
                                                                                                                   signature=sig, sig_len=sig_len)))
                     globals()["nonce_ctr"] += 1
@@ -2632,27 +2629,6 @@ def py2c_sigs(signatures, sig_lengths):
 
 
 class RemoteAPI:
-    def get_remote_report_with_pubkey(request):
-        pem_key = ctypes.POINTER(ctypes.c_uint8)()
-        pem_key_size = ctypes.c_size_t()
-        remote_report = ctypes.POINTER(ctypes.c_uint8)()
-        remote_report_size = ctypes.c_size_t()
-        _check_call(_LIB.get_remote_report_with_pubkey(
-            ctypes.byref(pem_key),
-            ctypes.byref(pem_key_size),
-            ctypes.byref(remote_report),
-            ctypes.byref(remote_report_size)))
-
-        pem_key_size = pem_key_size.value
-        remote_report_size = remote_report_size.value
-
-        pem_key = ctypes2numpy(pem_key, pem_key_size, np.uint8)
-        pem_key = ndarray_to_proto(pem_key)
-        remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint8)
-        remote_report = ndarray_to_proto(remote_report)
-
-        return pem_key, pem_key_size, remote_report, remote_report_size
-
     def get_enclave_symm_key(request):
         enc_key = ctypes.POINTER(ctypes.c_uint8)()
         enc_key_size = ctypes.c_size_t()
@@ -2695,7 +2671,6 @@ class RemoteAPI:
         dmatrix_handle = request.predict_params.dmatrix_handle
         option_mask = request.predict_params.option_mask
         ntree_limit = request.predict_params.ntree_limit
-        username = request.username
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -3086,10 +3061,3 @@ def sign_data(key, data, data_size):
     signature = pointer_to_proto(signature, sig_len_as_int, nptype=np.uint8)
 
     return signature, sig_len_as_int
-
-def add_nonce_to_args(args):
-    nonce_arg = " nonce "
-    for i in range(globals()["nonce_size"].value):
-        nonce_arg += str(globals()["nonce"][i]) + " "
-    nonce_arg += " nonce_ctr {}".format(globals()["nonce_ctr"])
-    return args + nonce_arg

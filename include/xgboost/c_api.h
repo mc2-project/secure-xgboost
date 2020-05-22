@@ -749,12 +749,6 @@ XGB_DLL int XGBoosterLoadRabitCheckpoint(
  */
 XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
-XGB_DLL int get_remote_report_with_pubkey(
-    uint8_t** pem_key,
-    size_t* pem_key_size,
-    uint8_t** remote_report,
-    size_t* remote_report_size);
-
 XGB_DLL int get_remote_report_with_pubkey_and_nonce(
     uint8_t** pem_key,
     size_t* key_size,
