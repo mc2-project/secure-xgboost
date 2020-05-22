@@ -92,12 +92,12 @@ class RemoteStub(object):
         self.rpc_RabitInit = channel.unary_unary(
                 '/remote.Remote/rpc_RabitInit',
                 request_serializer=remote__pb2.RabitParams.SerializeToString,
-                response_deserializer=remote__pb2.Status.FromString,
+                response_deserializer=remote__pb2.StatusMsg.FromString,
                 )
         self.rpc_RabitFinalize = channel.unary_unary(
                 '/remote.Remote/rpc_RabitFinalize',
                 request_serializer=remote__pb2.RabitParams.SerializeToString,
-                response_deserializer=remote__pb2.Status.FromString,
+                response_deserializer=remote__pb2.StatusMsg.FromString,
                 )
 
 
@@ -308,12 +308,12 @@ def add_RemoteServicer_to_server(servicer, server):
             'rpc_RabitInit': grpc.unary_unary_rpc_method_handler(
                     servicer.rpc_RabitInit,
                     request_deserializer=remote__pb2.RabitParams.FromString,
-                    response_serializer=remote__pb2.Status.SerializeToString,
+                    response_serializer=remote__pb2.StatusMsg.SerializeToString,
             ),
             'rpc_RabitFinalize': grpc.unary_unary_rpc_method_handler(
                     servicer.rpc_RabitFinalize,
                     request_deserializer=remote__pb2.RabitParams.FromString,
-                    response_serializer=remote__pb2.Status.SerializeToString,
+                    response_serializer=remote__pb2.StatusMsg.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -578,7 +578,7 @@ class Remote(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/remote.Remote/rpc_RabitInit',
             remote__pb2.RabitParams.SerializeToString,
-            remote__pb2.Status.FromString,
+            remote__pb2.StatusMsg.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -594,6 +594,6 @@ class Remote(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/remote.Remote/rpc_RabitFinalize',
             remote__pb2.RabitParams.SerializeToString,
-            remote__pb2.Status.FromString,
+            remote__pb2.StatusMsg.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -201,15 +201,19 @@ class Command(object):
             statuses = [result.status.status for result in results]
             # Set return value
             if self._func == rabit_remote_api.RabitInit:
-                if sum(statuses) == 0:
-                    self._ret = 0
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=0)
             elif self._func == rabit_remote_api.RabitFinalize:
-                if sum(statuses) == 0:
-                    self._ret = 0
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                 if -1 in statuses:
                     exceptions = [result.status.exception for result in results]
@@ -223,10 +227,12 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent dmatrix handles returned by enclaves in XGDMatrixCreateFromEncryptedFile call"))
             elif self._func == remote_api.XGBoosterSetParam:
-                if sum(statuses) == 0:
-                    self._ret = 0
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterCreate:
                 if -1 in statuses:
                     exceptions = [result.status.exception for result in results]
@@ -240,20 +246,26 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent booster handles returned by enclaves in XGBoosterCreate call"))
             elif self._func == remote_api.XGBoosterUpdateOneIter:
-                if sum(statuses) == 0:
-                    self._ret = 0
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterSaveModel:
-                if sum(statuses) == 0:
-                    self._ret = 0
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterLoadModel:
-                if sum(statuses) == 0:
-                    self._ret = 0
+                if -1 in statuses:
+                    exceptions = [result.status.exception for result in results]
+                    i = statuses.index(-1)
+                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
                 else:
-                    self._ret = -1
+                    self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterDumpModelEx:
                 if -1 in statuses:
                     exceptions = [result.status.exception for result in results]
