@@ -69,10 +69,10 @@ service Remote {
   rpc rpc_XGDMatrixNumRow(Name) returns (Integer) {}
 
   // Initialize Rabit
-  rpc rpc_RabitInit(RabitParams) returns (Status) {}
+  rpc rpc_RabitInit(RabitParams) returns (StatusMsg) {}
 
   // Finalize Rabit
-  rpc rpc_RabitFinalize(RabitParams) returns (Status) {}
+  rpc rpc_RabitFinalize(RabitParams) returns (StatusMsg) {}
 }
 
 message StatusMsg {
@@ -266,6 +266,4 @@ message ClusterParams {
 
 message RabitParams {
     string username = 1;
-
-    Status status = 2;
 }

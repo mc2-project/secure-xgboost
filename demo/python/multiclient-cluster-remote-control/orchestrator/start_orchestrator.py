@@ -9,4 +9,5 @@ nodes = [x.strip().split(":")[0] for x in nodes]
 
 enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity=3)
 print("Waiting for client...")
-xgb.serve(enclave, all_users=["user1", "user2"], nodes=nodes)
+#  xgb.serve(enclave, all_users=["user1", "user2"], nodes=nodes)
+xgb.serve(enclave, all_users=["user1"], nodes=nodes)

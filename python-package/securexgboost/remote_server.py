@@ -1,4 +1,3 @@
-A
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,11 +81,9 @@ class Command(object):
         
                 # Asynchronous calls to start job on each node
                 if self._func == rabit_remote_api.RabitInit:
-                    status = remote_pb2.Status(status=0)
-                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(status=status))
+                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams())
                 elif self._func == rabit_remote_api.RabitFinalize:
-                    status = remote_pb2.Status(status=0)
-                    response_future = stub.rpc_RabitFinalize.future(remote_pb2.RabitParams(status=status))
+                    response_future = stub.rpc_RabitFinalize.future(remote_pb2.RabitParams())
                 elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                     filenames = self._params.filenames
                     usernames = self._params.usernames
@@ -457,7 +454,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if not globals()["is_orchestrator"]:
                 # Get a reference to the existing enclave
                 result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
-                return remote_pb2.Status(status=result)
+                status = remote_pb2.Status(status=result)
+                return remote_pb2.StatusMsg(status=status)
             else:
                 node_ips = globals()["nodes"]
                 channels = []
@@ -483,9 +481,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
                 return_codes = [result.status.status for result in results]
                 if sum(return_codes) == 0:
-                    return remote_pb2.Status(status=0)
+                    status = remote_pb2.Status(status=0)
+                    return remote_pb2.StatusMsg(status=status)
                 else:
-                    return remote_pb2.Status(status=-1, exception="ERROR: A node threw an error trying to add the client key and certificate")
+                    error_status = remote_pb2.Status(status=-1, exception="ERROR: A node threw an error trying to add the client key and certificate")
+                    return remote_pb2.StatusMsg(status=error_status)
         except:
             status = handle_exception()
             return status
@@ -514,8 +514,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 status = self._synchronize(remote_api.XGBoosterSetParam, request)
             else:
                 remote_api.XGBoosterSetParam(request)
-                status = 0
-            return remote_pb2.Status(status=status)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
             return status
@@ -544,8 +544,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             else:
                 remote_api.XGBoosterUpdateOneIter(request)
-                status = 0
-            return remote_pb2.Status(status=status)
+                status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
             return status
@@ -582,8 +582,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 status = self._synchronize(remote_api.XGBoosterSaveModel, request)
             else:
                 remote_api.XGBoosterSaveModel(request)
-                status = 0
-            return remote_pb2.Status(status=status)
+                status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status)
 
         except:
             status = handle_exception()
@@ -598,8 +598,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 status = self._synchronize(remote_api.XGBoosterLoadModel, request)
             else:
                 remote_api.XGBoosterLoadModel(request)
-                status = 0
-            return remote_pb2.Status(status=status)
+                status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status)
 
         except:
             status = handle_exception()
@@ -691,8 +691,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 status = self._synchronize(rabit_remote_api.RabitInit, request)
             else:
                 rabit_remote_api.RabitInit(request)
-                status = 0
-            return remote_pb2.Status(status=status)
+                status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
             return status
@@ -707,8 +707,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 status = self._synchronize(rabit_remote_api.RabitFinalize, request)
             else:
                 rabit_remote_api.RabitFinalize(request)
-                status = 0
-            return remote_pb2.Status(status=status)
+                status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
             return status
