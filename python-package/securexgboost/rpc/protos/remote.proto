@@ -267,5 +267,5 @@ message ClusterParams {
 message RabitParams {
     string username = 1;
 
-    uint32 status = 2;
+    Status status = 2;
 }

@@ -1139,8 +1139,6 @@ class Enclave(object):
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
-            print(pem_key)
-
             self._set_report_attrs(pem_key, key_size, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
