@@ -29,6 +29,10 @@ class EnclaveContext {
     mbedtls_entropy_context m_entropy_context;
     mbedtls_pk_context m_pk_context;
     uint8_t m_public_key[CIPHER_PK_SIZE];
+    
+    // 12 bytes for the session nonce and four bytes for a counter within the session.
+    uint8_t m_nonce[CIPHER_IV_SIZE];
+    uint32_t m_nonce_ctr;
     uint8_t m_symm_key[CIPHER_KEY_SIZE];
 
      /* We maintain these maps to avoid having to pass out pointers to application code outside
@@ -54,6 +58,8 @@ class EnclaveContext {
 
     EnclaveContext() {
       generate_public_key();
+      generate_nonce();
+      m_nonce_ctr = 0;
       generate_symm_key();
       client_key_is_set = false;
       booster_ctr = 0;
@@ -78,6 +84,22 @@ class EnclaveContext {
 
     uint8_t* get_symm_key() {
       return m_symm_key;
+    }
+
+    uint8_t* get_nonce() {
+      return m_nonce;
+    }
+
+    // Checks equality of received and expected nonce and nonce counter and increments nonce counter.
+    bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
+      bool retval = recv_nonce_ctr == m_nonce_ctr;
+      if (!retval) return retval;
+      for (int i = 0; i < CIPHER_IV_SIZE; i++) {
+        retval = retval && (recv_nonce[i] == m_nonce[i]); 
+      }
+      if (retval)
+        m_nonce_ctr += 1;
+      return retval;
     }
 
     // Note: Returned handle needs to be freed
@@ -438,6 +460,13 @@ class EnclaveContext {
         LOG(FATAL) << "mbedtls_pk_write_pubkey_pem failed with " << res;
       }
     }
+
+    /**
+     * Generate a session nonce for the enclave to be used by clients. 
+     */
+    bool generate_nonce() {
+      generate_random(m_nonce, CIPHER_IV_SIZE);
+    } 
 };
 
 #endif

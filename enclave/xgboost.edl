@@ -17,6 +17,9 @@ enclave {
                 [in, count=num_files] size_t* username_lengths,
                 bst_ulong num_files,
                 int silent,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr, 
                 [out] char** handle,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
@@ -25,20 +28,26 @@ enclave {
                 size_t num_sigs);
 
         public int enclave_XGBoosterCreate(
-                [in, count=len] char** dmat_handles,
-                [in, count=len] size_t* handle_lengths,
-                bst_ulong len,
+                [in, count=len] char** dmat_handles, 
+                [in, count=len] size_t* handle_lengths, 
+                bst_ulong len, 
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] char** handle,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
                 [in, count=num_sigs] size_t* sig_lengths,
                 size_t num_sigs);
-
+        
         public int enclave_XGBoosterSetParam(
                 [in, string] char* handle,
                 [in, string] const char *name,
                 [in, string] const char *value,
+                [in, count=nonce_size] uint8_t *nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
@@ -49,6 +58,9 @@ enclave {
                 [in, string] char* handle,
                 int iter,
                 [in, string] char* dtrain,
+                [in, count=nonce_size] uint8_t *nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
@@ -77,6 +89,9 @@ enclave {
                 [in, string] char* dmat,
                 int option_mask,
                 unsigned ntree_limit,
+                [in, count=nonce_size] uint8_t *nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out_len,
                 [out] uint8_t **out_result,
                 [in, count=num_sigs] char **signers,
@@ -84,7 +99,7 @@ enclave {
                 [in, count=num_sigs] uint8_t **signatures,
                 [in, count=num_sigs] size_t* sig_lengths,
                 size_t num_sigs);
-
+        
         public int enclave_XGDMatrixGetFloatInfo(
                 [in, string] char* handle,
                 [in, string] const char* field,
@@ -111,6 +126,9 @@ enclave {
 
         public int enclave_XGDMatrixNumRow(
                 [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
@@ -120,6 +138,9 @@ enclave {
 
         public int enclave_XGDMatrixNumCol(
                 [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
@@ -141,6 +162,9 @@ enclave {
         public int enclave_XGBoosterLoadModel(
                 [in, string] char* handle,
                 [in, string] const char* fname,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
@@ -150,6 +174,9 @@ enclave {
         public int enclave_XGBoosterSaveModel(
                 [in, string] char* handle,
                 [in, string] const char* fname,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr, 
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
@@ -160,6 +187,9 @@ enclave {
                 [in, string] char* handle,
                 [in, string] const char* fmap,
                 int with_stats,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong* len,
                 [out] char*** out_models);
 
@@ -168,6 +198,9 @@ enclave {
                 [in, string] const char* fmap,
                 int with_stats,
                 [in, string] const char* format,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong* len,
                 [out] char*** out_models,
                 [in, count=num_sigs] char **signers,
@@ -184,8 +217,16 @@ enclave {
                 [in, count=fnum] const char** ftype,
                 [in, count=fnum] size_t* ftype_lengths,
                 int with_stats,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong* len,
-                [out] char*** out_models);
+                [out] char*** out_models,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
 
         public int enclave_XGBoosterDumpModelExWithFeatures(
                 [in, string] char* handle,
@@ -196,6 +237,9 @@ enclave {
                 [in, count=fnum] size_t* ftype_lengths,
                 int with_stats,
                 [in, string] const char* format,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong* len,
                 [out] char*** out_models,
                 [in, count=num_sigs] char **signers,
@@ -206,6 +250,9 @@ enclave {
 
         public int enclave_XGBoosterGetModelRaw(
                 [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
                 [out] bst_ulong *out_len,
                 [out] char **out_dptr,
                 [in, count=num_sigs] char **signers,
@@ -230,9 +277,11 @@ enclave {
         public int enclave_XGBoosterFree(
                 [in, string] char* handle);
 
-        public int enclave_get_remote_report_with_pubkey(
-                [out] uint8_t **pem_key,
-                [out] size_t *pem_key_size,
+        public int enclave_get_remote_report_with_pubkey_and_nonce(
+                [out] uint8_t **pem_key, 
+                [out] size_t *key_size,
+                [out] uint8_t **nonce,
+                [out] size_t *nonce_size,
                 [out] uint8_t **remote_report,
                 [out] size_t  *remote_report_size);
 
