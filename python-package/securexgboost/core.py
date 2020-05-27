@@ -536,7 +536,7 @@ class DMatrix(object):
                     args = args + " username {} filename {}".format(username, filename)
                 args = args + " silent {}".format(int(silent))
                 args = add_nonce_to_args(args)
-                print(args)
+
                 sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
                 channel_addr = globals()["remote_addr"]
