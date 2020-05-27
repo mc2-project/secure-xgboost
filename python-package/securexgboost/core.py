@@ -1413,7 +1413,7 @@ class Enclave(object):
         """
         if "current_user" in globals():
             username = globals()["current_user"]
-        if username is None:
+        else:
             raise ValueError("Please set your username with the init_user() function")
         channel_addr = globals()["remote_addr"]
         if channel_addr:
@@ -1817,7 +1817,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True, username=None, decrypt=True):
+                validate_features=True, decrypt=True):
         """
         Predict with data.
 
@@ -1875,9 +1875,6 @@ class Booster(object):
             When this is True, validate that the Booster's and data's feature_names are identical.
             Otherwise, it is assumed that the feature_names are the same.
 
-        username: string
-            Use the name to find the encryption key used for prediction result
-
         decrypt: bool
             When this is True, the predictions received from the enclave are decrypted using the user's symmetric key
 
@@ -1887,9 +1884,9 @@ class Booster(object):
         num_preds: number of predictions
         """
         # check the global variable for current_user
-        if username is None and "current_user" in globals():
+        if "current_user" in globals():
             username = globals()["current_user"]
-        if username is None:
+        else:
             raise ValueError("Please set your username with the init_user() function")
         option_mask = 0x00
         if output_margin:
@@ -2014,7 +2011,7 @@ class Booster(object):
         return preds
 
 
-    def save_model(self, fname, username=None):
+    def save_model(self, fname):
         """
         Save the model to an encrypted file at the server.
         The file is encrypted with the user's symmetric key.
@@ -2028,13 +2025,11 @@ class Booster(object):
         ----------
         fname : string
             Absolute path to save the model to
-        username: string
-            Used to encrypt the file
         """
         # check the global variable for current_user
-        if username is None and "current_user" in globals():
+        if "current_user" in globals():
             username = globals()["current_user"]
-        if username is None:
+        else:
             raise ValueError("Please set your username with the init_user() function")
         if isinstance(fname, STRING_TYPES):  # assume file name
 
@@ -2072,21 +2067,19 @@ class Booster(object):
 
 
     # FIXME Should we decrypt the raw model?
-    def save_raw(self, username=None):
+    def save_raw(self):
         """
         Save the model to a in memory buffer representation.
         The model is encrypted with the user's symmetric key.
 
-        username: string
-            usred to encrypt this file
         Returns
         -------
         a in memory buffer representation of the model
         """
         # check the global variable for current_user
-        if username is None and "current_user" in globals():
+        if "current_user" in globals():
             username = globals()["current_user"]
-        if username is None:
+        else:
             raise ValueError("Please set your username with the init_user() function")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
@@ -2122,7 +2115,7 @@ class Booster(object):
         return ctypes2buffer(cptr, length.value)
 
 
-    def load_model(self, fname, username=None):
+    def load_model(self, fname):
         """
         Load the model from a file.
     
@@ -2135,13 +2128,11 @@ class Booster(object):
         ----------
         fname : string or a memory buffer
             Input file name or memory buffer(see also save_raw)
-        username: string
-            Used to find the encryption key
         """
         # check the global variable for current_user
-        if username is None and "current_user" in globals():
+        if "current_user" in globals():
             username = globals()["current_user"]
-        if username is None:
+        else:
             raise ValueError("Please set your username with the init_user() function")
         if isinstance(fname, STRING_TYPES):
 
