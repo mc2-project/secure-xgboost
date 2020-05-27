@@ -47,6 +47,8 @@ class Command(object):
         self._params = None
         self._ret = None
         self._usernames = []
+        self._signatures = []
+        self._sig_lengths = []
         self._retrieved = []
 
     def submit(self, func, params, username):
@@ -56,6 +58,8 @@ class Command(object):
         else:
             assert self._func == func
         self._usernames.append(username)
+        self._signatures.append(params.signature)
+        self._sig_lengths.append(params.sig_len)
 
     def is_ready(self):
         for user in globals()["all_users"]:
@@ -64,7 +68,7 @@ class Command(object):
         return True
 
     def invoke(self):
-        self._ret = self._func(self._params)
+        self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
 
     def result(self, username):
         self._retrieved.append(username)
@@ -118,13 +122,20 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             # Get report from enclave
-            pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
+            pem_key, pem_key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
 
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
+            return remote_pb2.Report(pem_key=pem_key, pem_key_size=pem_key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Report(status=status)
+
+    def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
+        pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
+
+        return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
+            nonce=nonce, nonce_size=nonce_size,
+            remote_report=remote_report, remote_report_size=remote_report_size)
 
     # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key(self, request, context):
@@ -166,6 +177,21 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         except:
             status = handle_exception()
             return status
+
+    def rpc_get_enclave_symm_key(self, request, context):
+        """
+        Calls get_remote_report_with_pubkey()
+        """
+        try:
+            # Get report from enclave
+            enc_key, enc_key_size = remote_api.get_enclave_symm_key(request)
+            enc_key_proto = pointer_to_proto(enc_key, enc_key_size + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
+
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
+        except:
+            status = handle_exception()
+            return remote_pb2.Report(status=status)
 
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         """

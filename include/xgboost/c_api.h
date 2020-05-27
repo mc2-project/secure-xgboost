@@ -150,20 +150,32 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
  */
 XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
                                     int silent,
-                                    DMatrixHandle *out); 
+                                    DMatrixHandle *out);
 
 /*!
  * \brief load a data matrix from an encrypted file
  * \param fname the name of the encrypted file
  * \param silent whether print messages during loading
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out a loaded data matrix
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
-        char* usernames[],
-        bst_ulong num_files,
-        int silent,
-        DMatrixHandle *out);
+                                             char* usernames[],
+                                             bst_ulong num_files,
+                                             int silent,
+                                             uint8_t* nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
+                                             DMatrixHandle *out,
+                                             char **signers,
+                                             uint8_t* signatures[],
+                                             size_t* sig_lengths);
 
 /*!
  * \brief Create a DMatrix from a data iterator.
@@ -347,31 +359,68 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
 /*!
  * \brief get number of rows.
  * \param handle the handle to the DMatrix
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out The address to hold number of rows.
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumRow(DMatrixHandle handle,
-                            bst_ulong *out);
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
+                            bst_ulong *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths);
+
 /*!
  * \brief get number of columns
  * \param handle the handle to the DMatrix
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out The output of number of columns
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
-                            bst_ulong *out);
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
+                            bst_ulong *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths);
 // --- start XGBoost class
 
 /*!
  * \brief create xgboost learner
  * \param dmats matrices that are set to be cached
  * \param len length of dmats
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out handle to the result booster
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                             bst_ulong len,
-                            BoosterHandle *out);
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
+                            BoosterHandle *out,
+                            char **signers,
+                            uint8_t* signatures[],
+                            size_t* sig_lengths);
 
 /*!
  * \brief free obj in handle
@@ -385,22 +434,47 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle);
  * \param handle handle
  * \param name  parameter name
  * \param value value of parameter
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
-                              const char *value);
+                              const char *value,
+                              uint8_t *nonce,
+                              size_t nonce_size,
+                              uint32_t nonce_ctr,
+                              char **signers,
+                              uint8_t* signatures[],
+                              size_t* sig_lengths);
 
 /*!
  * \brief update the model in one round using dtrain
  * \param handle handle
  * \param iter current iteration rounds
  * \param dtrain training data
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
-                                   DMatrixHandle dtrain);
+                                   DMatrixHandle dtrain,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
+                                   char **signers,
+                                   uint8_t* signatures[],
+                                   size_t* sig_lengths);
+
 /*!
  * \brief update the model, by directly specify gradient and second order gradient,
  *        this can be used to replace UpdateOneIter, to support customized loss function
@@ -432,6 +506,7 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
                                  const char *evnames[],
                                  bst_ulong len,
                                  const char **out_result);
+
 /*!
  * \brief make prediction based on dmat
  * \param handle handle
@@ -443,63 +518,120 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
  *          4:output feature contributions to individual predictions
  * \param ntree_limit limit number of trees used for prediction, this is only valid for boosted trees
  *    when the parameter is set to 0, we will use all the trees
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out_len used to store length of returning result
  * \param out_result used to set a pointer to array
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr,
                              bst_ulong *out_len,
                              uint8_t **out_result,
-                             char* username); 
+                             char **signers,
+                             uint8_t* signatures[],
+                             size_t* sig_lengths);
+
 /*!
  * \brief load model from existing file
  * \param handle handle
  * \param fname file name
-* \return 0 when success, -1 when failure happens
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
+ * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
-                             char *username);
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
+                               char **signers,
+                               uint8_t* signatures[],
+                               size_t* sig_lengths);
+
 /*!
  * \brief save model into existing file
  * \param handle handle
  * \param fname file name
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
-                             char* username);
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
+                               char** signers,
+                               uint8_t* signatures[],
+                               size_t* sig_lengths);
+
 /*!
  * \brief load model from in memory buffer
  * \param handle handle
  * \param buf pointer to the buffer
  * \param len the length of the buffer
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          const void *buf,
                                          bst_ulong len,
-                                       char* username);
+                                         char** signers,
+                                         uint8_t* signatures[],
+                                         size_t* sig_lengths);
+
 /*!
  * \brief save model into binary raw bytes, return header of the array
  * user must copy the result out, before next xgboost call
  * \param handle handle
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out_len the argument to hold the output length
  * \param out_dptr the argument to hold the output data pointer
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
-                                 char *username);
+                                 char **signers,
+                                 uint8_t* signatures[],
+                                 size_t* sig_lengths);
+
 /*!
  * \brief dump model, return array of strings representing model dump
  * \param handle handle
  * \param fmap  name to fmap can be empty string
  * \param with_stats whether to dump with statistics
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out_len length of output array
  * \param out_dump_array pointer to hold representing dump of each model
  * \return 0 when success, -1 when failure happens
@@ -507,6 +639,9 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                                const char *fmap,
                                int with_stats,
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
                                bst_ulong *out_len,
                                const char ***out_dump_array);
 
@@ -516,16 +651,28 @@ XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
  * \param fmap  name to fmap can be empty string
  * \param with_stats whether to dump with statistics
  * \param format the format to dump the model in
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out_len length of output array
  * \param out_dump_array pointer to hold representing dump of each model
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char *fmap,
                                  int with_stats,
                                  const char *format,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  bst_ulong *out_len,
-                                 const char ***out_dump_array);
+                                 const char ***out_dump_array,
+                                 char **signers,
+                                 uint8_t* signatures[],
+                                 size_t* sig_lengths);
 
 /*!
  * \brief dump model, return array of strings representing model dump
@@ -534,8 +681,14 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
  * \param fname names of features
  * \param ftype types of features
  * \param with_stats whether to dump with statistics
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out_len length of output array
  * \param out_models pointer to hold representing dump of each model
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
@@ -543,8 +696,15 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                            const char **fname,
                                            const char **ftype,
                                            int with_stats,
+                                           uint8_t *nonce,
+                                           size_t nonce_size,
+                                           uint32_t nonce_ctr,
                                            bst_ulong *out_len,
-                                           const char ***out_models);
+                                           const char ***out_models,
+                                           char **signers,
+                                           size_t signer_lengths[],
+                                           uint8_t* signatures[],
+                                           size_t* sig_lengths);
 
 /*!
  * \brief dump model, return array of strings representing model dump
@@ -554,8 +714,14 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
  * \param ftype types of features
  * \param with_stats whether to dump with statistics
  * \param format the format to dump the model in
+ * \param nonce nonce received from the enclave during initialization
+ * \param nonce_size size in bytes of nonce
+ * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out_len length of output array
  * \param out_models pointer to hold representing dump of each model
+ * \param signers list of usernames of signing clients
+ * \param signatures list of client signatures
+ * \param sig_lengths list of signature lengths
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
@@ -564,8 +730,14 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              const char **ftype,
                                              int with_stats,
                                              const char *format,
+                                             uint8_t *nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
                                              bst_ulong *out_len,
-                                             const char ***out_models);
+                                             const char ***out_models,
+                                             char **signers,
+                                             uint8_t* signatures[],
+                                             size_t* sig_lengths);
 
 /*!
  * \brief Get string attribute from Booster.
@@ -622,15 +794,17 @@ XGB_DLL int XGBoosterLoadRabitCheckpoint(
  */
 XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
-XGB_DLL int get_remote_report_with_pubkey(
+XGB_DLL int get_remote_report_with_pubkey_and_nonce(
     uint8_t** pem_key,
     size_t* key_size,
+    uint8_t** nonce,
+    size_t* nonce_size,
     uint8_t** remote_report,
     size_t* remote_report_size);
 
 XGB_DLL int verify_remote_report_and_set_pubkey(
     uint8_t* pem_key,
-    size_t key_size,
+    size_t pem_key_size,
     uint8_t* remote_report,
     size_t remote_report_size);
 
@@ -648,6 +822,11 @@ XGB_DLL int add_client_key_with_certificate(
     size_t data_len,
     uint8_t* signature,
     size_t sig_len);
+
+XGB_DLL int get_enclave_symm_key(
+    char* username,
+    uint8_t** out,
+    size_t* out_size);
 
 XGB_DLL int encrypt_data_with_pk(
     char* data,
@@ -669,6 +848,12 @@ XGB_DLL int decrypt_predictions(
     uint8_t* encrypted_preds,
     size_t preds_len,
     bst_float** preds);
+
+XGB_DLL int decrypt_enclave_key(
+    char* key,
+    uint8_t* encrypted_key,
+    size_t len,
+    uint8_t** out_key);
 
 XGB_DLL int encrypt_file(
     char* fname,
