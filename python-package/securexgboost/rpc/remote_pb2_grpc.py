@@ -14,8 +14,8 @@ class RemoteStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.rpc_get_remote_report_with_pubkey = channel.unary_unary(
-        '/remote.Remote/rpc_get_remote_report_with_pubkey',
+    self.rpc_get_remote_report_with_pubkey_and_nonce = channel.unary_unary(
+        '/remote.Remote/rpc_get_remote_report_with_pubkey_and_nonce',
         request_serializer=remote__pb2.Status.SerializeToString,
         response_deserializer=remote__pb2.Report.FromString,
         )
@@ -36,62 +36,62 @@ class RemoteStub(object):
         )
     self.rpc_XGDMatrixCreateFromEncryptedFile = channel.unary_unary(
         '/remote.Remote/rpc_XGDMatrixCreateFromEncryptedFile',
-        request_serializer=remote__pb2.DMatrixAttrs.SerializeToString,
+        request_serializer=remote__pb2.DMatrixAttrsRequest.SerializeToString,
         response_deserializer=remote__pb2.Name.FromString,
         )
     self.rpc_XGBoosterCreate = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterCreate',
-        request_serializer=remote__pb2.BoosterAttrs.SerializeToString,
+        request_serializer=remote__pb2.BoosterAttrsRequest.SerializeToString,
         response_deserializer=remote__pb2.Name.FromString,
         )
     self.rpc_XGBoosterSetParam = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterSetParam',
-        request_serializer=remote__pb2.BoosterParam.SerializeToString,
+        request_serializer=remote__pb2.BoosterParamRequest.SerializeToString,
         response_deserializer=remote__pb2.StatusMsg.FromString,
         )
     self.rpc_XGBoosterUpdateOneIter = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterUpdateOneIter',
-        request_serializer=remote__pb2.BoosterUpdateParams.SerializeToString,
+        request_serializer=remote__pb2.BoosterUpdateParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.StatusMsg.FromString,
         )
     self.rpc_XGBoosterPredict = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterPredict',
-        request_serializer=remote__pb2.PredictParams.SerializeToString,
+        request_serializer=remote__pb2.PredictParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.Predictions.FromString,
         )
     self.rpc_XGBoosterSaveModel = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterSaveModel',
-        request_serializer=remote__pb2.SaveModelParams.SerializeToString,
+        request_serializer=remote__pb2.SaveModelParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.StatusMsg.FromString,
         )
     self.rpc_XGBoosterLoadModel = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterLoadModel',
-        request_serializer=remote__pb2.LoadModelParams.SerializeToString,
+        request_serializer=remote__pb2.LoadModelParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.StatusMsg.FromString,
         )
     self.rpc_XGBoosterDumpModelEx = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterDumpModelEx',
-        request_serializer=remote__pb2.DumpModelParams.SerializeToString,
+        request_serializer=remote__pb2.DumpModelParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.Dump.FromString,
         )
     self.rpc_XGBoosterDumpModelExWithFeatures = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterDumpModelExWithFeatures',
-        request_serializer=remote__pb2.DumpModelWithFeaturesParams.SerializeToString,
+        request_serializer=remote__pb2.DumpModelWithFeaturesParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.Dump.FromString,
         )
     self.rpc_XGBoosterGetModelRaw = channel.unary_unary(
         '/remote.Remote/rpc_XGBoosterGetModelRaw',
-        request_serializer=remote__pb2.ModelRawParams.SerializeToString,
+        request_serializer=remote__pb2.ModelRawParamsRequest.SerializeToString,
         response_deserializer=remote__pb2.Dump.FromString,
         )
     self.rpc_XGDMatrixNumCol = channel.unary_unary(
         '/remote.Remote/rpc_XGDMatrixNumCol',
-        request_serializer=remote__pb2.Name.SerializeToString,
+        request_serializer=remote__pb2.NumColRequest.SerializeToString,
         response_deserializer=remote__pb2.Integer.FromString,
         )
     self.rpc_XGDMatrixNumRow = channel.unary_unary(
         '/remote.Remote/rpc_XGDMatrixNumRow',
-        request_serializer=remote__pb2.Name.SerializeToString,
+        request_serializer=remote__pb2.NumRowRequest.SerializeToString,
         response_deserializer=remote__pb2.Integer.FromString,
         )
 
@@ -100,7 +100,7 @@ class RemoteServicer(object):
   """Interface exported by the server.
   """
 
-  def rpc_get_remote_report_with_pubkey(self, request, context):
+  def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
     """Get attestation report
     Status is a just a dummy argument and won't be used by the server
     """
@@ -218,8 +218,8 @@ class RemoteServicer(object):
 
 def add_RemoteServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'rpc_get_remote_report_with_pubkey': grpc.unary_unary_rpc_method_handler(
-          servicer.rpc_get_remote_report_with_pubkey,
+      'rpc_get_remote_report_with_pubkey_and_nonce': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_get_remote_report_with_pubkey_and_nonce,
           request_deserializer=remote__pb2.Status.FromString,
           response_serializer=remote__pb2.Report.SerializeToString,
       ),
@@ -240,62 +240,62 @@ def add_RemoteServicer_to_server(servicer, server):
       ),
       'rpc_XGDMatrixCreateFromEncryptedFile': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGDMatrixCreateFromEncryptedFile,
-          request_deserializer=remote__pb2.DMatrixAttrs.FromString,
+          request_deserializer=remote__pb2.DMatrixAttrsRequest.FromString,
           response_serializer=remote__pb2.Name.SerializeToString,
       ),
       'rpc_XGBoosterCreate': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterCreate,
-          request_deserializer=remote__pb2.BoosterAttrs.FromString,
+          request_deserializer=remote__pb2.BoosterAttrsRequest.FromString,
           response_serializer=remote__pb2.Name.SerializeToString,
       ),
       'rpc_XGBoosterSetParam': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterSetParam,
-          request_deserializer=remote__pb2.BoosterParam.FromString,
+          request_deserializer=remote__pb2.BoosterParamRequest.FromString,
           response_serializer=remote__pb2.StatusMsg.SerializeToString,
       ),
       'rpc_XGBoosterUpdateOneIter': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterUpdateOneIter,
-          request_deserializer=remote__pb2.BoosterUpdateParams.FromString,
+          request_deserializer=remote__pb2.BoosterUpdateParamsRequest.FromString,
           response_serializer=remote__pb2.StatusMsg.SerializeToString,
       ),
       'rpc_XGBoosterPredict': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterPredict,
-          request_deserializer=remote__pb2.PredictParams.FromString,
+          request_deserializer=remote__pb2.PredictParamsRequest.FromString,
           response_serializer=remote__pb2.Predictions.SerializeToString,
       ),
       'rpc_XGBoosterSaveModel': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterSaveModel,
-          request_deserializer=remote__pb2.SaveModelParams.FromString,
+          request_deserializer=remote__pb2.SaveModelParamsRequest.FromString,
           response_serializer=remote__pb2.StatusMsg.SerializeToString,
       ),
       'rpc_XGBoosterLoadModel': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterLoadModel,
-          request_deserializer=remote__pb2.LoadModelParams.FromString,
+          request_deserializer=remote__pb2.LoadModelParamsRequest.FromString,
           response_serializer=remote__pb2.StatusMsg.SerializeToString,
       ),
       'rpc_XGBoosterDumpModelEx': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterDumpModelEx,
-          request_deserializer=remote__pb2.DumpModelParams.FromString,
+          request_deserializer=remote__pb2.DumpModelParamsRequest.FromString,
           response_serializer=remote__pb2.Dump.SerializeToString,
       ),
       'rpc_XGBoosterDumpModelExWithFeatures': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterDumpModelExWithFeatures,
-          request_deserializer=remote__pb2.DumpModelWithFeaturesParams.FromString,
+          request_deserializer=remote__pb2.DumpModelWithFeaturesParamsRequest.FromString,
           response_serializer=remote__pb2.Dump.SerializeToString,
       ),
       'rpc_XGBoosterGetModelRaw': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGBoosterGetModelRaw,
-          request_deserializer=remote__pb2.ModelRawParams.FromString,
+          request_deserializer=remote__pb2.ModelRawParamsRequest.FromString,
           response_serializer=remote__pb2.Dump.SerializeToString,
       ),
       'rpc_XGDMatrixNumCol': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGDMatrixNumCol,
-          request_deserializer=remote__pb2.Name.FromString,
+          request_deserializer=remote__pb2.NumColRequest.FromString,
           response_serializer=remote__pb2.Integer.SerializeToString,
       ),
       'rpc_XGDMatrixNumRow': grpc.unary_unary_rpc_method_handler(
           servicer.rpc_XGDMatrixNumRow,
-          request_deserializer=remote__pb2.Name.FromString,
+          request_deserializer=remote__pb2.NumRowRequest.FromString,
           response_serializer=remote__pb2.Integer.SerializeToString,
       ),
   }

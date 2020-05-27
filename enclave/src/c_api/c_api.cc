@@ -271,40 +271,54 @@ bool generate_remote_report(
 }
 
 /**
- * Return the public key of this enclave along with the enclave's remote report.
+ * Return the public key of this enclave along with the enclave's remote report
+ * and a sequence number to be used by clients.
  * The enclave that receives the key will use the remote report to attest this
  * enclave.
  */
-int get_remote_report_with_pubkey(
+int get_remote_report_with_pubkey_and_nonce(
     uint8_t** pem_key,
-    size_t* pem_key_size,
+    size_t* key_size,
+    uint8_t** nonce,
+    size_t* nonce_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
-  // FIXME: Encrypt the symmetric key
-
   uint8_t* report = NULL;
   size_t report_size = 0;
-  uint8_t* pem_key_buf = NULL;
+  uint8_t* key_buf = NULL;
   int ret = 1;
 
-  uint8_t* _pem_key = EnclaveContext::getInstance().get_public_key();
+  uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
+  uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();
 
 #ifdef __ENCLAVE_SIMULATION__
-  pem_key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
-  if (pem_key_buf == NULL) {
+  key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+  if (key_buf == NULL) {
     ret = OE_OUT_OF_MEMORY;
     return ret;
   }
-  memcpy(pem_key_buf, _pem_key, CIPHER_PK_SIZE);
+  memcpy(key_buf, public_key, CIPHER_PK_SIZE);
 
-  *pem_key = pem_key_buf;
-  *pem_key_size = CIPHER_PK_SIZE;
+  *pem_key = key_buf;
+  *key_size = CIPHER_PK_SIZE;
+
+  uint8_t* nonce_buf = (uint8_t*)oe_host_malloc(CIPHER_IV_SIZE);
+  if (nonce_buf == NULL) {
+    ret = OE_OUT_OF_MEMORY;
+    return ret;
+  }
+  memcpy(nonce_buf, enclave_nonce, CIPHER_IV_SIZE);
+
+  *nonce = nonce_buf;
+  *nonce_size = CIPHER_IV_SIZE;
 
   ret = 0;
+
 #else
-  uint8_t* data[CIPHER_PK_SIZE];
-  memcpy(data, _pem_key, CIPHER_PK_SIZE);
-  if (generate_remote_report(data, CIPHER_PK_SIZE + CIPHER_KEY_SIZE, &report, &report_size)) {
+  uint8_t report_data[CIPHER_PK_SIZE + CIPHER_IV_SIZE];
+  std::copy(public_key, public_key + CIPHER_PK_SIZE, report_data);
+  std::copy(enclave_nonce, enclave_nonce + CIPHER_IV_SIZE, report_data + CIPHER_PK_SIZE);
+  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE + CIPHER_KEY_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
     if (*remote_report == NULL) {
@@ -317,8 +331,8 @@ int get_remote_report_with_pubkey(
     *remote_report_size = report_size;
     oe_free_report(report);
 
-    pem_key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
-    if (pem_key_buf == NULL) {
+    key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
+    if (key_buf == NULL) {
       ret = OE_OUT_OF_MEMORY;
       if (report)
         oe_free_report(report);
@@ -326,10 +340,24 @@ int get_remote_report_with_pubkey(
         oe_host_free(*remote_report);
       return ret;
     }
-    memcpy(pem_key_buf, _pem_key, CIPHER_PK_SIZE);
+    memcpy(key_buf, public_key, CIPHER_PK_SIZE);
 
-    *pem_key = pem_key_buf;
-    *pem_key_size = CIPHER_PK_SIZE;
+    *pem_key = key_buf;
+    *key_size = CIPHER_PK_SIZE;
+
+    uint8_t* nonce_buf = (uint8_t*)oe_host_malloc(CIPHER_IV_SIZE);
+    if (nonce_buf == NULL) {
+      ret = OE_OUT_OF_MEMORY;
+      if (report)
+        oe_free_report(report);
+      if (*remote_report)
+        oe_host_free(*remote_report);
+      return ret;
+    }
+    memcpy(nonce_buf, enclave_nonce, CIPHER_IV_SIZE);
+
+    *nonce = nonce_buf;
+    *nonce_size = CIPHER_IV_SIZE;
 
     ret = 0;
     LOG(INFO) << "get_remote_report_with_pubkey succeeded";
@@ -339,6 +367,12 @@ int get_remote_report_with_pubkey(
 #endif
   return ret;
 }
+
+//int add_client_key(uint8_t* data, size_t len, uint8_t* signature, size_t sig_len) {
+//    if (EnclaveContext::getInstance().decrypt_and_save_client_key(data, len, signature, sig_len))
+//      return 0;
+//    return -1;
+//}
 
 int add_client_key_with_certificate(char * cert,
         int cert_len,
@@ -407,15 +441,27 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
   API_END();
 }
 
+void add_nonce_to_args(std::ostringstream &oss, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr) {
+    oss << " nonce ";
+    for (int i = 0; i < nonce_size; i ++) {
+      oss << (int) nonce[i] << " ";
+    }
+    oss << " nonce_ctr " << nonce_ctr;
+}
+
 int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      char* usernames[],
                                      xgboost::bst_ulong num_files,
                                      int silent,
+                                     uint8_t* nonce,
+                                     size_t nonce_size,
+                                     uint32_t nonce_ctr,
                                      DMatrixHandle *out,
                                      char **signers,
                                      uint8_t** signatures,
                                      size_t* sig_lengths) {
     API_BEGIN();
+    CHECK_SEQUENCE_NUMBER();
     bool load_row_split = false;
     if (rabit::IsDistributed()) {
         LOG(INFO) << "XGBoost distributed mode detected, "
@@ -430,6 +476,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         oss << " username " << usernames[i] << " filename " << fnames[i];
     }
     oss << " silent " << silent;
+    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1063,15 +1110,20 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
+                            uint8_t* nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             xgboost::bst_ulong *out,
                             char **signers,
                             uint8_t** signatures,
                             size_t* sig_lengths) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   // signature verification
   std::ostringstream oss;
   oss << "XGDMatrixNumRow " << handle;
+  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr); 
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1082,18 +1134,22 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
+                            uint8_t* nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             xgboost::bst_ulong *out,
                             char **signers,
                             uint8_t** signatures,
                             size_t* sig_lengths) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   // signature verification
   std::ostringstream oss;
   oss << "XGDMatrixNumCol " << handle;
+  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr); 
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
@@ -1103,15 +1159,20 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 // xgboost implementation
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     xgboost::bst_ulong len,
+                    uint8_t *nonce,
+                    size_t nonce_size,
+                    uint32_t nonce_ctr,
                     BoosterHandle *out,
                     char **signers,
                     uint8_t** signatures,
                     size_t* sig_lengths) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterCreate";
+  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1139,17 +1200,22 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle) {
 }
 
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
-                                    const char *name,
-                                    const char *value,
-                                    char **signers,
-                                    uint8_t** signatures,
-                                    size_t* sig_lengths) {
+                              const char *name,
+                              const char *value,
+                              uint8_t *nonce,
+                              size_t nonce_size,
+                              uint32_t nonce_ctr,
+                              char **signers,
+                              uint8_t** signatures,
+                              size_t* sig_lengths) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER(); 
   CHECK_HANDLE();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterSetParam " << handle << " " << name << "," << value;
+  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
 
@@ -1162,15 +1228,20 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    char **signers,
                                    uint8_t** signatures,
                                    size_t* sig_lengths) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterUpdateOneIter booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
+  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff);
@@ -1234,17 +1305,22 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr,
                              xgboost::bst_ulong *len,
                              uint8_t **out_result,
                              char** signers,
                              uint8_t** signatures,
                              size_t* sig_lengths) {
   API_BEGIN();
+  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterPredict booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
+  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);;
   char* buff = strdup(oss.str().c_str());
   EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
   free(buff); // prevent memory leak
@@ -1297,13 +1373,15 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 }
 
 // TODO(rishabh): Server can replace file contents
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char** signers, uint8_t** signatures, size_t* sig_lengths) {
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, char** signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
+    CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
 
     // signature verification
     std::ostringstream oss;
     oss << "XGBoosterLoadModel handle " << handle << " filename " << fname;
+    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1342,13 +1420,15 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, char** s
     API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, char **signers, uint8_t** signatures, size_t* sig_lengths) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, char **signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
+    CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
 
     // check signature
     std::ostringstream oss;
     oss << "XGBoosterSaveModel handle " << handle << " filename " << fname;
+    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1422,6 +1502,9 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
+                                 uint8_t* nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  xgboost::bst_ulong* out_len,
                                  const char** out_dptr,
                                  char** signers,
@@ -1431,11 +1514,13 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     raw_str.resize(0);
 
     API_BEGIN();
+    CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
 
     // check signature
     std::ostringstream oss;
     oss << "XGBoosterGetModelRaw handle " << handle;
+    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1527,6 +1612,9 @@ inline void XGBoostDumpModelImpl(
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
+                       uint8_t* nonce,
+                       size_t nonce_size,
+                       uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
   LOG(FATAL) << "XGBoosterDumpModel not supported";
@@ -1537,15 +1625,20 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char* fmap,
                                  int with_stats,
                                  const char *format,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  xgboost::bst_ulong* len,
                                  const char*** out_models,
                                  char **signers,
                                  uint8_t** signatures,
                                  size_t* sig_lengths) {
     API_BEGIN();
+    CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
     std::ostringstream oss;
     oss << "XGBoosterDumpModelEx booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
+    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);
@@ -1567,8 +1660,15 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    const char** fname,
                                    const char** ftype,
                                    int with_stats,
+                                   uint8_t* nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
-                                   const char*** out_models) {
+                                   const char*** out_models,
+                                   char **signers,
+                                   size_t signer_lengths[],
+                                   uint8_t* signatures[],
+                                   size_t sig_lengths[]) {
   LOG(FATAL) << "XGBoosterDumpModelWithFeatures not supported";
   //return XGBoosterDumpModelExWithFeatures(handle, fnum, fname, ftype, with_stats,
   //                                 "text", len, out_models);
@@ -1600,12 +1700,16 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              const char** ftype,
                                              int with_stats,
                                              const char *format,
+                                             uint8_t* nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
                                              xgboost::bst_ulong* len,
                                              const char*** out_models,
                                              char **signers,
                                              uint8_t** signatures,
                                              size_t* sig_lengths) {
     API_BEGIN();
+    CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
 
     //check signature
@@ -1614,6 +1718,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     for (int i = 0; i <fnum; i++){
         oss << " fname " << fname[i] << " ftype " << ftype[i];
     }
+    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
     char* buff = strdup(oss.str().c_str());
     EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
     free(buff);

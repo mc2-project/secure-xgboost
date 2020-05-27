@@ -166,6 +166,9 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                              char* usernames[],
                                              bst_ulong num_files,
                                              int silent,
+                                             uint8_t* nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
                                              DMatrixHandle *out,
                                              char **signers,
                                              uint8_t* signatures[],
@@ -360,10 +363,14 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumRow(DMatrixHandle handle,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             bst_ulong *out,
                             char **signers,
                             uint8_t* signatures[],
                             size_t* sig_lengths);
+
 /*!
  * \brief get number of columns
  * \param handle the handle to the DMatrix
@@ -374,6 +381,9 @@ XGB_DLL int XGDMatrixNumRow(DMatrixHandle handle,
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             bst_ulong *out,
                             char **signers,
                             uint8_t* signatures[],
@@ -392,6 +402,9 @@ XGB_DLL int XGDMatrixNumCol(DMatrixHandle handle,
  */
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                             bst_ulong len,
+                            uint8_t *nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
                             BoosterHandle *out,
                             char **signers,
                             uint8_t* signatures[],
@@ -417,6 +430,9 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle);
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
                               const char *value,
+                              uint8_t *nonce,
+                              size_t nonce_size,
+                              uint32_t nonce_ctr,
                               char **signers,
                               uint8_t* signatures[],
                               size_t* sig_lengths);
@@ -434,9 +450,12 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
                                    DMatrixHandle dtrain,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    char **signers,
                                    uint8_t* signatures[],
-                                   size_t* sig_lengths) ;
+                                   size_t* sig_lengths);
 
 /*!
  * \brief update the model, by directly specify gradient and second order gradient,
@@ -492,6 +511,9 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr,
                              bst_ulong *out_len,
                              uint8_t **out_result,
                              char **signers,
@@ -509,9 +531,12 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
  */
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
                                const char *fname,
-                             char **signers,
-                             uint8_t* signatures[],
-                             size_t* sig_lengths);
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
+                               char **signers,
+                               uint8_t* signatures[],
+                               size_t* sig_lengths);
 
 /*!
  * \brief save model into existing file
@@ -524,6 +549,9 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle,
  */
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle,
                                const char *fname,
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
                                char** signers,
                                uint8_t* signatures[],
                                size_t* sig_lengths);
@@ -557,6 +585,9 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  bst_ulong *out_len,
                                  const char **out_dptr,
                                  char **signers,
@@ -575,6 +606,9 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                                const char *fmap,
                                int with_stats,
+                               uint8_t *nonce,
+                               size_t nonce_size,
+                               uint32_t nonce_ctr,
                                bst_ulong *out_len,
                                const char ***out_dump_array);
 
@@ -595,6 +629,9 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char *fmap,
                                  int with_stats,
                                  const char *format,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  bst_ulong *out_len,
                                  const char ***out_dump_array,
                                  char **signers,
@@ -617,8 +654,15 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                            const char **fname,
                                            const char **ftype,
                                            int with_stats,
+                                           uint8_t *nonce,
+                                           size_t nonce_size,
+                                           uint32_t nonce_ctr,
                                            bst_ulong *out_len,
-                                           const char ***out_models);
+                                           const char ***out_models,
+                                           char **signers,
+                                           size_t signer_lengths[],
+                                           uint8_t* signatures[],
+                                           size_t* sig_lengths);
 
 /*!
  * \brief dump model, return array of strings representing model dump
@@ -641,6 +685,9 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              const char **ftype,
                                              int with_stats,
                                              const char *format,
+                                             uint8_t *nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
                                              bst_ulong *out_len,
                                              const char ***out_models,
                                              char **signers,
@@ -702,9 +749,11 @@ XGB_DLL int XGBoosterLoadRabitCheckpoint(
  */
 XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle);
 
-XGB_DLL int get_remote_report_with_pubkey(
+XGB_DLL int get_remote_report_with_pubkey_and_nonce(
     uint8_t** pem_key,
-    size_t* pem_key_size,
+    size_t* key_size,
+    uint8_t** nonce,
+    size_t* nonce_size,
     uint8_t** remote_report,
     size_t* remote_report_size);
 
