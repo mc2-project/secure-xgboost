@@ -240,6 +240,16 @@ def c_array(ctype, values):
     return (ctype * len(values))(*values)
 
 
+def py2c_sigs(signatures, sig_lengths):
+    num = len(signatures)
+    c_signatures = (ctypes.POINTER(ctypes.c_uint8) * num)()
+    c_lengths = (ctypes.c_size_t * num)()
+
+    c_signatures[:] = [proto_to_pointer(signatures[i], ctypes.c_uint8) for i in range(num)]
+    c_lengths[:] = [ctypes.c_size_t(sig_lengths[i]) for i in range(num)]
+    return c_signatures, c_lengths
+
+
 def pointer_to_proto(pointer, pointer_len, nptype=np.uint8):
     """
     Convert C u_int or float pointer to proto for RPC serialization
@@ -1244,7 +1254,7 @@ class Enclave(object):
             priv_key = globals()["current_user_priv_key"]
             cert = globals()["current_user_cert"]
         except:
-            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+            raise ValueError("Please set your username with the init_user() function")
 
         # Encrypt the symmetric key using the enclave's public key
         enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), 
@@ -1352,7 +1362,7 @@ class Enclave(object):
         if "current_user" in globals():
             username = globals()["current_user"]
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your username with the init_user() function")
         channel_addr = globals()["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
@@ -1583,7 +1593,7 @@ class Booster(object):
         if "current_user" in globals():
             user = globals()["current_user"]
         else:
-            raise ValueError("Please set your user with User.set_user function")
+            raise ValueError("Please set your user with init_user() function")
 
         for key, val in params:
             args = "XGBoosterSetParam " + self.handle.value.decode('utf-8') + " " + key + "," + str(val)
@@ -1809,7 +1819,7 @@ class Booster(object):
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your username with the init_user() function")
         option_mask = 0x00
         if output_margin:
             option_mask |= 0x01
@@ -1945,7 +1955,7 @@ class Booster(object):
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your username with the init_user() function")
         if isinstance(fname, STRING_TYPES):  # assume file name
 
             # Normalize file paths (otherwise signatures might differ)
@@ -1988,7 +1998,7 @@ class Booster(object):
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your username with the init_user() function")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
 
@@ -2039,7 +2049,7 @@ class Booster(object):
         if username is None and "current_user" in globals():
             username = globals()["current_user"]
         if username is None:
-            raise ValueError("Please set your username with the Set_user function or provide a username as an optional argument")
+            raise ValueError("Please set your username with the init_user() function")
         if isinstance(fname, STRING_TYPES):
 
             # Normalize file paths (otherwise signatures might differ)
@@ -2218,7 +2228,7 @@ class Booster(object):
         try:
             sym_key = globals()["enclave_sym_key"]
         except:
-            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+            raise ValueError("Please set your username with the init_user() function")
         _check_call(_LIB.decrypt_dump(sym_key, sarr, length))
 
 
@@ -2506,16 +2516,6 @@ class Booster(object):
 ##########################################
 # APIs invoked by RPC server
 ##########################################
-
-def py2c_sigs(signatures, sig_lengths):
-    num = len(signatures)
-    c_signatures = (ctypes.POINTER(ctypes.c_uint8) * num)()
-    c_lengths = (ctypes.c_size_t * num)()
-
-    c_signatures[:] = [proto_to_pointer(signatures[i], ctypes.c_uint8) for i in range(num)]
-    c_lengths[:] = [ctypes.c_size_t(sig_lengths[i]) for i in range(num)]
-    return c_signatures, c_lengths
-
 
 class RemoteAPI:
     def get_remote_report_with_pubkey(request):
