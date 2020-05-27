@@ -230,14 +230,6 @@ class EnclaveContext {
       }
     }
 
-    /*
-     *void sync_client_key() {
-     *  // The master node (rank 0) broadcasts the client key to other nodes
-     *  rabit::Broadcast(client_key, CIPHER_KEY_SIZE, 0);
-     *  client_key_is_set = true;
-     *}
-     */
-
     bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
           mbedtls_pk_context _pk_context;
 
