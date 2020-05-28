@@ -464,7 +464,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 master_enclave_ip = node_ips[0]
                 with grpc.insecure_channel(master_enclave_ip) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=0))
+                    response = stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=0))
 
                 return response
         except:
