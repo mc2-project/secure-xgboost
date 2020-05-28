@@ -580,7 +580,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 if sum(return_codes) == 0:
                     # Only take returned result from the master enclave
                     result = results[0]
-                    enc_key = result.key
+                    enc_key_proto = result.key
                     enc_key_size = result.size
                     status = result.status
                     return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
