@@ -453,11 +453,25 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return remote_pb2.Report(status=status)
 
     def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
-        pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
+        try:
+            if not globals()["is_orchestrator"]:
+                pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
+                return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
+                    nonce=nonce, nonce_size=nonce_size,
+                    remote_report=remote_report, remote_report_size=remote_report_size)
+            else:
+                node_ips = globals()["nodes"]
+                master_enclave_ip = node_ips[0]
+                with grpc.insecure_channel(master_enclave_ip) as channel:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=0))
 
-        return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
-            nonce=nonce, nonce_size=nonce_size,
-            remote_report=remote_report, remote_report_size=remote_report_size)
+                return response
+        except:
+            status = handle_exception()
+            return remote_pb2.Report(status=status)
+
+
 
     # FIXME implement the library call within class RemoteAPI
     # FIXME add support for this function for cluster

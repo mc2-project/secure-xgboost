@@ -464,7 +464,7 @@ message ClusterParams {
 
 message RabitParams {
     string username = 1;
-    SequenceNumber seq_num = 2
+    SequenceNumber seq_num = 2;
     numproto.protobuf.NDArray signature = 3;
     uint32 sig_len = 4;
 

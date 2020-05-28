@@ -335,6 +335,8 @@ class EnclaveContext {
       if(verifySignature(user_public_key_context, data, data_len, signature, sig_len) != 0) {
         LOG(FATAL) << "Signature verification failed";
       }
+
+      LOG(DEBUG) << "Verification passed";
       return true;
     }
 
@@ -350,6 +352,8 @@ class EnclaveContext {
       uint8_t output[CIPHER_KEY_SIZE];
       unsigned char* nameptr;
       size_t name_len;
+
+      LOG(DEBUG) << "Decrypting and saving client key with certificate";
         
       // Only the master node verifies signature and certificate
       if (rabit::GetRank() == 0) {
@@ -367,6 +371,7 @@ class EnclaveContext {
 
 
           // Only the master node can decrypt the symmetric key
+          LOG(DEBUG) << "Decrypting client symmetric key";
           res = mbedtls_rsa_pkcs1_decrypt(
                   rsa_context,
                   mbedtls_ctr_drbg_random,
@@ -379,6 +384,8 @@ class EnclaveContext {
           if (res != 0) {
               LOG(FATAL) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
           }
+
+          LOG(DEBUG) << "Decryption passed";
 
           int ret;
           mbedtls_x509_crt user_cert;
