@@ -803,7 +803,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(rabit_remote_api.RabitInit, request)
             else:
-                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                #  signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 rabit_remote_api.RabitInit(request)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
@@ -820,7 +820,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(rabit_remote_api.RabitFinalize, request)
             else:
-                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                #  signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 rabit_remote_api.RabitFinalize(request)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)

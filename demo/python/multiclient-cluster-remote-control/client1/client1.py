@@ -23,6 +23,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
     time.sleep(3)
+    print("Done sleeping")
     enclave.attest(verify=False)
     print("Report successfully verified")
 
