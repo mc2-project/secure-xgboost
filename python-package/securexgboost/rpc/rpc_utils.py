@@ -60,4 +60,4 @@ def proto_to_pointer(proto):
     return pointer
 
 def get_signers_signatures_sig_lengths(request):
-    return request.usernames, request.signatures, request.sig_lengths
+    return request.signers, request.signatures, request.sig_lengths
