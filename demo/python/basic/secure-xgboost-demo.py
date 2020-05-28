@@ -20,7 +20,7 @@ print("Remote attestation")
 
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-enclave.attest()
+enclave.attest(verify=False)
 
 print("Send private key to enclave")
 enclave.add_key()
@@ -47,6 +47,7 @@ params = {
 num_rounds = 5 
 booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
 
+print("Saving model")
 # Save model to a file
 booster.save_model(HOME_DIR + "demo/python/basic/modelfile.model")
 

@@ -22,7 +22,7 @@ package remote;
 service Remote {
   // Get attestation report
   // Status is a just a dummy argument and won't be used by the server
-  rpc rpc_get_remote_report_with_pubkey(Status) returns (Report) {}
+  rpc rpc_get_remote_report_with_pubkey_and_nonce(Status) returns (Report) {}
 
   // Send symmetric key encrypted with enclave public key, signature
   rpc rpc_add_client_key(DataMetadata) returns (StatusMsg) {}
@@ -30,40 +30,43 @@ service Remote {
   // Send symmetric key encrypted with enclave public key, signature, certificate
   rpc rpc_add_client_key_with_certificate(DataMetadata) returns (StatusMsg) {}
 
+  // Get enclave's symmetric key, encypted with the client's symmetric key
+  rpc rpc_get_enclave_symm_key(Name) returns (EnclaveKey) {}
+
   // Send params of a DMatrix to the server for initialization
   // Returns the name assigned to this DMatrix
-  rpc rpc_XGDMatrixCreateFromEncryptedFile(DMatrixAttrs) returns (Name) {}
+  rpc rpc_XGDMatrixCreateFromEncryptedFile(DMatrixAttrsRequest) returns (Name) {}
 
   // Send params of a Booster to the server for initialization 
   // Returns the name assigned to this booster
-  rpc rpc_XGBoosterCreate(BoosterAttrs) returns (Name) {}
+  rpc rpc_XGBoosterCreate(BoosterAttrsRequest) returns (Name) {}
 
   // Set booster parameters
-  rpc rpc_XGBoosterSetParam(BoosterParam) returns (StatusMsg) {}
+  rpc rpc_XGBoosterSetParam(BoosterParamRequest) returns (StatusMsg) {}
 
   // Update the booster for one round
-  rpc rpc_XGBoosterUpdateOneIter(BoosterUpdateParams) returns (StatusMsg) {}
+  rpc rpc_XGBoosterUpdateOneIter(BoosterUpdateParamsRequest) returns (StatusMsg) {}
 
   // Run predictions
-  rpc rpc_XGBoosterPredict(PredictParams) returns (Predictions) {}
+  rpc rpc_XGBoosterPredict(PredictParamsRequest) returns (Predictions) {}
 
   // Save model to a file on the server
-  rpc rpc_XGBoosterSaveModel(SaveModelParams) returns (StatusMsg) {}
+  rpc rpc_XGBoosterSaveModel(SaveModelParamsRequest) returns (StatusMsg) {}
 
   // Load model from file on the server
-  rpc rpc_XGBoosterLoadModel(LoadModelParams) returns (StatusMsg) {}
+  rpc rpc_XGBoosterLoadModel(LoadModelParamsRequest) returns (StatusMsg) {}
 
   // Dump model 
-  rpc rpc_XGBoosterDumpModelEx(DumpModelParams) returns (Dump) {}
+  rpc rpc_XGBoosterDumpModelEx(DumpModelParamsRequest) returns (Dump) {}
 
   // Dump model with features
-  rpc rpc_XGBoosterDumpModelExWithFeatures(DumpModelWithFeaturesParams) returns (Dump) {}
+  rpc rpc_XGBoosterDumpModelExWithFeatures(DumpModelWithFeaturesParamsRequest) returns (Dump) {}
 
   // Save model to buffer
-  rpc rpc_XGBoosterGetModelRaw(ModelRawParams) returns (Dump) {}
+  rpc rpc_XGBoosterGetModelRaw(ModelRawParamsRequest) returns (Dump) {}
 
   // Get number of columns in the DMatrix
-  rpc rpc_XGDMatrixNumCol(Name) returns (Integer) {}
+  rpc rpc_XGDMatrixNumCol(NumColRequest) returns (Integer) {}
 
   // Get number of rows in the DMatrix
   rpc rpc_XGDMatrixNumRow(Name) returns (Integer) {}
@@ -95,7 +98,7 @@ message Report {
   numproto.protobuf.NDArray pem_key = 1;
 
   // Size of public key
-  uint32 key_size = 2;
+  uint32 pem_key_size = 2;
 
   // Remote report of enclave
   numproto.protobuf.NDArray remote_report = 3;
@@ -105,6 +108,24 @@ message Report {
 
   // Status of call
   Status status = 5;
+
+  // Session nonce
+  numproto.protobuf.NDArray nonce = 6;
+
+  // Size of nonce
+  uint32 nonce_size = 7;
+
+}
+
+message SequenceNumber {
+    // k byte random number generated at the start of the session
+    numproto.protobuf.NDArray nonce = 1;
+    
+    // Size of nonce (k = 12, or CIPHER_IV_SIZE)
+    uint32 nonce_size = 2;
+
+    // 4 byte counter that increments with each synchronized function call
+    uint32 nonce_ctr = 3;
 }
 
 // Message from client to enclaves with information on how to retrieve
@@ -132,14 +153,42 @@ message DMatrixAttrs {
     repeated string filenames = 1;
     repeated string usernames = 2;
     uint32 silent = 3;
-    string username = 4;
+    string username = 4; // [deprecated] moved to DMatrixAttrsRequest
+}
+
+// Wrapper around DMatrixAttrs to include sequence number
+message DMatrixAttrsRequest {
+    DMatrixAttrs attrs = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Params for the constructor of a Booster
 message BoosterAttrs {
     repeated string cache = 1;
     uint64 length = 2;
+    string username = 3; // [deprecated] moved to BoosterAttrsRequest
+}
+
+// Wrapper around BoosterAttrs to include sequence number
+message BoosterAttrsRequest {
+    BoosterAttrs attrs = 1;
+    SequenceNumber seq_num = 2;
     string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Booster parameter
@@ -147,7 +196,21 @@ message BoosterParam {
     string booster_handle = 1;
     string key = 2;
     string value = 3;
-    string username = 4;
+    string username = 4; // [deprecated] moved to BoosterParamRequest
+}
+
+// Wrapper around BoosterParam to include sequence number
+message BoosterParamRequest {
+    BoosterParam booster_param = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;    
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Params for training
@@ -155,7 +218,20 @@ message BoosterUpdateParams {
     string booster_handle = 1;
     string dtrain_handle = 2;
     uint32 iteration = 3;
-    string username = 4;
+    string username = 4; // [deprecated] moved to BoosterUpdateParamsRequest
+}
+
+message BoosterUpdateParamsRequest {
+    BoosterUpdateParams booster_update_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Params for eval
@@ -164,6 +240,8 @@ message BoosterEvalSetParams {
     repeated Pair evals = 2;
     uint32 iteration = 3;
     string username = 4;
+    numproto.protobuf.NDArray signature = 5;
+    uint32 sig_len = 6;
 }
 
 // Params for prediction
@@ -172,14 +250,42 @@ message PredictParams {
     string dmatrix_handle = 2;
     uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
-    string username = 5;
+    string username = 5; // [deprecated] moved to PredictParamsRequest
+}
+
+// Wrapper around PredictParams to include sequence number
+message PredictParamsRequest {
+    PredictParams predict_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Params for save model
 message SaveModelParams {
     string booster_handle = 1;
     string filename = 2;
+    string username = 3; // [deprecated]  moved to SaveModelParamsRequest
+}
+
+// Wrapper around SaveModelParams to include sequence number
+message SaveModelParamsRequest {
+    SaveModelParams save_model_params = 1;
+    SequenceNumber seq_num = 2;
     string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Params for load model
@@ -189,6 +295,20 @@ message LoadModelParams {
     string username = 3;
 }
 
+// Wrapper around LoadModelParams to include sequence number
+message LoadModelParamsRequest {
+    LoadModelParams load_model_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
+}
+
 // Params for dump model
 message DumpModelParams {
     string booster_handle = 1;
@@ -196,6 +316,20 @@ message DumpModelParams {
     uint32 with_stats = 3;
     string dump_format = 4;
     string username = 5;
+}
+
+// Wrapper around DumpModelParams to include sequence number
+message DumpModelParamsRequest {
+    DumpModelParams dump_model_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Params for dump model with features
@@ -209,10 +343,36 @@ message DumpModelWithFeaturesParams {
     string username = 7;
 }
 
+message DumpModelWithFeaturesParamsRequest {
+    DumpModelWithFeaturesParams dump_model_with_features_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
+}
+
 // Params for dump model
 message ModelRawParams {
     string booster_handle = 1;
     string username = 2;
+}
+
+message ModelRawParamsRequest {
+    ModelRawParams model_raw_params = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Model dump
@@ -236,7 +396,33 @@ message Name {
     string name = 1;
     string username = 2;
     // Status of call (for returned Name)
-    Status status = 3;
+    Status status = 5;
+}
+
+message NumColRequest {
+    Name name = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
+}
+
+message NumRowRequest {
+    Name name = 1;
+    SequenceNumber seq_num = 2;
+    string username = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
+
+    // Orchestrator will collect and deliver the below to each enclave in the cluster
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
 
 // Integer
@@ -244,6 +430,18 @@ message Integer {
     uint32 value = 1;
     // Status of call (for returned Integer)
     Status status = 2;
+}
+
+// Enclave's symmetric key (encrypted)
+message EnclaveKey {
+    // Encrypted key
+    numproto.protobuf.NDArray key = 1;
+
+    // Encrypted key size
+    uint32 size = 2;  
+
+    // Status
+    Status status = 3;
 }
 
 // Encrypted predictions served by enclave, to be decrypted at client
@@ -266,4 +464,11 @@ message ClusterParams {
 
 message RabitParams {
     string username = 1;
+    SequenceNumber seq_num = 2
+    numproto.protobuf.NDArray signature = 3;
+    uint32 sig_len = 4;
+
+    repeated string signers = 5;
+    repeated numproto.protobuf.NDArray signatures = 6;
+    repeated uint32 sig_lengths = 7;
 }

@@ -58,3 +58,6 @@ def proto_to_pointer(proto):
     # FIXME make the ctype POINTER type configurable
     pointer = ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
     return pointer
+
+def get_signers_signatures_sig_lengths(request):
+    return request.usernames, request.signatures, request.sig_lengths

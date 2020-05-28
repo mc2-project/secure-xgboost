@@ -46,7 +46,10 @@ class Command(object):
         self._func = None
         self._params = None
         self._ret = None
+        self._seq_num = None
         self._usernames = []
+        self._signatures = []
+        self._sig_lengths = []
         self._retrieved = []
 
     def submit(self, func, params, username):
@@ -55,7 +58,12 @@ class Command(object):
             self._params = params
         else:
             assert self._func == func
+
+        # FIXME: check that all clients have the same sequence number
+        self._seq_num = params.seq_num
         self._usernames.append(username)
+        self._signatures.append(params.signature)
+        self._sig_lengths.append(params.sig_len)
 
     def is_ready(self):
         for user in globals()["all_users"]:
@@ -66,8 +74,12 @@ class Command(object):
     def invoke(self):
         node_ips = globals().get("nodes")
         if not node_ips:
-            self._ret = self._func(self._params)
+            self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
         else: # We're the RPC orchestrator
+            seq_num = self._seq_num
+            signers = self._usernames
+            signatures = self._signatures
+            sig_lengths = self._sig_lengths
             channels = []
             for channel_addr in node_ips:
                 channels.append(grpc.insecure_channel(channel_addr))
@@ -81,116 +93,126 @@ class Command(object):
         
                 # Asynchronous calls to start job on each node
                 if self._func == rabit_remote_api.RabitInit:
-                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams())
+                    response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(
+                        seq_num=seq_num,
+                        signers=signers
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
+                        ))
                 elif self._func == rabit_remote_api.RabitFinalize:
-                    response_future = stub.rpc_RabitFinalize.future(remote_pb2.RabitParams())
+                    response_future = stub.rpc_RabitFinalize.future(remote_pb2.RabitParams(
+                        seq_num=seq_num,
+                        signers=signers
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
+                        ))
                 elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
-                    filenames = self._params.filenames
-                    usernames = self._params.usernames
-                    silent = self._params.silent
-                    response_future = stub.rpc_XGDMatrixCreateFromEncryptedFile.future(remote_pb2.DMatrixAttrs(
-                        filenames=filenames,
-                        usernames=usernames,
-                        silent=silent
+                    dmatrix_attrs = self._params.attrs
+                    response_future = stub.rpc_XGDMatrixCreateFromEncryptedFile.future(remote_pb2.DMatrixAttrsRequest(
+                        attrs=dmatrix_attrs,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths,
                         ))
                 elif self._func == remote_api.XGBoosterSetParam:
-                    booster_handle = self._params.booster_handle
-                    key = self._params.key
-                    value = self._params.value
-                    response_future = stub.rpc_XGBoosterSetParam.future(remote_pb2.BoosterParam(
-                        booster_handle=booster_handle,
-                        key=key,
-                        value=value
+                    booster_param = self._params.booster_param
+                    response_future = stub.rpc_XGBoosterSetParam.future(remote_pb2.BoosterParamRequest(
+                        booster_param=booster_param,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterCreate:
-                    cache = self._params.cache
-                    length = self._params.length
-                    response_future = stub.rpc_XGBoosterCreate.future(remote_pb2.BoosterAttrs(
-                        cache=cache,
-                        length=length
+                    attrs = self._params.attrs
+                    response_future = stub.rpc_XGBoosterCreate.future(remote_pb2.BoosterAttrsRequest(
+                        attrs=attrs,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterUpdateOneIter:
-                    booster_handle = self._params.booster_handle
-                    dtrain_handle = self._params.dtrain_handle
-                    iteration = self._params.iteration
-                    response_future = stub.rpc_XGBoosterUpdateOneIter.future(remote_pb2.BoosterUpdateParams(
-                        booster_handle=booster_handle,
-                        dtrain_handle=dtrain_handle,
-                        iteration=iteration
+                    booster_update_params = self._params.booster_update_params
+                    response_future = stub.rpc_XGBoosterUpdateOneIter.future(remote_pb2.BoosterUpdateParamsRequest(
+                        booster_update_params = booster_update_params,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterSaveModel:
-                    booster_handle = self._params.booster_handle
-                    filename = self._params.filename
-                    username = self._params.username
-                    response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParams(
-                        booster_handle=booster_handle,
-                        filename=filename,
-                        username=username
+                    save_model_params = self._params.save_model_params
+                    response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParamsRequest(
+                        save_model_params = save_model_params
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterLoadModel:
-                    booster_handle = self._params.booster_handle
-                    filename = self._params.filename
-                    username = username
-                    response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParams(
-                        booster_handle=booster_handle,
-                        filename=filename,
-                        username=username
+                    load_model_params = self._params.load_model_params
+                    response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParamsRequest(
+                        load_model_param=load_model_params
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterDumpModelEx:
-                    booster_handle = self._params.booster_handle
-                    fmap = self._params.fmap
-                    with_stats = self._params.with_stats
-                    dump_format = self._params.dump_format
-                    response_future = stub.rpc_XGBoosterDumpModelEx.future(remote_pb2.DumpModelParams(
-                        booster_handle=booster_handle,
-                        fmap=fmap,
-                        with_stats=with_stats,
-                        dump_format=dump_format
+                    dump_model_params = self._params.dump_model_params 
+                    response_future = stub.rpc_XGBoosterDumpModelEx.future(remote_pb2.DumpModelParamsRequest(
+                        dump_model_params=dump_model_params,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
-                    booster_handle = self._params.booster_handle
-                    flen = self._params.flen
-                    fname = self._params.fname
-                    ftype = self._params.ftype
-                    with_stats = self._params.with_stats
-                    dump_format = self._params.dump_format
-                    response_future = stub.rpc_XGBoosterDumpModelExWithFeatures.future(remote_pb2.DumpModelWithFeaturesParams(
-                        booster_handle=booster_handle,
-                        flen=flen,
-                        fname=fname,
-                        ftype=ftype,
-                        with_stats=with_stats,
-                        dump_format=dump_format
+                    dump_model_with_features_params = self._params.dump_model_with_features_params
+                    response_future = stub.rpc_XGBoosterDumpModelExWithFeatures.future(remote_pb2.DumpModelWithFeaturesParamsRequest(
+                        dump_model_with_features_params=dump_model_with_features_params.
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterGetModelRaw:
-                    booster_handle = self._params.booster_handle
-                    username = self._params.username
-                    response_future = stub.rpc_XGBoosterGetModelRaw.future(remote_pb2.ModelRawParams(
-                        booster_handle=booster_handle,
-                        username=username
+                    model_raw_params = self._params.model_raw_params
+                    response_future = stub.rpc_XGBoosterGetModelRaw.future(remote_pb2.ModelRawParamsRequest(
+                        model_raw_params=model_raw_params.
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGDMatrixNumRow:
                     name = self._params.name
-                    response_future = stub.rpc_XGDMatrixNumRow.future(remote_pb2.Name(
-                        name=name
+                    response_future = stub.rpc_XGDMatrixNumRow.future(remote_pb2.NumRowRequest(
+                        name=name,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGDMatrixNumCol:
                     name = self._params.name
-                    response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.Name(
-                        name=name
+                    response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.NumColRequest(
+                        name=name,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterPredict:
-                    booster_handle = self._params.booster_handle
-                    dmatrix_handle = self._params.dmatrix_handle
-                    option_mask = self._params.option_mask
-                    ntree_limit = self._params.ntree_limit
-                    username = self._params.username
-                    response_future = stub.rpc_XGBoosterPredict.future(remote_pb2.PredictParams(
-                        booster_handle=booster_handle,
-                        dmatrix_handle=dmatrix_handle,
-                        option_mask=option_mask,
-                        ntree_limit=ntree_limit,
-                        username=username
+                    predict_params = self._params.predict_params
+                    response_future = stub.rpc_XGBoosterPredict.future(remote_pb2.PredictParamsRequest(
+                        predict_params=predict_params,
+                        seq_num=seq_num,
+                        signers=signers,
+                        signatures=signatures,
+                        sig_lengths=sig_lengths
                         ))
                 futures.append(response_future)
         
@@ -378,7 +400,7 @@ def handle_exception():
     traceback.print_tb(e[2])
 
     status = remote_pb2.Status(status=-1, exception=str(e[1]))
-    return status
+    return remote_pb2.StatusMsg(status=status)
 
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
@@ -425,10 +447,17 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 remote_report_size = response.remote_report_size
 
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Report(pem_key=pem_key, key_size=key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
+            return remote_pb2.Report(pem_key=pem_key, pem_key_size=pem_key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Report(status=status)
+
+    def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
+        pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
+
+        return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
+            nonce=nonce, nonce_size=nonce_size,
+            remote_report=remote_report, remote_report_size=remote_report_size)
 
     # FIXME implement the library call within class RemoteAPI
     # FIXME add support for this function for cluster
@@ -502,6 +531,52 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             status = handle_exception()
             return status
 
+    def rpc_get_enclave_symm_key(self, request, context):
+        """
+        Get enclave symmetric key 
+        """
+        try:
+            username = request.username
+
+            if not globals()["is_orchestrator"]:
+                # Get symmetric key from enclave
+                enc_key, enc_key_size = remote_api.get_enclave_symm_key(request)
+                enc_key_proto = pointer_to_proto(enc_key, enc_key_size + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
+
+                status = remote_pb2.Status(status=0)
+                return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
+            else:
+                node_ips = globals()["nodes"]
+                channels = []
+                for channel_addr in node_ips:
+                    channels.append(grpc.insecure_channel(channel_addr))
+
+                futures = []
+                for channel in channels:
+                    stub = remote_pb2_grpc.RemoteStub(channel)
+                    # The transmitted data is encrypted with the public key of rank 0 enclave
+                    response_future = stub.rpc_get_enclave_symm_key.future(remote_pb2.Name(username=username))
+                    futures.append(response_future)
+
+                results = []
+                for future in futures:
+                    results.append(future.result())
+
+                return_codes = [result.status.status for result in results]
+                if sum(return_codes) == 0:
+                    # Only take returned result from the master enclave
+                    result = results[0]
+                    enc_key = result.key
+                    enc_key_size = result.size
+                    status = result.status
+                    return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
+                else:
+                    error_status = remote_pb2.Status(status=-1, exception="ERROR: an error was thrown in the cluster getting the enclave symmetric key")
+                    return remote_pb2.EnclaveKey(status=error_status)
+        except:
+            status = handle_exception()
+            return remote_pb2.EnclaveKey(status=status)
+
     def rpc_XGDMatrixCreateFromEncryptedFile(self, request, context):
         """
         Create DMatrix from encrypted file
@@ -510,7 +585,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 dmatrix_handle, status = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
             else:
-                dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Name(name=dmatrix_handle, status=status)
         except:
@@ -525,7 +601,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(remote_api.XGBoosterSetParam, request)
             else:
-                remote_api.XGBoosterSetParam(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                remote_api.XGBoosterSetParam(request, signers, signatures, sig_lengths)
             status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
         except:
@@ -540,7 +617,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 booster_handle, status = self._synchronize(remote_api.XGBoosterCreate, request)
             else:
-                booster_handle = remote_api.XGBoosterCreate(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                booster_handle = remote_api.XGBoosterCreate(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Name(name=booster_handle, status=status)
         except:
@@ -555,7 +633,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             else:
-                remote_api.XGBoosterUpdateOneIter(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                remote_api.XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
         except:
@@ -574,7 +653,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 enc_preds_proto_list, num_preds_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
             else:
                 # If we're not the orchestrator, we're just running this on our partition of the data
-                enc_preds, num_preds = remote_api.XGBoosterPredict(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                enc_preds, num_preds = remote_api.XGBoosterPredict(request, signers, signatures, sig_lengths)
                 enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
                 enc_preds_proto_list = [enc_preds_proto]
                 num_preds_list = [num_preds]
@@ -593,7 +673,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(remote_api.XGBoosterSaveModel, request)
             else:
-                remote_api.XGBoosterSaveModel(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                remote_api.XGBoosterSaveModel(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
 
@@ -609,7 +690,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(remote_api.XGBoosterLoadModel, request)
             else:
-                remote_api.XGBoosterLoadModel(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                remote_api.XGBoosterLoadModel(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
 
@@ -625,7 +707,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 length, sarr, status = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
             else:
-                length, sarr = remote_api.XGBoosterDumpModelEx(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                length, sarr = remote_api.XGBoosterDumpModelEx(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
@@ -641,7 +724,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 length, sarr, status = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
             else:
-                length, sarr = remote_api.XGBoosterDumpModelExWithFeatures(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                length, sarr = remote_api.XGBoosterDumpModelExWithFeatures(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Dump(sarr=sarr, length=length, status=status)
         except:
@@ -656,7 +740,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 length, sarr, status = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
             else:
-                length, sarr = remote_api.XGBoosterGetModelRaw(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                length, sarr = remote_api.XGBoosterGetModelRaw(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Dump(sarr=sarr, length=length, status=status)
 
@@ -672,7 +757,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 ret, status = self._synchronize(remote_api.XGDMatrixNumCol, request)
             else:
-                ret = remote_api.XGDMatrixNumCol(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                ret = remote_api.XGDMatrixNumCol(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Integer(value=ret, status=status)
         except:
@@ -687,7 +773,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 ret, status = self._synchronize(remote_api.XGDMatrixNumRow, request)
             else:
-                ret = remote_api.XGDMatrixNumRow(request)
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
+                ret = remote_api.XGDMatrixNumRow(request, signers, signatures, sig_lengths)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Integer(value=ret, status=status)
         except:
@@ -702,6 +789,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(rabit_remote_api.RabitInit, request)
             else:
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 rabit_remote_api.RabitInit(request)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
@@ -718,12 +806,14 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 status = self._synchronize(rabit_remote_api.RabitFinalize, request)
             else:
+                signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 rabit_remote_api.RabitFinalize(request)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
             return status
+
 
 def serve(enclave, num_workers=10, all_users=[], nodes=[]):
     """

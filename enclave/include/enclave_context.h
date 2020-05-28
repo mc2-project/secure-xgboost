@@ -3,6 +3,15 @@
 
 #include "xgboost_t.h"
 #include <enclave/crypto.h>
+#include <enclave/attestation.h>
+
+// needed for certificate
+#include "mbedtls/platform.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+#include "mbedtls/pk_internal.h"
 
 // needed for certificate
 #include "mbedtls/platform.h"
@@ -20,7 +29,11 @@ class EnclaveContext {
     mbedtls_entropy_context m_entropy_context;
     mbedtls_pk_context m_pk_context;
     uint8_t m_public_key[CIPHER_PK_SIZE];
-    uint8_t m_private_key[CIPHER_PK_SIZE];
+    
+    // 12 bytes for the session nonce and four bytes for a counter within the session.
+    uint8_t m_nonce[CIPHER_IV_SIZE];
+    uint32_t m_nonce_ctr;
+    uint8_t m_symm_key[CIPHER_KEY_SIZE];
 
      /* We maintain these maps to avoid having to pass out pointers to application code outside
       * the enclave; instead, the application is given a string nickname that the enclave resolves
@@ -40,8 +53,14 @@ class EnclaveContext {
     // map username to client_key
     std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
 
+    // map user name to public key
+    std::unordered_map<std::string, std::vector<uint8_t>> client_public_keys;
+
     EnclaveContext() {
       generate_public_key();
+      generate_nonce();
+      m_nonce_ctr = 0;
+      generate_symm_key();
       client_key_is_set = false;
       booster_ctr = 0;
       dmatrix_ctr = 0;
@@ -63,8 +82,24 @@ class EnclaveContext {
       return m_public_key;
     }
 
-    uint8_t* get_private_key() {
-      return m_private_key;
+    uint8_t* get_symm_key() {
+      return m_symm_key;
+    }
+
+    uint8_t* get_nonce() {
+      return m_nonce;
+    }
+
+    // Checks equality of received and expected nonce and nonce counter and increments nonce counter.
+    bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
+      bool retval = recv_nonce_ctr == m_nonce_ctr;
+      if (!retval) return retval;
+      for (int i = 0; i < CIPHER_IV_SIZE; i++) {
+        retval = retval && (recv_nonce[i] == m_nonce[i]); 
+      }
+      if (retval)
+        m_nonce_ctr += 1;
+      return retval;
     }
 
     // Note: Returned handle needs to be freed
@@ -184,89 +219,79 @@ class EnclaveContext {
       }
     }
 
-    // FIXME verify client identity using root CA
-    //bool verifySignature(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-    //  mbedtls_pk_context _pk_context;
-    //
-    //  unsigned char hash[32];
-    //  int ret = 1;
-    //
-    //  mbedtls_pk_init(&_pk_context);
-    //
-    //  const char* key =  "-----BEGIN PUBLIC KEY-----\n"
-    //    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArzxQ9wZ8pwKYEs+XZ1aJ\n"
-    //    "POur2Fm2AZhnev9hblLVAKUUcRijzieYLDrVoremwSNNoMtN1BED24yLBWJgaAli\n"
-    //    "0IQsfalXkQQUHOTdfqc6fH0IqdENbKCVMiVfKZ+hLZmuNPVH373xtMT2k95yqExR\n"
-    //    "wh6/4QRt/zHwUN+1FeumrM3TGB81ZjD5LDAr9AxhQVo17HuU94Nm5FDsCi/mumJ3\n"
-    //    "9vgi3TWKPAPs0egUbdpzakDBO0gmS9R4FlOQf2ygv8t3Q9Lmv1gr4iXrw1+fyZbf\n"
-    //    "vInXl8iUINK7imBUGffub1ALgsOuBVd5XomYYAsGdvmNovZu68Iqy2btwf9Bsgbi\n"
-    //    "uwIDAQAB\n"
-    //    "-----END PUBLIC KEY-----";
-    //
-    //  if((ret = mbedtls_pk_parse_public_key(&_pk_context, (const unsigned char*) key, strlen(key) + 1)) != 0) {
-    //    LOG(INFO) << "verification failed - Could not read key";
-    //    LOG(INFO) << "verification failed - mbedtls_pk_parse_public_keyfile returned" << ret;
-    //    return false;
-    //  }
-    //
-    //  if(!mbedtls_pk_can_do(&_pk_context, MBEDTLS_PK_RSA)) {
-    //    LOG(INFO) << "verification failed - Key is not an RSA key";
-    //    return false;
-    //  }
-    //
-    //  mbedtls_rsa_set_padding(mbedtls_pk_rsa(_pk_context), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
-    //
-    //  if((ret = compute_sha256(data, data_len, hash)) != 0) {
-    //    LOG(INFO) << "verification failed -- Could not hash";
-    //    return false;
-    //  }
-    //
-    //  if((ret = mbedtls_pk_verify(&_pk_context, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len)) != 0) {
-    //    LOG(INFO) << "verification failed -- mbedtls_pk_verify returned " << ret;
-    //    return false;
-    //  }
-    //
-    //  return true;
-    //}
+    char* get_client_cert(char *username) {
+      LOG(DEBUG) << "Getting username " << username;
+      std::string str(username);
+      auto iter = client_public_keys.find(str);
+      if (iter == client_public_keys.end()) {
+        LOG(FATAL) << "No certificate for user: " << username;
+      } else {
+        return (char*) iter->second.data();
+      }
+    }
 
-    //bool decrypt_and_save_client_key(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
-    //  if (rabit::GetRank() == 0) {
-    //    if (!verifySignature(data, data_len, signature, sig_len)) {
-    //      LOG(INFO) << "Signature verification failed";
-    //      return false;
-    //    }
-    //
-    //    int res = 0;
-    //    mbedtls_rsa_context* rsa_context;
-    //
-    //    mbedtls_pk_rsa(m_pk_context)->len = data_len;
-    //    rsa_context = mbedtls_pk_rsa(m_pk_context);
-    //    rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
-    //    rsa_context->hash_id = MBEDTLS_MD_SHA256;
-    //
-    //    size_t output_size;
-    //    uint8_t output[CIPHER_KEY_SIZE];
-    //
-    //    res = mbedtls_rsa_pkcs1_decrypt(
-    //        rsa_context,
-    //        mbedtls_ctr_drbg_random,
-    //        &m_ctr_drbg_context,
-    //        MBEDTLS_RSA_PRIVATE,
-    //        &output_size,
-    //        data,
-    //        output,
-    //        CIPHER_KEY_SIZE);
-    //    if (res != 0) {
-    //      LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
-    //      return false;
-    //    }
-    //    std::vector<uint8_t> v(output, output + CIPHER_KEY_SIZE);
-    //    memcpy(client_key, output, CIPHER_KEY_SIZE);
-    //    client_key_is_set = true;
-    //  }
-    //  sync_client_key();
-    //  return true;
-    //}
+    bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
+          mbedtls_pk_context _pk_context;
+
+      unsigned char hash[SHA_DIGEST_SIZE];
+      int ret = 1;
+
+      mbedtls_pk_init(&_pk_context);
+      if (client_keys.count(username) <= 0){
+        LOG(FATAL) << "user " << username << " does not exist";
+      }
+
+      char* cert = get_client_cert(username);
+      mbedtls_x509_crt user_cert;
+      mbedtls_x509_crt_init(&user_cert);
+      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert, strlen(cert) + 1)) != 0) {
+         LOG(FATAL) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+      }
+
+      _pk_context = user_cert.pk;
+
+      if (verifySignature(_pk_context, data, data_len, signature, sig_len) != 0) {
+        LOG(FATAL) << "Signature verification failed";
+      }
+      return true;
+    }
+
+    bool verifyClientSignatures(uint8_t* data, size_t data_len, char* signers[], uint8_t* signatures[], size_t sig_lengths[]){
+      mbedtls_pk_context _pk_context;
+
+      unsigned char hash[SHA_DIGEST_SIZE];
+      int ret = 1;
+
+      // FIXME: Currently we expect sigs to be in same order as users
+      for (auto _username: CLIENT_NAMES) {
+        char* username = (char*)_username.c_str();
+
+        mbedtls_pk_init(&_pk_context);
+        char* cert = get_client_cert(username);
+        mbedtls_x509_crt user_cert;
+        mbedtls_x509_crt_init(&user_cert);
+        if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert, strlen(cert) + 1)) != 0) {
+          LOG(FATAL) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
+        }
+        int i = -1;
+        for (int j = 0; j < NUM_CLIENTS; j++) {
+          if (strcmp(signers[j], username) == 0) {
+            i = j;
+            break;
+          }
+        }
+        if (i < 0) {
+          LOG(FATAL) << "Client not found in signature list: " << username;
+        }
+        uint8_t* signature = signatures[i];
+        size_t sig_len = sig_lengths[i];
+        _pk_context = user_cert.pk;
+        if (verifySignature(_pk_context, data, data_len, signature, sig_len) != 0) {
+          LOG(FATAL) << "Signature verification failed";
+        }
+      }
+      return true;
+    }
 
     bool verifySignatureWithCertificate(char* cert,
                 int cert_len,
@@ -275,48 +300,28 @@ class EnclaveContext {
                 uint8_t* signature,
                 size_t sig_len) {
       mbedtls_pk_context _pk_context;
+      LOG(DEBUG) << "Verifying signature with certificate";
 
       unsigned char hash[32];
       int ret = 1;
 
       mbedtls_pk_init(&_pk_context);
 
-      const char* CA_cert = "-----BEGIN CERTIFICATE-----\n"
-          "MIIDPDCCAiSgAwIBAgIBATANBgkqhkiG9w0BAQsFADA3MRYwFAYDVQQDDA1zZWN1\n"
-          "cmV4Z2Jvb3N0MRAwDgYDVQQKDAdyaXNlbGFiMQswCQYDVQQGEwJOTDAeFw0xMzAx\n"
-          "MDEwMDAwMDBaFw0yNTEyMzEyMzU5NTlaMDcxFjAUBgNVBAMMDXNlY3VyZXhnYm9v\n"
-          "c3QxEDAOBgNVBAoMB3Jpc2VsYWIxCzAJBgNVBAYTAk5MMIIBIjANBgkqhkiG9w0B\n"
-          "AQEFAAOCAQ8AMIIBCgKCAQEArzxQ9wZ8pwKYEs+XZ1aJPOur2Fm2AZhnev9hblLV\n"
-          "AKUUcRijzieYLDrVoremwSNNoMtN1BED24yLBWJgaAli0IQsfalXkQQUHOTdfqc6\n"
-          "fH0IqdENbKCVMiVfKZ+hLZmuNPVH373xtMT2k95yqExRwh6/4QRt/zHwUN+1Feum\n"
-          "rM3TGB81ZjD5LDAr9AxhQVo17HuU94Nm5FDsCi/mumJ39vgi3TWKPAPs0egUbdpz\n"
-          "akDBO0gmS9R4FlOQf2ygv8t3Q9Lmv1gr4iXrw1+fyZbfvInXl8iUINK7imBUGffu\n"
-          "b1ALgsOuBVd5XomYYAsGdvmNovZu68Iqy2btwf9BsgbiuwIDAQABo1MwUTAPBgNV\n"
-          "HRMECDAGAQH/AgEAMB0GA1UdDgQWBBQsyoN7J2skAO4oDOLrFCA1QarjjDAfBgNV\n"
-          "HSMEGDAWgBQsyoN7J2skAO4oDOLrFCA1QarjjDANBgkqhkiG9w0BAQsFAAOCAQEA\n"
-          "KkN+iohzbT97qz2DwlpQywVkz5t6Z0mZsTVexNObPsylEi4hz3mj2NHsgr8BNEdl\n"
-          "nLpOeDaFKs44giavKUPOfvREU2RiDm0lwLkWNVY232s/3YxXlUSGGONQtfJbOf9D\n"
-          "YQVCUi1twlLyFq5ZaBeBrKras7MCimKhZxUvPf6c99myBGsSkjH15UzX90bQev/q\n"
-          "tTStoaXW4CfAhz385U8PffADBpdOHqW8wpOh54juyPGK6UsQUKtVuxDeb3kzS6PM\n"
-          "wGfqCp4LSbJ0UQr2FTnI29qlS9LQqh1fdNhcrnMZ5iw6klPO+ZLAMyjpBXzVnDU7\n"
-          "ko6CD0TAPKr7JWDfUPSP/g==\n"
-          "-----END CERTIFICATE-----";
-
       mbedtls_x509_crt _cacert;
       mbedtls_x509_crt_init(&_cacert);
-      if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) CA_cert,
-              strlen(CA_cert)+1)) != 0) {
-        LOG(FATAL) << "verification failed - Could not read root certificate\n" 
-          << "mbedtls_x509_crt_parse returned " << ret;
+      if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) CA_CERT,
+                   strlen(CA_CERT)+1)) != 0) {
+         LOG(FATAL) << "verification failed - Could not read root certificate\n" 
+           << "mbedtls_x509_crt_parse returned " << ret;
       }
 
       mbedtls_x509_crt user_cert;
       mbedtls_x509_crt_init(&user_cert);
       if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
-              cert_len)) != 0) {
-        LOG(FATAL) << "verification failed - Could not read user certificate\n"
-          << "mbedtls_x509_crt_parse returned " << ret;
-        return false;
+                   cert_len)) != 0) {
+         LOG(FATAL) << "verification failed - Could not read user certificate\n"
+           << "mbedtls_x509_crt_parse returned " << ret;
+         return false;
       }
 
       uint32_t flags;
@@ -327,11 +332,13 @@ class EnclaveContext {
 
       mbedtls_pk_context user_public_key_context = user_cert.pk;
 
-      if(verifySignature(user_public_key_context, data, data_len, signature, sig_len) != 0)
-        return false;
+      if(verifySignature(user_public_key_context, data, data_len, signature, sig_len) != 0) {
+        LOG(FATAL) << "Signature verification failed";
+      }
       return true;
     }
 
+    // TODO(rishabh): Fix sequence of the various checks in this function
     bool decrypt_and_save_client_key_with_certificate(char * cert,
             int cert_len,
             uint8_t* data,
@@ -359,6 +366,7 @@ class EnclaveContext {
           rsa_context->hash_id = MBEDTLS_MD_SHA256;
 
 
+          // Only the master node can decrypt the symmetric key
           res = mbedtls_rsa_pkcs1_decrypt(
                   rsa_context,
                   mbedtls_ctr_drbg_random,
@@ -390,7 +398,6 @@ class EnclaveContext {
 
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
-      // FIXME: we'll likely have to broadcast the certificates themselves
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted client key";
 
@@ -399,19 +406,44 @@ class EnclaveContext {
 
       rabit::Broadcast(nameptr, name_len, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted username";
+
+      // rabit::Broadcast(cert, cert_len, 0);
+      // LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted cert";
         
-      // storing user private key
+      // Store the client's symmetric key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);
       std::string user_nam(nameptr, nameptr + name_len);
+
+      // Verify client's identity
+      if (std::find(CLIENT_NAMES.begin(), CLIENT_NAMES.end(), user_nam) == CLIENT_NAMES.end()) {
+        LOG(FATAL) << "No such authorized client";
+      }
       client_keys[user_nam] = user_private_key;
 
-      LOG(DEBUG) << "verification succeeded - user added: " << user_nam;
+      // Store the client's public key
+      std::vector<uint8_t> user_public_key(cert, cert + cert_len);
+      client_public_keys.insert({user_nam, user_public_key});
+
+      LOG(DEBUG) << "verification succeded - user added: " << user_nam;
       return true;
     }
 
   private:
     /**
-     * Generate an ephermeral public key pair for the enclave
+     * Generate an ephemeral symmetric key for the enclave
+     */
+    bool generate_symm_key() {
+      // Generate symmetric key if rank 0  
+      if (rabit::GetRank() == 0) {
+          generate_random(m_symm_key, CIPHER_KEY_SIZE);
+      }
+
+      // Broadcast symmetric key to all other enclaves
+      rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
+    }
+
+    /**
+     * Generate an ephemeral public key pair for the enclave
      */
     bool generate_public_key() {
       mbedtls_ctr_drbg_init(&m_ctr_drbg_context);
@@ -450,6 +482,13 @@ class EnclaveContext {
         LOG(FATAL) << "mbedtls_pk_write_pubkey_pem failed with " << res;
       }
     }
+
+    /**
+     * Generate a session nonce for the enclave to be used by clients. 
+     */
+    bool generate_nonce() {
+      generate_random(m_nonce, CIPHER_IV_SIZE);
+    } 
 };
 
 #endif
