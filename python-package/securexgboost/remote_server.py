@@ -400,7 +400,8 @@ def handle_exception():
     traceback.print_tb(e[2])
 
     status = remote_pb2.Status(status=-1, exception=str(e[1]))
-    return remote_pb2.StatusMsg(status=status)
+    return status
+    #  return remote_pb2.StatusMsg(status=status)
 
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
