@@ -2176,7 +2176,7 @@ class Booster(object):
             # _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
 
 
-    def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
+    def dump_model(self, fout, fmap='', with_stats=False, dump_format="text"):
         """
         Dump model into a text or JSON file.
 
