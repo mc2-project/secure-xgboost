@@ -426,33 +426,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         self.condition.release()
         return ret
 
-    def rpc_get_remote_report_with_pubkey(self, request, context):
-        """
-        Calls get_remote_report_with_pubkey()
-        """
-        try:
-            # Get report from enclave
-            if not globals()["is_orchestrator"]:
-                # Get report from enclave
-                pem_key, key_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey(request)
-            else:
-                node_ips = globals()["nodes"]
-                master_enclave_ip = node_ips[0]
-                with grpc.insecure_channel(master_enclave_ip) as channel:
-                    stub = remote_pb2_grpc.RemoteStub(channel)
-                    response = stub.rpc_get_remote_report_with_pubkey(remote_pb2.Status(status=0))
-
-                pem_key = response.pem_key
-                key_size = response.key_size
-                remote_report = response.remote_report
-                remote_report_size = response.remote_report_size
-
-            status = remote_pb2.Status(status=0)
-            return remote_pb2.Report(pem_key=pem_key, pem_key_size=pem_key_size, remote_report=remote_report, remote_report_size=remote_report_size, status=status)
-        except:
-            status = handle_exception()
-            return remote_pb2.Report(status=status)
-
     def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
         try:
             if not globals()["is_orchestrator"]:
@@ -463,10 +436,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             else:
                 node_ips = globals()["nodes"]
                 master_enclave_ip = node_ips[0]
+                print("master enclave: ", master_enclave_ip)
                 with grpc.insecure_channel(master_enclave_ip) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
+                    print("Making call to master enclave")
                     response = stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=0))
 
+                print("Orchestrator got response from master enclave")
                 return response
         except:
             status = handle_exception()

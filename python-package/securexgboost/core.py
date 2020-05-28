@@ -1214,7 +1214,9 @@ class Enclave(object):
         .. warning:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
         """
         channel_addr = globals()["remote_addr"]
+        print("attesting...")
         if channel_addr:
+            print("making RPC call to ", channel_addr)
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=1)))
@@ -1225,6 +1227,7 @@ class Enclave(object):
             remote_report = response.remote_report
             remote_report_size = response.remote_report_size
 
+            print("Got response")
             self._set_report_attrs(pem_key, key_size, nonce_, nonce_size_, remote_report, remote_report_size)
             # return pem_key, key_size, remote_report, remote_report_size
         else:
