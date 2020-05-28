@@ -95,14 +95,14 @@ class Command(object):
                 if self._func == rabit_remote_api.RabitInit:
                     response_future = stub.rpc_RabitInit.future(remote_pb2.RabitParams(
                         seq_num=seq_num,
-                        signers=signers
+                        signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == rabit_remote_api.RabitFinalize:
                     response_future = stub.rpc_RabitFinalize.future(remote_pb2.RabitParams(
                         seq_num=seq_num,
-                        signers=signers
+                        signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
@@ -145,7 +145,7 @@ class Command(object):
                 elif self._func == remote_api.XGBoosterSaveModel:
                     save_model_params = self._params.save_model_params
                     response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParamsRequest(
-                        save_model_params = save_model_params
+                        save_model_params = save_model_params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
@@ -154,7 +154,7 @@ class Command(object):
                 elif self._func == remote_api.XGBoosterLoadModel:
                     load_model_params = self._params.load_model_params
                     response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParamsRequest(
-                        load_model_param=load_model_params
+                        load_model_param=load_model_params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
@@ -172,7 +172,7 @@ class Command(object):
                 elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
                     dump_model_with_features_params = self._params.dump_model_with_features_params
                     response_future = stub.rpc_XGBoosterDumpModelExWithFeatures.future(remote_pb2.DumpModelWithFeaturesParamsRequest(
-                        dump_model_with_features_params=dump_model_with_features_params.
+                        dump_model_with_features_params=dump_model_with_features_params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
@@ -181,7 +181,7 @@ class Command(object):
                 elif self._func == remote_api.XGBoosterGetModelRaw:
                     model_raw_params = self._params.model_raw_params
                     response_future = stub.rpc_XGBoosterGetModelRaw.future(remote_pb2.ModelRawParamsRequest(
-                        model_raw_params=model_raw_params.
+                        model_raw_params=model_raw_params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
