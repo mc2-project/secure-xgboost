@@ -538,32 +538,14 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
             else:
                 node_ips = globals()["nodes"]
-                channels = []
-                for channel_addr in node_ips:
-                    channels.append(grpc.insecure_channel(channel_addr))
-
-                futures = []
-                for channel in channels:
+                master_enclave_ip = node_ips[0]
+                print("master enclave: ", master_enclave_ip)
+                with grpc.insecure_channel(master_enclave_ip) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
-                    # The transmitted data is encrypted with the public key of rank 0 enclave
-                    response_future = stub.rpc_get_enclave_symm_key.future(remote_pb2.Name(username=username))
-                    futures.append(response_future)
+                    response = stub.rpc_get_enclave_symm_key(remote_pb2.Name(username=username))
 
-                results = []
-                for future in futures:
-                    results.append(future.result())
+                return response
 
-                return_codes = [result.status.status for result in results]
-                if sum(return_codes) == 0:
-                    # Only take returned result from the master enclave
-                    result = results[0]
-                    enc_key_proto = result.key
-                    enc_key_size = result.size
-                    status = result.status
-                    return remote_pb2.EnclaveKey(key=enc_key_proto, size=enc_key_size, status=status)
-                else:
-                    error_status = remote_pb2.Status(status=-1, exception="ERROR: an error was thrown in the cluster getting the enclave symmetric key")
-                    return remote_pb2.EnclaveKey(status=error_status)
         except:
             status = handle_exception()
             return remote_pb2.EnclaveKey(status=status)
