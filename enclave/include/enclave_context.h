@@ -85,6 +85,7 @@ class EnclaveContext {
     }
 
     uint8_t* get_symm_key() {
+      LOG(DEBUG) << "Getting enclave symm key";
       return m_symm_key;
     }
 
@@ -212,10 +213,11 @@ class EnclaveContext {
     }
 
     void get_client_key(uint8_t* key, char *username) {
+      LOG(DEBUG) << "Getting client key for user: " << username;
       std::string str(username);
       auto iter = client_keys.find(str);
       if (iter == client_keys.end()) {
-        LOG(FATAL) << "No client key for user: " << username;
+        LOG(INFO) << "No client key for user: " << username;
       } else {
         memcpy(key, (uint8_t*) iter->second.data(), CIPHER_KEY_SIZE);
       }
@@ -425,7 +427,7 @@ class EnclaveContext {
 
       // Verify client's identity
       if (std::find(CLIENT_NAMES.begin(), CLIENT_NAMES.end(), user_nam) == CLIENT_NAMES.end()) {
-        LOG(FATAL) << "No such authorized client";
+        LOG(INFO) << "No such authorized client";
       }
       client_keys[user_nam] = user_private_key;
 
