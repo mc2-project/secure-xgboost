@@ -283,11 +283,13 @@ int get_remote_report_with_pubkey_and_nonce(
     size_t* nonce_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
+
   uint8_t* report = NULL;
   size_t report_size = 0;
   uint8_t* key_buf = NULL;
   int ret = 1;
   LOG(DEBUG) << "In get remote report wit pubkey and nonce";
+  LOG(DEBUG) << "Getting public key";
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
   LOG(DEBUG) << "Getting nonce";
   uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();

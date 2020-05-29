@@ -79,6 +79,8 @@ class EnclaveContext {
     }
 
     uint8_t* get_public_key() {
+      LOG(DEBUG) << "Called get public key";
+      LOG(DEBUG) << "getting public key " << m_public_key;
       return m_public_key;
     }
 
@@ -440,11 +442,12 @@ class EnclaveContext {
      * Generate an ephemeral symmetric key for the enclave
      */
     bool generate_symm_key() {
+      LOG(DEBUG) << "Generating symmetric key";
       // Generate symmetric key if rank 0  
       if (rabit::GetRank() == 0) {
           generate_random(m_symm_key, CIPHER_KEY_SIZE);
+          LOG(DEBUG) << "Rank 0 generated symmetric key";
       }
-
       // Broadcast symmetric key to all other enclaves
       rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
     }
