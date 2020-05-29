@@ -1511,42 +1511,17 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
   return 0;
 }
 
-XGB_DLL int sign_data(char *keyfile, uint8_t* data, size_t data_size, uint8_t* signature, size_t* sig_len) {
+XGB_DLL int sign_data_with_keyfile(char *keyfile, uint8_t* data, size_t data_size, uint8_t* signature, size_t* sig_len) {
   mbedtls_pk_context pk;
-  mbedtls_entropy_context m_entropy_context;
-  mbedtls_ctr_drbg_context m_ctr_drbg_context;
-
-  mbedtls_entropy_init( &m_entropy_context );
   mbedtls_pk_init( &pk );
-  mbedtls_ctr_drbg_init( &m_ctr_drbg_context );
 
-  unsigned char hash[32];
-  int ret = 1;
-
-  ret = mbedtls_ctr_drbg_seed(&m_ctr_drbg_context, mbedtls_entropy_func, &m_entropy_context, NULL, 0);
-
+  int ret;
   if((ret = mbedtls_pk_parse_keyfile( &pk, keyfile, "")) != 0) {
-    printf( " failed\n  ! Could not read key from '%s'\n", keyfile);
-    printf( "  ! mbedtls_pk_parse_public_keyfile returned %d\n\n", ret );
-    return ret;
-  }
-  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
-    printf( " failed\n  ! Key is not an RSA key\n" );
-    return ret;
+    LOG(FATAL) <<"signing failed -- mbedtls_pk_parse_public_keyfile returned" << ret;
   }
 
-  mbedtls_rsa_set_padding(mbedtls_pk_rsa(pk), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
-
-  if((ret = compute_sha256(data, data_size, hash)) != 0) {
-    printf( " failed\n  ! Could not hash\n\n");
-    return ret;
-  }
-
-  if((ret = mbedtls_pk_sign(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len, mbedtls_ctr_drbg_random, &m_ctr_drbg_context)) != 0) {
-    printf( " failed\n  ! mbedtls_pk_sign returned %d\n\n", ret );
-    return ret;
-  }
-  return 0;
+  ret = sign_data(pk, data, data_size, signature, sig_len);
+  return ret;
 }
 
 XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_preds, bst_float** preds) {

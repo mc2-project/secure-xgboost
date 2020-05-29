@@ -836,7 +836,7 @@ XGB_DLL int encrypt_data_with_pk(
     uint8_t* encrypted_data,
     size_t* encrypted_data_size);
 
-XGB_DLL int sign_data(
+XGB_DLL int sign_data_with_keyfile(
     char* keyfile,
     uint8_t* encrypted_data,
     size_t encrypted_data_size,

@@ -3056,7 +3056,7 @@ def sign_data(key, data, data_size):
     sig_len = ctypes.c_size_t(1024)
 
     # Sign data with key keyfile
-    _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
+    _check_call(_LIB.sign_data_with_keyfile(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
 
     # Cast the signature and sig_len back to a gRPC serializable format
     sig_len_as_int = sig_len.value

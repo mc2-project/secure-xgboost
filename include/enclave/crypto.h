@@ -244,4 +244,32 @@ static int verifySignature(mbedtls_pk_context pk, uint8_t* data, size_t data_len
   }
   return ret;
 }
+
+static int sign_data(mbedtls_pk_context pk, uint8_t* data, size_t data_size, uint8_t* signature, size_t* sig_len) {
+  mbedtls_entropy_context m_entropy_context;
+  mbedtls_ctr_drbg_context m_ctr_drbg_context;
+
+  mbedtls_entropy_init( &m_entropy_context );
+  mbedtls_ctr_drbg_init( &m_ctr_drbg_context );
+
+  unsigned char hash[32];
+  int ret = 1;
+
+  ret = mbedtls_ctr_drbg_seed(&m_ctr_drbg_context, mbedtls_entropy_func, &m_entropy_context, NULL, 0);
+
+  if(!mbedtls_pk_can_do(&pk, MBEDTLS_PK_RSA)) {
+    LOG(FATAL) <<"signing failed -- Key is not an RSA key";
+  }
+
+  mbedtls_rsa_set_padding(mbedtls_pk_rsa(pk), MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256 );
+
+  if((ret = compute_sha256(data, data_size, hash)) != 0) {
+    LOG(FATAL) <<"signing failed -- could not hash";
+  }
+
+  if((ret = mbedtls_pk_sign(&pk, MBEDTLS_MD_SHA256, hash, 0, signature, sig_len, mbedtls_ctr_drbg_random, &m_ctr_drbg_context)) != 0) {
+    LOG(FATAL) <<"signing failed -- mbedtls_pk_sign returned " << ret;
+  }
+  return 0;
+}
 #endif // CRYPTO_H_
