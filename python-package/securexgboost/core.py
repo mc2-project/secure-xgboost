@@ -556,8 +556,9 @@ class DMatrix(object):
                                                                                                                                 username=globals()["current_user"],
                                                                                                                                 signature=sig,
                                                                                                                                 sig_len=sig_len)))
-                        globals()["nonce_ctr"] += 1
                         handle = c_str(response.name)
+                        out_sig = proto_to_pointer(response.signature)
+                        out_sig_length = c_bst_ulong(response.sig_len)
                 else:
                     c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
                     signers = from_pystr_to_cstr([globals()["current_user"]])
@@ -2780,6 +2781,8 @@ class RemoteAPI:
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
         dmat_handle = ctypes.c_char_p()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
             from_pystr_to_cstr(filenames),
             from_pystr_to_cstr(usernames),
@@ -2789,10 +2792,12 @@ class RemoteAPI:
             nonce_size,
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(dmat_handle),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return dmat_handle.value.decode('utf-8')
+        return dmat_handle.value.decode('utf-8'), out_sig, out_sig_len.value
 
 
     def XGBoosterSaveModel(request, signers, signatures, sig_lengths):

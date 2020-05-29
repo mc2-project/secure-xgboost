@@ -340,6 +340,8 @@ message Name {
     string name = 1;
     string username = 2;
     // Status of call (for returned Name)
+    numproto.protobuf.NDArray signature = 3;
+    uint32 sig_len = 4;
     Status status = 5;
 }
 

@@ -198,9 +198,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Create DMatrix from encrypted file
         """
         try:
-            dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+            dmatrix_handle, sig, sig_len = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Name(name=dmatrix_handle, status=status)
+            return remote_pb2.Name(name=dmatrix_handle, signature=sig_proto, sig_len=sig_len, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Name(name=None, status=status)
