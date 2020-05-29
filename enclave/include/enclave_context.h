@@ -230,32 +230,6 @@ class EnclaveContext {
       }
     }
 
-    bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
-          mbedtls_pk_context _pk_context;
-
-      unsigned char hash[SHA_DIGEST_SIZE];
-      int ret = 1;
-
-      mbedtls_pk_init(&_pk_context);
-      if (client_keys.count(username) <= 0){
-        LOG(FATAL) << "user " << username << " does not exist";
-      }
-
-      char* cert = get_client_cert(username);
-      mbedtls_x509_crt user_cert;
-      mbedtls_x509_crt_init(&user_cert);
-      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert, strlen(cert) + 1)) != 0) {
-         LOG(FATAL) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
-      }
-
-      _pk_context = user_cert.pk;
-
-      if (verifySignature(_pk_context, data, data_len, signature, sig_len) != 0) {
-        LOG(FATAL) << "Signature verification failed";
-      }
-      return true;
-    }
-
     bool verifyClientSignatures(uint8_t* data, size_t data_len, char* signers[], uint8_t* signatures[], size_t sig_lengths[]){
       mbedtls_pk_context _pk_context;
 
@@ -336,6 +310,12 @@ class EnclaveContext {
         LOG(FATAL) << "Signature verification failed";
       }
       return true;
+    }
+
+    bool sign_args(char* data,
+        uint8_t* signature,
+        size_t* sig_len) {
+      return sign_data(m_pk_context, (uint8_t*)data, strlen(data), signature, sig_len);
     }
 
     // TODO(rishabh): Fix sequence of the various checks in this function

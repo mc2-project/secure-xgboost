@@ -457,6 +457,8 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      size_t nonce_size,
                                      uint32_t nonce_ctr,
                                      DMatrixHandle *out,
+                                     uint8_t** out_sig,
+                                     size_t *out_sig_length,
                                      char **signers,
                                      uint8_t** signatures,
                                      size_t* sig_lengths) {
@@ -493,7 +495,25 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     }
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames_vector, silent != 0, load_row_split, true, keys));
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, usernames, num_files);
+
+    // sign the output
+    std::ostringstream sss;
+    sss << "handle " << out_str;
+    add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+    buff = strdup(sss.str().c_str());
+    uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+    size_t _out_sig_length = SIG_ALLOC_SIZE;
+    EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+    free(buff);
+
+    // copy outputs to host
     *out = oe_host_strndup(out_str, strlen(out_str));
+    uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+    memcpy(host_buf, _out_sig, _out_sig_length);
+    *out_sig_length = _out_sig_length;
+    *out_sig = host_buf;
+
+    free(_out_sig);
     free(out_str);
     for (int i = 0; i < num_files; ++i) {
         free(keys[i]);

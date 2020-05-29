@@ -539,6 +539,9 @@ class DMatrix(object):
 
                 sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
+                out_sig = ctypes.POINTER(ctypes.c_uint8)()
+                out_sig_length = c_bst_ulong()
+
                 channel_addr = globals()["remote_addr"]
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
@@ -572,10 +575,17 @@ class DMatrix(object):
                         nonce_size,
                         ctypes.c_uint32(nonce_ctr),
                         ctypes.byref(handle),
+                        ctypes.byref(out_sig),
+                        ctypes.byref(out_sig_length),
                         signers,
                         c_signatures,
                         c_lengths))
-                    globals()["nonce_ctr"] += 1
+
+                args = "handle {}".format(handle.value.decode('utf-8')) 
+                args = add_nonce_to_args(args)
+                verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+                globals()["nonce_ctr"] += 1
+
             else:
                 raise NotImplementedError("Loading from unencrypted files not supported.")
                 # FIXME implement RPC for this
@@ -1226,6 +1236,9 @@ class Enclave(object):
                 ctypes.byref(globals()["nonce"]), ctypes.byref(globals()["nonce_size"]),
                 ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
             # return self._get_report_attrs()
+
+        globals()["enclave_pk"] = self.pem_key
+        globals()["enclave_pk_size"] = self.pem_key_size
 
         if (verify):
             self._verify_report()
@@ -3063,3 +3076,17 @@ def sign_data(key, data, data_size):
     signature = pointer_to_proto(signature, sig_len_as_int, nptype=np.uint8)
 
     return signature, sig_len_as_int
+
+def verify_enclave_signature(data, data_size, sig, sig_len):
+    # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
+    # data = proto_to_pointer(sig)
+    # data_size = ctypes.c_size_t(sig_size)
+    if isinstance(data, str):
+        data = c_str(data)
+    data_size = ctypes.c_size_t(data_size)
+
+    pem_key = globals()["enclave_pk"]
+    pem_key_len = globals()["enclave_pk_size"]
+    # Verify signature
+    _check_call(_LIB.verify_signature(pem_key, pem_key_len, data, data_size, sig, sig_len))
+

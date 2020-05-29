@@ -297,6 +297,8 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      size_t nonce_size,
                                      uint32_t nonce_ctr,
                                      DMatrixHandle *out,
+                                     uint8_t** out_sig,
+                                     size_t *out_sig_length,
                                      char **signers,
                                      uint8_t* signatures[],
                                      size_t* sig_lengths) {
@@ -308,7 +310,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     get_str_lengths(usernames, num_files, username_lengths);
     get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
-    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, nonce, nonce_size, nonce_ctr, out, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, nonce, nonce_size, nonce_ctr, out, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
 }
 
 
@@ -1452,6 +1454,25 @@ XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* d
 XGB_DLL int get_enclave_symm_key(char *username, uint8_t** out, size_t* out_size) {
   safe_ecall(enclave_get_enclave_symm_key(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, username, out, out_size));
 }
+
+XGB_DLL int verify_signature(uint8_t* pem_key, size_t key_size, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
+  int res = -1;
+  mbedtls_pk_context m_pk_context;
+  mbedtls_pk_init(&m_pk_context);
+
+  // Read the given public key.
+  res = mbedtls_pk_parse_public_key(&m_pk_context, pem_key, key_size);
+  if (res != 0) {
+    std::cout << "mbedtls_pk_parse_public_key failed.\n";
+    mbedtls_pk_free(&m_pk_context);
+    return res;
+  }
+
+  res = verifySignature(m_pk_context, data, data_len, signature, sig_len);
+  mbedtls_pk_free( &m_pk_context );
+  return res;
+}
+
 
 XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_t key_size, uint8_t* encrypted_data, size_t* encrypted_data_size) {
   bool result = false;

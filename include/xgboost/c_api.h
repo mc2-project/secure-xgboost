@@ -160,6 +160,8 @@ XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
  * \param nonce_size size in bytes of nonce
  * \param nonce_ctr incrementing counter used to indicate sequence number of API call
  * \param out a loaded data matrix
+ * \param out_sig signature over the output and nonce
+ * \param out_sig_length length of output signature
  * \param signers list of usernames of signing clients
  * \param signatures list of client signatures
  * \param sig_lengths list of signature lengths
@@ -173,6 +175,8 @@ XGB_DLL int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                              size_t nonce_size,
                                              uint32_t nonce_ctr,
                                              DMatrixHandle *out,
+                                             uint8_t** out_sig,
+                                             size_t *out_sig_length,
                                              char **signers,
                                              uint8_t* signatures[],
                                              size_t* sig_lengths);
@@ -835,6 +839,14 @@ XGB_DLL int encrypt_data_with_pk(
     size_t key_size,
     uint8_t* encrypted_data,
     size_t* encrypted_data_size);
+
+XGB_DLL int verify_signature(
+    uint8_t* pem_key,
+    size_t key_size,
+    uint8_t* data,
+    size_t data_size,
+    uint8_t* signature,
+    size_t sig_len);
 
 XGB_DLL int sign_data_with_keyfile(
     char* keyfile,

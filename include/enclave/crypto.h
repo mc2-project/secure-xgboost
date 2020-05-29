@@ -24,6 +24,7 @@
 #define CIPHER_TAG_SIZE 16
 #define SHA_DIGEST_SIZE 32
 #define CIPHER_PK_SIZE 512
+#define SIG_ALLOC_SIZE 1024
 
 static int print_bytes(uint8_t* data, size_t len) {
   for (int i = 0; i < len; i++)

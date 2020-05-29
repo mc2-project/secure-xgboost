@@ -21,6 +21,8 @@ enclave {
                 size_t nonce_size,
                 uint32_t nonce_ctr, 
                 [out] char** handle,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
                 [in, count=num_sigs] char **signers,
                 [in, count=num_sigs] size_t* signer_lengths,
                 [in, count=num_sigs] uint8_t **signatures,
