@@ -79,13 +79,10 @@ class EnclaveContext {
     }
 
     uint8_t* get_public_key() {
-      LOG(DEBUG) << "Called get public key";
-      LOG(DEBUG) << "getting public key " << m_public_key;
       return m_public_key;
     }
 
     uint8_t* get_symm_key() {
-      LOG(DEBUG) << "Getting enclave symm key";
       return m_symm_key;
     }
 

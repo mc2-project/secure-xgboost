@@ -403,7 +403,6 @@ int get_enclave_symm_key(char* username, uint8_t** out, size_t* out_size) {
   unsigned char* iv = buf;
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
-
   encrypt_symm(
       key,
       (const unsigned char*)pt,

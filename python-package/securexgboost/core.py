@@ -1434,6 +1434,18 @@ class Enclave(object):
                 enc_key_serialized = response.key
                 enc_key_size = ctypes.c_size_t(response.size)
                 enc_key = proto_to_pointer(enc_key_serialized)
+
+            # Decrypt the key and save it
+            try:
+                sym_key = globals()["current_user_sym_key"]
+            except:
+                raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+            c_char_p_key = ctypes.c_char_p(sym_key)
+            enclave_symm_key = ctypes.POINTER(ctypes.c_uint8)()
+
+            _check_call(_LIB.decrypt_enclave_key(c_char_p_key, enc_key, enc_key_size, ctypes.byref(enclave_symm_key)))
+            globals()["enclave_sym_key"] = enclave_symm_key
+
         else:
             enc_key = ctypes.POINTER(ctypes.c_uint8)()
             enc_key_size = ctypes.c_size_t()
@@ -1443,16 +1455,6 @@ class Enclave(object):
                 ctypes.byref(enc_key_size)))
 
         
-        # Decrypt the key and save it
-        try:
-            sym_key = globals()["current_user_sym_key"]
-        except:
-            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
-        c_char_p_key = ctypes.c_char_p(sym_key)
-        enclave_symm_key = ctypes.POINTER(ctypes.c_uint8)()
-
-        _check_call(_LIB.decrypt_enclave_key(c_char_p_key, enc_key, enc_key_size, ctypes.byref(enclave_symm_key)))
-        globals()["enclave_sym_key"] = enclave_symm_key
 
 
 class Booster(object):
