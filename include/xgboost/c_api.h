@@ -38,7 +38,7 @@ if (result != OE_OK) {                                    \
 #define check_enclave_buffer(ptr, size) {                 \
 if (!oe_is_within_enclave((ptr), size)) {                 \
     fprintf(stderr,                                       \
-            "%s:%d: Buffer bounds check faileds\n",       \
+            "%s:%d: Buffer bounds check failed\n",        \
             __FILE__, __LINE__);                          \
     exit(1);                                              \
 }                                                         \
@@ -47,7 +47,7 @@ if (!oe_is_within_enclave((ptr), size)) {                 \
 #define check_host_buffer(ptr, size) {                    \
 if (!oe_is_outside_enclave((ptr), size)) {                \
     fprintf(stderr,                                       \
-            "%s:%d: Buffer bounds check faileds\n",       \
+            "%s:%d: Buffer bounds check failed\n",        \
             __FILE__, __LINE__);                          \
     exit(1);                                              \
 }                                                         \
