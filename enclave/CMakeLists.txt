@@ -114,9 +114,11 @@ else()
 endif()
 
 # Sign enclave
+get_filename_component(SIGNER_KEY_FILE ${SIGNER_KEY_FILE}
+    REALPATH BASE_DIR "${CMAKE_SOURCE_DIR}")
 add_custom_command(OUTPUT xgboost_enclave.signed
-	DEPENDS xgboost_enclave xgboost.conf private.pem
-    COMMAND openenclave::oesign sign -e $<TARGET_FILE:xgboost_enclave> -c ${PROJECT_SOURCE_DIR}/xgboost.conf -k ${PROJECT_SOURCE_DIR}/private.pem)
+    DEPENDS xgboost_enclave xgboost.conf ${SIGNER_KEY_FILE}
+    COMMAND openenclave::oesign sign -e $<TARGET_FILE:xgboost_enclave> -c ${PROJECT_SOURCE_DIR}/xgboost.conf -k ${SIGNER_KEY_FILE})
 
 # Dump enclave info
 add_custom_command(OUTPUT xgboost_enclave.info
