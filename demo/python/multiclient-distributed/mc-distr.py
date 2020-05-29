@@ -17,8 +17,8 @@ username1 = "user1"
 train_enc_1 = HOME_DIR + "demo/python/multiclient-distributed/data/u1_train.enc"
 
 KEY_FILE_1 = HOME_DIR + "demo/python/multiclient-distributed/data/key1.txt"
-PRIVATE_KEY_FILE_1 = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
-CERT_FILE_1 = HOME_DIR + "demo/data/usercrts/user1.crt"
+PRIVATE_KEY_FILE_1 = HOME_DIR + "config/user1.pem"
+CERT_FILE_1 = HOME_DIR + "config/user1.crt"
 
 xgb.init_user(username1, KEY_FILE_1, PRIVATE_KEY_FILE_1, CERT_FILE_1)
 print("Send private key to enclave")
@@ -29,8 +29,8 @@ train_enc_2 = HOME_DIR + "demo/python/multiclient-distributed/data/u2_train.enc"
 test_enc_2 = HOME_DIR + "demo/python/multiclient-distributed/data/u2_test.enc"
 
 KEY_FILE_2 = HOME_DIR + "demo/python/multiclient-distributed/data/key2.txt"
-PRIVATE_KEY_FILE_2 = HOME_DIR + "demo/data/userkeys/private_user_2.pem"
-CERT_FILE_2 = HOME_DIR + "demo/data/usercrts/user2.crt"
+PRIVATE_KEY_FILE_2 = HOME_DIR + "config/user2.pem"
+CERT_FILE_2 = HOME_DIR + "config/user2.crt"
 
 xgb.init_user(username2, KEY_FILE_2, PRIVATE_KEY_FILE_2, CERT_FILE_2)
 
