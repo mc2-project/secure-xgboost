@@ -96,7 +96,7 @@ class TestInteractionConstraints(unittest.TestCase):
 
     def test_approx_interaction_constraints(self):
         #TODO: This is failing on line 87
-        ""
+        """
         self.run_interaction_constraints(tree_method='approx')
         """
 
