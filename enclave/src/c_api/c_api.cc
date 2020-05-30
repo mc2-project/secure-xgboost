@@ -495,6 +495,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     }
     void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fnames_vector, silent != 0, load_row_split, true, keys));
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, usernames, num_files);
+    *out = oe_host_strndup(out_str, strlen(out_str));
 
     // sign the output
     std::ostringstream sss;
@@ -506,14 +507,12 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
     free(buff);
 
-    // copy outputs to host
-    *out = oe_host_strndup(out_str, strlen(out_str));
     uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
     memcpy(host_buf, _out_sig, _out_sig_length);
     *out_sig_length = _out_sig_length;
     *out_sig = host_buf;
-
     free(_out_sig);
+
     free(out_str);
     for (int i = 0; i < num_files; ++i) {
         free(keys[i]);
@@ -1134,6 +1133,8 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             size_t nonce_size,
                             uint32_t nonce_ctr,
                             xgboost::bst_ulong *out,
+                            uint8_t** out_sig,
+                            size_t *out_sig_length,
                             char **signers,
                             uint8_t** signatures,
                             size_t* sig_lengths) {
@@ -1150,6 +1151,23 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<xgboost::bst_ulong>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_row_);
+
+  // sign the output
+  std::ostringstream sss;
+  sss << *out;
+  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+  buff = strdup(sss.str().c_str());
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+  free(buff);
+
+  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+
   API_END();
 }
 
@@ -1158,6 +1176,8 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             size_t nonce_size,
                             uint32_t nonce_ctr,
                             xgboost::bst_ulong *out,
+                            uint8_t** out_sig,
+                            size_t *out_sig_length,
                             char **signers,
                             uint8_t** signatures,
                             size_t* sig_lengths) {
@@ -1173,6 +1193,23 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
+
+  // sign the output
+  std::ostringstream sss;
+  sss << *out;
+  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+  buff = strdup(sss.str().c_str());
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+  free(buff);
+
+  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+
   API_END();
 }
 
@@ -1183,6 +1220,8 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     size_t nonce_size,
                     uint32_t nonce_ctr,
                     BoosterHandle *out,
+                    uint8_t** out_sig,
+                    size_t *out_sig_length,
                     char **signers,
                     uint8_t** signatures,
                     size_t* sig_lengths) {
@@ -1206,6 +1245,23 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
   void* booster = new Booster(mats);
   char* out_str = EnclaveContext::getInstance().add_booster(booster);
   *out = oe_host_strndup(out_str, strlen(out_str));
+
+  // sign the output
+  std::ostringstream sss;
+  sss << "handle " << out_str;
+  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+  buff = strdup(sss.str().c_str());
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+  free(buff);
+
+  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+
   free(out_str);
   API_END();
 }
@@ -1225,6 +1281,8 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               uint8_t *nonce,
                               size_t nonce_size,
                               uint32_t nonce_ctr,
+                              uint8_t** out_sig,
+                              size_t *out_sig_length,
                               char **signers,
                               uint8_t** signatures,
                               size_t* sig_lengths) {
@@ -1241,6 +1299,22 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
 
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
+
+  // sign the output
+  std::ostringstream sss;
+  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+  buff = strdup(sss.str().c_str());
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+  free(buff);
+
+  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+
   API_END();
 }
 
@@ -1251,6 +1325,8 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    uint8_t *nonce,
                                    size_t nonce_size,
                                    uint32_t nonce_ctr,
+                                   uint8_t** out_sig,
+                                   size_t *out_sig_length,
                                    char **signers,
                                    uint8_t** signatures,
                                    size_t* sig_lengths) {
@@ -1271,6 +1347,22 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
     static_cast<std::shared_ptr<DMatrix>*>(EnclaveContext::getInstance().get_dmatrix(dtrain));
   bst->LazyInit();
   bst->learner()->UpdateOneIter(iter, dtr->get());
+
+  // sign the output
+  std::ostringstream sss;
+  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+  buff = strdup(sss.str().c_str());
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+  free(buff);
+
+  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+
   API_END();
 }
 
@@ -1330,6 +1422,8 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              uint32_t nonce_ctr,
                              xgboost::bst_ulong *len,
                              uint8_t **out_result,
+                             uint8_t** out_sig,
+                             size_t *out_sig_length,
                              char** signers,
                              uint8_t** signatures,
                              size_t* sig_lengths) {
@@ -1389,11 +1483,28 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   free(buf);
   *len = static_cast<xgboost::bst_ulong>(preds.size());
   *out_result = (uint8_t*)host_buf;
+
+  // sign the output
+  // TODO(rishabh): Sign ciphertext / include nonce as AAD
+  std::ostringstream sss;
+  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+  buff = strdup(sss.str().c_str());
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+  free(buff);
+
+  host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+
   API_END();
 }
 
 // TODO(rishabh): Server can replace file contents
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, char** signers, uint8_t** signatures, size_t* sig_lengths) {
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
     CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
@@ -1437,10 +1548,26 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t*
 
     static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle))->LoadModel(&fs);
     free(output);
+
+    // sign the output
+    std::ostringstream sss;
+    add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+    buff = strdup(sss.str().c_str());
+    uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+    size_t _out_sig_length = SIG_ALLOC_SIZE;
+    EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+    free(buff);
+
+    uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+    memcpy(host_buf, _out_sig, _out_sig_length);
+    *out_sig_length = _out_sig_length;
+    *out_sig = host_buf;
+    free(_out_sig);
+
     API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, char **signers, uint8_t** signatures, size_t* sig_lengths) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
     CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
@@ -1478,12 +1605,32 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t*
     fs->Write(&buf_len, sizeof(size_t));
     fs->Write(buf, buf_len);
     free(buf);
+
+    // sign the output
+    // TODO(rishabh): Sign ciphertext / include nonce as AAD
+    std::ostringstream sss;
+    add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+    buff = strdup(sss.str().c_str());
+    uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+    size_t _out_sig_length = SIG_ALLOC_SIZE;
+    EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+    free(buff);
+
+    uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+    memcpy(host_buf, _out_sig, _out_sig_length);
+    *out_sig_length = _out_sig_length;
+    *out_sig = host_buf;
+    free(_out_sig);
+
     API_END();
 }
 
+// TODO(rishabh): Add nonce + output signatures
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          const void* buf,
                                          xgboost::bst_ulong len,
+                                         uint8_t** out_sig,
+                                         size_t *out_sig_length,
                                          char **signers,
                                          uint8_t** signatures,
                                          size_t* sig_lengths) {
@@ -1518,6 +1665,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
     common::MemoryFixSizeBuffer fs((void*)output, len);  // NOLINT(*)
     static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle))->LoadModel(&fs);
     free(output);
+
     API_END();
 }
 
@@ -1527,6 +1675,8 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  uint32_t nonce_ctr,
                                  xgboost::bst_ulong* out_len,
                                  const char** out_dptr,
+                                 uint8_t** out_sig,
+                                 size_t *out_sig_length,
                                  char** signers,
                                  uint8_t** signatures,
                                  size_t* sig_lengths) {
@@ -1572,6 +1722,23 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     free(buf);
     *out_dptr = (const char*)host_buf;
     *out_len = static_cast<xgboost::bst_ulong>(raw_str.length()) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE;
+
+    // sign the output
+    // TODO(rishabh): Sign ciphertext / include nonce as AAD
+    std::ostringstream sss;
+    add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+    buff = strdup(sss.str().c_str());
+    uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+    size_t _out_sig_length = SIG_ALLOC_SIZE;
+    EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+    free(buff);
+
+    host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+    memcpy(host_buf, _out_sig, _out_sig_length);
+    *out_sig_length = _out_sig_length;
+    *out_sig = host_buf;
+    free(_out_sig);
+
     API_END();
 }
 
@@ -1650,6 +1817,8 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  uint32_t nonce_ctr,
                                  xgboost::bst_ulong* len,
                                  const char*** out_models,
+                                 uint8_t** out_sig,
+                                 size_t *out_sig_length,
                                  char **signers,
                                  uint8_t** signatures,
                                  size_t* sig_lengths) {
@@ -1671,6 +1840,23 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
         featmap.LoadText(is);
     }
     XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+
+    // sign the output
+    // TODO(rishabh): Sign ciphertext / include nonce as AAD
+    std::ostringstream sss;
+    add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+    buff = strdup(sss.str().c_str());
+    uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+    size_t _out_sig_length = SIG_ALLOC_SIZE;
+    EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+    free(buff);
+
+    uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+    memcpy(host_buf, _out_sig, _out_sig_length);
+    *out_sig_length = _out_sig_length;
+    *out_sig = host_buf;
+    free(_out_sig);
+
     API_END();
 }
 
@@ -1685,6 +1871,8 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
                                    const char*** out_models,
+                                   uint8_t** out_sig,
+                                   size_t *out_sig_length,
                                    char **signers,
                                    size_t signer_lengths[],
                                    uint8_t* signatures[],
@@ -1725,6 +1913,8 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              uint32_t nonce_ctr,
                                              xgboost::bst_ulong* len,
                                              const char*** out_models,
+                                             //uint8_t** out_sig,
+                                             //size_t *out_sig_length,
                                              char **signers,
                                              uint8_t** signatures,
                                              size_t* sig_lengths) {
@@ -1748,6 +1938,23 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
         featmap.PushBack(i, fname[i], ftype[i]);
     }
     XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+
+    // sign the output
+    // TODO(rishabh): Sign ciphertext / include nonce as AAD
+    //std::ostringstream sss;
+    //add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
+    //buff = strdup(sss.str().c_str());
+    //uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+    //size_t _out_sig_length = SIG_ALLOC_SIZE;
+    //EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
+    //free(buff);
+    //
+    //uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+    //memcpy(host_buf, _out_sig, _out_sig_length);
+    //*out_sig_length = _out_sig_length;
+    //*out_sig = host_buf;
+    //free(_out_sig);
+
     API_END();
 }
 
