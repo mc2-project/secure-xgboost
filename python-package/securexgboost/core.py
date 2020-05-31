@@ -1454,6 +1454,8 @@ class Enclave(object):
         _check_call(_LIB.decrypt_enclave_key(c_char_p_key, enc_key, enc_key_size, ctypes.byref(enclave_symm_key)))
         globals()["enclave_sym_key"] = enclave_symm_key
 
+        print(enclave_symm_key)
+
 
 class Booster(object):
     # pylint: disable=too-many-public-methods
