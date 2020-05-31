@@ -401,7 +401,6 @@ class EnclaveContext {
           LOG(DEBUG) << rabit::GetRank() << " rank got username from cert";
           mbedtls_x509_name subject_name = user_cert.subject;
           mbedtls_asn1_buf name = subject_name.val;
-          // nameptr = name.p;
           strcpy((char*) nameptr, (const char*) name.p);
           name_len = name.len;
       } 
@@ -438,20 +437,18 @@ class EnclaveContext {
       return true;
     }
 
+    void share_symm_key_and_nonce() {
+        rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
+        rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
+    }
+
   private:
     /**
      * Generate an ephemeral symmetric key for the enclave
+     * This function is only run by the master enclave, assuming that remote attestation is done before anything else
      */
     bool generate_symm_key() {
-      // LOG(DEBUG) << "Generating symmetric key";
-      // Generate symmetric key if rank 0  
-      // if (rabit::GetRank() == 0) {
-      // Only the master enclave generates a symmetric key
       generate_random(m_symm_key, CIPHER_KEY_SIZE);
-          // LOG(DEBUG) << "Rank 0 generated symmetric key";
-      // }
-      // Broadcast symmetric key to all other enclaves
-      // rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
     }
 
     /**

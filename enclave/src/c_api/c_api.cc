@@ -387,7 +387,8 @@ int add_client_key_with_certificate(char * cert,
         uint8_t* signature,
         size_t sig_len) {
     API_BEGIN();
-    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len);
+    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len, data, data_len, signature, sig_len);
+    EnclaveContext::getInstance().share_symm_key_and_nonce();
     API_END();
 }
 
