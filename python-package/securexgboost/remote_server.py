@@ -510,6 +510,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 for future in futures:
                     print("getting result")
                     results.append(future.result())
+                    print("status: ", future.result().status.status)
 
                 return_codes = [result.status.status for result in results]
                 print("Got return codes")

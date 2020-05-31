@@ -351,7 +351,8 @@ class EnclaveContext {
 
       size_t output_size;
       uint8_t output[CIPHER_KEY_SIZE];
-      unsigned char* nameptr;
+      // FIXME: set size of names
+      unsigned char nameptr[50];
       size_t name_len;
 
       LOG(DEBUG) << "Decrypting and saving client key with certificate";
@@ -400,7 +401,8 @@ class EnclaveContext {
           LOG(DEBUG) << rabit::GetRank() << " rank got username from cert";
           mbedtls_x509_name subject_name = user_cert.subject;
           mbedtls_asn1_buf name = subject_name.val;
-          nameptr = name.p;
+          // nameptr = name.p;
+          strcpy((char*) nameptr, (const char*) name.p);
           name_len = name.len;
       } 
 
@@ -411,7 +413,7 @@ class EnclaveContext {
 
       rabit::Broadcast(&name_len, sizeof(name_len), 0);
       LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted username length";
-
+        
       rabit::Broadcast(nameptr, name_len, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted username";
 
@@ -432,7 +434,7 @@ class EnclaveContext {
       std::vector<uint8_t> user_public_key(cert, cert + cert_len);
       client_public_keys.insert({user_nam, user_public_key});
 
-      LOG(DEBUG) << "verification succeded - user added: " << user_nam;
+      LOG(DEBUG) << "verification succeeded - user added: " << user_nam;
       return true;
     }
 
