@@ -32,6 +32,7 @@ def init(args=None):
     current_user = core_globals.get("current_user")
 
     if channel_addr:
+        # FIXME: add signature to rabit init
         with grpc.insecure_channel(channel_addr) as channel:
             stub = remote_pb2_grpc.RemoteStub(channel)
             response = stub.rpc_RabitInit(remote_pb2.RabitParams(username=current_user)) 
@@ -50,6 +51,7 @@ def finalize():
     current_user = core_globals.get("current_user")
 
     if channel_addr:
+        # FIXME: add signature to rabit finalize
         with grpc.insecure_channel(channel_addr) as channel:
             stub = remote_pb2_grpc.RemoteStub(channel)
             response = stub.rpc_RabitFinalize(remote_pb2.RabitParams(username=current_user)) 

@@ -288,10 +288,7 @@ int get_remote_report_with_pubkey_and_nonce(
   size_t report_size = 0;
   uint8_t* key_buf = NULL;
   int ret = 1;
-  LOG(DEBUG) << "In get remote report wit pubkey and nonce";
-  LOG(DEBUG) << "Getting public key";
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
-  LOG(DEBUG) << "Getting nonce";
   uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();
 
 #ifdef __ENCLAVE_SIMULATION__
@@ -301,7 +298,7 @@ int get_remote_report_with_pubkey_and_nonce(
     return ret;
   }
   memcpy(key_buf, public_key, CIPHER_PK_SIZE);
-  LOG(DEBUG) << "Copied public key outside enclave";
+
   *pem_key = key_buf;
   *key_size = CIPHER_PK_SIZE;
 
@@ -311,14 +308,11 @@ int get_remote_report_with_pubkey_and_nonce(
     return ret;
   }
   memcpy(nonce_buf, enclave_nonce, CIPHER_IV_SIZE);
-  LOG(DEBUG) << "Copied nonce outside";
 
   *nonce = nonce_buf;
   *nonce_size = CIPHER_IV_SIZE;
 
   ret = 0;
-
-  LOG(DEBUG) << "returning from get_remote_report_with_pubkey_and_nonce";
 
 #else
   uint8_t report_data[CIPHER_PK_SIZE + CIPHER_IV_SIZE];
@@ -404,6 +398,7 @@ int get_enclave_symm_key(char* username, uint8_t** out, size_t* out_size) {
   unsigned char* iv = buf;
   unsigned char* tag = buf + CIPHER_IV_SIZE;
   unsigned char* output = tag + CIPHER_TAG_SIZE;
+
   encrypt_symm(
       key,
       (const unsigned char*)pt,

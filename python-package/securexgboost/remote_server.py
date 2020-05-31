@@ -401,7 +401,6 @@ def handle_exception():
 
     status = remote_pb2.Status(status=-1, exception=str(e[1]))
     return status
-    #  return remote_pb2.StatusMsg(status=status)
 
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):

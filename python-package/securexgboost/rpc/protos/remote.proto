@@ -69,7 +69,7 @@ service Remote {
   rpc rpc_XGDMatrixNumCol(NumColRequest) returns (Integer) {}
 
   // Get number of rows in the DMatrix
-  rpc rpc_XGDMatrixNumRow(Name) returns (Integer) {}
+  rpc rpc_XGDMatrixNumRow(NumRowRequestName) returns (Integer) {}
 
   // Initialize Rabit
   rpc rpc_RabitInit(RabitParams) returns (StatusMsg) {}

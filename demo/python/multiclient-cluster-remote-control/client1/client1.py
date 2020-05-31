@@ -17,13 +17,14 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     xgb.rabit.init()
 
+    # Sleep to allow client2 to attest first
+    time.sleep(3)
+
     # Remote attestation
     print("Remote attestation")
-
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    time.sleep(3)
-    enclave.attest(verify=False)
+    enclave.attest()
     print("Report successfully verified")
 
     print("Send private key to enclave")

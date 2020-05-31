@@ -214,7 +214,7 @@ class EnclaveContext {
       std::string str(username);
       auto iter = client_keys.find(str);
       if (iter == client_keys.end()) {
-        LOG(INFO) << "No client key for user: " << username;
+        LOG(FATAL) << "No client key for user: " << username;
       } else {
         memcpy(key, (uint8_t*) iter->second.data(), CIPHER_KEY_SIZE);
       }
@@ -422,7 +422,7 @@ class EnclaveContext {
 
       // Verify client's identity
       if (std::find(CLIENT_NAMES.begin(), CLIENT_NAMES.end(), user_nam) == CLIENT_NAMES.end()) {
-        LOG(INFO) << "No such authorized client";
+        LOG(FATAL) << "No such authorized client";
       }
       client_keys[user_nam] = user_private_key;
 
@@ -435,8 +435,8 @@ class EnclaveContext {
     }
 
     void share_symm_key_and_nonce() {
-        rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
         rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
+        rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
     }
 
   private:
