@@ -22,8 +22,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    time.sleep(10)
-    print("Done sleeping")
+    time.sleep(3)
     enclave.attest(verify=False)
     print("Report successfully verified")
 
@@ -54,7 +53,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
             "min_child_weight": "1",
             "gamma": "0.1",
             "max_depth": "3",
-            "verbosity": "3" 
+            "verbosity": "0" 
     }
 
     # Train and evaluate

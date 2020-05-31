@@ -57,8 +57,6 @@ class Command(object):
             self._func = func
             self._params = params
         else:
-            print(self._func)
-            print(func)
             assert self._func == func
 
         # FIXME: check that all clients have the same sequence number

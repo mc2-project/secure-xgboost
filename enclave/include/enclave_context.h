@@ -416,9 +416,6 @@ class EnclaveContext {
       rabit::Broadcast(nameptr, name_len, 0);
       LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted username";
 
-      // rabit::Broadcast(cert, cert_len, 0);
-      // LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted cert";
-        
       // Store the client's symmetric key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);
       std::string user_nam(nameptr, nameptr + name_len);
