@@ -57,6 +57,8 @@ class Command(object):
             self._func = func
             self._params = params
         else:
+            print(self._func)
+            print(func)
             assert self._func == func
 
         # FIXME: check that all clients have the same sequence number
@@ -445,29 +447,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             status = handle_exception()
             return remote_pb2.Report(status=status)
 
-
-
-    # FIXME implement the library call within class RemoteAPI
-    # FIXME add support for this function for cluster
-    def rpc_add_client_key(self, request, context):
-        """
-        Sends encrypted symmetric key, signature over key, and filename of data that was encrypted using the symmetric key
-        """
-        try:
-            # Get encrypted symmetric key, signature, and filename from request
-            enc_sym_key = request.enc_sym_key
-            key_size = request.key_size
-            signature = request.signature
-            sig_len = request.sig_len
-
-            # Get a reference to the existing enclave
-            result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
-
-            return remote_pb2.Status(status=result)
-        except:
-            status = handle_exception()
-            return status
-
     # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
         """
@@ -504,19 +483,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
                     futures.append(response_future)
 
-                print("made all calls to nodes")
-
                 results = []
                 for future in futures:
-                    print("getting result")
                     results.append(future.result())
-                    print("status: ", future.result().status.status)
 
                 return_codes = [result.status.status for result in results]
-                print("Got return codes")
                 if sum(return_codes) == 0:
                     status = remote_pb2.Status(status=0)
-                    print("returning status to client")
                     return remote_pb2.StatusMsg(status=status)
                 else:
                     error_status = remote_pb2.Status(status=-1, exception="ERROR: A node threw an error trying to add the client key and certificate")
@@ -542,11 +515,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             else:
                 node_ips = globals()["nodes"]
                 master_enclave_ip = node_ips[0]
-                print("master enclave: ", master_enclave_ip)
                 with grpc.insecure_channel(master_enclave_ip) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     response = stub.rpc_get_enclave_symm_key(remote_pb2.Name(username=username))
-                    print("orchestrator got response for get enclave symm key")
 
                 return response
 

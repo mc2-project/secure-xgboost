@@ -68,6 +68,10 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     # Decrypt predictions
     print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[:10])
 
+    # Get fscores of model
+    print("\nModel Feature Importance: ")
+    print(booster.get_fscore())
+
     xgb.rabit.finalize()
 
 if __name__ == '__main__':
