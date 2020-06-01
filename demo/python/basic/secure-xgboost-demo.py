@@ -53,8 +53,8 @@ booster.save_model(HOME_DIR + "demo/python/basic/modelfile.model")
 
 print("Loading model")
 # Load model from file
-# booster = xgb.Booster()
-# booster.load_model(HOME_DIR + "demo/python/basic/modelfile.model")
+booster = xgb.Booster()
+booster.load_model(HOME_DIR + "demo/python/basic/modelfile.model")
 
 # Get encrypted predictions
 print("\nModel Predictions: ")
