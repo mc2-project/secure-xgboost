@@ -2356,8 +2356,8 @@ class Booster(object):
             args = add_nonce_to_args(args)
             sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
 
-            # out_sig = ctypes.POINTER(ctypes.c_uint8)()
-            # out_sig_length = c_bst_ulong()
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
 
             channel_addr = globals()["remote_addr"]
             if channel_addr:
@@ -2376,8 +2376,8 @@ class Booster(object):
                         signature=sig, sig_len=sig_len)))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
-                    # out_sig = proto_to_pointer(response.signature)
-                    # out_sig_length = c_bst_ulong(response.sig_len)
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
                 nonce = globals()["nonce"]
                 nonce_size = globals()["nonce_size"]
@@ -2396,16 +2396,16 @@ class Booster(object):
                     ctypes.c_uint32(nonce_ctr),
                     ctypes.byref(length),
                     ctypes.byref(sarr),
-                    # ctypes.byref(out_sig),
-                    # ctypes.byref(out_sig_length),
+                    ctypes.byref(out_sig),
+                    ctypes.byref(out_sig_length),
                     signers,
                     c_signatures,
                     c_lengths))
 
-            # args = ""
-            # args = add_nonce_to_args(args)
-            # print(args)
-            # verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+            args = ""
+            args = add_nonce_to_args(args)
+            print(args)
+            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
             globals()["nonce_ctr"] += 1
         else:
             if fmap != '' and not os.path.exists(fmap):
@@ -2816,7 +2816,7 @@ class RemoteAPI:
             ctypes.c_int(option_mask),
             ctypes.c_uint(ntree_limit),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(preds),
@@ -2843,7 +2843,7 @@ class RemoteAPI:
             ctypes.c_int(iteration),
             c_str(dtrain_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(out_sig),
             ctypes.byref(out_sig_len),
@@ -2867,7 +2867,7 @@ class RemoteAPI:
             from_pystr_to_cstr(cache),
             c_bst_ulong(length),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(bst_handle),
             ctypes.byref(out_sig),
@@ -2894,7 +2894,7 @@ class RemoteAPI:
             c_str(key),
             c_str(value),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(out_sig),
             ctypes.byref(out_sig_len),
@@ -2921,7 +2921,7 @@ class RemoteAPI:
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(dmat_handle),
             ctypes.byref(out_sig),
@@ -2947,7 +2947,7 @@ class RemoteAPI:
             c_str(booster_handle),
             c_str(filename),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(out_sig),
             ctypes.byref(out_sig_len),
@@ -2971,7 +2971,7 @@ class RemoteAPI:
             c_str(booster_handle),
             c_str(filename),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(out_sig),
             ctypes.byref(out_sig_len),
@@ -3000,8 +3000,8 @@ class RemoteAPI:
             c_str(fmap),
             ctypes.c_int(with_stats),
             c_str(dump_format),
-            c_types.byref(nonce),
-            c_types.c_size_t(nonce_size),
+            nonce,
+            ctypes.c_size_t(nonce_size),
             c_types.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr),
@@ -3026,8 +3026,8 @@ class RemoteAPI:
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
-        # out_sig = ctypes.POINTER(ctypes.c_uint8)()
-        # out_sig_len = c_bst_ulong()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
             c_str(booster_handle),
             ctypes.c_int(flen),
@@ -3036,16 +3036,16 @@ class RemoteAPI:
             ctypes.c_int(with_stats),
             c_str(dump_format),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr),
-            # ctypes.byref(out_sig),
-            # ctypes.byref(out_sig_len),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return length.value, from_cstr_to_pystr(sarr, length)
+        return length.value, from_cstr_to_pystr(sarr, length), out_sig, out_sig_len.value
 
     # TODO test this
     def XGBoosterGetModelRaw(request, signers, signatures, sig_lengths):
@@ -3063,7 +3063,7 @@ class RemoteAPI:
         _check_call(_LIB.XGBoosterGetModelRaw(
             c_str(booster_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr),
@@ -3087,7 +3087,7 @@ class RemoteAPI:
         _check_call(_LIB.XGDMatrixNumCol(
             c_str(dmatrix_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(ret),
             ctypes.byref(out_sig),
@@ -3110,7 +3110,7 @@ class RemoteAPI:
         _check_call(_LIB.XGDMatrixNumRow(
             c_str(dmatrix_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(ret),
             ctypes.byref(out_sig),

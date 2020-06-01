@@ -278,8 +278,8 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              uint32_t nonce_ctr,
                                              xgboost::bst_ulong* len,
                                              char*** out_models,
-                                             //uint8_t** out_sig,
-                                             //size_t* out_sig_length, 
+                                             uint8_t** out_sig,
+                                             size_t* out_sig_length, 
                                              char **signers,
                                              size_t signer_lengths[],
                                              uint8_t* signatures[],
@@ -297,7 +297,7 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     copy_arr_to_enclave(signers_cpy, NUM_CLIENTS, signers, signer_lengths);
     copy_sigs_to_enclave(sigs, signatures, sig_lengths);
     
-    int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, nonce, nonce_size, nonce_ctr, len, (const char***) out_models, signers_cpy, sigs, sig_lengths);
+    int ret = XGBoosterDumpModelExWithFeatures(handle, (int) fnum, (const char**) fname_cpy, (const char**) ftype_cpy, with_stats, format, nonce, nonce_size, nonce_ctr, len, (const char***) out_models, out_sig, out_sig_length, signers_cpy, sigs, sig_lengths);
  
     free_array(fname_cpy, fnum);
     free_array(ftype_cpy, fnum);

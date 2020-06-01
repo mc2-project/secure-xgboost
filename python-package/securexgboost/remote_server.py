@@ -308,9 +308,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted model dump with features
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+            length, sarr, sig, sig_len = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
