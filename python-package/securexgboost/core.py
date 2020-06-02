@@ -17,8 +17,9 @@ import sys
 import warnings
 
 import grpc
-from .rpc import remote_pb2
+from .rpc import remote_pb2, ndarray_pb2
 from .rpc import remote_pb2_grpc
+from rpc_utils import CIPHER_IV_SIZE, CIPHER_TAG_SIZE
 
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
@@ -393,6 +394,18 @@ def add_nonce_to_args(args):
     nonce_arg += " nonce_ctr {}".format(globals()["nonce_ctr"])
     return args + nonce_arg
 
+def add_to_sig_data(arr, pos=0, data=None, data_size=0):
+    if isinstance(data, str):
+        ctypes.memmove(ctypes.byref(arr, pos), c_str(data), len(data))
+    else:
+        ctypes.memmove(ctypes.byref(arr, pos), data, data_size)
+    return arr
+
+def add_nonce_to_sig_data(arr, pos=0):
+    ctypes.memmove(ctypes.byref(arr, pos), globals()["nonce"], 12)
+    ctypes.memmove(ctypes.byref(arr, pos + 12), globals()["nonce_ctr"].to_bytes(4, 'big'), 4)
+    return arr
+
 def get_seq_num_proto():
     return remote_pb2.SequenceNumber(
                             nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
@@ -583,8 +596,10 @@ class DMatrix(object):
                         c_lengths))
 
                 args = "handle {}".format(handle.value.decode('utf-8')) 
-                args = add_nonce_to_args(args)
-                verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+                arr = (ctypes.c_char * (len(args) + 16))()
+                add_to_sig_data(arr, data=args)
+                add_nonce_to_sig_data(arr, pos=len(args))
+                verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
                 globals()["nonce_ctr"] += 1
 
             else:
@@ -2025,9 +2040,11 @@ class Booster(object):
                                               signers,
                                               c_signatures,
                                               c_lengths))
-        args = ""
-        args = add_nonce_to_args(args)
-        verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+        size = length.value * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+        arr = (ctypes.c_char * (size + 16))()
+        add_to_sig_data(arr, data=preds, data_size=size)
+        add_nonce_to_sig_data(arr, pos=size)
+        verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
         globals()["nonce_ctr"] += 1
 
             # TODO(rishabh): implement this in decrypt_predictions
@@ -2150,9 +2167,9 @@ class Booster(object):
                                                     ctypes.byref(out_sig),
                                                     ctypes.byref(out_sig_length),
                                                     signers, c_signatures, c_sig_lengths))
-            args = ""
-            args = add_nonce_to_args(args)
-            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+            arr = (ctypes.c_char * 16)()
+            add_nonce_to_sig_data(arr)
+            verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
             globals()["nonce_ctr"] += 1
         else:
             raise TypeError("fname must be a string")
@@ -2209,9 +2226,10 @@ class Booster(object):
                                                   signers,
                                                   c_signatures,
                                                   c_lengths))
-        args = ""
-        args = add_nonce_to_args(args)
-        verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+        arr = (ctypes.c_char * (length.value + 16))()
+        add_to_sig_data(arr, data=cptr, data_size=length.value)
+        add_nonce_to_sig_data(arr, pos=length.value)
+        verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
         globals()["nonce_ctr"] += 1
         return ctypes2buffer(cptr, length.value)
 
@@ -2402,11 +2420,6 @@ class Booster(object):
                     c_signatures,
                     c_lengths))
 
-            args = ""
-            args = add_nonce_to_args(args)
-            print(args)
-            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-            globals()["nonce_ctr"] += 1
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
@@ -2453,10 +2466,13 @@ class Booster(object):
                                                       signers,
                                                       c_signatures,
                                                       c_lengths))
-            args = ""
-            args = add_nonce_to_args(args)
-            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-            globals()["nonce_ctr"] += 1
+        py_sarr = from_cstr_to_pystr(sarr, length)
+        total_length = len(''.join(py_sarr))
+        arr = (ctypes.c_char * (total_length + 16))()
+        add_to_sig_data(arr, data=''.join(py_sarr), data_size=total_length)
+        add_nonce_to_sig_data(arr, pos=total_length)
+        verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
+        globals()["nonce_ctr"] += 1
 
         if decrypt:
             self.decrypt_dump(sarr, length)
@@ -3225,8 +3241,12 @@ def sign_data(key, data, data_size):
     # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
     if isinstance(data, str):
         data = c_str(data)
-    # FIXME use positive check instead of negative check
-    elif not isinstance(data, ctypes.c_char_p):
+    elif isinstance(data, ctypes.POINTER(ctypes.c_uint8)):
+        pass
+    elif isinstance(data, ctypes.c_char_p):
+        pass
+    else:
+        # FIXME error handling for other types
         data = proto_to_pointer(data)
 
     data_size = ctypes.c_size_t(data_size)

@@ -91,6 +91,7 @@ class EnclaveContext {
     }
 
     // Checks equality of received and expected nonce and nonce counter and increments nonce counter.
+    // FIXME: Redundant check; signature verification is enough
     bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
       bool retval = recv_nonce_ctr == m_nonce_ctr;
       if (!retval) return retval;
@@ -316,6 +317,18 @@ class EnclaveContext {
         uint8_t* signature,
         size_t* sig_len) {
       return sign_data(m_pk_context, (uint8_t*)data, strlen(data), signature, sig_len);
+    }
+
+    bool sign_bytes_with_nonce(std::vector<uint8_t> *bytes, uint8_t* signature, size_t* sig_len) {
+      for (int i = 0; i < CIPHER_IV_SIZE; i ++) {
+        bytes->push_back(m_nonce[i]);
+      }
+      bytes->push_back(m_nonce_ctr >> 24);
+      bytes->push_back(m_nonce_ctr >> 16);
+      bytes->push_back(m_nonce_ctr >>  8);
+      bytes->push_back(m_nonce_ctr      );
+
+      return sign_data(m_pk_context, bytes->data(), bytes->size(), signature, sig_len);
     }
 
     // TODO(rishabh): Fix sequence of the various checks in this function
