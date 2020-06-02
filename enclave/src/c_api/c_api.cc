@@ -441,12 +441,10 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
   API_END();
 }
 
-void add_nonce_to_args(std::ostringstream &oss, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr) {
-    oss << " nonce ";
-    for (int i = 0; i < nonce_size; i ++) {
-      oss << (int) nonce[i] << " ";
-    }
-    oss << " nonce_ctr " << nonce_ctr;
+void check_signed_input(std::ostringstream& ss, char** signers, uint8_t** signatures, size_t* sig_lengths) {
+  std::string const& s = ss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  EnclaveContext::getInstance().verify_signatures_with_nonce(&bytes, signers, signatures, sig_lengths);
 }
 
 void get_signed_output(std::vector<uint8_t> *bytes, uint8_t** out_sig, size_t* out_sig_length) {
@@ -489,12 +487,8 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
         oss << " username " << usernames[i] << " filename " << fnames[i];
     }
     oss << " silent " << silent;
-    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-    char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-    free(buff);
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
-    // FIXME consistently use uint8_t* for key bytes
     char* keys[num_files];
     std::vector<const std::string> fnames_vector;
     for (xgboost::bst_ulong i = 0; i < num_files; ++i) {
@@ -1142,14 +1136,11 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             uint8_t** signatures,
                             size_t* sig_lengths) {
   API_BEGIN();
-  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   // signature verification
   std::ostringstream oss;
   oss << "XGDMatrixNumRow " << handle;
-  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr); 
-  char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<xgboost::bst_ulong>(
@@ -1158,19 +1149,11 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
   // sign the output
   std::ostringstream sss;
   sss << *out;
-  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
-  buff = strdup(sss.str().c_str());
-  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
-  size_t _out_sig_length = SIG_ALLOC_SIZE;
-  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
-  free(buff);
+  std::string const& s = sss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  get_signed_output(&bytes, out_sig, out_sig_length);
 
-  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
-  memcpy(host_buf, _out_sig, _out_sig_length);
-  *out_sig_length = _out_sig_length;
-  *out_sig = host_buf;
-  free(_out_sig);
-
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
@@ -1185,14 +1168,12 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             uint8_t** signatures,
                             size_t* sig_lengths) {
   API_BEGIN();
-  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
   // signature verification
   std::ostringstream oss;
   oss << "XGDMatrixNumCol " << handle;
-  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr); 
-  char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+  check_signed_input(oss, signers, signatures, sig_lengths);
+
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
@@ -1200,19 +1181,11 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
   // sign the output
   std::ostringstream sss;
   sss << *out;
-  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
-  buff = strdup(sss.str().c_str());
-  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
-  size_t _out_sig_length = SIG_ALLOC_SIZE;
-  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
-  free(buff);
+  std::string const& s = sss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  get_signed_output(&bytes, out_sig, out_sig_length);
 
-  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
-  memcpy(host_buf, _out_sig, _out_sig_length);
-  *out_sig_length = _out_sig_length;
-  *out_sig = host_buf;
-  free(_out_sig);
-
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
@@ -1229,14 +1202,11 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     uint8_t** signatures,
                     size_t* sig_lengths) {
   API_BEGIN();
-  CHECK_SEQUENCE_NUMBER();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterCreate";
-  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-  char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   std::vector<std::shared_ptr<DMatrix> > mats;
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
@@ -1252,20 +1222,12 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
   // sign the output
   std::ostringstream sss;
   sss << "handle " << out_str;
-  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
-  buff = strdup(sss.str().c_str());
-  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
-  size_t _out_sig_length = SIG_ALLOC_SIZE;
-  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
-  free(buff);
-
-  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
-  memcpy(host_buf, _out_sig, _out_sig_length);
-  *out_sig_length = _out_sig_length;
-  *out_sig = host_buf;
-  free(_out_sig);
+  std::string const& s = sss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  get_signed_output(&bytes, out_sig, out_sig_length);
 
   free(out_str);
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
@@ -1290,34 +1252,21 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               uint8_t** signatures,
                               size_t* sig_lengths) {
   API_BEGIN();
-  CHECK_SEQUENCE_NUMBER(); 
   CHECK_HANDLE();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterSetParam " << handle << " " << name << "," << value;
-  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-  char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
 
   // sign the output
-  std::ostringstream sss;
-  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
-  buff = strdup(sss.str().c_str());
-  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
-  size_t _out_sig_length = SIG_ALLOC_SIZE;
-  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
-  free(buff);
+  std::vector<uint8_t> bytes;
+  get_signed_output(&bytes, out_sig, out_sig_length);
 
-  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
-  memcpy(host_buf, _out_sig, _out_sig_length);
-  *out_sig_length = _out_sig_length;
-  *out_sig = host_buf;
-  free(_out_sig);
-
+  CHECK_SEQUENCE_NUMBER(); 
   API_END();
 }
 
@@ -1334,16 +1283,12 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    uint8_t** signatures,
                                    size_t* sig_lengths) {
   API_BEGIN();
-  CHECK_SEQUENCE_NUMBER();
   CHECK_HANDLE();
 
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterUpdateOneIter booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
-  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-  char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-  free(buff);
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   auto *dtr =
@@ -1352,20 +1297,10 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
   bst->learner()->UpdateOneIter(iter, dtr->get());
 
   // sign the output
-  std::ostringstream sss;
-  add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
-  buff = strdup(sss.str().c_str());
-  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
-  size_t _out_sig_length = SIG_ALLOC_SIZE;
-  EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
-  free(buff);
+  std::vector<uint8_t> bytes;
+  get_signed_output(&bytes, out_sig, out_sig_length);
 
-  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
-  memcpy(host_buf, _out_sig, _out_sig_length);
-  *out_sig_length = _out_sig_length;
-  *out_sig = host_buf;
-  free(_out_sig);
-
+  CHECK_SEQUENCE_NUMBER(); 
   API_END();
 }
 
@@ -1436,10 +1371,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   // signature verification
   std::ostringstream oss;
   oss << "XGBoosterPredict booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
-  add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);;
-  char* buff = strdup(oss.str().c_str());
-  EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-  free(buff); // prevent memory leak
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   std::vector<bst_float>&preds =
     XGBAPIThreadLocalStore::Get()->ret_vec_float;
@@ -1497,16 +1429,12 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 // TODO(rishabh): Server can replace file contents
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
-    CHECK_SEQUENCE_NUMBER();
     CHECK_HANDLE();
 
     // signature verification
     std::ostringstream oss;
     oss << "XGBoosterLoadModel handle " << handle << " filename " << fname;
-    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-    char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-    free(buff);
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
     size_t buf_len;
@@ -1541,20 +1469,10 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t*
     free(output);
 
     // sign the output
-    std::ostringstream sss;
-    add_nonce_to_args(sss, nonce, nonce_size, nonce_ctr);
-    buff = strdup(sss.str().c_str());
-    uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
-    size_t _out_sig_length = SIG_ALLOC_SIZE;
-    EnclaveContext::getInstance().sign_args(buff, _out_sig, &_out_sig_length);
-    free(buff);
+    std::vector<uint8_t> bytes;
+    get_signed_output(&bytes, out_sig, out_sig_length);
 
-    uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
-    memcpy(host_buf, _out_sig, _out_sig_length);
-    *out_sig_length = _out_sig_length;
-    *out_sig = host_buf;
-    free(_out_sig);
-
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 
@@ -1565,10 +1483,7 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t*
     // check signature
     std::ostringstream oss;
     oss << "XGBoosterSaveModel handle " << handle << " filename " << fname;
-    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-    char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-    free(buff);
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
     raw_str.resize(0);
@@ -1669,10 +1584,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     // check signature
     std::ostringstream oss;
     oss << "XGBoosterGetModelRaw handle " << handle;
-    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-    char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-    free(buff);
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     common::MemoryBufferStream fo(&raw_str);
     auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
@@ -1794,10 +1706,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
     CHECK_HANDLE();
     std::ostringstream oss;
     oss << "XGBoosterDumpModelEx booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
-    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-    char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-    free(buff);
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     FeatureMap featmap;
     if (strlen(fmap) != 0) {
@@ -1888,10 +1797,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     for (int i = 0; i <fnum; i++){
         oss << " fname " << fname[i] << " ftype " << ftype[i];
     }
-    add_nonce_to_args(oss, nonce, nonce_size, nonce_ctr);
-    char* buff = strdup(oss.str().c_str());
-    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buff, strlen(buff), signers, signatures, sig_lengths);
-    free(buff);
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     FeatureMap featmap;
     for (int i = 0; i < fnum; ++i) {

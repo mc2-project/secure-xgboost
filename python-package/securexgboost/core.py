@@ -387,13 +387,6 @@ def proto_to_pointer(proto, ctype=ctypes.c_uint8):
 # 
 #     return array
 
-def add_nonce_to_args(args):
-    nonce_arg = " nonce "
-    for i in range(globals()["nonce_size"].value):
-        nonce_arg += str(globals()["nonce"][i]) + " "
-    nonce_arg += " nonce_ctr {}".format(globals()["nonce_ctr"])
-    return args + nonce_arg
-
 def add_to_sig_data(arr, pos=0, data=None, data_size=0):
     if isinstance(data, str):
         ctypes.memmove(ctypes.byref(arr, pos), c_str(data), len(data))
@@ -548,9 +541,7 @@ class DMatrix(object):
                 for username, filename in zip(usernames, data):
                     args = args + " username {} filename {}".format(username, filename)
                 args = args + " silent {}".format(int(silent))
-                args = add_nonce_to_args(args)
-
-                sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+                sig, sig_len = create_enclave_signature(args)
 
                 out_sig = ctypes.POINTER(ctypes.c_uint8)()
                 out_sig_length = c_bst_ulong()
@@ -596,11 +587,7 @@ class DMatrix(object):
                         c_lengths))
 
                 args = "handle {}".format(handle.value.decode('utf-8')) 
-                arr = (ctypes.c_char * (len(args) + 16))()
-                add_to_sig_data(arr, data=args)
-                add_nonce_to_sig_data(arr, pos=len(args))
-                verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
-                globals()["nonce_ctr"] += 1
+                verify_enclave_signature(args, len(args), out_sig, out_sig_length)
 
             else:
                 raise NotImplementedError("Loading from unencrypted files not supported.")
@@ -1010,8 +997,7 @@ class DMatrix(object):
         number of rows : int
         """
         args = "XGDMatrixNumRow " + self.handle.value.decode('utf-8')
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_enclave_signature(args)
 
         ret = c_bst_ulong()
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
@@ -1043,9 +1029,7 @@ class DMatrix(object):
             ret = ret.value
 
         args = "{}".format(ret) 
-        args = add_nonce_to_args(args)
         verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-        globals()["nonce_ctr"] += 1
 
         return ret
 
@@ -1057,8 +1041,7 @@ class DMatrix(object):
         number of columns : int
         """
         args = "XGDMatrixNumCol " + self.handle.value.decode('utf-8')
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_enclave_signature(args)
 
         ret = c_bst_ulong()
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
@@ -1093,9 +1076,7 @@ class DMatrix(object):
             ret = ret.value
 
         args = "{}".format(ret) 
-        args = add_nonce_to_args(args)
         verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-        globals()["nonce_ctr"] += 1
         return ret
 
     # def slice(self, rindex):
@@ -1530,8 +1511,7 @@ class Booster(object):
             self._validate_features(d)
 
         args = "XGBoosterCreate"
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_enclave_signature(args)
 
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
         out_sig_length = c_bst_ulong()
@@ -1565,9 +1545,7 @@ class Booster(object):
                                              c_lengths))
 
         args = "handle {}".format(self.handle.value.decode('utf-8')) 
-        args = add_nonce_to_args(args)
         verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-        globals()["nonce_ctr"] += 1
 
         self.set_param({'seed': 0})
         self.set_param(params or {})
@@ -1720,8 +1698,7 @@ class Booster(object):
 
         for key, val in params:
             args = "XGBoosterSetParam " + self.handle.value.decode('utf-8') + " " + key + "," + str(val)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_enclave_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -1745,10 +1722,7 @@ class Booster(object):
                                                     ctypes.byref(out_sig_length),
                                                     signers, c_signatures, c_sig_lengths))
 
-            args = ""
-            args = add_nonce_to_args(args)
-            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-            globals()["nonce_ctr"] += 1
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1770,8 +1744,7 @@ class Booster(object):
         
         if fobj is None:
             args = "XGBoosterUpdateOneIter booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_enclave_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -1798,11 +1771,7 @@ class Booster(object):
                                                         ctypes.byref(out_sig_length),
                                                         signers, c_signatures, c_lengths))
 
-            args = ""
-            args = add_nonce_to_args(args)
-            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-
-            globals()["nonce_ctr"] += 1
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
         else:
             raise NotImplementedError("Custom objective functions not supported")
             # TODO(rishabh): We do not support custom objectives currently
@@ -1996,8 +1965,7 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         args = "XGBoosterPredict booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_enclave_signature(args)
 
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
         out_sig_length = c_bst_ulong()
@@ -2041,11 +2009,7 @@ class Booster(object):
                                               c_signatures,
                                               c_lengths))
         size = length.value * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
-        arr = (ctypes.c_char * (size + 16))()
-        add_to_sig_data(arr, data=preds, data_size=size)
-        add_nonce_to_sig_data(arr, pos=size)
-        verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
-        globals()["nonce_ctr"] += 1
+        verify_enclave_signature(preds, size, out_sig, out_sig_length)
 
             # TODO(rishabh): implement this in decrypt_predictions
             #  preds = ctypes2numpy(preds, length.value, np.float32)
@@ -2137,8 +2101,7 @@ class Booster(object):
             fname = os.path.normpath(fname)
 
             args = "XGBoosterSaveModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_enclave_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -2167,10 +2130,7 @@ class Booster(object):
                                                     ctypes.byref(out_sig),
                                                     ctypes.byref(out_sig_length),
                                                     signers, c_signatures, c_sig_lengths))
-            arr = (ctypes.c_char * 16)()
-            add_nonce_to_sig_data(arr)
-            verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
-            globals()["nonce_ctr"] += 1
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
         else:
             raise TypeError("fname must be a string")
 
@@ -2194,8 +2154,7 @@ class Booster(object):
         cptr = ctypes.POINTER(ctypes.c_char)()
 
         args = "XGBoosterGetModelRaw handle {}".format(self.handle.value.decode('utf-8'))
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_enclave_signature(args)
 
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
         out_sig_length = c_bst_ulong()
@@ -2226,11 +2185,7 @@ class Booster(object):
                                                   signers,
                                                   c_signatures,
                                                   c_lengths))
-        arr = (ctypes.c_char * (length.value + 16))()
-        add_to_sig_data(arr, data=cptr, data_size=length.value)
-        add_nonce_to_sig_data(arr, pos=length.value)
-        verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
-        globals()["nonce_ctr"] += 1
+        verify_enclave_signature(cptr, length.value, out_sig, out_sig_length)
         return ctypes2buffer(cptr, length.value)
 
 
@@ -2260,8 +2215,7 @@ class Booster(object):
 
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             args = "XGBoosterLoadModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_enclave_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -2290,10 +2244,7 @@ class Booster(object):
                 nonce_ctr = ctypes.c_uint32(globals()["nonce_ctr"])
                 _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), nonce, nonce_size, nonce_ctr, ctypes.byref(out_sig), ctypes.byref(out_sig_length), signers, c_signatures, c_lengths))
 
-            args = ""
-            args = add_nonce_to_args(args)
-            verify_enclave_signature(args, len(args), out_sig, out_sig_length)
-            globals()["nonce_ctr"] += 1
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
         else:
             # FIXME: Remote execution for non-file type
             raise "NotImplementedError"
@@ -2371,8 +2322,7 @@ class Booster(object):
             args = "XGBoosterDumpModelExWithFeatures booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
             for i in range(flen):
                 args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_enclave_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -2425,8 +2375,8 @@ class Booster(object):
                 raise ValueError("No such file: {0}".format(fmap))
 
             args = "XGBoosterDumpModelEx booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_enclave_signature(args)
+
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
 
@@ -2467,12 +2417,8 @@ class Booster(object):
                                                       c_signatures,
                                                       c_lengths))
         py_sarr = from_cstr_to_pystr(sarr, length)
-        total_length = len(''.join(py_sarr))
-        arr = (ctypes.c_char * (total_length + 16))()
-        add_to_sig_data(arr, data=''.join(py_sarr), data_size=total_length)
-        add_nonce_to_sig_data(arr, pos=total_length)
-        verify_enclave_signature(arr, len(arr), out_sig, out_sig_length)
-        globals()["nonce_ctr"] += 1
+        data = ''.join(py_sarr)
+        verify_enclave_signature(data, len(data), out_sig, out_sig_length)
 
         if decrypt:
             self.decrypt_dump(sarr, length)
@@ -3241,12 +3187,11 @@ def sign_data(key, data, data_size):
     # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
     if isinstance(data, str):
         data = c_str(data)
-    elif isinstance(data, ctypes.POINTER(ctypes.c_uint8)):
-        pass
-    elif isinstance(data, ctypes.c_char_p):
+    elif isinstance(data, ctypes.Array) and (data._type_ is ctypes.c_char):
         pass
     else:
         # FIXME error handling for other types
+        print(type(data))
         data = proto_to_pointer(data)
 
     data_size = ctypes.c_size_t(data_size)
@@ -3264,16 +3209,30 @@ def sign_data(key, data, data_size):
 
     return signature, sig_len_as_int
 
-def verify_enclave_signature(data, data_size, sig, sig_len):
-    # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
-    # data = proto_to_pointer(sig)
-    # data_size = ctypes.c_size_t(sig_size)
-    if isinstance(data, str):
-        data = c_str(data)
-    data_size = ctypes.c_size_t(data_size)
+def verify_enclave_signature(data, size, sig, sig_len):
+    """
+    Verify the signature returned by the enclave with nonce
+    """
+    arr = (ctypes.c_char * (size + 16))()
+    add_to_sig_data(arr, data=data, data_size=size)
+    add_nonce_to_sig_data(arr, pos=size)
+    size = ctypes.c_size_t(len(arr))
 
     pem_key = globals()["enclave_pk"]
     pem_key_len = globals()["enclave_pk_size"]
     # Verify signature
-    _check_call(_LIB.verify_signature(pem_key, pem_key_len, data, data_size, sig, sig_len))
+    _check_call(_LIB.verify_signature(pem_key, pem_key_len, arr, size, sig, sig_len))
+
+    globals()["nonce_ctr"] += 1
+
+
+def create_enclave_signature(args):
+    """
+    Sign the data for the enclave with nonce
+    """
+    arr = (ctypes.c_char * (len(args) + 16))()
+    add_to_sig_data(arr, data=args)
+    add_nonce_to_sig_data(arr, pos=len(args))
+    sig, sig_len = sign_data(globals()["current_user_priv_key"], arr, len(arr))
+    return sig, sig_len
 

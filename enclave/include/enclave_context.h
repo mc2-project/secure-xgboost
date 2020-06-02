@@ -268,6 +268,18 @@ class EnclaveContext {
       return true;
     }
 
+    bool verify_signatures_with_nonce(std::vector<uint8_t> *bytes, char* signers[], uint8_t* signatures[], size_t sig_lengths[]){
+      for (int i = 0; i < CIPHER_IV_SIZE; i ++) {
+        bytes->push_back(m_nonce[i]);
+      }
+      bytes->push_back(m_nonce_ctr >> 24);
+      bytes->push_back(m_nonce_ctr >> 16);
+      bytes->push_back(m_nonce_ctr >>  8);
+      bytes->push_back(m_nonce_ctr      );
+      
+      return verifyClientSignatures(bytes->data(), bytes->size(), signers, signatures, sig_lengths);
+    }
+
     bool verifySignatureWithCertificate(char* cert,
                 int cert_len,
                 uint8_t* data,
