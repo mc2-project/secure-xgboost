@@ -19,7 +19,7 @@ import warnings
 import grpc
 from .rpc import remote_pb2, ndarray_pb2
 from .rpc import remote_pb2_grpc
-from rpc_utils import CIPHER_IV_SIZE, CIPHER_TAG_SIZE
+from rpc_utils import CIPHER_IV_SIZE, CIPHER_TAG_SIZE, CIPHER_NONCE_SIZE
 
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
@@ -3213,7 +3213,7 @@ def verify_enclave_signature(data, size, sig, sig_len):
     """
     Verify the signature returned by the enclave with nonce
     """
-    arr = (ctypes.c_char * (size + 16))()
+    arr = (ctypes.c_char * (size + CIPHER_NONCE_SIZE))()
     add_to_sig_data(arr, data=data, data_size=size)
     add_nonce_to_sig_data(arr, pos=size)
     size = ctypes.c_size_t(len(arr))
@@ -3230,7 +3230,7 @@ def create_enclave_signature(args):
     """
     Sign the data for the enclave with nonce
     """
-    arr = (ctypes.c_char * (len(args) + 16))()
+    arr = (ctypes.c_char * (len(args) + CIPHER_NONCE_SIZE))()
     add_to_sig_data(arr, data=args)
     add_nonce_to_sig_data(arr, pos=len(args))
     sig, sig_len = sign_data(globals()["current_user_priv_key"], arr, len(arr))
