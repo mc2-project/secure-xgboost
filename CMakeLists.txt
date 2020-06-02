@@ -10,6 +10,17 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
+
+# Build options
+set(CLIENT_LIST user1 user2
+    CACHE STRING "List of usernames of clients in federation")
+set(SIGNER_PUB_FILE config/signer.pub
+    CACHE STRING "Public key of enclave signing authority")
+set(SIGNER_KEY_FILE config/signer.pem
+    CACHE STRING "Private key of enclave signing authority")
+set(CA_CERT_FILE config/signer.crt
+    CACHE STRING "Root certificate of CA for signing client identities")
+
 # OE configuration options for enclave
 set(OE_DEBUG 0
     CACHE STRING "Build enclave in debug mode (1) or release mode (0)")
@@ -46,6 +57,34 @@ FILE(WRITE ${PROJECT_SOURCE_DIR}/enclave/xgboost.conf
     "ProductID=${OE_PRODUCT_ID}\n"
     "SecurityVersion=${OE_SECURITY_VERSION}\n"
 )
+
+# Read signer's public key
+file(STRINGS ${SIGNER_PUB_FILE} MRSIGNER_PUBLIC_KEY_LINES)
+set(MRSIGNER_PUBLIC_KEY "")
+foreach(line IN LISTS MRSIGNER_PUBLIC_KEY_LINES)
+    set(MRSIGNER_PUBLIC_KEY "${MRSIGNER_PUBLIC_KEY}\"${line}\\n\"\n")
+endforeach()
+
+# Read root certificate
+file(STRINGS ${CA_CERT_FILE} CA_CERT_LINES)
+set(CA_CERT "")
+foreach(line IN LISTS CA_CERT_LINES)
+    set(CA_CERT "${CA_CERT}\"${line}\\n\"\n")
+endforeach()
+
+# List of usernames of participating clients
+set(CLIENT_NAMES "")
+message("\nAuthorized client names:")
+foreach(name ${CLIENT_LIST})
+    message(${name})
+    set(CLIENT_NAMES "${CLIENT_NAMES} \"${name}\",")
+endforeach(name)
+set(CLIENT_NAMES "{${CLIENT_NAMES}}")
+list(LENGTH CLIENT_LIST NUM_CLIENTS)
+
+# Generate file to hardcode usernames and keys into enclave
+message(STATUS "cmake/attestation.h.in -> ${PROJECT_SOURCE_DIR}/include/enclave/attestation.h")
+configure_file("cmake/attestation.h.in" "${PROJECT_SOURCE_DIR}/include/enclave/attestation.h")
 
 if(OE_DEBUG STREQUAL 0)
     set(LOGGING OFF)

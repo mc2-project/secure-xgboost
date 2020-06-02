@@ -1,1 +1,1 @@
-python3 client1.py --ip-addr $1 --symmkey key1.txt --privkey ../../../data/userkeys/private_user_1.pem --cert ../../../data/usercrts/user1.crt
+python3 client1.py --ip-addr $1 --symmkey key1.txt --privkey ../../../../config/user1.pem --cert ../../../../config/user1.crt
