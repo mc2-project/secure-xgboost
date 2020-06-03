@@ -5,8 +5,8 @@ username = "user1"
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 sym_key_file = DIR + "/../../data/key_zeros.txt"
-pub_key_file = DIR + "/../../data/userkeys/private_user_1.pem"
-cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
+pub_key_file = DIR + "/../../../config/user1.pem"
+cert_file = DIR + "/../../../config/user1.crt"
 
 
 print("Init user parameters")
@@ -50,6 +50,11 @@ booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest
 print("Saving model")
 # Save model to a file
 booster.save_model(HOME_DIR + "demo/python/basic/modelfile.model")
+
+print("Loading model")
+# Load model from file
+booster = xgb.Booster()
+booster.load_model(HOME_DIR + "demo/python/basic/modelfile.model")
 
 # Get encrypted predictions
 print("\nModel Predictions: ")

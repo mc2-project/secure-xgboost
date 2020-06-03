@@ -1437,6 +1437,11 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t*
     std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
     raw_str.resize(0);
 
+    common::MemoryBufferStream fo(&raw_str);
+    auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
+    bst->LazyInit();
+    bst->learner()->Save(&fo);
+
     size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + raw_str.length();
     unsigned char* buf  = (unsigned char*) malloc(buf_len);
 

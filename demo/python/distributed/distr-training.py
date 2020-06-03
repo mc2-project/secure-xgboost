@@ -4,8 +4,8 @@ import os
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 SYM_KEY_FILE = DIR + "/../../data/key_zeros.txt"
-PRIVATE_KEY_FILE = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
-CERT_FILE = DIR + "/../../data/usercrts/user1.crt"
+PRIVATE_KEY_FILE = HOME_DIR + "config/user1.pem"
+CERT_FILE = HOME_DIR + "config/user1.crt"
 
 username = "user1"
 xgb.init_user(username, SYM_KEY_FILE, PRIVATE_KEY_FILE, CERT_FILE)
