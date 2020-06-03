@@ -337,7 +337,6 @@ class EnclaveContext {
         LOG(FATAL) << "Signature verification failed";
       }
 
-      LOG(DEBUG) << "Verification passed";
       return true;
     }
 
@@ -355,8 +354,6 @@ class EnclaveContext {
       unsigned char nameptr[50];
       size_t name_len;
 
-      LOG(DEBUG) << "Decrypting and saving client key with certificate";
-        
       // Only the master node verifies signature and certificate
       if (rabit::GetRank() == 0) {
           if (!verifySignatureWithCertificate(cert, cert_len, data, data_len, signature, sig_len)) {
@@ -373,7 +370,6 @@ class EnclaveContext {
 
 
           // Only the master node can decrypt the symmetric key
-          LOG(DEBUG) << "Decrypting client symmetric key";
           res = mbedtls_rsa_pkcs1_decrypt(
                   rsa_context,
                   mbedtls_ctr_drbg_random,
@@ -387,8 +383,6 @@ class EnclaveContext {
               LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
           }
 
-          LOG(DEBUG) << "Decryption passed";
-
           int ret;
           mbedtls_x509_crt user_cert;
           mbedtls_x509_crt_init(&user_cert);
@@ -398,7 +392,6 @@ class EnclaveContext {
                   << "mbedtls_x509_crt_parse returned " << ret;
           }
 
-          LOG(DEBUG) << rabit::GetRank() << " rank got username from cert";
           mbedtls_x509_name subject_name = user_cert.subject;
           mbedtls_asn1_buf name = subject_name.val;
           strcpy((char*) nameptr, (const char*) name.p);
@@ -408,13 +401,8 @@ class EnclaveContext {
       // Signature and certificate verification has passed
       // The master node (rank 0) broadcasts the client key and client name to other nodes
       rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
-      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted client key";
-
       rabit::Broadcast(&name_len, sizeof(name_len), 0);
-      LOG(DEBUG) << "Rank " << rabit::GetRank() << " broadcasted username length";
-        
       rabit::Broadcast(nameptr, name_len, 0);
-      LOG(DEBUG) << "Rank "  << rabit::GetRank() << " broadcasted username";
 
       // Store the client's symmetric key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);

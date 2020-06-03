@@ -91,7 +91,7 @@ class RemoteStub(object):
                 )
         self.rpc_XGDMatrixNumRow = channel.unary_unary(
                 '/remote.Remote/rpc_XGDMatrixNumRow',
-                request_serializer=remote__pb2.Name.SerializeToString,
+                request_serializer=remote__pb2.NumRowRequest.SerializeToString,
                 response_deserializer=remote__pb2.Integer.FromString,
                 )
         self.rpc_RabitInit = channel.unary_unary(
@@ -319,7 +319,7 @@ def add_RemoteServicer_to_server(servicer, server):
             ),
             'rpc_XGDMatrixNumRow': grpc.unary_unary_rpc_method_handler(
                     servicer.rpc_XGDMatrixNumRow,
-                    request_deserializer=remote__pb2.Name.FromString,
+                    request_deserializer=remote__pb2.NumRowRequest.FromString,
                     response_serializer=remote__pb2.Integer.SerializeToString,
             ),
             'rpc_RabitInit': grpc.unary_unary_rpc_method_handler(
@@ -594,7 +594,7 @@ class Remote(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/remote.Remote/rpc_XGDMatrixNumRow',
-            remote__pb2.Name.SerializeToString,
+            remote__pb2.NumRowRequest.SerializeToString,
             remote__pb2.Integer.FromString,
             options, channel_credentials,
             call_credentials, compression, wait_for_ready, timeout, metadata)

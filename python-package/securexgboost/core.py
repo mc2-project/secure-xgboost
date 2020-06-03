@@ -1930,7 +1930,7 @@ class Booster(object):
                                                                                                         signature=sig, sig_len=sig_len)))
                 globals()["nonce_ctr"] += 1
                 enc_preds_serialized_list = response.predictions
-                length_list = [num_pred for num_pred in response.num_preds]
+                length_list = list(response.num_preds)
                 
                 preds = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
 

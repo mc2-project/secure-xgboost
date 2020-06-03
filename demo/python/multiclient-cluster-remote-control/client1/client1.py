@@ -32,17 +32,10 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     print("Load training matrices")
     dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_train.enc"}, encrypted=True)
-    if not dtrain:
-        print("Error loading data")
-        return
 
     print("Creating test matrix")
     dtest1 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_test.enc"})
     dtest2 = xgb.DMatrix({"user2": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_test.enc"})
-
-    if not dtest1 or not dtest2:
-        print("Error creating dtest")
-        return
 
     print("Beginning Training")
 

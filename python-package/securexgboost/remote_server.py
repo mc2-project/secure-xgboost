@@ -72,8 +72,7 @@ class Command(object):
         return True
 
     def invoke(self):
-        node_ips = globals().get("nodes")
-        if not node_ips:
+        if not globals()["is_orchestrator"]:
             self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
         else: # We're the RPC orchestrator
             seq_num = self._seq_num
@@ -154,7 +153,7 @@ class Command(object):
                 elif self._func == remote_api.XGBoosterLoadModel:
                     load_model_params = self._params.load_model_params
                     response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParamsRequest(
-                        load_model_param=load_model_params,
+                        load_model_params=load_model_params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
@@ -221,26 +220,29 @@ class Command(object):
                 results.append(future.result())
 
             statuses = [result.status.status for result in results]
+            
+            # Check for error
+            error = False
+            exception = None
+            if -1 in statuses:
+                exceptions = [result.status.exception for result in results]
+                i = statuses.index(-1)
+                exception = exceptions[i]
+                
             # Set return value
             if self._func == rabit_remote_api.RabitInit:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
+                if error:
+                    self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == rabit_remote_api.RabitFinalize:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
+                if error:
+                    self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     dmatrix_handles = [result.name for result in results]
                     if dmatrix_handles.count(dmatrix_handles[0]) == len(dmatrix_handles):
@@ -249,17 +251,13 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent dmatrix handles returned by enclaves in XGDMatrixCreateFromEncryptedFile call"))
             elif self._func == remote_api.XGBoosterSetParam:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
+                if error:
+                    self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterCreate:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     bst_handles = [result.name for result in results]
                     if bst_handles.count(bst_handles[0]) == len(bst_handles):
@@ -268,31 +266,23 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent booster handles returned by enclaves in XGBoosterCreate call"))
             elif self._func == remote_api.XGBoosterUpdateOneIter:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
+                if error:
+                    self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterSaveModel:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
+                if error:
+                    self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterLoadModel:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = remote_pb2.Status(status=-1, exception=exceptions[i]) 
+                if error:
+                    self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGBoosterDumpModelEx:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     sarrs = [result.sarr for result in results]
                     lengths = [result.length for result in results]
@@ -331,10 +321,8 @@ class Command(object):
                     else:
                         self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterGetModelRaw call"))
             elif self._func == remote_api.XGDMatrixNumRow:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     num_rows = [result.value for result in results]
                     if num_rows.count(num_rows[0]) == len(num_rows):
@@ -343,10 +331,8 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumRow call")) 
             elif self._func == remote_api.XGDMatrixNumCol:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     num_cols = [result.value for result in results]
                     if num_cols.count(num_cols[0]) == len(num_cols):
@@ -355,10 +341,8 @@ class Command(object):
                     else:
                         self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumCol call"))
             elif self._func == remote_api.XGBoosterPredict:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error: 
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     enc_preds_protos_list_list = [result.predictions for result in results]
                     # enc_preds_ret is a list of enc_preds_protos, one for each node in the cluster
