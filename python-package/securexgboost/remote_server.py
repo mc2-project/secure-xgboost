@@ -75,6 +75,7 @@ class Command(object):
         if not globals()["is_orchestrator"]:
             self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
         else: # We're the RPC orchestrator
+            node_ips = globals()["nodes"]
             seq_num = self._seq_num
             signers = self._usernames
             signatures = self._signatures
