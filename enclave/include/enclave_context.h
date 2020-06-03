@@ -91,6 +91,7 @@ class EnclaveContext {
     }
 
     // Checks equality of received and expected nonce and nonce counter and increments nonce counter.
+    // FIXME: Redundant check; signature verification is enough
     bool check_seq_num(uint8_t* recv_nonce, uint32_t recv_nonce_ctr) {
       bool retval = recv_nonce_ctr == m_nonce_ctr;
       if (!retval) return retval;
@@ -230,32 +231,6 @@ class EnclaveContext {
       }
     }
 
-    bool verifySignatureWithUserName(uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len, char* username){
-          mbedtls_pk_context _pk_context;
-
-      unsigned char hash[SHA_DIGEST_SIZE];
-      int ret = 1;
-
-      mbedtls_pk_init(&_pk_context);
-      if (client_keys.count(username) <= 0){
-        LOG(FATAL) << "user " << username << " does not exist";
-      }
-
-      char* cert = get_client_cert(username);
-      mbedtls_x509_crt user_cert;
-      mbedtls_x509_crt_init(&user_cert);
-      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert, strlen(cert) + 1)) != 0) {
-         LOG(FATAL) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
-      }
-
-      _pk_context = user_cert.pk;
-
-      if (verifySignature(_pk_context, data, data_len, signature, sig_len) != 0) {
-        LOG(FATAL) << "Signature verification failed";
-      }
-      return true;
-    }
-
     bool verifyClientSignatures(uint8_t* data, size_t data_len, char* signers[], uint8_t* signatures[], size_t sig_lengths[]){
       mbedtls_pk_context _pk_context;
 
@@ -291,6 +266,18 @@ class EnclaveContext {
         }
       }
       return true;
+    }
+
+    bool verify_signatures_with_nonce(std::vector<uint8_t> *bytes, char* signers[], uint8_t* signatures[], size_t sig_lengths[]){
+      for (int i = 0; i < CIPHER_IV_SIZE; i ++) {
+        bytes->push_back(m_nonce[i]);
+      }
+      bytes->push_back(m_nonce_ctr >> 24);
+      bytes->push_back(m_nonce_ctr >> 16);
+      bytes->push_back(m_nonce_ctr >>  8);
+      bytes->push_back(m_nonce_ctr      );
+      
+      return verifyClientSignatures(bytes->data(), bytes->size(), signers, signatures, sig_lengths);
     }
 
     bool verifySignatureWithCertificate(char* cert,
@@ -336,6 +323,24 @@ class EnclaveContext {
         LOG(FATAL) << "Signature verification failed";
       }
       return true;
+    }
+
+    bool sign_args(char* data,
+        uint8_t* signature,
+        size_t* sig_len) {
+      return sign_data(m_pk_context, (uint8_t*)data, strlen(data), signature, sig_len);
+    }
+
+    bool sign_bytes_with_nonce(std::vector<uint8_t> *bytes, uint8_t* signature, size_t* sig_len) {
+      for (int i = 0; i < CIPHER_IV_SIZE; i ++) {
+        bytes->push_back(m_nonce[i]);
+      }
+      bytes->push_back(m_nonce_ctr >> 24);
+      bytes->push_back(m_nonce_ctr >> 16);
+      bytes->push_back(m_nonce_ctr >>  8);
+      bytes->push_back(m_nonce_ctr      );
+
+      return sign_data(m_pk_context, bytes->data(), bytes->size(), signature, sig_len);
     }
 
     // TODO(rishabh): Fix sequence of the various checks in this function
