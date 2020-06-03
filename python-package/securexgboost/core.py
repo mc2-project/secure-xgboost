@@ -17,7 +17,7 @@ import sys
 import warnings
 
 import grpc
-from .rpc import remote_pb2, ndarray_pb2
+from .rpc import remote_pb2
 from .rpc import remote_pb2_grpc
 from rpc_utils import CIPHER_IV_SIZE, CIPHER_TAG_SIZE, CIPHER_NONCE_SIZE
 
@@ -541,7 +541,7 @@ class DMatrix(object):
                 for username, filename in zip(usernames, data):
                     args = args + " username {} filename {}".format(username, filename)
                 args = args + " silent {}".format(int(silent))
-                sig, sig_len = create_enclave_signature(args)
+                sig, sig_len = create_client_signature(args)
 
                 out_sig = ctypes.POINTER(ctypes.c_uint8)()
                 out_sig_length = c_bst_ulong()
@@ -997,7 +997,7 @@ class DMatrix(object):
         number of rows : int
         """
         args = "XGDMatrixNumRow " + self.handle.value.decode('utf-8')
-        sig, sig_len = create_enclave_signature(args)
+        sig, sig_len = create_client_signature(args)
 
         ret = c_bst_ulong()
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
@@ -1041,7 +1041,7 @@ class DMatrix(object):
         number of columns : int
         """
         args = "XGDMatrixNumCol " + self.handle.value.decode('utf-8')
-        sig, sig_len = create_enclave_signature(args)
+        sig, sig_len = create_client_signature(args)
 
         ret = c_bst_ulong()
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
@@ -1511,7 +1511,7 @@ class Booster(object):
             self._validate_features(d)
 
         args = "XGBoosterCreate"
-        sig, sig_len = create_enclave_signature(args)
+        sig, sig_len = create_client_signature(args)
 
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
         out_sig_length = c_bst_ulong()
@@ -1698,7 +1698,7 @@ class Booster(object):
 
         for key, val in params:
             args = "XGBoosterSetParam " + self.handle.value.decode('utf-8') + " " + key + "," + str(val)
-            sig, sig_len = create_enclave_signature(args)
+            sig, sig_len = create_client_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -1744,7 +1744,7 @@ class Booster(object):
         
         if fobj is None:
             args = "XGBoosterUpdateOneIter booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
-            sig, sig_len = create_enclave_signature(args)
+            sig, sig_len = create_client_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -1965,7 +1965,7 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         args = "XGBoosterPredict booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
-        sig, sig_len = create_enclave_signature(args)
+        sig, sig_len = create_client_signature(args)
 
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
         out_sig_length = c_bst_ulong()
@@ -2101,7 +2101,7 @@ class Booster(object):
             fname = os.path.normpath(fname)
 
             args = "XGBoosterSaveModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            sig, sig_len = create_enclave_signature(args)
+            sig, sig_len = create_client_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -2154,7 +2154,7 @@ class Booster(object):
         cptr = ctypes.POINTER(ctypes.c_char)()
 
         args = "XGBoosterGetModelRaw handle {}".format(self.handle.value.decode('utf-8'))
-        sig, sig_len = create_enclave_signature(args)
+        sig, sig_len = create_client_signature(args)
 
         out_sig = ctypes.POINTER(ctypes.c_uint8)()
         out_sig_length = c_bst_ulong()
@@ -2215,7 +2215,7 @@ class Booster(object):
 
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             args = "XGBoosterLoadModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            sig, sig_len = create_enclave_signature(args)
+            sig, sig_len = create_client_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -2322,7 +2322,7 @@ class Booster(object):
             args = "XGBoosterDumpModelExWithFeatures booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
             for i in range(flen):
                 args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
-            sig, sig_len = create_enclave_signature(args)
+            sig, sig_len = create_client_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -2375,7 +2375,7 @@ class Booster(object):
                 raise ValueError("No such file: {0}".format(fmap))
 
             args = "XGBoosterDumpModelEx booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
-            sig, sig_len = create_enclave_signature(args)
+            sig, sig_len = create_client_signature(args)
 
             out_sig = ctypes.POINTER(ctypes.c_uint8)()
             out_sig_length = c_bst_ulong()
@@ -3191,7 +3191,6 @@ def sign_data(key, data, data_size):
         pass
     else:
         # FIXME error handling for other types
-        print(type(data))
         data = proto_to_pointer(data)
 
     data_size = ctypes.c_size_t(data_size)
@@ -3226,7 +3225,7 @@ def verify_enclave_signature(data, size, sig, sig_len):
     globals()["nonce_ctr"] += 1
 
 
-def create_enclave_signature(args):
+def create_client_signature(args):
     """
     Sign the data for the enclave with nonce
     """
