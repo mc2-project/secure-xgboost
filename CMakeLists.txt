@@ -22,7 +22,7 @@ set(CA_CERT_FILE config/signer.crt
     CACHE STRING "Root certificate of CA for signing client identities")
 
 # OE configuration options for enclave
-set(OE_DEBUG 0
+set(OE_DEBUG 1
     CACHE STRING "Build enclave in debug mode (1) or release mode (0)")
 set(OE_NUM_HEAP_PAGES 100000
     CACHE STRING "Number of enclave heap pages")
@@ -36,9 +36,9 @@ set(OE_SECURITY_VERSION 1
     CACHE STRING "Enclave security version (ISVSVN)")
 
 option(LOGGING
-    "Enable enclave logger" OFF)
+    "Enable enclave logger" ON)
 option(SIMULATE
-    "Build enclave in simulation mode" OFF)
+    "Build enclave in simulation mode" ON)
 option(OBLIVIOUS
     "Enable oblivious training and inference" ON)
 option(USE_AVX2 

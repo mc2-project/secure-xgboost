@@ -294,10 +294,8 @@ class Command(object):
                     else:
                         self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelEx call"))
             elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions)) 
                 else:
                     sarrs = [result.sarr for result in results]
                     lengths = [result.length for result in results]
@@ -308,10 +306,8 @@ class Command(object):
                     else:
                         self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelExWithFeatures call"))
             elif self._func == remote_api.XGBoosterGetModelRaw:
-                if -1 in statuses:
-                    exceptions = [result.status.exception for result in results]
-                    i = statuses.index(-1)
-                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions[i])) 
+                if error:
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions)) 
                 else:
                     sarrs = [result.sarr for result in results]
                     lengths = [result.length for result in results]
