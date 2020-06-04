@@ -73,6 +73,7 @@ class Command(object):
 
     def invoke(self):
         if not globals()["is_orchestrator"]:
+            # Returns <return_value>, signature, sig_len
             self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
         else: # We're the RPC orchestrator
             node_ips = globals()["nodes"]
@@ -229,117 +230,130 @@ class Command(object):
                 exceptions = [result.status.exception for result in results]
                 i = statuses.index(-1)
                 exception = exceptions[i]
+
+            # Collect all signatures
+            sig_protos = []
+            sig_lens = []
+            for result in results:
+                sig_protos.append(result.signature)
+                sig_lens.append(result.sig_len)
+            
+            # If we return only one signature, return the signature from the master enclave
+            master_signature = sig_protos[0]
+            master_sig_len = sig_lens[0]
                 
             # Set return value
             if self._func == rabit_remote_api.RabitInit:
                 if error:
                     self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
+                    # FIXME: add signatures
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == rabit_remote_api.RabitFinalize:
                 if error:
                     self._ret = remote_pb2.Status(status=-1, exception=exception)
                 else:
+                    # FIXME: add signatures
                     self._ret = remote_pb2.Status(status=0)
             elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
                 if error:
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
+                    self._ret = (None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     dmatrix_handles = [result.name for result in results]
                     if dmatrix_handles.count(dmatrix_handles[0]) == len(dmatrix_handles):
                         # Every enclave returned the same handle string
-                        self._ret = (dmatrix_handles[0], remote_pb2.Status(status=0))
+                        self._ret = (dmatrix_handles[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent dmatrix handles returned by enclaves in XGDMatrixCreateFromEncryptedFile call"))
+                        self._ret = (None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent dmatrix handles returned by enclaves in XGDMatrixCreateFromEncryptedFile call"))
             elif self._func == remote_api.XGBoosterSetParam:
                 if error:
-                    self._ret = remote_pb2.Status(status=-1, exception=exception)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception))
                 else:
-                    self._ret = remote_pb2.Status(status=0)
+                    self._ret = (None, None, remote_pb2.Status(status=0))
             elif self._func == remote_api.XGBoosterCreate:
                 if error:
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
+                    self._ret = (None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     bst_handles = [result.name for result in results]
                     if bst_handles.count(bst_handles[0]) == len(bst_handles):
                         # Every enclave returned the same booster handle string
-                        self._ret = (bst_handles[0], remote_pb2.Status(status=0))
+                        self._ret = (bst_handles[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent booster handles returned by enclaves in XGBoosterCreate call"))
+                        self._ret = (None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent booster handles returned by enclaves in XGBoosterCreate call"))
             elif self._func == remote_api.XGBoosterUpdateOneIter:
                 if error:
-                    self._ret = remote_pb2.Status(status=-1, exception=exception)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception))
                 else:
-                    self._ret = remote_pb2.Status(status=0)
+                    self._ret = (master_signature, master_sig_len, remote_pb2.Status(status=0))
             elif self._func == remote_api.XGBoosterSaveModel:
                 if error:
-                    self._ret = remote_pb2.Status(status=-1, exception=exception)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception))
                 else:
-                    self._ret = remote_pb2.Status(status=0)
+                    self._ret = (master_signature, master_sig_len, remote_pb2.Status(status=0))
             elif self._func == remote_api.XGBoosterLoadModel:
                 if error:
-                    self._ret = remote_pb2.Status(status=-1, exception=exception)
+                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception))
                 else:
-                    self._ret = remote_pb2.Status(status=0)
+                    self._ret = (master_signature, master_sig_len, remote_pb2.Status(status=0))
             elif self._func == remote_api.XGBoosterDumpModelEx:
                 if error:
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
+                    self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     sarrs = [result.sarr for result in results]
                     lengths = [result.length for result in results]
                     if lengths.count(lengths[0]) == len(lengths):
                         # Every enclave returned the same length
                         # We cannot check if the dumps are the same because they are encrypted
-                        self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
+                        self._ret = (lengths[0], sarrs[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelEx call"))
+                        self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelEx call"))
             elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
                 if error:
-                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions)) 
+                    self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception=exceptions)) 
                 else:
                     sarrs = [result.sarr for result in results]
                     lengths = [result.length for result in results]
                     if lengths.count(lengths[0]) == len(lengths):
                         # Every enclave returned the same length
                         # We cannot check if the dumps are the same because they are encrypted
-                        self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
+                        self._ret = (lengths[0], sarrs[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelExWithFeatures call"))
+                        self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterDumpModelExWithFeatures call"))
             elif self._func == remote_api.XGBoosterGetModelRaw:
                 if error:
-                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exceptions)) 
+                    self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception=exceptions)) 
                 else:
                     sarrs = [result.sarr for result in results]
                     lengths = [result.length for result in results]
                     if lengths.count(lengths[0]) == len(lengths):
                         # Every enclave returned the same length
                         # We cannot check if the dumps are the same because they are encrypted
-                        self._ret = (lengths[0], sarrs[0], remote_pb2.Status(status=0))
+                        self._ret = (lengths[0], sarrs[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterGetModelRaw call"))
+                        self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results from enclaves in XGBoosterGetModelRaw call"))
             elif self._func == remote_api.XGDMatrixNumRow:
                 if error:
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
+                    self._ret = (None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     num_rows = [result.value for result in results]
                     if num_rows.count(num_rows[0]) == len(num_rows):
                         # Each enclave agrees on the number of rows in the DMatrix
-                        self._ret = (num_rows[0], remote_pb2.Status(status=0))
+                        self._ret = (num_rows[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumRow call")) 
+                        self._ret = (None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumRow call")) 
             elif self._func == remote_api.XGDMatrixNumCol:
                 if error:
-                    self._ret = (None, remote_pb2.Status(status=-1, exception=exception)) 
+                    self._ret = (None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     num_cols = [result.value for result in results]
                     if num_cols.count(num_cols[0]) == len(num_cols):
                         # Each enclave agrees on the number of columns in the DMatrix
-                        self._ret = (num_cols[0], remote_pb2.Status(status=0))
+                        self._ret = (num_cols[0], master_signature, master_sig_len, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumCol call"))
+                        self._ret = (None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent numbers from enclaves in XGDMatrixNumCol call"))
             elif self._func == remote_api.XGBoosterPredict:
                 if error: 
-                    self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception)) 
+                    self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
                     enc_preds_protos_list_list = [result.predictions for result in results]
                     # enc_preds_ret is a list of enc_preds_protos, one for each node in the cluster
@@ -354,9 +368,9 @@ class Command(object):
                         num_preds_ret.extend(num_preds_lst)
 
                     if len(enc_preds_ret) == len(num_preds_ret):
-                        self._ret = (enc_preds_ret, num_preds_ret, remote_pb2.Status(status=0))
+                        self._ret = (enc_preds_ret, num_preds_ret, sig_protos, sig_lens, remote_pb2.Status(status=0))
                     else:
-                        self._ret = (None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results in XGBoosterPredict call"))
+                        self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results in XGBoosterPredict call"))
             else:
                 raise NotImplementedError
 
@@ -380,8 +394,7 @@ def handle_exception():
     print("Error value: " + str(e[1]))
     traceback.print_tb(e[2])
 
-    status = remote_pb2.Status(status=-1, exception=str(e[1]))
-    return status
+    return remote_pb2.Status(status=-1, exception=str(e[1]))
 
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
@@ -436,6 +449,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             key_size = request.key_size
             signature = request.signature
             sig_len = request.sig_len
+
             # Get encrypted symmetric key, signature, and certificate from request
             if not globals()["is_orchestrator"]:
                 # Get a reference to the existing enclave
@@ -474,7 +488,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                     return remote_pb2.StatusMsg(status=error_status)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_get_enclave_symm_key(self, request, context):
         """
@@ -509,12 +523,14 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                dmatrix_handle, status = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+                dmatrix_handle, sig_proto, sig_len, status = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+                sig_proto = pointer_to_proto(sig, sig_len)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                dmatrix_handle = remote_api.XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths)
+                dmatrix_handle, sig, sig_len = remote_api.XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Name(name=dmatrix_handle, status=status)
+            return remote_pb2.Name(name=dmatrix_handle, signature=sig_proto, sig_len=sig_len, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Name(name=None, status=status)
@@ -525,15 +541,16 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                status = self._synchronize(remote_api.XGBoosterSetParam, request)
+                sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterSetParam, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                remote_api.XGBoosterSetParam(request, signers, signatures, sig_lengths)
+                sig, sig_len = remote_api.XGBoosterSetParam(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.StatusMsg(status=status)
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterCreate(self, request, context):
         """
@@ -541,12 +558,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                booster_handle, status = self._synchronize(remote_api.XGBoosterCreate, request)
+                booster_handle, sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterCreate, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                booster_handle = remote_api.XGBoosterCreate(request, signers, signatures, sig_lengths)
+                booster_handle, sig, sig_len = remote_api.XGBoosterCreate(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Name(name=booster_handle, status=status)
+            return remote_pb2.Name(name=booster_handle, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Name(status=status)
@@ -557,15 +575,16 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
+                sig, sig_len, status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                remote_api.XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths)
+                sig, sig_len = remote_api.XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.StatusMsg(status=status)
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterPredict(self, request, context):
         """
@@ -576,16 +595,17 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 # If we're the orchestrator, this list should already be in proto form
-                enc_preds_proto_list, num_preds_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
+                enc_preds_proto_list, num_preds_list, sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterPredict, request)
             else:
                 # If we're not the orchestrator, we're just running this on our partition of the data
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                enc_preds, num_preds = remote_api.XGBoosterPredict(request, signers, signatures, sig_lengths)
+                enc_preds, num_preds, sig, sig_len = remote_api.XGBoosterPredict(request, signers, signatures, sig_lengths)
                 enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
                 enc_preds_proto_list = [enc_preds_proto]
                 num_preds_list = [num_preds]
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status)
+            return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Predictions(status=status)
@@ -597,16 +617,16 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                status = self._synchronize(remote_api.XGBoosterSaveModel, request)
+                sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterSaveModel, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                remote_api.XGBoosterSaveModel(request, signers, signatures, sig_lengths)
+                sig, sig_len = remote_api.XGBoosterSaveModel(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.StatusMsg(status=status)
-
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterLoadModel(self, request, context):
         """
@@ -614,16 +634,16 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                status = self._synchronize(remote_api.XGBoosterLoadModel, request)
+                sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterLoadModel, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                remote_api.XGBoosterLoadModel(request, signers, signatures, sig_lengths)
+                sig, sig_len = remote_api.XGBoosterLoadModel(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.StatusMsg(status=status)
-
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterDumpModelEx(self, request, context):
         """
@@ -631,13 +651,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr, status = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+                length, sarr, sig_proto, status = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                length, sarr = remote_api.XGBoosterDumpModelEx(request, signers, signatures, sig_lengths)
+                length, sarr, sig, sig_len = remote_api.XGBoosterDumpModelEx(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
-
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Dump(status=status)
@@ -648,12 +668,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr, status = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+                length, sarr, sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                length, sarr = remote_api.XGBoosterDumpModelExWithFeatures(request, signers, signatures, sig_lengths)
+                length, sarr, sig, sig_len = remote_api.XGBoosterDumpModelExWithFeatures(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Dump(status=status)
@@ -664,13 +685,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr, status = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
+                length, sarr, sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                length, sarr = remote_api.XGBoosterGetModelRaw(request, signers, signatures, sig_lengths)
+                length, sarr, sig, sig_len = remote_api.XGBoosterGetModelRaw(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
-
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Dump(status=status)
@@ -681,12 +702,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                ret, status = self._synchronize(remote_api.XGDMatrixNumCol, request)
+                ret, sig_proto, sig_len, status = self._synchronize(remote_api.XGDMatrixNumCol, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                ret = remote_api.XGDMatrixNumCol(request, signers, signatures, sig_lengths)
+                sig, sig_len, ret = remote_api.XGDMatrixNumCol(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Integer(value=ret, status=status)
+            return remote_pb2.Integer(value=ret, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Integer(status=status)
@@ -697,12 +719,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                ret, status = self._synchronize(remote_api.XGDMatrixNumRow, request)
+                ret, sig_proto, sig_len, status = self._synchronize(remote_api.XGDMatrixNumRow, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                ret = remote_api.XGDMatrixNumRow(request, signers, signatures, sig_lengths)
+                ret, sig, sig_len = remote_api.XGDMatrixNumRow(request, signers, signatures, sig_lengths)
+                sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Integer(value=ret, status=status)
+            return remote_pb2.Integer(value=ret, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Integer(status=status)

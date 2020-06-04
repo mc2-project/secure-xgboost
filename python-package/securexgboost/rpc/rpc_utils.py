@@ -4,6 +4,7 @@ import ctypes
 
 CIPHER_IV_SIZE = 12
 CIPHER_TAG_SIZE = 16
+CIPHER_NONCE_SIZE = 16
 
 def ctypes2numpy(cptr, length, dtype):
     """Convert a ctypes pointer array to a numpy array.
