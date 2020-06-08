@@ -1,2 +1,0 @@
-## Make sure you git clone https://github.com/ARMmbed/mbedtls.git in this folder and run `make` inside the repo before running any script
-### You also need to generate the CA certificate first before generating the user certificate

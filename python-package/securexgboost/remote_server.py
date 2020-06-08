@@ -90,8 +90,7 @@ def handle_exception():
     print("Error value: " + str(e[1]))
     traceback.print_tb(e[2])
 
-    status = remote_pb2.Status(status=-1, exception=str(e[1]))
-    return status
+    return remote_pb2.Status(status=-1, exception=str(e[1]))
 
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
@@ -152,10 +151,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             # Get a reference to the existing enclave
             result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
 
-            return remote_pb2.Status(status=result)
+            status = remote_pb2.Status(status=result)
+            return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
@@ -173,10 +173,11 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             # Get a reference to the existing enclave
             result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
 
-            return remote_pb2.Status(status=result)
+            status = remote_pb2.Status(status=result)
+            return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_get_enclave_symm_key(self, request, context):
         """
@@ -198,9 +199,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Create DMatrix from encrypted file
         """
         try:
-            dmatrix_handle = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+            dmatrix_handle, sig, sig_len = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Name(name=dmatrix_handle, status=status)
+            return remote_pb2.Name(name=dmatrix_handle, signature=sig_proto, sig_len=sig_len, status=status)
         except:
             status = handle_exception()
             return remote_pb2.Name(name=None, status=status)
@@ -210,20 +212,23 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Set booster parameter
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterSetParam, request)
-            return remote_pb2.Status(status=0)
+            sig, sig_len = self._synchronize(remote_api.XGBoosterSetParam, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterCreate(self, request, context):
         """
         Create a booster
         """
         try:
-            booster_handle = self._synchronize(remote_api.XGBoosterCreate, request)
+            booster_handle, sig, sig_len = self._synchronize(remote_api.XGBoosterCreate, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Name(name=booster_handle, status=status)
+            return remote_pb2.Name(name=booster_handle, status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
             return remote_pb2.Name(status=status)
@@ -233,21 +238,24 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Update model for one iteration
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
-            return remote_pb2.Status(status=0)
+            sig, sig_len = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterPredict(self, request, context):
         """
         Get encrypted predictions
         """
         try:
-            enc_preds, num_preds = self._synchronize(remote_api.XGBoosterPredict, request)
+            enc_preds, num_preds, sig, sig_len = self._synchronize(remote_api.XGBoosterPredict, request)
             enc_preds_proto = pointer_to_proto(enc_preds, num_preds * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=status)
+            return remote_pb2.Predictions(predictions=enc_preds_proto, num_preds=num_preds, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
@@ -258,33 +266,38 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Save model to encrypted file
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterSaveModel, request)
-            return remote_pb2.Status(status=0)
+            sig, sig_len = self._synchronize(remote_api.XGBoosterSaveModel, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterLoadModel(self, request, context):
         """
         Load model from encrypted file
         """
         try:
-            _ = self._synchronize(remote_api.XGBoosterLoadModel, request)
-            return remote_pb2.Status(status=0)
+            sig, sig_len = self._synchronize(remote_api.XGBoosterLoadModel, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
+            status = remote_pb2.Status(status=0)
+            return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
-            return status
+            return remote_pb2.StatusMsg(status=status)
 
     def rpc_XGBoosterDumpModelEx(self, request, context):
         """
         Get encrypted model dump
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+            length, sarr, sig, sig_len = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
@@ -295,9 +308,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted model dump with features
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+            length, sarr, sig, sig_len = self._synchronize(remote_api.XGBoosterDumpModelExWithFeatures, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
@@ -308,9 +322,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get encrypted raw model dump
         """
         try:
-            length, sarr = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
+            length, sarr, sig, sig_len = self._synchronize(remote_api.XGBoosterGetModelRaw, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Dump(sarr=sarr, length=length, status=status)
+            return remote_pb2.Dump(sarr=sarr, length=length, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
@@ -321,9 +336,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get number of columns in DMatrix
         """
         try:
-            ret = self._synchronize(remote_api.XGDMatrixNumCol, request)
+            ret, sig, sig_len = self._synchronize(remote_api.XGDMatrixNumCol, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Integer(value=ret, status=status)
+            return remote_pb2.Integer(value=ret, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
@@ -334,9 +350,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         Get number of rows in DMatrix
         """
         try:
-            ret = self._synchronize(remote_api.XGDMatrixNumRow, request)
+            ret, sig, sig_len = self._synchronize(remote_api.XGDMatrixNumRow, request)
+            sig_proto = pointer_to_proto(sig, sig_len)
             status = remote_pb2.Status(status=0)
-            return remote_pb2.Integer(value=ret, status=status)
+            return remote_pb2.Integer(value=ret, status=status, signature=sig_proto, sig_len=sig_len)
 
         except:
             status = handle_exception()
