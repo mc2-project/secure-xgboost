@@ -430,8 +430,32 @@ class EnclaveContext {
     void share_symm_key_and_nonce() {
         rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
         rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
-        rabit::Broadcast(&m_pk_context, sizeof(mbedtls_pk_context), 0);
+        LOG(DEBUG) << "Broadcasting master enclave keypair";
         rabit::Broadcast(m_public_key, CIPHER_PK_SIZE, 0);
+        
+        uint8_t m_private_key[CIPHER_PK_SIZE];
+        int res;
+        res = mbedtls_pk_write_key_pem(&m_pk_context, m_private_key, sizeof(m_private_key));
+        if (res != 0) {
+            LOG(FATAL) << "mbedtls_pk_write_key_pem failed with " << res;
+        }
+
+        rabit::Broadcast(m_private_key, CIPHER_PK_SIZE, 0);
+
+        // Create new mbedtls_pk_context
+        mbedtls_pk_free(&m_pk_context);
+        res = mbedtls_pk_parse_key(&m_pk_context, m_private_key, CIPHER_PK_SIZE, NULL, NULL);
+        if (res != 0) {
+            LOG(FATAL) << "mbedtls_pk_parse_key failed with " << res;
+        }
+        
+        mbedtls_pk_parse_public_key(&m_pk_context, m_public_key, CIPHER_PK_SIZE);
+        if (res != 0) {
+            LOG(FATAL) << "mbedtls_pk_parse_public_key failed with " << res;
+        }
+
+        LOG(DEBUG) << "Successfully broadcasted master enclave keypair";
+        
     }
 
   private:
