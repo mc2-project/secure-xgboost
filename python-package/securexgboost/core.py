@@ -2006,10 +2006,12 @@ class Booster(object):
                     print("Verifying")
                     preds = preds_list[i]
                     enc_preds_length = length_list[i]
+                    print("Enc preds length: ", enc_preds_length)
                     size = enc_preds_length * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
 
                     out_sig = out_sigs[i]
                     out_sig_length = out_sig_lengths_ulong[i]
+                    print("Signature length: ", out_sig_length)
 
                     verify_enclave_signature(preds, size, out_sig, out_sig_length)
 

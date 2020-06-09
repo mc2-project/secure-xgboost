@@ -430,6 +430,8 @@ class EnclaveContext {
     void share_symm_key_and_nonce() {
         rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
         rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
+        rabit::Broadcast(&m_pk_context, sizeof(mbedtls_pk_context), 0);
+        rabit::Broadcast(m_public_key, CIPHER_PK_SIZE, 0);
     }
 
   private:

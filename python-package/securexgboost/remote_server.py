@@ -371,7 +371,9 @@ class Command(object):
 
                         # Collect signatures
                         sig_protos_ret.extend(result.signatures)
+                        print(sig_protos_ret)
                         sig_lens_ret.extend(result.sig_lens)
+                        print(sig_lens_ret)
                         
                     #  # Collect encrypted predictions
                     #  enc_preds_protos_list_list = [result.predictions for result in results]
