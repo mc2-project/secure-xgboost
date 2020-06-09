@@ -1061,8 +1061,6 @@ class DMatrix(object):
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
-                print(type(response.signature))
-
                 out_sig = proto_to_pointer(response.signature)
                 out_sig_length = c_bst_ulong(response.sig_len)
                 ret = response.value

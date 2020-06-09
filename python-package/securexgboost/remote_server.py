@@ -232,18 +232,21 @@ class Command(object):
                 exception = exceptions[i]
 
             # Collect all signatures
-            sig_protos = []
-            sig_lens = []
-            for result in results:
-                sig_protos.append(result.signature)
-                sig_lens.append(result.sig_len)
+            master_signature = None
+            master_sig_len = None
 
-            print("We got back {} signatures".format(len(sig_protos)))
-            print(sig_protos)
-            
-            # If we return only one signature, return the signature from the master enclave
-            master_signature = sig_protos[0]
-            master_sig_len = sig_lens[0]
+            if self._func != remote_api.XGBoosterPredict:
+                sig_protos = []
+                sig_lens = []
+                for result in results:
+                    sig_protos.append(result.signature)
+                    sig_lens.append(result.sig_len)
+
+                print("We got back {} signatures".format(len(sig_protos)))
+                
+                # If we return only one signature, return the signature from the master enclave
+                master_signature = sig_protos[0]
+                master_sig_len = sig_lens[0]
                 
             # Set return value
             if self._func == rabit_remote_api.RabitInit:
@@ -272,7 +275,7 @@ class Command(object):
                 if error:
                     self._ret = (None, None, remote_pb2.Status(status=-1, exception=exception))
                 else:
-                    self._ret = (None, None, remote_pb2.Status(status=0))
+                    self._ret = (master_signature, master_sig_len, remote_pb2.Status(status=0))
             elif self._func == remote_api.XGBoosterCreate:
                 if error:
                     self._ret = (None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
@@ -358,20 +361,34 @@ class Command(object):
                 if error: 
                     self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
+                    # Collect encrypted predictions
                     enc_preds_protos_list_list = [result.predictions for result in results]
                     # enc_preds_ret is a list of enc_preds_protos, one for each node in the cluster
                     enc_preds_ret = []
                     for proto_lst in enc_preds_protos_list_list:
                         enc_preds_ret.extend(proto_lst)
 
+                    # Collect num preds
                     num_preds_list_list = [result.num_preds for result in results]
                     # num_preds_ret is a list of integers, each of which represents the number of predictions in the corresponding index in enc_preds_ret
                     num_preds_ret = []
                     for num_preds_lst in num_preds_list_list:
                         num_preds_ret.extend(num_preds_lst)
 
+                    # Collect signatures
+                    sig_protos_list_list = [result.signatures for result in results]
+                    sig_protos_ret = []
+                    for sig_proto_lst in sig_protos_list_list:
+                        sig_protos_ret.extend(sig_proto_lst)
+
+                    # Collect signature lengths
+                    sig_len_list_list = [result.sig_lens for result in results]
+                    sig_lens_ret = []
+                    for sig_len_lst in sig_len_list_list:
+                        sig_lens_ret.extend(sig_len_lst)
+
                     if len(enc_preds_ret) == len(num_preds_ret):
-                        self._ret = (enc_preds_ret, num_preds_ret, sig_protos, sig_lens, remote_pb2.Status(status=0))
+                        self._ret = (enc_preds_ret, num_preds_ret, sig_protos_ret, sig_lens_ret, remote_pb2.Status(status=0))
                     else:
                         self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception="ERROR: Inconsistent results in XGBoosterPredict call"))
             else:
@@ -548,7 +565,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 sig, sig_len = remote_api.XGBoosterSetParam(request, signers, signatures, sig_lengths)
                 sig_proto = pointer_to_proto(sig, sig_len)
-            status = remote_pb2.Status(status=0)
+                status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status, signature=sig_proto, sig_len=sig_len)
         except:
             status = handle_exception()
@@ -577,7 +594,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                sig, sig_len, status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
+                sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterUpdateOneIter, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 sig, sig_len = remote_api.XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths)
@@ -597,7 +614,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 # If we're the orchestrator, this list should already be in proto form
-                enc_preds_proto_list, num_preds_list, sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterPredict, request)
+                enc_preds_proto_list, num_preds_list, sig_protos_list, sig_len_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
             else:
                 # If we're not the orchestrator, we're just running this on our partition of the data
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
@@ -606,8 +623,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 enc_preds_proto_list = [enc_preds_proto]
                 num_preds_list = [num_preds]
                 sig_proto = pointer_to_proto(sig, sig_len)
+                sig_proto_list = [sig_proto]
+                sig_len_list = [sig_len]
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status, signature=sig_proto, sig_len=sig_len)
+            return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status, signatures=sig_proto_list, sig_len=sig_len_list)
         except:
             status = handle_exception()
             return remote_pb2.Predictions(status=status)
