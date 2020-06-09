@@ -237,6 +237,9 @@ class Command(object):
             for result in results:
                 sig_protos.append(result.signature)
                 sig_lens.append(result.sig_len)
+
+            print("We got back {} signatures".format(len(sig_protos)))
+            print(sig_protos)
             
             # If we return only one signature, return the signature from the master enclave
             master_signature = sig_protos[0]
@@ -524,7 +527,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         try:
             if globals()["is_orchestrator"]:
                 dmatrix_handle, sig_proto, sig_len, status = self._synchronize(remote_api.XGDMatrixCreateFromEncryptedFile, request)
-                sig_proto = pointer_to_proto(sig, sig_len)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 dmatrix_handle, sig, sig_len = remote_api.XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths)
@@ -705,7 +707,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 ret, sig_proto, sig_len, status = self._synchronize(remote_api.XGDMatrixNumCol, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
-                sig, sig_len, ret = remote_api.XGDMatrixNumCol(request, signers, signatures, sig_lengths)
+                ret, sig, sig_len = remote_api.XGDMatrixNumCol(request, signers, signatures, sig_lengths)
                 sig_proto = pointer_to_proto(sig, sig_len)
                 status = remote_pb2.Status(status=0)
             return remote_pb2.Integer(value=ret, status=status, signature=sig_proto, sig_len=sig_len)
