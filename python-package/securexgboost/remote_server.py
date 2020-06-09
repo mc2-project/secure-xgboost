@@ -242,8 +242,6 @@ class Command(object):
                     sig_protos.append(result.signature)
                     sig_lens.append(result.sig_len)
 
-                print("We got back {} signatures".format(len(sig_protos)))
-                
                 # If we return only one signature, return the signature from the master enclave
                 master_signature = sig_protos[0]
                 master_sig_len = sig_lens[0]
@@ -614,7 +612,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             if globals()["is_orchestrator"]:
                 # With a cluster, we'll obtain a set of predictions for each node in the cluster
                 # If we're the orchestrator, this list should already be in proto form
-                enc_preds_proto_list, num_preds_list, sig_protos_list, sig_len_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
+                enc_preds_proto_list, num_preds_list, sig_proto_list, sig_len_list, status = self._synchronize(remote_api.XGBoosterPredict, request)
             else:
                 # If we're not the orchestrator, we're just running this on our partition of the data
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
@@ -626,7 +624,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 sig_proto_list = [sig_proto]
                 sig_len_list = [sig_len]
                 status = remote_pb2.Status(status=0)
-            return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status, signatures=sig_proto_list, sig_len=sig_len_list)
+            return remote_pb2.Predictions(predictions=enc_preds_proto_list, num_preds=num_preds_list, status=status, signatures=sig_proto_list, sig_lens=sig_len_list)
         except:
             status = handle_exception()
             return remote_pb2.Predictions(status=status)
