@@ -56,6 +56,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     booster = xgb.train(params, dtrain, num_rounds)
 
     # Get our predictions
+    print("Getting predictions")
     predictions, num_preds = booster.predict(dtest1, decrypt=False)
 
     # Enable the other party to get its predictions

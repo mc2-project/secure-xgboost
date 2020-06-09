@@ -1987,29 +1987,37 @@ class Booster(object):
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=globals()["current_user"],
                                                                                                         signature=sig, sig_len=sig_len)))
+                # List of list of predictions
                 enc_preds_serialized_list = response.predictions
                 length_list = list(response.num_preds)
+
+                # List of signatures
                 out_sigs_serialized_list = response.signatures
                 out_sig_length_list = list(response.sig_lens)
                 
+                print(len(enc_preds_serialized_list))
+                print(length_list)
                 preds_list = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
                 out_sigs = [proto_to_pointer(out_sig_serialized) for out_sig_serialized in out_sigs_serialized_list]
                 out_sig_lengths_ulong = [c_bst_ulong(length) for length in out_sig_length_list]
 
                 # Verify signatures
-                for i in range(len(preds)):
-                    length = out_sig_lengths_ulong[i]
-                    size = length.value * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+                for i in range(len(preds_list)):
+                    print("Verifying")
                     preds = preds_list[i]
+                    enc_preds_length = length_list[i]
+                    size = enc_preds_length * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+
                     out_sig = out_sigs[i]
+                    out_sig_length = out_sig_lengths_ulong[i]
 
                     verify_enclave_signature(preds, size, out_sig, out_sig_length)
-
 
                 if decrypt:
                     preds = self.decrypt_predictions(preds_list, length_list)
                     return preds, sum(length_list)
 
+                print("Got predictions")
                 return preds, length_list
         else:
             nonce = globals()["nonce"]

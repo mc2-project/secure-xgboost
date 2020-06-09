@@ -359,31 +359,43 @@ class Command(object):
                 if error: 
                     self._ret = (None, None, None, None, remote_pb2.Status(status=-1, exception=exception)) 
                 else:
-                    # Collect encrypted predictions
-                    enc_preds_protos_list_list = [result.predictions for result in results]
-                    # enc_preds_ret is a list of enc_preds_protos, one for each node in the cluster
                     enc_preds_ret = []
-                    for proto_lst in enc_preds_protos_list_list:
-                        enc_preds_ret.extend(proto_lst)
-
-                    # Collect num preds
-                    num_preds_list_list = [result.num_preds for result in results]
-                    # num_preds_ret is a list of integers, each of which represents the number of predictions in the corresponding index in enc_preds_ret
                     num_preds_ret = []
-                    for num_preds_lst in num_preds_list_list:
-                        num_preds_ret.extend(num_preds_lst)
-
-                    # Collect signatures
-                    sig_protos_list_list = [result.signatures for result in results]
                     sig_protos_ret = []
-                    for sig_proto_lst in sig_protos_list_list:
-                        sig_protos_ret.extend(sig_proto_lst)
-
-                    # Collect signature lengths
-                    sig_len_list_list = [result.sig_lens for result in results]
                     sig_lens_ret = []
-                    for sig_len_lst in sig_len_list_list:
-                        sig_lens_ret.extend(sig_len_lst)
+
+                    for result in results:
+                        # Collect encrypted predictions
+                        enc_preds_ret.extend(result.predictions)
+                        num_preds_ret.extend(result.num_preds)
+
+                        # Collect signatures
+                        sig_protos_ret.extend(result.signatures)
+                        sig_lens_ret.extend(result.sig_lens)
+                        
+                    #  # Collect encrypted predictions
+                    #  enc_preds_protos_list_list = [result.predictions for result in results]
+                    #  # enc_preds_ret is a list of enc_preds_protos, one for each node in the cluster
+                    #  enc_preds_ret = []
+                    #  
+                    #  # Collect num preds
+                    #  num_preds_list_list = [result.num_preds for result in results]
+                    #  # num_preds_ret is a list of integers, each of which represents the number of predictions in the corresponding index in enc_preds_ret
+                    #  num_preds_ret = []
+                    #  
+                    #  # Collect signatures
+                    #  sig_protos_list_list = [result.signatures for result in results]
+                    #  sig_protos_ret = []
+                    #  
+                    #  # Collect signature lengths
+                    #  sig_len_list_list = [result.sig_lens for result in results]
+                    #  sig_lens_ret = []
+                    #  
+                    #  for i in range(len(enc_preds_protos_list_list)):
+                    #      enc_preds_ret.extend(enc_preds_protos_list_list[i])
+                    #      num_preds_ret.extend(num_preds_list_list[i])
+                    #      sig_protos_ret.extend(sig_protos_list_list[i])
+                        #  sig_lens_ret.extend(sig_len_list_list[i])
 
                     if len(enc_preds_ret) == len(num_preds_ret):
                         self._ret = (enc_preds_ret, num_preds_ret, sig_protos_ret, sig_lens_ret, remote_pb2.Status(status=0))
