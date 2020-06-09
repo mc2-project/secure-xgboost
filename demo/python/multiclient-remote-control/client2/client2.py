@@ -14,14 +14,11 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     # Remote attestation
     print("Remote attestation")
-    enclave_reference = xgb.Enclave(addr=channel_addr)
+    xgb.init(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave_reference.attest()
+    xgb.attest()
     print("Report successfully verified")
-
-    print("Send private key to enclave")
-    enclave_reference.add_key()
 
     print("Load training matrices")
     dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-remote-control/data/c1_train.enc", username: HOME_DIR + "demo/python/multiclient-remote-control/data/c2_train.enc"}, encrypted=True)

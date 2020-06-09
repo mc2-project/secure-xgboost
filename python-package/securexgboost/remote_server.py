@@ -95,8 +95,7 @@ def handle_exception():
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
-    def __init__(self, enclave, condition, command):
-        self.enclave = enclave
+    def __init__(self, condition, command):
         self.condition = condition
         self.command = command
 
@@ -136,44 +135,15 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             nonce=nonce, nonce_size=nonce_size,
             remote_report=remote_report, remote_report_size=remote_report_size)
 
-    # FIXME implement the library call within class RemoteAPI
-    def rpc_add_client_key(self, request, context):
-        """
-        Sends encrypted symmetric key, signature over key, and filename of data that was encrypted using the symmetric key
-        """
-        try:
-            # Get encrypted symmetric key, signature, and filename from request
-            enc_sym_key = request.enc_sym_key
-            key_size = request.key_size
-            signature = request.signature
-            sig_len = request.sig_len
-
-            # Get a reference to the existing enclave
-            result = self.enclave._add_client_key(enc_sym_key, key_size, signature, sig_len)
-
-            status = remote_pb2.Status(status=result)
-            return remote_pb2.StatusMsg(status=status)
-        except:
-            status = handle_exception()
-            return remote_pb2.StatusMsg(status=status)
-
-    # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
         """
         Calls add_client_key_with_certificate()
         """
         try:
             # Get encrypted symmetric key, signature, and certificate from request
-            certificate = request.certificate
-            enc_sym_key = request.enc_sym_key
-            key_size = request.key_size
-            signature = request.signature
-            sig_len = request.sig_len
-
             # Get a reference to the existing enclave
-            result = self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
-
-            status = remote_pb2.Status(status=result)
+            remote_api.add_client_key_with_certificate(request)
+            status = remote_pb2.Status(status=0)
             return remote_pb2.StatusMsg(status=status)
         except:
             status = handle_exception()
@@ -359,13 +329,13 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             status = handle_exception()
             return remote_pb2.Integer(status=status)
 
-def serve(enclave, num_workers=10, all_users=[]):
+def serve(all_users=[], num_workers=10):
     condition = threading.Condition()
     command = Command()
     globals()["all_users"] = all_users
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
-    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)
+    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(condition, command), rpc_server)
     rpc_server.add_insecure_port('[::]:50051')
     rpc_server.start()
     rpc_server.wait_for_termination()
