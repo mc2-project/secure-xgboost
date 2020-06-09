@@ -432,15 +432,18 @@ class EnclaveContext {
         rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
         LOG(DEBUG) << "Broadcasting master enclave keypair";
         rabit::Broadcast(m_public_key, CIPHER_PK_SIZE, 0);
+        LOG(DEBUG) << "Successfully broadcasted public key";
         
         uint8_t m_private_key[CIPHER_PK_SIZE];
         int res;
         res = mbedtls_pk_write_key_pem(&m_pk_context, m_private_key, sizeof(m_private_key));
         if (res != 0) {
-            LOG(FATAL) << "mbedtls_pk_write_key_pem failed with " << res;
+            LOG(INFO) << "mbedtls_pk_write_key_pem failed with " << res;
         }
+        LOG(DEBUG) << "wrote out private key";
 
         rabit::Broadcast(m_private_key, CIPHER_PK_SIZE, 0);
+        LOG(DEBUG) << "Broadcasted private key";
 
         // Create new mbedtls_pk_context
         mbedtls_pk_free(&m_pk_context);
