@@ -430,8 +430,59 @@ class EnclaveContext {
     void share_symm_key_and_nonce() {
         rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
         rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
-        rabit::Broadcast(&m_pk_context, sizeof(mbedtls_pk_context), 0);
-        rabit::Broadcast(m_public_key, CIPHER_PK_SIZE, 0)
+        LOG(DEBUG) << "Broadcasting master enclave keypair";
+        rabit::Broadcast(m_public_key, CIPHER_PK_SIZE, 0);
+        LOG(DEBUG) << "Successfully broadcasted public key";
+        size_t private_key_length;
+        unsigned char m_private_key[5 * CIPHER_PK_SIZE];
+        int res;
+       
+        if (rabit::GetRank() == 0) {
+            res = mbedtls_pk_write_key_pem(&m_pk_context, m_private_key, sizeof(m_private_key));
+            if (res != 0) {
+                LOG(INFO) << "mbedtls_pk_write_key_pem failed with " << res;
+                char tmp[1024];
+                mbedtls_strerror(res, tmp, 1024);
+                LOG(DEBUG) << tmp;
+            }
+            LOG(DEBUG) << "wrote out private key";
+
+            // int i;
+            // for (i = 0; i < 5 * CIPHER_PK_SIZE; i++) {
+            //     if (m_private_key[i] == '\0') {
+            //         LOG(DEBUG) << "NULL TERMINATED AT " << i;
+            //         break;
+            //     }
+            // }
+            private_key_length = strlen((const char*) m_private_key);
+        }
+
+        rabit::Broadcast(&private_key_length, sizeof(private_key_length), 0);
+        rabit::Broadcast(m_private_key, private_key_length, 0);
+        LOG(DEBUG) << "Broadcasted private key";
+
+        // Create new mbedtls_pk_context
+        if (rabit::GetRank() != 0) {
+            mbedtls_pk_free(&m_pk_context);
+            res = mbedtls_pk_parse_key(&m_pk_context, (const unsigned char*) m_private_key, private_key_length + 1, NULL, NULL);
+            if (res != 0) {
+                LOG(INFO) << "mbedtls_pk_parse_key failed with " << res;
+                char tmp[1024];
+                mbedtls_strerror(res, tmp, 1024);
+                LOG(INFO) << tmp;
+            }
+
+            mbedtls_pk_parse_public_key(&m_pk_context, m_public_key, CIPHER_PK_SIZE);
+            if (res != 0) {
+                LOG(FATAL) << "mbedtls_pk_parse_public_key failed with " << res;
+                char tmp[1024];
+                mbedtls_strerror(res, tmp, 1024);
+                LOG(DEBUG) << tmp;
+            }
+        }
+
+        LOG(DEBUG) << "Successfully broadcasted master enclave keypair";
+        
     }
 
   private:
