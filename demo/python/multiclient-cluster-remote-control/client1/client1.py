@@ -24,7 +24,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Remote attestation")
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave.attest(verify=False)
+    enclave.attest()
     print("Report successfully verified")
 
     print("Send private key to enclave")
