@@ -10,7 +10,7 @@ import os
 
 from .core import DMatrix, Booster
 from .core import generate_client_key, encrypt_file
-from .core import init, attest
+from .core import init_client, init_server, attest
 from .training import train #, cv
 from . import rabit                   # noqa
 from .remote_server import serve
@@ -26,7 +26,8 @@ with open(VERSION_FILE) as f:
     __version__ = f.read().strip()
 
 __all__ = ['DMatrix', 'Booster',
-           'train', 'cv', 'init', 'attest',
+           'train', 'cv', 'init_client', 'attest',
+           'init_server', 'serve',
            'generate_client_key', 'encrypt_file',
            'XGBModel', 'XGBClassifier', 'XGBRegressor', 'XGBRanker',
            'XGBRFClassifier', 'XGBRFRegressor',

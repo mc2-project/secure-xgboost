@@ -839,7 +839,7 @@ class DMatrix(object):
     # 
     #     Parameters
     #     ----------
-    #     fname : string
+    #     fname : str
     #         Name of the output buffer file.
     #     silent : bool (optional; default: True)
     #         If set, the output is suppressed.
@@ -1195,7 +1195,7 @@ class Booster(object):
             Parameters for boosters.
         cache : list
             List of cache items.
-        model_file : string
+        model_file : str
             Path to the model file.
         """
         for d in cache:
@@ -1780,7 +1780,7 @@ class Booster(object):
 
         Parameters
         ----------
-        fname : string
+        fname : str
             Absolute path to save the model to
         """
         # check the global variable for current_user
@@ -1893,7 +1893,7 @@ class Booster(object):
     
         Parameters
         ----------
-        fname : string or a memory buffer
+        fname : str or a memory buffer
             Input file name or memory buffer(see also save_raw)
         """
         # check the global variable for current_user
@@ -1953,13 +1953,13 @@ class Booster(object):
 
         Parameters
         ----------
-        fout : string
+        fout : str
             Output file name.
-        fmap : string, optional
+        fmap : str, optional
             Name of the file containing feature map names.
         with_stats : bool, optional
             Controls whether the split statistics are output.
-        dump_format : string, optional
+        dump_format : str, optional
             Format of model dump file. Can be 'text' or 'json'.
         """
         if isinstance(fout, STRING_TYPES):
@@ -1990,11 +1990,11 @@ class Booster(object):
 
         Parameters
         ----------
-        fmap : string, optional
+        fmap : str, optional
             Name of the file containing feature map names.
         with_stats : bool, optional
             Controls whether the split statistics are output.
-        dump_format : string, optional
+        dump_format : str, optional
             Format of model dump. Can be 'text' or 'json'.
         decrypt: bool
             When this is True, the model dump received from the enclave is decrypted using the user's symmetric key
@@ -2412,33 +2412,27 @@ class Booster(object):
 # Enclave init and attestation APIs
 ##########################################
 
-def init(enclave_image=None, remote_addr=None, user_name=None, 
-        sym_key_file=None, priv_key_file=None, cert_file=None,
-        log_verbosity=0):
+def init_client(remote_addr=None, user_name=None, 
+        sym_key_file=None, priv_key_file=None, cert_file=None):
     """
+    Initialize the client. Set up the client's keys, and specify the IP address of the enclave server.
+
     Parameters
     ----------
-    enclave_image: str
-        Path to enclave binary
-    user_name : string
+    remote_addr: str
+        IP address of remote server running the enclave
+    user_name : str
         Current user's identity
-    sym_key_file : string
+    sym_key_file : str
         Path to file containing user's symmetric key used for encrypting data
-    priv_key_file : string
+    priv_key_file : str
         Path to file containing user's private key used for signing data
-    cert_file : string
+    cert_file : str
         Path to file containing user's public key certificate
-    log_verbosity: int, optional
-        Verbosity level for enclave (for enclaves in debug mode)
     """
     # TODO(rishabh): Verify parameters
 
-    if remote_addr is not None:
-        _CONF["remote_addr"] = remote_addr;
-    else:
-        _CONF["remote_addr"] = None;
-        _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
-
+    _CONF["remote_addr"] = remote_addr;
     _CONF["current_user"] = user_name
 
     if sym_key_file is not None:
@@ -2455,6 +2449,20 @@ def init(enclave_image=None, remote_addr=None, user_name=None,
             _CONF["current_user_cert"] = cert_file.read()
 
     _CONF["nonce_ctr"] = 0 
+
+
+def init_server(enclave_image=None, log_verbosity=0):
+    """
+    Launch the enclave from an image. This API should be invoked by the server and not the clients.
+
+    Parameters
+    ----------
+    enclave_image: str
+        Path to enclave binary
+    log_verbosity: int, optional
+        Verbosity level for enclave (for enclaves in debug mode)
+    """
+    _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
 
 
 def attest(verify=True):

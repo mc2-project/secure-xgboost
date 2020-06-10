@@ -10,7 +10,8 @@ cert_file = DIR + "/../../../config/user1.crt"
 
 
 print("Init user and enclave parameters")
-xgb.init(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
+xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
+xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")

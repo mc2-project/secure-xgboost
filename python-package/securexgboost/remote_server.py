@@ -35,6 +35,8 @@ c_bst_ulong = ctypes.c_uint64
 import threading
 import types
 
+_USERS = []
+
 class Command(object):
     """
     Commands submitted for execution to remote server
@@ -62,7 +64,7 @@ class Command(object):
         self._sig_lengths.append(params.sig_len)
 
     def is_ready(self):
-        for user in globals()["all_users"]:
+        for user in _USERS:
             if user not in self._usernames:
                 return False
         return True
@@ -78,7 +80,7 @@ class Command(object):
         return ret
 
     def is_complete(self):
-        for user in globals()["all_users"]:
+        for user in _USERS:
             if user not in self._retrieved:
                 return False
         return True
@@ -330,9 +332,19 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return remote_pb2.Integer(status=status)
 
 def serve(all_users=[], num_workers=10):
+    """
+    Launch the RPC server.
+
+    Parameters
+    ----------
+    all_users: list
+        List of client names 
+    log_verbosity: int, optional
+        Verbosity level for enclave (for enclaves in debug mode)
+    """
     condition = threading.Condition()
     command = Command()
-    globals()["all_users"] = all_users
+    _USERS.extend(all_users)
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(condition, command), rpc_server)
