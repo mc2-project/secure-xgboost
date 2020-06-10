@@ -2001,7 +2001,6 @@ class Booster(object):
 
                 # Verify signatures
                 for i in range(len(preds_list)):
-                #  for i in [1, 0]:
                     preds = preds_list[i]
                     enc_preds_length = length_list[i]
                     size = enc_preds_length * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
@@ -2018,7 +2017,6 @@ class Booster(object):
                     preds = self.decrypt_predictions(preds_list, length_list)
                     return preds, sum(length_list)
 
-                print("Got predictions")
                 return preds_list, length_list
         else:
             nonce = globals()["nonce"]
