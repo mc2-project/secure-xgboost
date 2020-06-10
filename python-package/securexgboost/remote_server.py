@@ -658,7 +658,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         """
         try:
             if globals()["is_orchestrator"]:
-                length, sarr, sig_proto, status = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
+                length, sarr, sig_proto, sig_len, status = self._synchronize(remote_api.XGBoosterDumpModelEx, request)
             else:
                 signers, signatures, sig_lengths = get_signers_signatures_sig_lengths(request)
                 length, sarr, sig, sig_len = remote_api.XGBoosterDumpModelEx(request, signers, signatures, sig_lengths)

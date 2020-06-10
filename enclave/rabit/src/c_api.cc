@@ -166,8 +166,8 @@ struct WriteWrapper : public Serializable {
 void RabitInit(int argc, char *argv[]) {
   rabit::Init(argc, argv);
 
-  // Master enclave shares its symmetric key and nonce to maintain consistency across the cluster
-  EnclaveContext::getInstance().share_symm_key_and_nonce();
+  // Master enclave shares its symmetric key, public/private keypair, and nonce to maintain consistency across the cluster
+  EnclaveContext::getInstance().share_keys_and_nonce();
 }
 
 void RabitFinalize() {
