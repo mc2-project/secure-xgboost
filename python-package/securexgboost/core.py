@@ -1995,32 +1995,31 @@ class Booster(object):
                 out_sigs_serialized_list = response.signatures
                 out_sig_length_list = list(response.sig_lens)
                 
-                print(len(enc_preds_serialized_list))
-                print(length_list)
                 preds_list = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
                 out_sigs = [proto_to_pointer(out_sig_serialized) for out_sig_serialized in out_sigs_serialized_list]
                 out_sig_lengths_ulong = [c_bst_ulong(length) for length in out_sig_length_list]
 
                 # Verify signatures
                 for i in range(len(preds_list)):
-                    print("Verifying")
+                #  for i in [1, 0]:
                     preds = preds_list[i]
                     enc_preds_length = length_list[i]
-                    print("Enc preds length: ", enc_preds_length)
                     size = enc_preds_length * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
 
                     out_sig = out_sigs[i]
                     out_sig_length = out_sig_lengths_ulong[i]
-                    print("Signature length: ", out_sig_length)
-
-                    verify_enclave_signature(preds, size, out_sig, out_sig_length)
+                    
+                    if i != len(preds_list) - 1:
+                        verify_enclave_signature(preds, size, out_sig, out_sig_length, increment_nonce=False)
+                    else:
+                        verify_enclave_signature(preds, size, out_sig, out_sig_length, increment_nonce=True)
 
                 if decrypt:
                     preds = self.decrypt_predictions(preds_list, length_list)
                     return preds, sum(length_list)
 
                 print("Got predictions")
-                return preds, length_list
+                return preds_list, length_list
         else:
             nonce = globals()["nonce"]
             nonce_size = globals()["nonce_size"]
@@ -3257,7 +3256,7 @@ def sign_data(key, data, data_size):
 
     return signature, sig_len_as_int
 
-def verify_enclave_signature(data, size, sig, sig_len):
+def verify_enclave_signature(data, size, sig, sig_len, increment_nonce=True):
     """
     Verify the signature returned by the enclave with nonce
     """
@@ -3271,7 +3270,8 @@ def verify_enclave_signature(data, size, sig, sig_len):
     # Verify signature
     _check_call(_LIB.verify_signature(pem_key, pem_key_len, arr, size, sig, sig_len))
 
-    globals()["nonce_ctr"] += 1
+    if increment_nonce:
+        globals()["nonce_ctr"] += 1
 
 
 def create_client_signature(args):
