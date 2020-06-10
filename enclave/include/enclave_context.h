@@ -454,7 +454,7 @@ class EnclaveContext {
             //         break;
             //     }
             // }
-            private_key_length = strlen(m_private_key);
+            private_key_length = strlen((const char*) m_private_key);
         }
 
         rabit::Broadcast(&private_key_length, sizeof(private_key_length), 0);
