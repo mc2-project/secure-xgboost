@@ -60,6 +60,6 @@ print("\n\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
-print(booster.decrypt_predictions(predictions, num_preds)[0][:20])
+print(booster.decrypt_predictions(predictions, num_preds)[:20])
 
 xgb.rabit.finalize()

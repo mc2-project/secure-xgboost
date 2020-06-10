@@ -69,7 +69,7 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--ip-addr", help="server IP address", required=True)
-    parser.add_argument("--symmkey", help="path to symmetrix key used to encrypt data on client", required=True)
+    parser.add_argument("--symmkey", help="path to symmetric key used to encrypt data on client", required=True)
     parser.add_argument("--privkey", help="path to user's private key for signing data", required=True)
     parser.add_argument("--cert", help="path to user's public key certificate", required=True)
 

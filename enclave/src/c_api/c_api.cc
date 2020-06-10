@@ -283,11 +283,11 @@ int get_remote_report_with_pubkey_and_nonce(
     size_t* nonce_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
+
   uint8_t* report = NULL;
   size_t report_size = 0;
   uint8_t* key_buf = NULL;
   int ret = 1;
-
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
   uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();
 
@@ -381,7 +381,7 @@ int add_client_key_with_certificate(char * cert,
         uint8_t* signature,
         size_t sig_len) {
     API_BEGIN();
-    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len,data, data_len, signature, sig_len);
+    EnclaveContext::getInstance().decrypt_and_save_client_key_with_certificate(cert, cert_len, data, data_len, signature, sig_len);
     API_END();
 }
 

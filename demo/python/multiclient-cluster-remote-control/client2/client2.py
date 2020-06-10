@@ -7,30 +7,27 @@ import os
 
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../../"
-username = "user1"
+username = "user2"
 
 def run(channel_addr, sym_key_file, priv_key_file, cert_file):
+    xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
+
+    xgb.rabit.init()
+
     # Remote attestation
     print("Remote attestation")
-    xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
+
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
     xgb.attest()
     print("Report successfully verified")
 
     print("Load training matrices")
-    dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-remote-control/data/c2_train.enc"}, encrypted=True)
-    if not dtrain:
-        print("Error loading data")
-        return
+    dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_train.enc", username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_train.enc"}, encrypted=True)
 
     print("Creating test matrix")
-    dtest1 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c1_test.enc"})
-    dtest2 = xgb.DMatrix({"user2": HOME_DIR + "demo/python/multiclient-remote-control/data/c2_test.enc"})
-
-    if not dtest1 or not dtest2:
-        print("Error creating dtest")
-        return
+    dtest1 = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_test.enc"})
+    dtest2 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_test.enc"})
 
     print("Beginning Training")
 
@@ -50,14 +47,20 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Training...")
     booster = xgb.train(params, dtrain, num_rounds)
 
-    # Get our predictions
-    predictions, num_preds = booster.predict(dtest1, decrypt=False)
-
     # Enable the other party to get its predictions
-    _, _ = booster.predict(dtest2, decrypt=False)
+    _, _ = booster.predict(dtest1, decrypt=False)
+
+    # Get our predictions
+    predictions, num_preds = booster.predict(dtest2, decrypt=False)
 
     # Decrypt predictions
-    print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[0])
+    print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[:10])
+
+    # Get fscores of model
+    print("\nModel Feature Importance: ")
+    print(booster.get_fscore())
+
+    xgb.rabit.finalize()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

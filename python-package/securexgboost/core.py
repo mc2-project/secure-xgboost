@@ -202,6 +202,12 @@ def _check_call(ret):
         raise XGBoostError(py_str(_LIB.XGBGetLastError()))
 
 
+def pass_globals():
+    return {
+            "current_user": globals()["current_user"],
+            "remote_addr": globals()["remote_addr"]
+            }
+
 def ctypes2numpy(cptr, length, dtype):
     """Convert a ctypes pointer array to a numpy array.
     """
@@ -1034,7 +1040,6 @@ class DMatrix(object):
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
-
                 out_sig = proto_to_pointer(response.signature)
                 out_sig_length = c_bst_ulong(response.sig_len)
                 ret = response.value
@@ -1675,12 +1680,37 @@ class Booster(object):
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                         signature=sig, sig_len=sig_len)))
-                enc_preds_serialized = response.predictions
-                length = c_bst_ulong(response.num_preds)
+                # List of list of predictions
+                enc_preds_serialized_list = response.predictions
+                length_list = list(response.num_preds)
 
-                preds = proto_to_pointer(enc_preds_serialized)
-                out_sig = proto_to_pointer(response.signature)
-                out_sig_length = c_bst_ulong(response.sig_len)
+                # List of signatures
+                out_sigs_serialized_list = response.signatures
+                out_sig_length_list = list(response.sig_lens)
+                
+                preds_list = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
+                out_sigs = [proto_to_pointer(out_sig_serialized) for out_sig_serialized in out_sigs_serialized_list]
+                out_sig_lengths_ulong = [c_bst_ulong(length) for length in out_sig_length_list]
+
+                # Verify signatures
+                for i in range(len(preds_list)):
+                    preds = preds_list[i]
+                    enc_preds_length = length_list[i]
+                    size = enc_preds_length * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+
+                    out_sig = out_sigs[i]
+                    out_sig_length = out_sig_lengths_ulong[i]
+                    
+                    if i != len(preds_list) - 1:
+                        verify_enclave_signature(preds, size, out_sig, out_sig_length, increment_nonce=False)
+                    else:
+                        verify_enclave_signature(preds, size, out_sig, out_sig_length, increment_nonce=True)
+
+                if decrypt:
+                    preds = self.decrypt_predictions(preds_list, length_list)
+                    return preds, sum(length_list)
+
+                return preds_list, length_list
         else:
             nonce = _CONF["nonce"]
             nonce_size = _CONF["nonce_size"]
@@ -1701,8 +1731,9 @@ class Booster(object):
                                               signers,
                                               c_signatures,
                                               c_lengths))
-        size = length.value * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
-        verify_enclave_signature(preds, size, out_sig, out_sig_length)
+
+            size = length.value * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+            verify_enclave_signature(preds, size, out_sig, out_sig_length)
 
             # TODO(rishabh): implement this in decrypt_predictions
             #  preds = ctypes2numpy(preds, length.value, np.float32)
@@ -1727,9 +1758,9 @@ class Booster(object):
             #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
             #      else:
             #          preds = preds.reshape(nrow, chunk_size)
-        if decrypt:
-            preds = self.decrypt_predictions(preds, length.value)
-        return preds, length.value
+            if decrypt:
+                preds = self.decrypt_predictions(preds, length.value)
+            return preds, length.value
 
     # TODO(rishabh): change encrypted_preds to Python type from ctype
     def decrypt_predictions(self, encrypted_preds, num_preds):
@@ -1757,16 +1788,31 @@ class Booster(object):
 
         # Cast arguments to proper ctypes
         c_char_p_key = ctypes.c_char_p(sym_key)
-        size_t_num_preds = ctypes.c_size_t(num_preds)
 
-        preds = ctypes.POINTER(ctypes.c_float)()
+        if not isinstance(encrypted_preds, list):
+            size_t_num_preds = ctypes.c_size_t(num_preds)
 
-        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
+            preds = ctypes.POINTER(ctypes.c_float)()
 
-        # Convert c pointer to numpy array
-        preds = ctypes2numpy(preds, num_preds, np.float32)
-        return preds
+            _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
 
+            # Convert c pointer to numpy array
+            preds = ctypes2numpy(preds, num_preds, np.float32)
+            return preds
+        else:
+            preds_list = []
+            for i in range(len(encrypted_preds)):
+                size_t_num_preds = ctypes.c_size_t(num_preds[i])
+                preds = ctypes.POINTER(ctypes.c_float)()
+
+                _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
+
+                # Convert c pointer to numpy array
+                preds = ctypes2numpy(preds, num_preds[i], np.float32)
+                preds_list.append(preds)
+
+            concatenated_preds = np.concatenate(preds_list)
+            return concatenated_preds
 
     def save_model(self, fname):
         """
@@ -3117,7 +3163,7 @@ def sign_data(key, data, data_size):
 
     return signature, sig_len_as_int
 
-def verify_enclave_signature(data, size, sig, sig_len):
+def verify_enclave_signature(data, size, sig, sig_len, increment_nonce=True):
     """
     Verify the signature returned by the enclave with nonce
     """
@@ -3131,7 +3177,8 @@ def verify_enclave_signature(data, size, sig, sig_len):
     # Verify signature
     _check_call(_LIB.verify_signature(pem_key, pem_key_len, arr, size, sig, sig_len))
 
-    _CONF["nonce_ctr"] += 1
+    if increment_nonce:
+        _CONF["nonce_ctr"] += 1
 
 
 def create_client_signature(args):
