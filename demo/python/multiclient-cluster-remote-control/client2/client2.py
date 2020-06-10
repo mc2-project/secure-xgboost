@@ -12,30 +12,27 @@ username = "user2"
 def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     xgb.init_user(username, sym_key_file, priv_key_file, cert_file)
 
+    enclave = xgb.Enclave(addr=channel_addr)
+
+    xgb.rabit.init()
+
     # Remote attestation
     print("Remote attestation")
-    enclave_reference = xgb.Enclave(addr=channel_addr)
+
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave_reference.attest()
+    enclave.attest()
     print("Report successfully verified")
 
     print("Send private key to enclave")
-    enclave_reference.add_key()
+    enclave.add_key()
 
     print("Load training matrices")
-    dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-remote-control/data/c1_train.enc", username: HOME_DIR + "demo/python/multiclient-remote-control/data/c2_train.enc"}, encrypted=True)
-    if not dtrain:
-        print("Error loading data")
-        return
+    dtrain = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_train.enc", username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_train.enc"}, encrypted=True)
 
     print("Creating test matrix")
-    dtest1 = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-remote-control/data/c1_test.enc"})
-    dtest2 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-remote-control/data/c2_test.enc"})
-
-    if not dtest1 or not dtest2:
-        print("Error creating dtest")
-        return
+    dtest1 = xgb.DMatrix({"user1": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_test.enc"})
+    dtest2 = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_test.enc"})
 
     print("Beginning Training")
 
@@ -62,7 +59,13 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     predictions, num_preds = booster.predict(dtest2, decrypt=False)
 
     # Decrypt predictions
-    print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[0])
+    print("Predictions: ", booster.decrypt_predictions(predictions, num_preds)[:10])
+
+    # Get fscores of model
+    print("\nModel Feature Importance: ")
+    print(booster.get_fscore())
+
+    xgb.rabit.finalize()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

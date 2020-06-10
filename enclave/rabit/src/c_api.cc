@@ -7,6 +7,7 @@
 #include <string>
 #include "../include/rabit/rabit.h"
 #include "../include/rabit/c_api.h"
+#include "enclave_context.h"
 
 namespace rabit {
 namespace c_api {
@@ -164,6 +165,9 @@ struct WriteWrapper : public Serializable {
 
 void RabitInit(int argc, char *argv[]) {
   rabit::Init(argc, argv);
+
+  // Master enclave shares its symmetric key, public/private keypair, and nonce to maintain consistency across the cluster
+  EnclaveContext::getInstance().share_keys_and_nonce();
 }
 
 void RabitFinalize() {

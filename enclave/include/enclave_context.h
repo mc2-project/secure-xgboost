@@ -211,6 +211,7 @@ class EnclaveContext {
     }
 
     void get_client_key(uint8_t* key, char *username) {
+      LOG(DEBUG) << "Getting client key for user: " << username;
       std::string str(username);
       auto iter = client_keys.find(str);
       if (iter == client_keys.end()) {
@@ -322,6 +323,7 @@ class EnclaveContext {
       if(verifySignature(user_public_key_context, data, data_len, signature, sig_len) != 0) {
         LOG(FATAL) << "Signature verification failed";
       }
+
       return true;
     }
 
@@ -350,51 +352,67 @@ class EnclaveContext {
             size_t data_len,
             uint8_t* signature,
             size_t sig_len) {
-      LOG(DEBUG) << "Saving client key with certificate";
-      if (!verifySignatureWithCertificate(cert,cert_len,data,data_len,signature,sig_len)) {
-        LOG(FATAL) << "Signature verification failed";
-      }
-
-      int res = 0;
-      mbedtls_rsa_context* rsa_context;
-      mbedtls_pk_rsa(m_pk_context)->len = data_len;
-      rsa_context = mbedtls_pk_rsa(m_pk_context);
-      rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
-      rsa_context->hash_id = MBEDTLS_MD_SHA256;
 
       size_t output_size;
       uint8_t output[CIPHER_KEY_SIZE];
+      // FIXME: set size of names
+      unsigned char nameptr[50];
+      size_t name_len;
 
-      res = mbedtls_rsa_pkcs1_decrypt(
-          rsa_context,
-          mbedtls_ctr_drbg_random,
-          &m_ctr_drbg_context,
-          MBEDTLS_RSA_PRIVATE,
-          &output_size,
-          data,
-          output,
-          CIPHER_KEY_SIZE);
-      if (res != 0) {
-        LOG(FATAL) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
-      }
+      // Only the master node verifies signature and certificate
+      if (rabit::GetRank() == 0) {
+          if (!verifySignatureWithCertificate(cert, cert_len, data, data_len, signature, sig_len)) {
+              LOG(FATAL) << "Signature verification failed";
+          }
 
-      mbedtls_x509_crt user_cert;
-      mbedtls_x509_crt_init(&user_cert);
-      int ret;
-      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
-                   cert_len)) != 0) {
-         LOG(FATAL) << "verification failed - Could not read user certificate\n"
-           << "mbedtls_x509_crt_parse returned " << ret;
-      }
+          int res = 0;
+          mbedtls_rsa_context* rsa_context;
 
-      mbedtls_x509_name subject_name = user_cert.subject;
-      mbedtls_asn1_buf name = subject_name.val;
-      unsigned char* nameptr = name.p;
-      size_t name_len = name.len;
+          mbedtls_pk_rsa(m_pk_context)->len = data_len;
+          rsa_context = mbedtls_pk_rsa(m_pk_context);
+          rsa_context->padding = MBEDTLS_RSA_PKCS_V21;
+          rsa_context->hash_id = MBEDTLS_MD_SHA256;
+
+
+          // Only the master node can decrypt the symmetric key
+          res = mbedtls_rsa_pkcs1_decrypt(
+                  rsa_context,
+                  mbedtls_ctr_drbg_random,
+                  &m_ctr_drbg_context,
+                  MBEDTLS_RSA_PRIVATE,
+                  &output_size,
+                  data,
+                  output,
+                  CIPHER_KEY_SIZE);
+          if (res != 0) {
+              LOG(INFO) << "mbedtls_rsa_pkcs1_decrypt failed with " << res;
+          }
+
+          int ret;
+          mbedtls_x509_crt user_cert;
+          mbedtls_x509_crt_init(&user_cert);
+          if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
+                          cert_len)) != 0) {
+              LOG(FATAL) << "verification failed - Could not read user certificate\n"
+                  << "mbedtls_x509_crt_parse returned " << ret;
+          }
+
+          mbedtls_x509_name subject_name = user_cert.subject;
+          mbedtls_asn1_buf name = subject_name.val;
+          strcpy((char*) nameptr, (const char*) name.p);
+          name_len = name.len;
+      } 
+
+      // Signature and certificate verification has passed
+      // The master node (rank 0) broadcasts the client key and client name to other nodes
+      rabit::Broadcast(&output, CIPHER_KEY_SIZE, 0);
+      rabit::Broadcast(&name_len, sizeof(name_len), 0);
+      rabit::Broadcast(nameptr, name_len, 0);
 
       // Store the client's symmetric key
       std::vector<uint8_t> user_private_key(output, output + CIPHER_KEY_SIZE);
       std::string user_nam(nameptr, nameptr + name_len);
+
       // Verify client's identity
       if (std::find(CLIENT_NAMES.begin(), CLIENT_NAMES.end(), user_nam) == CLIENT_NAMES.end()) {
         LOG(FATAL) << "No such authorized client";
@@ -405,13 +423,44 @@ class EnclaveContext {
       std::vector<uint8_t> user_public_key(cert, cert + cert_len);
       client_public_keys.insert({user_nam, user_public_key});
 
-      LOG(DEBUG) << "verification succeded - user added: " << user_nam;
+      LOG(DEBUG) << "verification succeeded - user added: " << user_nam;
       return true;
+    }
+
+    void share_keys_and_nonce() {
+        rabit::Broadcast(m_symm_key, CIPHER_KEY_SIZE, 0);
+        rabit::Broadcast(m_nonce, CIPHER_IV_SIZE, 0);
+
+        size_t private_key_length;
+        unsigned char m_private_key[5 * CIPHER_PK_SIZE];
+        int res;
+       
+        if (rabit::GetRank() == 0) {
+            res = mbedtls_pk_write_key_pem(&m_pk_context, m_private_key, sizeof(m_private_key));
+            if (res != 0) {
+                LOG(FATAL) << "mbedtls_pk_write_key_pem failed with " << res;
+            }
+            private_key_length = strlen((const char*) m_private_key);
+        }
+
+        rabit::Broadcast(&private_key_length, sizeof(private_key_length), 0);
+        rabit::Broadcast(m_private_key, private_key_length, 0);
+
+        // Replace mbedtls_pk_context at non master enclaves so that each enclave has the same keypair
+        if (rabit::GetRank() != 0) {
+            mbedtls_pk_free(&m_pk_context);
+            res = mbedtls_pk_parse_key(&m_pk_context, (const unsigned char*) m_private_key, private_key_length + 1, NULL, NULL);
+            if (res != 0) {
+                LOG(FATAL) << "mbedtls_pk_parse_key failed with " << res;
+            }
+        }
+        
     }
 
   private:
     /**
      * Generate an ephemeral symmetric key for the enclave
+     * This function is only run by the master enclave, assuming that remote attestation is done before anything else
      */
     bool generate_symm_key() {
       generate_random(m_symm_key, CIPHER_KEY_SIZE);
