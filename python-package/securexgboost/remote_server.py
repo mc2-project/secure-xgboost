@@ -772,7 +772,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return status
 
 
-def serve(all_users=[], nodes=[], num_workers=10):
+def serve(all_users=[], nodes=[], nodes_port=50051, num_workers=10, port=50051):
     """
     Launch the RPC server.
 
@@ -783,8 +783,12 @@ def serve(all_users=[], nodes=[], num_workers=10):
     nodes : list
         list of IP addresses of nodes in the cluster
         passing in this argument means that this RPC server is the RPC orchestrator
+    nodes_port : int
+        port of each RPC server in cluster 
     num_workers : int
         number of threads to use
+    port : int
+        port on which to start this RPC server 
     """
     condition = threading.Condition()
     command = Command()
@@ -799,7 +803,7 @@ def serve(all_users=[], nodes=[], num_workers=10):
         globals()["is_orchestrator"] = False
     else:
         nodes.sort()
-        nodes = [addr + ":50051" for addr in nodes]
+        nodes = [addr + ":" + str(nodes_port) for addr in nodes]
         globals()["nodes"] = nodes
         globals()["is_orchestrator"] = True
 
@@ -807,7 +811,7 @@ def serve(all_users=[], nodes=[], num_workers=10):
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
     remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(condition, command), rpc_server)
-    rpc_server.add_insecure_port('[::]:50051')
+    rpc_server.add_insecure_port('[::]:' + str(port))
     rpc_server.start()
     rpc_server.wait_for_termination()
 
