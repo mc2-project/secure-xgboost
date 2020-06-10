@@ -18,10 +18,6 @@ Core Data Structure
     :members:
     :show-inheritance:
 
-.. autoclass:: securexgboost.Enclave
-    :members:
-    :show-inheritance:
-
 Learning API
 ------------
 .. automodule:: securexgboost.training
