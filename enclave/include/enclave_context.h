@@ -447,14 +447,14 @@ class EnclaveContext {
             }
             LOG(DEBUG) << "wrote out private key";
 
-            int i;
-            for (i = 0; i < 5 * CIPHER_PK_SIZE; i++) {
-                if (m_private_key[i] == '\0') {
-                    LOG(DEBUG) << "NULL TERMINATED AT " << i;
-                    break;
-                }
-            }
-            private_key_length = i;
+            // int i;
+            // for (i = 0; i < 5 * CIPHER_PK_SIZE; i++) {
+            //     if (m_private_key[i] == '\0') {
+            //         LOG(DEBUG) << "NULL TERMINATED AT " << i;
+            //         break;
+            //     }
+            // }
+            private_key_length = strlen(m_private_key);
         }
 
         rabit::Broadcast(&private_key_length, sizeof(private_key_length), 0);
@@ -464,12 +464,12 @@ class EnclaveContext {
         // Create new mbedtls_pk_context
         if (rabit::GetRank() != 0) {
             mbedtls_pk_free(&m_pk_context);
-            res = mbedtls_pk_parse_key(&m_pk_context, (const unsigned char*) m_private_key, private_key_length, NULL, NULL);
+            res = mbedtls_pk_parse_key(&m_pk_context, (const unsigned char*) m_private_key, private_key_length + 1, NULL, NULL);
             if (res != 0) {
-                LOG(FATAL) << "mbedtls_pk_parse_key failed with " << res;
+                LOG(INFO) << "mbedtls_pk_parse_key failed with " << res;
                 char tmp[1024];
                 mbedtls_strerror(res, tmp, 1024);
-                LOG(DEBUG) << tmp;
+                LOG(INFO) << tmp;
             }
 
             mbedtls_pk_parse_public_key(&m_pk_context, m_public_key, CIPHER_PK_SIZE);
