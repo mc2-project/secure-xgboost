@@ -10,19 +10,14 @@ HOME_DIR = DIR + "/../../../../"
 username = "user1"
 
 def run(channel_addr, sym_key_file, priv_key_file, cert_file):
-    xgb.init_user(username, sym_key_file, priv_key_file, cert_file)
-
     # Remote attestation
     print("Remote attestation")
-    enclave_reference = xgb.Enclave(addr=channel_addr)
+    xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
 
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave_reference.attest()
+    xgb.attest()
     print("Report successfully verified")
-
-    print("Send private key to enclave")
-    enclave_reference.add_key()
 
     print("Creating training matrix")
     dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/remote-control/data/train.enc"})
@@ -73,12 +68,13 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
      
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ip-addr", help="server IP address", required=True)
+    parser.add_argument("--ip-addr", help="orchestrator IP address", required=True)
     parser.add_argument("--symmkey", help="path to symmetric key used to encrypt data on client", required=True)
     parser.add_argument("--privkey", help="path to user's private key for signing data", required=True)
     parser.add_argument("--cert", help="path to user's public key certificate", required=True)
+    parser.add_argument("--port", help="orchestrator port", default=50051)
 
     args = parser.parse_args()
 
-    channel_addr = str(args.ip_addr) + ":50051" 
+    channel_addr = str(args.ip_addr) + ":" + str(args.port) 
     run(channel_addr, str(args.symmkey), str(args.privkey), str(args.cert))

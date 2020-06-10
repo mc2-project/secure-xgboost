@@ -35,6 +35,8 @@ c_bst_ulong = ctypes.c_uint64
 import threading
 import types
 
+_USERS = []
+
 class Command(object):
     """
     Commands submitted for execution to remote server
@@ -66,7 +68,7 @@ class Command(object):
         self._sig_lengths.append(params.sig_len)
 
     def is_ready(self):
-        for user in globals()["all_users"]:
+        for user in _USERS:
             if user not in self._usernames:
                 return False
         return True
@@ -388,7 +390,7 @@ class Command(object):
         return ret
 
     def is_complete(self):
-        for user in globals()["all_users"]:
+        for user in _USERS:
             if user not in self._retrieved:
                 return False
         return True
@@ -405,8 +407,7 @@ def handle_exception():
 
 class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
-    def __init__(self, enclave, condition, command):
-        self.enclave = enclave
+    def __init__(self, condition, command):
         self.condition = condition
         self.command = command
 
@@ -444,7 +445,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             status = handle_exception()
             return remote_pb2.Report(status=status)
 
-    # FIXME implement the library call within class RemoteAPI
     def rpc_add_client_key_with_certificate(self, request, context):
         """
         Calls add_client_key_with_certificate()
@@ -459,7 +459,8 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             # Get encrypted symmetric key, signature, and certificate from request
             if not globals()["is_orchestrator"]:
                 # Get a reference to the existing enclave
-                self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
+                remote_api.add_client_key_with_certificate(request)
+                # self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
                 status = remote_pb2.Status(status=0)
                 return remote_pb2.StatusMsg(status=status)
             else:
@@ -771,23 +772,27 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             return status
 
 
-def serve(enclave, num_workers=10, all_users=[], nodes=[]):
+def serve(all_users=[], nodes=[], nodes_port=50051, num_workers=10, port=50051):
     """
+    Launch the RPC server.
+
     Parameters
     ----------
-    enclave : Enclave
-        reference to the Enclave object
-    num_workers : int
-        number of threads to use
     all_users : list
         list of usernames participating in the joint computation
     nodes : list
         list of IP addresses of nodes in the cluster
         passing in this argument means that this RPC server is the RPC orchestrator
+    nodes_port : int
+        port of each RPC server in cluster 
+    num_workers : int
+        number of threads to use
+    port : int
+        port on which to start this RPC server 
     """
     condition = threading.Condition()
     command = Command()
-    globals()["all_users"] = all_users
+    _USERS.extend(all_users)
 
     # Sort node IPs to ensure that first element in list is rank 0
     # Above is true because of how tracker assigns ranks
@@ -798,15 +803,15 @@ def serve(enclave, num_workers=10, all_users=[], nodes=[]):
         globals()["is_orchestrator"] = False
     else:
         nodes.sort()
-        nodes = [addr + ":50051" for addr in nodes]
+        nodes = [addr + ":" + str(nodes_port) for addr in nodes]
         globals()["nodes"] = nodes
         globals()["is_orchestrator"] = True
 
         print("Hello from the orchestrator!")
 
     rpc_server = grpc.server(futures.ThreadPoolExecutor(max_workers=num_workers))
-    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(enclave, condition, command), rpc_server)
-    rpc_server.add_insecure_port('[::]:50051')
+    remote_pb2_grpc.add_RemoteServicer_to_server(RemoteServicer(condition, command), rpc_server)
+    rpc_server.add_insecure_port('[::]:' + str(port))
     rpc_server.start()
     rpc_server.wait_for_termination()
 

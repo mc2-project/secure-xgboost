@@ -5,25 +5,20 @@ username = "user1"
 DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 sym_key_file = DIR + "/../../data/key_zeros.txt"
-pub_key_file = DIR + "/../../../config/user1.pem"
+priv_key_file = DIR + "/../../../config/user1.pem"
 cert_file = DIR + "/../../../config/user1.crt"
 
 
-print("Init user parameters")
-xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
-
-print("Creating enclave")
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
+print("Init user and enclave parameters")
+xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
+xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")
 
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-enclave.attest()
-
-print("Send private key to enclave")
-enclave.add_key()
+xgb.attest()
 
 print("Creating training matrix from encrypted file")
 dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"})

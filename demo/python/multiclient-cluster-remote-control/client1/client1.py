@@ -11,9 +11,7 @@ HOME_DIR = DIR + "/../../../../"
 username = "user1"
 
 def run(channel_addr, sym_key_file, priv_key_file, cert_file):
-    xgb.init_user(username, sym_key_file, priv_key_file, cert_file)
-
-    enclave = xgb.Enclave(addr=channel_addr)
+    xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
 
     xgb.rabit.init()
 
@@ -24,11 +22,8 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
     print("Remote attestation")
     # Note: Simulation mode does not support attestation
     # pass in `verify=False` to attest()
-    enclave.attest()
+    xgb.attest()
     print("Report successfully verified")
-
-    print("Send private key to enclave")
-    enclave.add_key()
 
     print("Load training matrices")
     dtrain = xgb.DMatrix({username: HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c1_train.enc", "user2": HOME_DIR + "demo/python/multiclient-cluster-remote-control/data/c2_train.enc"}, encrypted=True)
