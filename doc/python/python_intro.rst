@@ -55,21 +55,21 @@ Secure XGBoost can use either a list of pairs or a dictionary to set :doc:`param
     param['nthread'] = 4
     param['eval_metric'] = 'auc'
 
-* You can also specify multiple eval metrics:
-
-  .. code-block:: python
-
-    param['eval_metric'] = ['auc', 'ams@0']
-
-    # alternatively:
-    # plst = param.items()
-    # plst += [('eval_metric', 'ams@0')]
-
-* Specify validations set to watch performance
-
-  .. code-block:: python
-
-    evallist = [(dtest, 'eval'), (dtrain, 'train')]
+.. * You can also specify multiple eval metrics:
+.. 
+..   .. code-block:: python
+.. 
+..     param['eval_metric'] = ['auc', 'ams@0']
+.. 
+..     # alternatively:
+..     # plst = param.items()
+..     # plst += [('eval_metric', 'ams@0')]
+.. 
+.. * Specify validations set to watch performance
+.. 
+..   .. code-block:: python
+.. 
+..     evallist = [(dtest, 'eval'), (dtrain, 'train')]
 
 Training
 --------
