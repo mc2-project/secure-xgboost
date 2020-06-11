@@ -116,7 +116,7 @@ Troubleshooting
 ***************
 1. **Permission denied**
 
-   This may be symptomatic of an SSH authentication error. Be sure that the SSH public key of the machine running the tracker is in the ``~/.ssh/authorized_hosts`` file of each node in the cluster.
+   This may be symptomatic of an SSH authentication error. Be sure that the SSH public key of the machine running the tracker is in the ``~/.ssh/authorized_keys`` file of each node in the cluster.
 
 2. **Hung connection**
 

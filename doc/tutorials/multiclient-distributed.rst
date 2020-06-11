@@ -4,11 +4,11 @@ Multiclient Outsourced Distributed Computation
 
 Secure XGBoost is tailored toward an outsourced computation model -- one in which multiple clients with sensitive data want to outsource joint computation on their sensitive data to the untrusted cloud. This tutorial provides an example of such a scenario. 
 
-In the multiclient setting, Secure XGBoost contains a mechanism for consensus. It requires that all parties agree to invoke a certain API before actually running that function. For example, if Party A wants to train a model on Party A and Party B's data, Secure XGBoost requires that both Party A and Party B submit a command to the enclave before proceeding to train the model. In a similar fashion, if Party A wants to load its data, Party B must also agree and allow Party A to do so.
+In the multiclient setting, Secure XGBoost contains a mechanism for consensus. It requires that all parties agree to invoke a certain API before running that function. For example, if Party A wants to train a model on Party A and Party B's data, Secure XGBoost requires that both Party A and Party B submit a train command before proceeding to train the model. In a similar fashion, if Party A wants to load its data, Party B must also agree and allow Party A to do so.
 
 In this example, there are five entities: two clients, who each own sensitive data; an RPC orchestrator; and two untrusted servers, each running an enclave, who communicate to perform distributed computation. Each party holds distinct data that they want to aggregate. The demo consists of the following steps: 
 
-   1. The orchestrator starts an RPC server and creates an enclave at each node (each untrusted server) in the cluster. 
+   1. The orchestrator starts an RPC server and creates an enclave at each node (untrusted server) in the cluster. 
 
    2. The orchestrator starts an RPC server to listen for client requests.
 
@@ -55,9 +55,9 @@ First, set up machines that will act as the untrusted servers. We'll need to sta
 Orchestrator Setup
 ******************
 
-Next set up the RPC orchestrator.
+Next, set up the RPC orchestrator.
 
-1. Modify the ``nodes`` argument in the ``xgb.serve()`` function in the ``demo/python/remote-control/start_orchestrator.py`` script to reflect the IP address of the nodes in the cluster. The ``port`` argument tells the RPC orchestrator which port to listen for client commands on. Note that ``start_orchestrator.py`` contains code that will automatically parse ``hosts.config`` for the node IPs, so you may not have to do this step.
+1. Modify the ``nodes`` argument in the ``xgb.serve()`` function in the ``demo/python/multiclient-cluster-remote-control/start_orchestrator.py`` script to reflect the IP address of the nodes in the cluster. The ``port`` argument tells the RPC orchestrator which port to listen for client commands on. Note that ``start_orchestrator.py`` contains code that will automatically parse ``hosts.config`` for the node IPs, so you may not have to do this step.
 
    .. code-block:: bash
 
@@ -73,7 +73,7 @@ Next set up the RPC orchestrator.
 Client 1 Setup
 **************
 
-**Before doing this setup, ensure that you've already setup the server.**
+**Before doing this setup, ensure that you've already set up the cluster and the orchestrator.**
 
 This setup will involve encrypting data on client 1, transferring the data to the server, and telling the orchestrator that client 1 is ready. 
 
@@ -158,10 +158,9 @@ This setup will involve encrypting data on client 2, transferring the data to th
 
    .. code-block:: bash
 
-   python3 client2.py --ip-addr <server-ip> --symmkey key2.txt --privkey ../../../data/userkeys/private_user_2.pem --cert ../../../data/usercrts/user2.crt --port 50052
+      python3 client2.py --ip-addr <server-ip> --symmkey key2.txt --privkey ../../../data/userkeys/private_user_2.pem --cert ../../../data/usercrts/user2.crt --port 50052
 
 For convenience, we added a script ``run.sh`` in this directory that runs this command. It takes in one argument: the orchestrator IP. 
-
 
 Once you have submitted commands from client 2, the orchestrator will relay commands to the cluster. The enclave cluster will load the two parties' data, train a model over both parties' data, and serve encrypted predictions back to each party. 
 
@@ -171,9 +170,9 @@ Troubleshooting
 ***************
 1. **Permission denied**
 
-   This may be symptomatic of an SSH authentication error. Be sure that the SSH public key of the machine running the tracker is in the ``~/.ssh/authorized_hosts`` file of each node in the cluster.
+   This may be symptomatic of an SSH authentication error. Be sure that the SSH public key of the machine running the tracker is in the ``~/.ssh/authorized_keys`` file of each node in the cluster.
 
-   2. **Hung connection**
+2. **Hung connection**
 
    If the tracker is hung after logging a statement similar to ``start listen on ...``, the tracker may be hung listening for an initial signal from a node in the cluster. Ensure that ports 9000-9100 are open on each machine.
 

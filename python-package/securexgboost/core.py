@@ -438,7 +438,7 @@ class DMatrix(object):
         Parameters
         ----------
         data_dict : dict, {str: str}
-            The keys are usernames. The values are absolute paths to the training data of the corresponding user.
+            The keys are usernames. The values are absolute paths to the training data of the corresponding user in the cloud.
         encrypted : bool, optional
             Whether data is encrypted
         silent : bool, optional
@@ -1641,7 +1641,7 @@ class Booster(object):
         Returns
         -------
         prediction : list
-            List of predictions. Each element in the list is a set of predictions from a different node
+            List of predictions. Each element in the list is a set of predictions from a different node in the cloud.
         num_preds: list
             Number of predictions in each element in `prediction`
         """
@@ -2541,9 +2541,9 @@ def attest(verify=True):
     Parameters
     ----------
     verify: bool
-        Whether to verify the enclave report or not
+        If true, the client verifies the enclave report 
 
-    .. warning:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
+        .. warning:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
     """
 
     pem_key = ctypes.POINTER(ctypes.c_uint8)()
