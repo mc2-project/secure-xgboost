@@ -203,6 +203,8 @@ def _check_call(ret):
 
 
 def pass_globals():
+    """Pass global variables to rabit"""
+    # FIXME: fix this to use _CONF
     return {
             "current_user": globals()["current_user"],
             "remote_addr": globals()["remote_addr"]
@@ -437,6 +439,8 @@ class DMatrix(object):
         ----------
         data_dict : dict, {str: str}
             The keys are usernames. The values are absolute paths to the training data of the corresponding user.
+        encrypted : bool, optional
+            Whether data is encrypted
         silent : bool, optional
             Whether to print messages during construction
         feature_names : list, optional
@@ -1636,8 +1640,10 @@ class Booster(object):
 
         Returns
         -------
-        prediction : numpy array
-        num_preds: number of predictions
+        prediction : list
+            List of predictions. Each element in the list is a set of predictions from a different node
+        num_preds: list
+            Number of predictions in each element in `prediction`
         """
         # check the global variable for current_user
         if "current_user" in _CONF:
@@ -2044,6 +2050,11 @@ class Booster(object):
             Format of model dump. Can be 'text' or 'json'.
         decrypt: bool
             When this is True, the model dump received from the enclave is decrypted using the user's symmetric key
+
+        Returns
+        -------
+        res : str
+            A string representation of the model dump
         """
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2165,7 +2176,15 @@ class Booster(object):
         return res
 
     def decrypt_dump(self, sarr, length):
-        """ Decrypt the models obtained from get_dump()
+        """ 
+        Decrypt the models obtained from get_dump()
+        
+        Parameters
+        ----------
+        sarr: str
+            Encrypted string representation of the model obtained from get_dump()
+        length : int
+           length of sarr 
         """ 
         try:
             sym_key = _CONF["enclave_sym_key"]
@@ -2499,7 +2518,7 @@ def init_client(remote_addr=None, user_name=None,
 
 def init_server(enclave_image=None, log_verbosity=0):
     """
-    Launch the enclave from an image. This API should be invoked by the server and not the clients.
+    Launch the enclave from an image. This API should be invoked only by the servers and not the clients.
 
     Parameters
     ----------
@@ -3044,11 +3063,11 @@ class RemoteAPI:
 
 def generate_client_key(keyfile):
     """
-    Generate a new key and save it to `path_to_key`
+    Generate a new key and save it to ``keyfile``
 
     Parameters
     ----------
-    path_to_key : str
+    keyfile : str
         path to which key will be saved
     """
     KEY_BYTES = 32

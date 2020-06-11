@@ -781,8 +781,7 @@ def serve(all_users=[], nodes=[], nodes_port=50051, num_workers=10, port=50051):
     all_users : list
         list of usernames participating in the joint computation
     nodes : list
-        list of IP addresses of nodes in the cluster
-        passing in this argument means that this RPC server is the RPC orchestrator
+        list of IP addresses of nodes in the cluster. Passing in this argument means that this RPC server is the RPC orchestrator
     nodes_port : int
         port of each RPC server in cluster 
     num_workers : int
