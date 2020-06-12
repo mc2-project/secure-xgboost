@@ -12,7 +12,7 @@ cmake_policy(SET CMP0022 NEW)
 
 
 # Build options
-set(CLIENT_LIST user1 user2
+set(CLIENT_LIST user1 
     CACHE STRING "List of usernames of clients in federation")
 set(SIGNER_PUB_FILE config/signer.pub
     CACHE STRING "Public key of enclave signing authority")
@@ -22,7 +22,7 @@ set(CA_CERT_FILE config/signer.crt
     CACHE STRING "Root certificate of CA for signing client identities")
 
 # OE configuration options for enclave
-set(OE_DEBUG 0
+set(OE_DEBUG 1
     CACHE STRING "Build enclave in debug mode (1) or release mode (0)")
 set(OE_NUM_HEAP_PAGES 100000
     CACHE STRING "Number of enclave heap pages")
@@ -36,11 +36,11 @@ set(OE_SECURITY_VERSION 1
     CACHE STRING "Enclave security version (ISVSVN)")
 
 option(LOGGING
-    "Enable enclave logger" OFF)
+    "Enable enclave logger" ON)
 option(SIMULATE
-    "Build enclave in simulation mode" OFF)
+    "Build enclave in simulation mode" ON)
 option(OBLIVIOUS
-    "Enable oblivious training and inference" ON)
+    "Enable oblivious training and inference" OFF)
 option(USE_AVX2 
     "Use AVX2 instructions to speed up oblivious primitives" ON)
 option(LVI_MITIGATION
