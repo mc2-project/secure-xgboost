@@ -25,7 +25,7 @@ if [ ${TASK} == "python_test" ]; then
     # Install python dependencies
     python -m pip install graphviz pytest pytest-cov codecov
     python -m pip install datatable
-    python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes
+    python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools 
 
     # Start python tests
     python -m pytest -v --fulltrace -s tests/python --cov=python-package/securexgboost || exit -1
