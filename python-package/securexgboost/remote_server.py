@@ -426,10 +426,16 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         self.condition.release()
         return ret
 
+    def _serialize(self, func, params):
+        self.condition.acquire() 
+        ret = func(params) 
+        self.condition.release()
+        return ret
+
     def rpc_get_remote_report_with_pubkey_and_nonce(self, request, context):
         try:
             if not globals()["is_orchestrator"]:
-                pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = remote_api.get_remote_report_with_pubkey_and_nonce(request)
+                pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size = self._serialize(remote_api.get_remote_report_with_pubkey_and_nonce, request)
                 return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
                     nonce=nonce, nonce_size=nonce_size,
                     remote_report=remote_report, remote_report_size=remote_report_size)
@@ -459,7 +465,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             # Get encrypted symmetric key, signature, and certificate from request
             if not globals()["is_orchestrator"]:
                 # Get a reference to the existing enclave
-                remote_api.add_client_key_with_certificate(request)
+                self._serialize(remote_api.add_client_key_with_certificate, request)
                 # self.enclave._add_client_key_with_certificate(certificate, enc_sym_key, key_size, signature, sig_len)
                 status = remote_pb2.Status(status=0)
                 return remote_pb2.StatusMsg(status=status)
@@ -506,7 +512,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
 
             if not globals()["is_orchestrator"]:
                 # Get symmetric key from enclave
-                enc_key, enc_key_size = remote_api.get_enclave_symm_key(request)
+                enc_key, enc_key_size = self._serialize(remote_api.get_enclave_symm_key, request)
                 enc_key_proto = pointer_to_proto(enc_key, enc_key_size + CIPHER_IV_SIZE + CIPHER_TAG_SIZE)
 
                 status = remote_pb2.Status(status=0)
