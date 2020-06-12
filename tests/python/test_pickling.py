@@ -6,32 +6,17 @@ import unittest
 import securexgboost as xgb
 import os
 from sklearn.datasets import dump_svmlight_file
-
+from paths import sym_key_file, priv_key_file, cert_file
 
 username = "user1"
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
-sym_key_file = HOME_DIR + "demo/data/key_zeros.txt"
-pub_key_file = HOME_DIR + "demo/data/userkeys/private_user_1.pem"
-cert_file = HOME_DIR + "demo/data/usercrts/{0}.crt".format(username)
 
 temp_name = HOME_DIR + "demo/data/temp_file.txt"
 temp_enc_name = HOME_DIR + "demo/data/temp_file.txt.enc"
 
-print("Init user parameters")
-xgb.init_user(username, sym_key_file, pub_key_file, cert_file)
-
-print("Creating enclave")
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
-
-# Remote Attestation
-print("Remote attestation")
-
-# Note: Simulation mode does not support attestation
-# pass in `verify=False` to attest()
-enclave.attest(verify=False)
-
-print("Send private key to enclave")
-enclave.add_key()
+xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
+xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
+xgb.attest(verify=False)
 
 
 kRows = 100
