@@ -71,5 +71,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    channel_addr = str(args.ip_addr) + ":50051" 
+    # Connect to the orchestrator
+    channel_addr = str(args.ip_addr) + ":50052" 
     run(channel_addr, str(args.symmkey), str(args.privkey), str(args.cert))

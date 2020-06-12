@@ -15,9 +15,6 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     xgb.rabit.init()
 
-    # Sleep to allow client2 to attest first
-    time.sleep(3)
-
     # Remote attestation
     print("Remote attestation")
     # Note: Simulation mode does not support attestation
@@ -75,5 +72,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    channel_addr = str(args.ip_addr) + ":50051" 
+    # Connect to the orchestrator
+    channel_addr = str(args.ip_addr) + ":50052" 
     run(channel_addr, str(args.symmkey), str(args.privkey), str(args.cert))
