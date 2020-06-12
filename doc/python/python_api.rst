@@ -6,6 +6,24 @@ This page gives the Python API reference of Secure XGBoost, please also refer to
   :backlinks: none
   :local:
 
+Initialization API
+------------------
+Functions used to initialize clients and servers in Secure XGBoost.
+
+.. autofunction:: securexgboost.init_client
+
+.. autofunction:: securexgboost.init_server
+
+Security API
+------------
+Functions for cryptography and remote attestation.
+
+.. autofunction:: securexgboost.generate_client_key
+
+.. autofunction:: securexgboost.encrypt_file
+
+.. autofunction:: securexgboost.attest
+
 Core Data Structure
 -------------------
 .. automodule:: securexgboost.core
@@ -15,10 +33,6 @@ Core Data Structure
     :show-inheritance:
 
 .. autoclass:: securexgboost.Booster
-    :members:
-    :show-inheritance:
-
-.. autoclass:: securexgboost.Enclave
     :members:
     :show-inheritance:
 
@@ -68,3 +82,10 @@ Learning API
 .. .. autofunction:: xgboost.callback.reset_learning_rate
 .. 
 .. .. autofunction:: xgboost.callback.early_stop
+
+Remote Server API
+-----------------
+Functions to enable remote control of computation.
+
+.. autofunction:: securexgboost.serve
+

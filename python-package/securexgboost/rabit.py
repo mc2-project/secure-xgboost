@@ -8,7 +8,7 @@ import os
 import ctypes
 import numpy as np
 
-from .core import _LIB, c_str, STRING_TYPES, pass_globals 
+from .core import _LIB, c_str, STRING_TYPES, _CONF 
 from .compat import pickle
 
 import grpc
@@ -27,9 +27,8 @@ def _init_rabit():
 def init(args=None):
     """Initialize the rabit library with arguments"""
 
-    core_globals = pass_globals()
-    channel_addr = core_globals.get("remote_addr")
-    current_user = core_globals.get("current_user")
+    channel_addr = _CONF.get("remote_addr")
+    current_user = _CONF.get("current_user")
 
     if channel_addr:
         # FIXME: add signature to rabit init
@@ -46,9 +45,8 @@ def init(args=None):
 
 def finalize():
     """Finalize the process, notify tracker everything is done."""
-    core_globals = pass_globals()
-    channel_addr = core_globals.get("remote_addr")
-    current_user = core_globals.get("current_user")
+    channel_addr = _CONF.get("remote_addr")
+    current_user = _CONF.get("current_user")
 
     if channel_addr:
         # FIXME: add signature to rabit finalize
