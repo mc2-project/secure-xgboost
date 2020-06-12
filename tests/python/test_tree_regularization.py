@@ -24,11 +24,12 @@ y = np.array([1])
 dump_svmlight_file(X, y, temp_name) 
 xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
  
-train_data = xgb.DMatrix({username: temp_enc_name})
+#  train_data = xgb.DMatrix({username: temp_enc_name})
 
 
 class TestTreeRegularization(unittest.TestCase):
     def test_alpha(self):
+        train_data = xgb.DMatrix({username: temp_enc_name})
         params = {
             'tree_method': 'exact', 'verbosity': 0,
             'objective': 'reg:squarederror',
@@ -47,6 +48,7 @@ class TestTreeRegularization(unittest.TestCase):
         assert_approx_equal(preds[0], 0.9)
 
     def test_lambda(self):
+        train_data = xgb.DMatrix({username: temp_enc_name})
         params = {
             'tree_method': 'exact', 'verbosity': 0,
             'objective': 'reg:squarederror',
@@ -65,6 +67,7 @@ class TestTreeRegularization(unittest.TestCase):
         assert_approx_equal(preds[0], 0.75)
 
     def test_alpha_and_lambda(self):
+        train_data = xgb.DMatrix({username: temp_enc_name})
         params = {
             'tree_method': 'exact', 'verbosity': 1,
             'objective': 'reg:squarederror',
