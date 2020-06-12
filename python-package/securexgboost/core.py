@@ -19,6 +19,7 @@ import warnings
 import grpc
 from .rpc import remote_pb2
 from .rpc import remote_pb2_grpc
+from rpc_utils import CIPHER_IV_SIZE, CIPHER_TAG_SIZE, CIPHER_NONCE_SIZE
 
 import numpy as np
 from numproto import ndarray_to_proto, proto_to_ndarray
@@ -165,6 +166,9 @@ def _load_lib():
 # load the XGBoost library globally
 _LIB = _load_lib()
 
+# user and enclave configuration information
+_CONF = {}
+
 def _check_remote_call(ret):
     """check the return value of c api call
 
@@ -176,7 +180,7 @@ def _check_remote_call(ret):
     ret : proto
         return value from remote api calls
     """
-    channel_addr = globals()["remote_addr"]
+    channel_addr = _CONF["remote_addr"]
     if channel_addr:
         if ret.status.status != 0:
             raise XGBoostError(ret.status.exception)
@@ -196,7 +200,6 @@ def _check_call(ret):
     """
     if ret != 0:
         raise XGBoostError(py_str(_LIB.XGBGetLastError()))
-
 
 def ctypes2numpy(cptr, length, dtype):
     """Convert a ctypes pointer array to a numpy array.
@@ -386,42 +389,23 @@ def proto_to_pointer(proto, ctype=ctypes.c_uint8):
 # 
 #     return array
 
-def add_nonce_to_args(args):
-    nonce_arg = " nonce "
-    for i in range(globals()["nonce_size"].value):
-        nonce_arg += str(globals()["nonce"][i]) + " "
-    nonce_arg += " nonce_ctr {}".format(globals()["nonce_ctr"])
-    return args + nonce_arg
+def add_to_sig_data(arr, pos=0, data=None, data_size=0):
+    if isinstance(data, str):
+        ctypes.memmove(ctypes.byref(arr, pos), c_str(data), len(data))
+    else:
+        ctypes.memmove(ctypes.byref(arr, pos), data, data_size)
+    return arr
+
+def add_nonce_to_sig_data(arr, pos=0):
+    ctypes.memmove(ctypes.byref(arr, pos), _CONF["nonce"], 12)
+    ctypes.memmove(ctypes.byref(arr, pos + 12), _CONF["nonce_ctr"].to_bytes(4, 'big'), 4)
+    return arr
 
 def get_seq_num_proto():
     return remote_pb2.SequenceNumber(
-                            nonce=pointer_to_proto(globals()["nonce"], globals()["nonce_size"].value),
-                            nonce_size=globals()["nonce_size"].value,
-                            nonce_ctr=globals()["nonce_ctr"])
-
-def init_user(user_name, sym_key_file, priv_key_file, cert_file):
-    """
-    Parameters
-    ----------
-    user_name : string
-        Current user's identity
-    sym_key_file : string
-        Path to file containing user's symmetric key used for encrypting data
-    priv_key_file : string
-        Path to file containing user's private key used for signing data
-    cert_file : string
-        Path to file containing user's public key certificate
-    """
-    globals()["current_user"] = user_name
-    with open(sym_key_file, "rb") as keyfile:
-        globals()["current_user_sym_key"] = keyfile.read()
-    # FIXME: Save buffer instead of file
-    # with open(priv_key_file, "r") as keyfile:
-    #     priv_key = keyfile.read()
-    globals()["current_user_priv_key"] = priv_key_file
-
-    with open(cert_file, "r") as cert_file:
-        globals()["current_user_cert"] = cert_file.read()
+                            nonce=pointer_to_proto(_CONF["nonce"], _CONF["nonce_size"].value),
+                            nonce_size=_CONF["nonce_size"].value,
+                            nonce_ctr=_CONF["nonce_ctr"])
 
 
 class DMatrix(object):
@@ -445,7 +429,9 @@ class DMatrix(object):
         Parameters
         ----------
         data_dict : dict, {str: str}
-            The keys are usernames. The values are absolute paths to the training data of the corresponding user.
+            The keys are usernames. The values are absolute paths to the training data of the corresponding user in the cloud.
+        encrypted : bool, optional
+            Whether data is encrypted
         silent : bool, optional
             Whether to print messages during construction
         feature_names : list, optional
@@ -535,11 +521,12 @@ class DMatrix(object):
                 for username, filename in zip(usernames, data):
                     args = args + " username {} filename {}".format(username, filename)
                 args = args + " silent {}".format(int(silent))
-                args = add_nonce_to_args(args)
+                sig, sig_len = create_client_signature(args)
 
-                sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+                out_sig = ctypes.POINTER(ctypes.c_uint8)()
+                out_sig_length = c_bst_ulong()
 
-                channel_addr = globals()["remote_addr"]
+                channel_addr = _CONF["remote_addr"]
                 if channel_addr:
                     with grpc.insecure_channel(channel_addr) as channel:
                         stub = remote_pb2_grpc.RemoteStub(channel)
@@ -550,20 +537,21 @@ class DMatrix(object):
                         seq_num = get_seq_num_proto() 
                         response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrsRequest(attrs=dmatrix_attrs,
                                                                                                                                 seq_num=seq_num,
-                                                                                                                                username=globals()["current_user"],
+                                                                                                                                username=_CONF["current_user"],
                                                                                                                                 signature=sig,
                                                                                                                                 sig_len=sig_len)))
-                        globals()["nonce_ctr"] += 1
                         handle = c_str(response.name)
+                        out_sig = proto_to_pointer(response.signature)
+                        out_sig_length = c_bst_ulong(response.sig_len)
                 else:
                     c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-                    signers = from_pystr_to_cstr([globals()["current_user"]])
+                    signers = from_pystr_to_cstr([_CONF["current_user"]])
 
                     filenames = from_pystr_to_cstr(data)
                     usrs = from_pystr_to_cstr(usernames)
-                    nonce = globals()["nonce"]
-                    nonce_size = globals()["nonce_size"]
-                    nonce_ctr = globals()["nonce_ctr"]
+                    nonce = _CONF["nonce"]
+                    nonce_size = _CONF["nonce_size"]
+                    nonce_ctr = _CONF["nonce_ctr"]
                     _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(filenames,
                         usrs,
                         c_bst_ulong(len(data)),
@@ -572,10 +560,15 @@ class DMatrix(object):
                         nonce_size,
                         ctypes.c_uint32(nonce_ctr),
                         ctypes.byref(handle),
+                        ctypes.byref(out_sig),
+                        ctypes.byref(out_sig_length),
                         signers,
                         c_signatures,
                         c_lengths))
-                    globals()["nonce_ctr"] += 1
+
+                args = "handle {}".format(handle.value.decode('utf-8')) 
+                verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+
             else:
                 raise NotImplementedError("Loading from unencrypted files not supported.")
                 # FIXME implement RPC for this
@@ -847,7 +840,7 @@ class DMatrix(object):
     # 
     #     Parameters
     #     ----------
-    #     fname : string
+    #     fname : str
     #         Name of the output buffer file.
     #     silent : bool (optional; default: True)
     #         If set, the output is suppressed.
@@ -985,30 +978,41 @@ class DMatrix(object):
         """
         channel_addr = globals()["remote_addr"]
         args = "XGDMatrixNumRow " + self.handle.value.decode('utf-8')
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_client_signature(args)
+
+        ret = c_bst_ulong()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_length = c_bst_ulong()
 
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 name_proto = remote_pb2.Name(name=self.handle.value)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.NumRowRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"],
+                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.NumRowRequest(name=name_proto, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
-                return response.value
+                out_sig = proto_to_pointer(response.signature)
+                out_sig_length = c_bst_ulong(response.sig_len)
+                ret = response.value
         else:
             c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-            signers = from_pystr_to_cstr([globals()["current_user"]])
-            ret = c_bst_ulong()
+            signers = from_pystr_to_cstr([_CONF["current_user"]])
             _check_call(_LIB.XGDMatrixNumRow(self.handle,
-                                             globals()["nonce"],
-                                             globals()["nonce_size"],
-                                             ctypes.c_uint32(globals()["nonce_ctr"]),
+                                             _CONF["nonce"],
+                                             _CONF["nonce_size"],
+                                             ctypes.c_uint32(_CONF["nonce_ctr"]),
                                              ctypes.byref(ret),
+                                             ctypes.byref(out_sig),
+                                             ctypes.byref(out_sig_length),
                                              signers,
                                              c_signatures,
                                              c_lengths))
-            return ret.value
+            ret = ret.value
+
+        args = "{}".format(ret) 
+        verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+
+        return ret
 
     def num_col(self):
         """Get the number of columns (features) in the DMatrix.
@@ -1018,33 +1022,42 @@ class DMatrix(object):
         number of columns : int
         """
         args = "XGDMatrixNumCol " + self.handle.value.decode('utf-8')
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_client_signature(args)
 
-        channel_addr = globals()["remote_addr"]
+        ret = c_bst_ulong()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_length = c_bst_ulong()
+
+        channel_addr = _CONF["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 name_proto = remote_pb2.Name(name=self.handle.value)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=globals()["current_user"],
+                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
-                globals()["nonce_ctr"] += 1
-                return response.value
+                out_sig = proto_to_pointer(response.signature)
+                out_sig_length = c_bst_ulong(response.sig_len)
+                ret = response.value
         else:
             c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-            signers = from_pystr_to_cstr([globals()["current_user"]])
+            signers = from_pystr_to_cstr([_CONF["current_user"]])
             ret = c_bst_ulong()
             _check_call(_LIB.XGDMatrixNumCol(self.handle,
-                                             globals()["nonce"],
-                                             globals()["nonce_size"],
-                                             ctypes.c_uint32(globals()["nonce_ctr"]),
+                                             _CONF["nonce"],
+                                             _CONF["nonce_size"],
+                                             ctypes.c_uint32(_CONF["nonce_ctr"]),
                                              ctypes.byref(ret),
+                                             ctypes.byref(out_sig),
+                                             ctypes.byref(out_sig_length),
                                              signers,
                                              c_signatures,
                                              c_lengths))
-            globals()["nonce_ctr"] += 1
-            return ret.value
+            ret = ret.value
+
+        args = "{}".format(ret) 
+        verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+        return ret
 
     # def slice(self, rindex):
     #     """Slice the DMatrix and return a new DMatrix that only contains `rindex`.
@@ -1164,289 +1177,6 @@ class DMatrix(object):
         self._feature_types = feature_types
 
 
-class Enclave(object):
-    """
-    Object wrapper for an enclave: a trusted execution environment used by secure XGBoost.
-    """
-    def __init__(self, enclave_image=None, log_verbosity=0, addr=None):
-        """
-        Parameters
-        ----------
-        enclave_image: str
-            Path to enclave binary
-        log_verbosity: int, optional
-            Verbosity level for enclave (for enclaves in debug mode)
-        """
-        if addr is not None:
-            # TODO(rishabh): Verify address is valid
-            globals()["remote_addr"] = addr;
-        else:
-            globals()["remote_addr"] = None;
-            _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
-        self.pem_key = ctypes.POINTER(ctypes.c_uint8)()
-        self.pem_key_size = ctypes.c_size_t()
-        self.remote_report = ctypes.POINTER(ctypes.c_uint8)()
-        self.remote_report_size = ctypes.c_size_t()
-        globals()["nonce"] = ctypes.POINTER(ctypes.c_uint8)()
-        globals()["nonce_size"] = ctypes.c_size_t()
-        globals()["nonce_ctr"] = 0 
-
-    # TODO(rishabh): user-defined parameters for verification
-    # (e.g. mrsigner / mrenclave values)
-    # TODO(rishabh): Handle verification failures
-    def attest(self, verify=True):
-        """
-        Verify remote attestation report of enclave and get its public key.
-        The report and public key are saved as instance attributes.
-
-
-        Parameters
-        ----------
-        verify: bool
-            Whether to verify the enclave report or not
-        
-
-        .. warning:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
-        """
-        channel_addr = globals()["remote_addr"]
-        if channel_addr:
-            with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=1)))
-            pem_key = response.pem_key
-            key_size = response.pem_key_size
-            nonce_ = response.nonce
-            nonce_size_ = response.nonce_size
-            remote_report = response.remote_report
-            remote_report_size = response.remote_report_size
-
-            self._set_report_attrs(pem_key, key_size, nonce_, nonce_size_, remote_report, remote_report_size)
-            # return pem_key, key_size, remote_report, remote_report_size
-        else:
-            _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(ctypes.byref(self.pem_key), ctypes.byref(self.pem_key_size),
-                ctypes.byref(globals()["nonce"]), ctypes.byref(globals()["nonce_size"]),
-                ctypes.byref(self.remote_report), ctypes.byref(self.remote_report_size)))
-            # return self._get_report_attrs()
-
-        if (verify):
-            self._verify_report()
-
-    def _verify_report(self):
-        """
-        Verify the received attestation report and set the public key.
-        """
-        _check_call(_LIB.verify_remote_report_and_set_pubkey_and_nonce(self.pem_key, self.pem_key_size,
-                                                                       globals()["nonce"], globals()["nonce_size"],
-                                                                       self.remote_report, self.remote_report_size))
-
-    def _set_report_attrs(self, pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size):
-        """
-        Set the enclave public key and remote report
-
-        To be used by RPC client during verification
-        """
-        pem_key_ndarray = proto_to_ndarray(pem_key)
-        self.pem_key = pem_key_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
-        self.pem_key_size = ctypes.c_size_t(key_size)
-
-        nonce_ndarray = proto_to_ndarray(nonce)
-        globals()["nonce"] = nonce_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
-        globals()["nonce_size"] = ctypes.c_size_t(nonce_size)
-
-        remote_report_ndarray = proto_to_ndarray(remote_report)
-        self.remote_report = remote_report_ndarray.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
-        self.remote_report_size = ctypes.c_size_t(remote_report_size)
-
-
-
-    def _get_report_attrs(self):
-        """
-        Get the enclave public key and remote report
-
-        To be called by the RPC service
-
-        Must be called after get_remote_report_with_pubkey_and_nonce() is called
-
-        Returns
-        -------
-        pem_key : proto.NDArray
-        key_size : int
-        nonce : proto.NDArray
-        nonce_size : int
-        remote_report : proto.NDArray
-        remote_report_size : int
-        """
-        # Convert pem_key to serialized numpy array
-        pem_key = ctypes2numpy(self.pem_key, self.pem_key_size.value, np.uint8)
-        pem_key = ndarray_to_proto(pem_key)
-        pem_key_size = self.pem_key_size.value
-
-        # Convert nonce to serialized numpy array
-        nonce = ctypes2numpy(globals()["nonce"], globals()["nonce_size"].value, np.uint8)
-        nonce = ndarray_to_proto(nonce)
-        nonce_size = globals()["nonce_size"].value
-
-        # Convert remote_report to serialized numpy array
-        remote_report = ctypes2numpy(self.remote_report, self.remote_report_size.value, np.uint8)
-        remote_report = ndarray_to_proto(remote_report)
-        remote_report_size = self.remote_report_size.value
-
-        return pem_key, pem_key_size, nonce, nonce_size, remote_report, remote_report_size
-
-    def add_key(self):
-        """
-        Add private (symmetric) key to enclave.
-        This function encrypts the user's symmetric key using the enclave's public key, and signs the ciphertext with the user's private key.
-        The signed message is sent to the enclave.
-        """
-
-        enclave_pem_key, enclave_key_size, _, _, _, _ = self._get_report_attrs()
-
-        try:
-            sym_key = globals()["current_user_sym_key"]
-            priv_key = globals()["current_user_priv_key"]
-            cert = globals()["current_user_cert"]
-        except:
-            raise ValueError("Please set your username with the init_user() function")
-
-        # Encrypt the symmetric key using the enclave's public key
-        enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), 
-                enclave_pem_key, enclave_key_size)
-        # Sign the encrypted symmetric key (so enclave can verify it came from the client)
-        sig, sig_size = sign_data(priv_key, enc_sym_key, enc_sym_key_size)
-        # Send the encrypted key to the enclave
-        self._add_client_key_with_certificate(cert, enc_sym_key, enc_sym_key_size, sig, sig_size)
-
-        self._get_enclave_symm_key()
-
-    # def _add_client_key(self, enc_sym_key, enc_len, signature, sig_len):
-    #     """
-    #     Add client symmetric key used to encrypt file fname
-    # 
-    #     Parameters
-    #     ----------
-    #     enc_sym_key : proto.NDArray
-    #         key used to encrypt client files
-    #     enc_len : int
-    #         length of enc_sym_key
-    #     signature : proto.NDArray
-    #         signature over enc_sym_key, signed with client private key
-    #     sig_len : int
-    #         length of signature
-    #     """
-    #     channel_addr = globals()["remote_addr"]
-    #     if channel_addr:
-    #         with grpc.insecure_channel(channel_addr) as channel:
-    #             stub = remote_pb2_grpc.RemoteStub(channel)
-    #             response = stub.rpc_add_client_key(remote_pb2.DataMetadata(
-    #                 enc_sym_key=enc_sym_key,
-    #                 key_size=enc_len,
-    #                 signature=signature,
-    #                 sig_len=sig_len))
-    #             return
-    #     else:
-    # 
-    #         # Cast enc_sym_key : proto.NDArray to pointer to pass into C++ add_client_key()
-    #         enc_sym_key = proto_to_pointer(enc_sym_key)
-    #         enc_len = ctypes.c_size_t(enc_len)
-    # 
-    #         # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
-    #         signature = proto_to_pointer(signature)
-    #         sig_len = ctypes.c_size_t(sig_len)
-    # 
-    #         # Add client key
-    #         _check_call(_LIB.add_client_key(enc_sym_key, enc_len, signature, sig_len))
-
-    def _add_client_key_with_certificate(self, certificate, data, data_len, signature, sig_len):
-        """
-        Add client symmetric key used to encrypt file fname
-
-        Parameters
-        ----------
-        certificate : a string
-            content of the user certificate
-        data : proto.NDArray
-            key used to encrypt client files
-        data_len : int
-            length of data
-        signature : proto.NDArray
-            signature over data, signed with client private key
-        sig_len : int
-            length of signature
-        """
-        channel_addr = globals()["remote_addr"]
-
-        # If we're on the client
-        if channel_addr:
-            with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
-                    certificate=certificate,
-                    enc_sym_key=data,
-                    key_size=data_len,
-                    signature=signature,
-                    sig_len=sig_len)))
-
-                return response.status.status
-
-        # Else we're on the server
-
-        # length needed to call cert parse later
-        cert_len = len(certificate) + 1
-        # Cast certificate to a char*
-        certificate = ctypes.c_char_p(str.encode(certificate))
-
-        # Cast data : proto.NDArray to pointer to pass into C++ add_client_key()
-        data = proto_to_pointer(data)
-        data_len = ctypes.c_size_t(data_len)
-
-        # Cast signature : proto.NDArray to pointer to pass into C++ add_client_key()
-        signature = proto_to_pointer(signature)
-        sig_len = ctypes.c_size_t(sig_len)
-
-        # Add client key
-        _check_call(_LIB.add_client_key_with_certificate(certificate, cert_len, data, data_len, signature, sig_len))
-
-
-    def _get_enclave_symm_key(self):
-        """
-        Get enclave's symmetric key used to encrypt output common to all clients
-        """
-        if "current_user" in globals():
-            username = globals()["current_user"]
-        else:
-            raise ValueError("Please set your username with the init_user() function")
-        channel_addr = globals()["remote_addr"]
-        if channel_addr:
-            with grpc.insecure_channel(channel_addr) as channel:
-                stub = remote_pb2_grpc.RemoteStub(channel)
-                response = _check_remote_call(stub.rpc_get_enclave_symm_key(remote_pb2.Name(
-                    username=username)))
-
-                enc_key_serialized = response.key
-                enc_key_size = ctypes.c_size_t(response.size)
-                enc_key = proto_to_pointer(enc_key_serialized)
-        else:
-            enc_key = ctypes.POINTER(ctypes.c_uint8)()
-            enc_key_size = ctypes.c_size_t()
-            _check_call(_LIB.get_enclave_symm_key(
-                c_str(username),
-                ctypes.byref(enc_key),
-                ctypes.byref(enc_key_size)))
-
-        
-        # Decrypt the key and save it
-        try:
-            sym_key = globals()["current_user_sym_key"]
-        except:
-            raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
-        c_char_p_key = ctypes.c_char_p(sym_key)
-        enclave_symm_key = ctypes.POINTER(ctypes.c_uint8)()
-
-        _check_call(_LIB.decrypt_enclave_key(c_char_p_key, enc_key, enc_key_size, ctypes.byref(enclave_symm_key)))
-        globals()["enclave_sym_key"] = enclave_symm_key
-
-
 class Booster(object):
     # pylint: disable=too-many-public-methods
     """A Booster of Secure XGBoost.
@@ -1466,7 +1196,7 @@ class Booster(object):
             Parameters for boosters.
         cache : list
             List of cache items.
-        model_file : string
+        model_file : str
             Path to the model file.
         """
         for d in cache:
@@ -1475,10 +1205,12 @@ class Booster(object):
             self._validate_features(d)
 
         args = "XGBoosterCreate"
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_client_signature(args)
 
-        channel_addr = globals()["remote_addr"]
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_length = c_bst_ulong()
+
+        channel_addr = _CONF["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1487,22 +1219,28 @@ class Booster(object):
                     cache=cache_handles,
                     length=len(cache))
                 seq_num = get_seq_num_proto()
-                response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrsRequest(attrs=booster_attrs, seq_num=seq_num, username=globals()["current_user"],
+                response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrsRequest(attrs=booster_attrs, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                       signature=sig, sig_len=sig_len)))
-                globals()["nonce_ctr"] += 1
             self.handle = c_str(response.name)
+            out_sig = proto_to_pointer(response.signature)
+            out_sig_length = c_bst_ulong(response.sig_len)
         else:
             c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-            signers = from_pystr_to_cstr([globals()["current_user"]])
+            signers = from_pystr_to_cstr([_CONF["current_user"]])
             dmats = c_array(ctypes.c_char_p, [d.handle for d in cache])
             self.handle = ctypes.c_char_p()
             _check_call(_LIB.XGBoosterCreate(dmats, c_bst_ulong(len(cache)),
-                                             globals()["nonce"], globals()["nonce_size"], ctypes.c_uint32(globals()["nonce_ctr"]),
+                                             _CONF["nonce"], _CONF["nonce_size"], ctypes.c_uint32(_CONF["nonce_ctr"]),
                                              ctypes.byref(self.handle),
+                                             ctypes.byref(out_sig),
+                                             ctypes.byref(out_sig_length),
                                              signers,
                                              c_signatures,
                                              c_lengths))
-            globals()["nonce_ctr"] += 1
+
+        args = "handle {}".format(self.handle.value.decode('utf-8')) 
+        verify_enclave_signature(args, len(args), out_sig, out_sig_length)
+
         self.set_param({'seed': 0})
         self.set_param(params or {})
         if (params is not None) and ('booster' in params):
@@ -1647,31 +1385,38 @@ class Booster(object):
         elif isinstance(params, STRING_TYPES) and value is not None:
             params = [(params, value)]
 
-        if "current_user" in globals():
-            user = globals()["current_user"]
+        if "current_user" in _CONF:
+            user = _CONF["current_user"]
         else:
             raise ValueError("Please set your user with init_user() function")
 
         for key, val in params:
             args = "XGBoosterSetParam " + self.handle.value.decode('utf-8') + " " + key + "," + str(val)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_client_signature(args)
 
-            channel_addr = globals()["remote_addr"]
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
+
+            channel_addr = _CONF["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     booster_param = remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)) 
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParamRequest(booster_param=booster_param, seq_num=seq_num, username=globals()["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParamRequest(booster_param=booster_param, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                             signature=sig, sig_len=sig_len)))
-                    globals()["nonce_ctr"] += 1                            
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
                 c_signatures, c_sig_lengths = py2c_sigs([sig], [sig_len])
-                signers = from_pystr_to_cstr([globals()["current_user"]])
+                signers = from_pystr_to_cstr([_CONF["current_user"]])
                 _check_call(_LIB.XGBoosterSetParam(self.handle, c_str(key), c_str(str(val)), 
-                                                    globals()["nonce"], globals()["nonce_size"], ctypes.c_uint32(globals()["nonce_ctr"]), signers, c_signatures, c_sig_lengths))
-                globals()["nonce_ctr"] += 1
+                                                    _CONF["nonce"], _CONF["nonce_size"], ctypes.c_uint32(_CONF["nonce_ctr"]), 
+                                                    ctypes.byref(out_sig),
+                                                    ctypes.byref(out_sig_length),
+                                                    signers, c_signatures, c_sig_lengths))
+
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
 
     def update(self, dtrain, iteration, fobj=None):
         """Update for one iteration, with objective function calculated
@@ -1693,10 +1438,12 @@ class Booster(object):
         
         if fobj is None:
             args = "XGBoosterUpdateOneIter booster_handle {} iteration {} train_data_handle {}".format(self.handle.value.decode('utf-8'), int(iteration), dtrain.handle.value.decode('utf-8'))
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_client_signature(args)
 
-            channel_addr = globals()["remote_addr"]
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
+
+            channel_addr = _CONF["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1704,17 +1451,21 @@ class Booster(object):
                                                                            dtrain_handle=dtrain.handle.value,
                                                                            iteration=iteration)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParamsRequest(booster_update_params=booster_update_params, seq_num=seq_num, username=globals()["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParamsRequest(booster_update_params=booster_update_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                         signature=sig, sig_len=sig_len)))
-                    globals()["nonce_ctr"] += 1
-                    return response
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
                 c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-                signers = from_pystr_to_cstr([globals()["current_user"]])
+                signers = from_pystr_to_cstr([_CONF["current_user"]])
                 _check_call(_LIB.XGBoosterUpdateOneIter(self.handle, ctypes.c_int(iteration), dtrain.handle, 
-                                                        globals()["nonce"], globals()["nonce_size"], ctypes.c_uint32(globals()["nonce_ctr"]),
+                                                        _CONF["nonce"], _CONF["nonce_size"], ctypes.c_uint32(_CONF["nonce_ctr"]),
+                                                        
+                                                        ctypes.byref(out_sig),
+                                                        ctypes.byref(out_sig_length),
                                                         signers, c_signatures, c_lengths))
-                globals()["nonce_ctr"] += 1
+
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
         else:
             raise NotImplementedError("Custom objective functions not supported")
             # TODO(rishabh): We do not support custom objectives currently
@@ -1881,12 +1632,14 @@ class Booster(object):
 
         Returns
         -------
-        prediction : numpy array
-        num_preds: number of predictions
+        prediction : list
+            List of predictions. Each element in the list is a set of predictions from a different node in the cloud.
+        num_preds: list
+            Number of predictions in each element in `prediction`
         """
         # check the global variable for current_user
-        if "current_user" in globals():
-            username = globals()["current_user"]
+        if "current_user" in _CONF:
+            username = _CONF["current_user"]
         else:
             raise ValueError("Please set your username with the init_user() function")
         option_mask = 0x00
@@ -1908,10 +1661,12 @@ class Booster(object):
         preds = ctypes.POINTER(ctypes.c_uint8)()
 
         args = "XGBoosterPredict booster_handle {} data_handle {} option_mask {} ntree_limit {}".format(self.handle.value.decode('utf-8'), data.handle.value.decode('utf-8'), int(option_mask), int(ntree_limit))
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_client_signature(args)
 
-        channel_addr = globals()["remote_addr"]
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_length = c_bst_ulong()
+
+        channel_addr = _CONF["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -1921,19 +1676,45 @@ class Booster(object):
                     ntree_limit=ntree_limit,
                     username=username)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=globals()["current_user"],
+                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                         signature=sig, sig_len=sig_len)))
-                globals()["nonce_ctr"] += 1
-                enc_preds_serialized = response.predictions
-                length = c_bst_ulong(response.num_preds)
+                # List of list of predictions
+                enc_preds_serialized_list = response.predictions
+                length_list = list(response.num_preds)
 
-                preds = proto_to_pointer(enc_preds_serialized)
+                # List of signatures
+                out_sigs_serialized_list = response.signatures
+                out_sig_length_list = list(response.sig_lens)
+                
+                preds_list = [proto_to_pointer(enc_preds_serialized) for enc_preds_serialized in enc_preds_serialized_list]
+                out_sigs = [proto_to_pointer(out_sig_serialized) for out_sig_serialized in out_sigs_serialized_list]
+                out_sig_lengths_ulong = [c_bst_ulong(length) for length in out_sig_length_list]
+
+                # Verify signatures
+                for i in range(len(preds_list)):
+                    preds = preds_list[i]
+                    enc_preds_length = length_list[i]
+                    size = enc_preds_length * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+
+                    out_sig = out_sigs[i]
+                    out_sig_length = out_sig_lengths_ulong[i]
+                    
+                    if i != len(preds_list) - 1:
+                        verify_enclave_signature(preds, size, out_sig, out_sig_length, increment_nonce=False)
+                    else:
+                        verify_enclave_signature(preds, size, out_sig, out_sig_length, increment_nonce=True)
+
+                if decrypt:
+                    preds = self.decrypt_predictions(preds_list, length_list)
+                    return preds, sum(length_list)
+
+                return preds_list, length_list
         else:
-            nonce = globals()["nonce"]
-            nonce_size = globals()["nonce_size"]
-            nonce_ctr = globals()["nonce_ctr"]
+            nonce = _CONF["nonce"]
+            nonce_size = _CONF["nonce_size"]
+            nonce_ctr = _CONF["nonce_ctr"]
             c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-            signers = from_pystr_to_cstr([globals()["current_user"]])
+            signers = from_pystr_to_cstr([_CONF["current_user"]])
             _check_call(_LIB.XGBoosterPredict(self.handle,
                                               data.handle,
                                               ctypes.c_int(option_mask),
@@ -1943,10 +1724,14 @@ class Booster(object):
                                               ctypes.c_uint32(nonce_ctr),
                                               ctypes.byref(length),
                                               ctypes.byref(preds),
+                                              ctypes.byref(out_sig),
+                                              ctypes.byref(out_sig_length),
                                               signers,
                                               c_signatures,
                                               c_lengths))
-            globals()["nonce_ctr"] += 1
+
+            size = length.value * ctypes.sizeof(ctypes.c_float) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE
+            verify_enclave_signature(preds, size, out_sig, out_sig_length)
 
             # TODO(rishabh): implement this in decrypt_predictions
             #  preds = ctypes2numpy(preds, length.value, np.float32)
@@ -1971,9 +1756,9 @@ class Booster(object):
             #              preds = preds.reshape(nrow, ngroup, data.num_col() + 1)
             #      else:
             #          preds = preds.reshape(nrow, chunk_size)
-        if decrypt:
-            preds = self.decrypt_predictions(preds, length.value)
-        return preds, length.value
+            if decrypt:
+                preds = self.decrypt_predictions(preds, length.value)
+            return preds, length.value
 
     # TODO(rishabh): change encrypted_preds to Python type from ctype
     def decrypt_predictions(self, encrypted_preds, num_preds):
@@ -1995,22 +1780,37 @@ class Booster(object):
             plaintext predictions
         """
         try:
-            sym_key = globals()["current_user_sym_key"]
+            sym_key = _CONF["current_user_sym_key"]
         except:
             raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
 
         # Cast arguments to proper ctypes
         c_char_p_key = ctypes.c_char_p(sym_key)
-        size_t_num_preds = ctypes.c_size_t(num_preds)
 
-        preds = ctypes.POINTER(ctypes.c_float)()
+        if not isinstance(encrypted_preds, list):
+            size_t_num_preds = ctypes.c_size_t(num_preds)
 
-        _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
+            preds = ctypes.POINTER(ctypes.c_float)()
 
-        # Convert c pointer to numpy array
-        preds = ctypes2numpy(preds, num_preds, np.float32)
-        return preds
+            _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds, size_t_num_preds, ctypes.byref(preds)))
 
+            # Convert c pointer to numpy array
+            preds = ctypes2numpy(preds, num_preds, np.float32)
+            return preds
+        else:
+            preds_list = []
+            for i in range(len(encrypted_preds)):
+                size_t_num_preds = ctypes.c_size_t(num_preds[i])
+                preds = ctypes.POINTER(ctypes.c_float)()
+
+                _check_call(_LIB.decrypt_predictions(c_char_p_key, encrypted_preds[i], size_t_num_preds, ctypes.byref(preds)))
+
+                # Convert c pointer to numpy array
+                preds = ctypes2numpy(preds, num_preds[i], np.float32)
+                preds_list.append(preds)
+
+            concatenated_preds = np.concatenate(preds_list)
+            return concatenated_preds
 
     def save_model(self, fname):
         """
@@ -2024,12 +1824,12 @@ class Booster(object):
 
         Parameters
         ----------
-        fname : string
+        fname : str
             Absolute path to save the model to
         """
         # check the global variable for current_user
-        if "current_user" in globals():
-            username = globals()["current_user"]
+        if "current_user" in _CONF:
+            username = _CONF["current_user"]
         else:
             raise ValueError("Please set your username with the init_user() function")
         if isinstance(fname, STRING_TYPES):  # assume file name
@@ -2038,10 +1838,12 @@ class Booster(object):
             fname = os.path.normpath(fname)
 
             args = "XGBoosterSaveModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_client_signature(args)
 
-            channel_addr = globals()["remote_addr"]
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
+
+            channel_addr = _CONF["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -2050,19 +1852,22 @@ class Booster(object):
                         filename=fname,
                         username=username)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(save_model_params=save_model_params, seq_num=seq_num, username=globals()["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(save_model_params=save_model_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                 signature=sig, sig_len=sig_len)))
-                    globals()["nonce_ctr"] += 1
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
-                nonce = globals()["nonce"]
-                nonce_size = globals()["nonce_size"]
-                nonce_ctr = globals()["nonce_ctr"]
+                nonce = _CONF["nonce"]
+                nonce_size = _CONF["nonce_size"]
+                nonce_ctr = _CONF["nonce_ctr"]
                 c_signatures, c_sig_lengths = py2c_sigs([sig], [sig_len])
-                signers = from_pystr_to_cstr([globals()["current_user"]])
+                signers = from_pystr_to_cstr([_CONF["current_user"]])
                 _check_call(_LIB.XGBoosterSaveModel(self.handle, c_str(fname),
                                                     nonce, nonce_size, ctypes.c_uint32(nonce_ctr),
+                                                    ctypes.byref(out_sig),
+                                                    ctypes.byref(out_sig_length),
                                                     signers, c_signatures, c_sig_lengths))
-                globals()["nonce_ctr"] += 1
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
         else:
             raise TypeError("fname must be a string")
 
@@ -2078,18 +1883,20 @@ class Booster(object):
         a in memory buffer representation of the model
         """
         # check the global variable for current_user
-        if "current_user" in globals():
-            username = globals()["current_user"]
+        if "current_user" in _CONF:
+            username = _CONF["current_user"]
         else:
             raise ValueError("Please set your username with the init_user() function")
         length = c_bst_ulong()
         cptr = ctypes.POINTER(ctypes.c_char)()
 
         args = "XGBoosterGetModelRaw handle {}".format(self.handle.value.decode('utf-8'))
-        args = add_nonce_to_args(args)
-        sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+        sig, sig_len = create_client_signature(args)
 
-        channel_addr = globals()["remote_addr"]
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_length = c_bst_ulong()
+
+        channel_addr = _CONF["remote_addr"]
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
@@ -2097,22 +1904,25 @@ class Booster(object):
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterGetModelRawParams(model_raw_params=model_raw_params, seq_num=seq_num, username=username,
                                                                                   signature=sig, sig_len=sig_len))
-                globals()["nonce_ctr"] += 1
                 cptr = from_pystr_to_cstr(list(response.sarr))
                 length = c_bst_ulong(response.length)
+                out_sig = proto_to_pointer(response.signature)
+                out_sig_length = c_bst_ulong(response.sig_len)
         else:
             c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-            signers = from_pystr_to_cstr([globals()["current_user"]])
+            signers = from_pystr_to_cstr([_CONF["current_user"]])
             _check_call(_LIB.XGBoosterGetModelRaw(self.handle,
-                                                  globals()["nonce"],
-                                                  globals()["nonce_size"],
-                                                  ctypes.c_uint32(globals()["nonce_ctr"]),
+                                                  _CONF["nonce"],
+                                                  _CONF["nonce_size"],
+                                                  ctypes.c_uint32(_CONF["nonce_ctr"]),
                                                   ctypes.byref(length),
                                                   ctypes.byref(cptr),
+                                                  ctypes.byref(out_sig),
+                                                  ctypes.byref(out_sig_length),
                                                   signers,
                                                   c_signatures,
                                                   c_lengths))
-            globals()["nonce_ctr"] += 1
+        verify_enclave_signature(cptr, length.value, out_sig, out_sig_length)
         return ctypes2buffer(cptr, length.value)
 
 
@@ -2127,12 +1937,12 @@ class Booster(object):
     
         Parameters
         ----------
-        fname : string or a memory buffer
+        fname : str or a memory buffer
             Input file name or memory buffer(see also save_raw)
         """
         # check the global variable for current_user
-        if "current_user" in globals():
-            username = globals()["current_user"]
+        if "current_user" in _CONF:
+            username = _CONF["current_user"]
         else:
             raise ValueError("Please set your username with the init_user() function")
         if isinstance(fname, STRING_TYPES):
@@ -2142,10 +1952,12 @@ class Booster(object):
 
             # assume file name, cannot use os.path.exist to check, file can be from URL.
             args = "XGBoosterLoadModel handle {} filename {}".format(self.handle.value.decode('utf-8'), fname)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_client_signature(args)
 
-            channel_addr = globals()["remote_addr"]
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
+
+            channel_addr = _CONF["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -2156,18 +1968,20 @@ class Booster(object):
                     seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParamsRequest(load_model_params=load_model_params,
                                                                                                                 seq_num=seq_num,
-                                                                                                                username=globals()["current_user"],
+                                                                                                                username=_CONF["current_user"],
                                                                                                                 signature=sig,
                                                                                                                 sig_len=sig_len)))
-                    globals()["nonce_ctr"] += 1                                                                                             
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
                 c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-                signers = from_pystr_to_cstr([globals()["current_user"]])
-                nonce = globals()["nonce"]
-                nonce_size = globals()["nonce_size"]
-                nonce_ctr = ctypes.c_uint32(globals()["nonce_ctr"])
-                _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), nonce, nonce_size, nonce_ctr, signers, c_signatures, c_lengths))
-                globals()["nonce_ctr"] += 1
+                signers = from_pystr_to_cstr([_CONF["current_user"]])
+                nonce = _CONF["nonce"]
+                nonce_size = _CONF["nonce_size"]
+                nonce_ctr = ctypes.c_uint32(_CONF["nonce_ctr"])
+                _check_call(_LIB.XGBoosterLoadModel(self.handle, c_str(fname), nonce, nonce_size, nonce_ctr, ctypes.byref(out_sig), ctypes.byref(out_sig_length), signers, c_signatures, c_lengths))
+
+            verify_enclave_signature("", 0, out_sig, out_sig_length)
         else:
             # FIXME: Remote execution for non-file type
             raise "NotImplementedError"
@@ -2177,19 +1991,19 @@ class Booster(object):
             # _check_call(_LIB.XGBoosterLoadModelFromBuffer(self.handle, ptr, length, c_str(username)))
 
 
-    def dump_model(self, key, fout, fmap='', with_stats=False, dump_format="text"):
+    def dump_model(self, fout, fmap='', with_stats=False, dump_format="text"):
         """
         Dump model into a text or JSON file.
 
         Parameters
         ----------
-        fout : string
+        fout : str
             Output file name.
-        fmap : string, optional
+        fmap : str, optional
             Name of the file containing feature map names.
         with_stats : bool, optional
             Controls whether the split statistics are output.
-        dump_format : string, optional
+        dump_format : str, optional
             Format of model dump file. Can be 'text' or 'json'.
         """
         if isinstance(fout, STRING_TYPES):
@@ -2220,14 +2034,19 @@ class Booster(object):
 
         Parameters
         ----------
-        fmap : string, optional
+        fmap : str, optional
             Name of the file containing feature map names.
         with_stats : bool, optional
             Controls whether the split statistics are output.
-        dump_format : string, optional
+        dump_format : str, optional
             Format of model dump. Can be 'text' or 'json'.
         decrypt: bool
             When this is True, the model dump received from the enclave is decrypted using the user's symmetric key
+
+        Returns
+        -------
+        res : str
+            A string representation of the model dump
         """
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
@@ -2245,10 +2064,12 @@ class Booster(object):
             args = "XGBoosterDumpModelExWithFeatures booster_handle {} flen {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), flen, int(with_stats), dump_format)
             for i in range(flen):
                 args = args +  " fname {} ftype {}".format(fname[i], ftype[i])
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_client_signature(args)
 
-            channel_addr = globals()["remote_addr"]
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
+
+            channel_addr = _CONF["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -2261,17 +2082,18 @@ class Booster(object):
                         dump_format=dump_format)
                     seq_num = get_seq_num_proto()
                     response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParamsRequest(
-                        dump_model_with_features_params=dump_model_with_features_params, seq_num=seq_num, username=globals()["current_user"],
+                        dump_model_with_features_params=dump_model_with_features_params, seq_num=seq_num, username=_CONF["current_user"],
                         signature=sig, sig_len=sig_len)))
-                    globals()["nonce_ctr"] += 1
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
-                nonce = globals()["nonce"]
-                nonce_size = globals()["nonce_size"]
-                nonce_ctr = globals()["nonce_ctr"]
+                nonce = _CONF["nonce"]
+                nonce_size = _CONF["nonce_size"]
+                nonce_ctr = _CONF["nonce_ctr"]
                 c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-                signers = from_pystr_to_cstr([globals()["current_user"]])
+                signers = from_pystr_to_cstr([_CONF["current_user"]])
                 _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
                     self.handle,
                     ctypes.c_int(flen),
@@ -2284,19 +2106,23 @@ class Booster(object):
                     ctypes.c_uint32(nonce_ctr),
                     ctypes.byref(length),
                     ctypes.byref(sarr),
+                    ctypes.byref(out_sig),
+                    ctypes.byref(out_sig_length),
                     signers,
                     c_signatures,
                     c_lengths))
-                globals()["nonce_ctr"] += 1
+
         else:
             if fmap != '' and not os.path.exists(fmap):
                 raise ValueError("No such file: {0}".format(fmap))
 
             args = "XGBoosterDumpModelEx booster_handle {} fmap {} with_stats {} dump_format {}".format(self.handle.value.decode('utf-8'), fmap, int(with_stats), dump_format)
-            args = add_nonce_to_args(args)
-            sig, sig_len = sign_data(globals()["current_user_priv_key"], args, len(args))
+            sig, sig_len = create_client_signature(args)
 
-            channel_addr = globals()["remote_addr"]
+            out_sig = ctypes.POINTER(ctypes.c_uint8)()
+            out_sig_length = c_bst_ulong()
+
+            channel_addr = _CONF["remote_addr"]
             if channel_addr:
                 with grpc.insecure_channel(channel_addr) as channel:
                     stub = remote_pb2_grpc.RemoteStub(channel)
@@ -2306,17 +2132,18 @@ class Booster(object):
                         with_stats=with_stats,
                         dump_format=dump_format)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParamsRequest(dump_model_params=dump_model_params, seq_num=seq_num, username=globals()["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParamsRequest(dump_model_params=dump_model_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                   signature=sig, sig_len=sig_len)))
-                    globals()["nonce_ctr"] += 1
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
+                    out_sig = proto_to_pointer(response.signature)
+                    out_sig_length = c_bst_ulong(response.sig_len)
             else:
-                nonce = globals()["nonce"]
-                nonce_size = globals()["nonce_size"]
-                nonce_ctr = globals()["nonce_ctr"]
+                nonce = _CONF["nonce"]
+                nonce_size = _CONF["nonce_size"]
+                nonce_ctr = _CONF["nonce_ctr"]
                 c_signatures, c_lengths = py2c_sigs([sig], [sig_len])
-                signers = from_pystr_to_cstr([globals()["current_user"]])
+                signers = from_pystr_to_cstr([_CONF["current_user"]])
                 _check_call(_LIB.XGBoosterDumpModelEx(self.handle,
                                                       c_str(fmap),
                                                       ctypes.c_int(with_stats),
@@ -2326,10 +2153,14 @@ class Booster(object):
                                                       ctypes.c_uint32(nonce_ctr),
                                                       ctypes.byref(length),
                                                       ctypes.byref(sarr),
+                                                      ctypes.byref(out_sig),
+                                                      ctypes.byref(out_sig_length),
                                                       signers,
                                                       c_signatures,
                                                       c_lengths))
-                globals()["nonce_ctr"] += 1
+        py_sarr = from_cstr_to_pystr(sarr, length)
+        data = ''.join(py_sarr)
+        verify_enclave_signature(data, len(data), out_sig, out_sig_length)
 
         if decrypt:
             self.decrypt_dump(sarr, length)
@@ -2337,10 +2168,18 @@ class Booster(object):
         return res
 
     def decrypt_dump(self, sarr, length):
-        """ Decrypt the models obtained from get_dump()
+        """ 
+        Decrypt the models obtained from get_dump()
+        
+        Parameters
+        ----------
+        sarr: str
+            Encrypted string representation of the model obtained from get_dump()
+        length : int
+           length of sarr 
         """ 
         try:
-            sym_key = globals()["enclave_sym_key"]
+            sym_key = _CONF["enclave_sym_key"]
         except:
             raise ValueError("Please set your username with the init_user() function")
         _check_call(_LIB.decrypt_dump(sym_key, sarr, length))
@@ -2626,6 +2465,210 @@ class Booster(object):
                 "Returning histogram as ndarray (as_pandas == True, but pandas is not installed).")
         return nph
 
+##########################################
+# Enclave init and attestation APIs
+##########################################
+
+def init_client(remote_addr=None, user_name=None, 
+        sym_key_file=None, priv_key_file=None, cert_file=None):
+    """
+    Initialize the client. Set up the client's keys, and specify the IP address of the enclave server.
+
+    Parameters
+    ----------
+    remote_addr: str
+        IP address of remote server running the enclave
+    user_name : str
+        Current user's identity
+    sym_key_file : str
+        Path to file containing user's symmetric key used for encrypting data
+    priv_key_file : str
+        Path to file containing user's private key used for signing data
+    cert_file : str
+        Path to file containing user's public key certificate
+    """
+    # TODO(rishabh): Verify parameters
+
+    _CONF["remote_addr"] = remote_addr;
+    _CONF["current_user"] = user_name
+
+    if sym_key_file is not None:
+        with open(sym_key_file, "rb") as keyfile:
+            _CONF["current_user_sym_key"] = keyfile.read()
+            # TODO(rishabh): Save buffer instead of file
+            # with open(priv_key_file, "r") as keyfile:
+            #     priv_key = keyfile.read()
+
+    _CONF["current_user_priv_key"] = priv_key_file
+
+    if cert_file is not None:
+        with open(cert_file, "r") as cert_file:
+            _CONF["current_user_cert"] = cert_file.read()
+
+    _CONF["nonce_ctr"] = 0 
+
+
+def init_server(enclave_image=None, log_verbosity=0):
+    """
+    Launch the enclave from an image. This API should be invoked only by the servers and not the clients.
+
+    Parameters
+    ----------
+    enclave_image: str
+        Path to enclave binary
+    log_verbosity: int, optional
+        Verbosity level for enclave (for enclaves in debug mode)
+    """
+    _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
+
+
+def attest(verify=True):
+    # TODO(rishabh): user-defined mrsigner/mrenclave for verification
+    # TODO(rishabh): Handle verification failures
+    """
+    Verify remote attestation report of enclave and get its public key.
+    The report and public key are saved as instance attributes.
+
+
+    Parameters
+    ----------
+    verify: bool
+        If true, the client verifies the enclave report 
+
+        .. warning:: ``verify`` should be set to ``False`` only for development and testing in simulation mode
+    """
+
+    pem_key = ctypes.POINTER(ctypes.c_uint8)()
+    pem_key_size = ctypes.c_size_t()
+    nonce = ctypes.POINTER(ctypes.c_uint8)()
+    nonce_size = ctypes.c_size_t()
+    remote_report = ctypes.POINTER(ctypes.c_uint8)()
+    remote_report_size = ctypes.c_size_t()
+
+    # Get attestation report
+    channel_addr = _CONF["remote_addr"]
+    if channel_addr:
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_pb2_grpc.RemoteStub(channel)
+            response = _check_remote_call(stub.rpc_get_remote_report_with_pubkey_and_nonce(remote_pb2.Status(status=1)))
+
+        pem_key = proto_to_ndarray(response.pem_key).ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
+        pem_key_size = ctypes.c_size_t(response.pem_key_size)
+        nonce = proto_to_ndarray(response.nonce).ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
+        nonce_size = ctypes.c_size_t(response.nonce_size)
+        remote_report = proto_to_ndarray(response.remote_report).ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
+        remote_report_size = ctypes.c_size_t(response.remote_report_size)
+
+    else:
+        _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(
+            ctypes.byref(pem_key), ctypes.byref(pem_key_size),
+            ctypes.byref(nonce), ctypes.byref(nonce_size),
+            ctypes.byref(remote_report), ctypes.byref(remote_report_size)))
+
+        # Verify attestation report
+    if (verify):
+        _check_call(_LIB.verify_remote_report_and_set_pubkey_and_nonce(
+            pem_key, pem_key_size,
+            nonce, nonce_size,
+            remote_report, remote_report_size))
+
+    _CONF["enclave_pk"] = pem_key
+    _CONF["enclave_pk_size"] = pem_key_size
+    _CONF["nonce"] = nonce
+    _CONF["nonce_size"] = nonce_size
+
+    _add_client_key()
+    _get_enclave_symm_key()
+
+
+def _add_client_key():
+    """
+    Add private (symmetric) key to enclave.
+    This function encrypts the user's symmetric key using the enclave's public key, and signs the ciphertext with the user's private key.
+    The signed message is sent to the enclave.
+    """
+    # Convert key to serialized numpy array
+    pem_key_size = _CONF["enclave_pk_size"].value
+    pem_key = ctypes2numpy(_CONF["enclave_pk"], pem_key_size, np.uint8)
+    pem_key = ndarray_to_proto(pem_key)
+
+    # Convert nonce to serialized numpy array
+    nonce_size = _CONF["nonce_size"].value
+    nonce = ctypes2numpy(_CONF["nonce"], nonce_size, np.uint8)
+    nonce = ndarray_to_proto(nonce)
+
+    try:
+        sym_key = _CONF["current_user_sym_key"]
+        priv_key = _CONF["current_user_priv_key"]
+        cert = _CONF["current_user_cert"]
+    except:
+        raise ValueError("Please set your username with the init_user() function")
+    enc_sym_key, enc_sym_key_size = encrypt_data_with_pk(sym_key, len(sym_key), pem_key, pem_key_size)
+
+    # Sign the encrypted symmetric key
+    sig, sig_size = sign_data(priv_key, enc_sym_key, enc_sym_key_size)
+
+    # Send the encrypted key to the enclave
+    channel_addr = _CONF["remote_addr"]
+    if channel_addr:
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_pb2_grpc.RemoteStub(channel)
+            response = _check_remote_call(stub.rpc_add_client_key_with_certificate(remote_pb2.DataMetadata(
+                certificate=cert,
+                enc_sym_key=enc_sym_key,
+                key_size=enc_sym_key_size,
+                signature=sig,
+                sig_len=sig_size)))
+    else:
+        cert_len = len(cert) + 1
+        cert = ctypes.c_char_p(str.encode(cert))
+        enc_sym_key = proto_to_pointer(enc_sym_key)
+        enc_sym_key_size = ctypes.c_size_t(enc_sym_key_size)
+        sig = proto_to_pointer(sig)
+        sig_size = ctypes.c_size_t(sig_size)
+
+        _check_call(_LIB.add_client_key_with_certificate(cert, cert_len, enc_sym_key, enc_sym_key_size, sig, sig_size))
+
+
+def _get_enclave_symm_key():
+    """
+    Get enclave's symmetric key used to encrypt output common to all clients
+    """
+
+    if "current_user" in _CONF:
+        username = _CONF["current_user"]
+    else:
+        raise ValueError("Please set your username with the init_user() function")
+    channel_addr = _CONF["remote_addr"]
+    if channel_addr:
+        with grpc.insecure_channel(channel_addr) as channel:
+            stub = remote_pb2_grpc.RemoteStub(channel)
+            response = _check_remote_call(stub.rpc_get_enclave_symm_key(remote_pb2.Name(
+                username=username)))
+
+            enc_key_serialized = response.key
+            enc_key_size = ctypes.c_size_t(response.size)
+            enc_key = proto_to_pointer(enc_key_serialized)
+    else:
+        enc_key = ctypes.POINTER(ctypes.c_uint8)()
+        enc_key_size = ctypes.c_size_t()
+        _check_call(_LIB.get_enclave_symm_key(
+            c_str(username),
+            ctypes.byref(enc_key),
+            ctypes.byref(enc_key_size)))
+
+
+    # Decrypt the key and save it
+    try:
+        sym_key = _CONF["current_user_sym_key"]
+    except:
+        raise ValueError("User not found. Please set your username, symmetric key, and public key using `init_user()`")
+    c_char_p_key = ctypes.c_char_p(sym_key)
+    enclave_symm_key = ctypes.POINTER(ctypes.c_uint8)()
+
+    _check_call(_LIB.decrypt_enclave_key(c_char_p_key, enc_key, enc_key_size, ctypes.byref(enclave_symm_key)))
+    _CONF["enclave_sym_key"] = enclave_symm_key
+
 
 ##########################################
 # APIs invoked by RPC server
@@ -2669,6 +2712,18 @@ class RemoteAPI:
 
         return pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size
 
+
+    def add_client_key_with_certificate(request):
+        cert_len = len(request.certificate) + 1
+        cert = ctypes.c_char_p(str.encode(request.certificate))
+        enc_sym_key = proto_to_pointer(request.enc_sym_key)
+        enc_sym_key_size = ctypes.c_size_t(request.key_size)
+        sig = proto_to_pointer(request.signature)
+        sig_size = ctypes.c_size_t(request.sig_len)
+
+        _check_call(_LIB.add_client_key_with_certificate(cert, cert_len, enc_sym_key, enc_sym_key_size, sig, sig_size))
+
+
     def XGBoosterPredict(request, signers, signatures, sig_lengths):
         booster_handle = request.predict_params.booster_handle
         dmatrix_handle = request.predict_params.dmatrix_handle
@@ -2681,20 +2736,24 @@ class RemoteAPI:
         
         length = c_bst_ulong()
         preds = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterPredict(
             c_str(booster_handle),
             c_str(dmatrix_handle),
             ctypes.c_int(option_mask),
             ctypes.c_uint(ntree_limit),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(preds),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return preds, length.value
+        return preds, length.value, out_sig, out_sig_len.value
         
     def XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths):
         booster_handle = request.booster_update_params.booster_handle
@@ -2705,16 +2764,21 @@ class RemoteAPI:
         nonce_ctr = request.seq_num.nonce_ctr
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterUpdateOneIter(
             c_str(booster_handle),
             ctypes.c_int(iteration),
             c_str(dtrain_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
+        return out_sig, out_sig_len.value
 
     def XGBoosterCreate(request, signers, signatures, sig_lengths):
         cache = list(request.attrs.cache)
@@ -2725,17 +2789,21 @@ class RemoteAPI:
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths) 
 
         bst_handle = ctypes.c_char_p()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterCreate(
             from_pystr_to_cstr(cache),
             c_bst_ulong(length),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(bst_handle),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return bst_handle.value.decode('utf-8')
+        return bst_handle.value.decode('utf-8'), out_sig, out_sig_len.value
 
 
     def XGBoosterSetParam(request, signers, signatures, sig_lengths):
@@ -2747,16 +2815,21 @@ class RemoteAPI:
         nonce_ctr = request.seq_num.nonce_ctr
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
         bst_handle = c_str(booster_handle)
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterSetParam(
             c_str(booster_handle),
             c_str(key),
             c_str(value),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
+        return out_sig, out_sig_len.value
 
     def XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths):
         filenames = list(request.attrs.filenames)
@@ -2768,19 +2841,23 @@ class RemoteAPI:
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
         dmat_handle = ctypes.c_char_p()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGDMatrixCreateFromEncryptedFile(
             from_pystr_to_cstr(filenames),
             from_pystr_to_cstr(usernames),
             c_bst_ulong(len(filenames)),
             ctypes.c_int(silent),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(dmat_handle),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return dmat_handle.value.decode('utf-8')
+        return dmat_handle.value.decode('utf-8'), out_sig, out_sig_len.value
 
 
     def XGBoosterSaveModel(request, signers, signatures, sig_lengths):
@@ -2792,15 +2869,20 @@ class RemoteAPI:
         nonce_ctr = request.seq_num.nonce_ctr
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterSaveModel(
             c_str(booster_handle),
             c_str(filename),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
+        return out_sig, out_sig_len.value
 
     def XGBoosterLoadModel(request, signers, signatures, sig_lengths):
         booster_handle = request.load_model_params.booster_handle
@@ -2811,15 +2893,20 @@ class RemoteAPI:
         nonce_ctr = request.seq_num.nonce_ctr
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterLoadModel(
             c_str(booster_handle),
             c_str(filename),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             signers,
             c_signatures,
             c_sig_lengths))
+        return out_sig, out_sig_len.value
 
     # TODO test this
     def XGBoosterDumpModelEx(request, signers, signatures, sig_lengths):
@@ -2834,20 +2921,24 @@ class RemoteAPI:
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterDumpModelEx(
             c_str(booster_handle),
             c_str(fmap),
             ctypes.c_int(with_stats),
             c_str(dump_format),
-            c_types.byref(nonce),
-            c_types.c_size_t(nonce_size),
+            nonce,
+            ctypes.c_size_t(nonce_size),
             c_types.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return length.value, from_cstr_to_pystr(sarr, length)
+        return length.value, from_cstr_to_pystr(sarr, length), out_sig, out_sig_len.value
 
     def XGBoosterDumpModelExWithFeatures(request, signers, signatures, sig_lengths):
         booster_handle = request.dump_model_with_features_params.booster_handle
@@ -2863,6 +2954,8 @@ class RemoteAPI:
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterDumpModelExWithFeatures(
             c_str(booster_handle),
             ctypes.c_int(flen),
@@ -2871,14 +2964,16 @@ class RemoteAPI:
             ctypes.c_int(with_stats),
             c_str(dump_format),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return length.value, from_cstr_to_pystr(sarr, length)
+        return length.value, from_cstr_to_pystr(sarr, length), out_sig, out_sig_len.value
 
     # TODO test this
     def XGBoosterGetModelRaw(request, signers, signatures, sig_lengths):
@@ -2891,17 +2986,21 @@ class RemoteAPI:
 
         length = c_bst_ulong()
         sarr = ctypes.POINTER(ctypes.c_char_p)()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGBoosterGetModelRaw(
             c_str(booster_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(length),
             ctypes.byref(sarr),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return length.value, from_cstr_to_pystr(sarr, length)
+        return length.value, from_cstr_to_pystr(sarr, length), out_sig, out_sig_len.value
 
     def XGDMatrixNumCol(request, signers, signatures, sig_lengths):
         dmatrix_handle = request.name.name
@@ -2911,16 +3010,20 @@ class RemoteAPI:
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
         ret = c_bst_ulong()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumCol(
             c_str(dmatrix_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(ret),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
-        return ret.value
+        return ret.value, out_sig, out_sig_len.value
 
     def XGDMatrixNumRow(request, signers, signatures, sig_lengths):
         dmatrix_handle = request.name.name
@@ -2930,15 +3033,19 @@ class RemoteAPI:
         c_signatures, c_sig_lengths = py2c_sigs(signatures, sig_lengths)
 
         ret = c_bst_ulong()
+        out_sig = ctypes.POINTER(ctypes.c_uint8)()
+        out_sig_len = c_bst_ulong()
         _check_call(_LIB.XGDMatrixNumRow(
             c_str(dmatrix_handle),
             nonce,
-            nonce_size,
+            ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(ret),
+            ctypes.byref(out_sig),
+            ctypes.byref(out_sig_len),
             c_signatures,
             c_sig_lengths))
-        return ret.value
+        return ret.value, out_sig, out_sig_len.value
 
 
 ##########################################
@@ -2948,11 +3055,11 @@ class RemoteAPI:
 
 def generate_client_key(keyfile):
     """
-    Generate a new key and save it to `path_to_key`
+    Generate a new key and save it to ``keyfile``
 
     Parameters
     ----------
-    path_to_key : str
+    keyfile : str
         path to which key will be saved
     """
     KEY_BYTES = 32
@@ -3046,8 +3153,10 @@ def sign_data(key, data, data_size):
     # Cast data : proto.NDArray to pointer to pass into C++ sign_data() function
     if isinstance(data, str):
         data = c_str(data)
-    # FIXME use positive check instead of negative check
-    elif not isinstance(data, ctypes.c_char_p):
+    elif isinstance(data, ctypes.Array) and (data._type_ is ctypes.c_char):
+        pass
+    else:
+        # FIXME error handling for other types
         data = proto_to_pointer(data)
 
     data_size = ctypes.c_size_t(data_size)
@@ -3057,10 +3166,39 @@ def sign_data(key, data, data_size):
     sig_len = ctypes.c_size_t(1024)
 
     # Sign data with key keyfile
-    _check_call(_LIB.sign_data(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
+    _check_call(_LIB.sign_data_with_keyfile(keyfile, data, data_size, signature, ctypes.byref(sig_len)))
 
     # Cast the signature and sig_len back to a gRPC serializable format
     sig_len_as_int = sig_len.value
     signature = pointer_to_proto(signature, sig_len_as_int, nptype=np.uint8)
 
     return signature, sig_len_as_int
+
+def verify_enclave_signature(data, size, sig, sig_len, increment_nonce=True):
+    """
+    Verify the signature returned by the enclave with nonce
+    """
+    arr = (ctypes.c_char * (size + CIPHER_NONCE_SIZE))()
+    add_to_sig_data(arr, data=data, data_size=size)
+    add_nonce_to_sig_data(arr, pos=size)
+    size = ctypes.c_size_t(len(arr))
+
+    pem_key = _CONF["enclave_pk"]
+    pem_key_len = _CONF["enclave_pk_size"]
+    # Verify signature
+    _check_call(_LIB.verify_signature(pem_key, pem_key_len, arr, size, sig, sig_len))
+
+    if increment_nonce:
+        _CONF["nonce_ctr"] += 1
+
+
+def create_client_signature(args):
+    """
+    Sign the data for the enclave with nonce
+    """
+    arr = (ctypes.c_char * (len(args) + CIPHER_NONCE_SIZE))()
+    add_to_sig_data(arr, data=args)
+    add_nonce_to_sig_data(arr, pos=len(args))
+    sig, sig_len = sign_data(_CONF["current_user_priv_key"], arr, len(arr))
+    return sig, sig_len
+

@@ -8,19 +8,15 @@ PRIVATE_KEY_FILE = HOME_DIR + "config/user1.pem"
 CERT_FILE = HOME_DIR + "config/user1.crt"
 
 username = "user1"
-xgb.init_user(username, SYM_KEY_FILE, PRIVATE_KEY_FILE, CERT_FILE)
-
 print("Creating enclave")
-enclave = xgb.Enclave(HOME_DIR + "build/enclave/xgboost_enclave.signed")
+xgb.init_client(user_name=username, sym_key_file=SYM_KEY_FILE, priv_key_file=PRIVATE_KEY_FILE, cert_file=CERT_FILE)
+xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
 
 # Remote Attestation
 print("Remote attestation")
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-enclave.attest()
-
-print("Send private key to enclave")
-enclave.add_key()
+xgb.attest()
 
 rabit_args = {
         "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
@@ -64,6 +60,6 @@ print("\n\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
-print(booster.decrypt_predictions(predictions, num_preds)[0][:20])
+print(booster.decrypt_predictions(predictions, num_preds)[:20])
 
 xgb.rabit.finalize()

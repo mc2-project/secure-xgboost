@@ -1106,14 +1106,29 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
     const size_t icol_start = row_ptr[row_idx];
     const size_t icol_end = row_ptr[row_idx + 1];
     std::vector<tree::GradStats> delta_stats(hist_.nbins(), tree::GradStats{0, 0});
-    for (size_t j = icol_start; j < icol_end; ++j) {
-      const uint32_t idx_bin = index[j];
-      CHECK(idx_bin < delta_stats.size())
-        << "idx_bin=" << idx_bin << ", nbins=" << delta_stats.size();
-      auto grad = ObliviousArrayAccess(delta_stats.data(), idx_bin, delta_stats.size());
-      grad.Add(gpair_h[row_idx]);
-      ObliviousArrayAssign(delta_stats.data(), idx_bin, delta_stats.size(), grad);
-    }
+
+		int nbins = static_cast<uint32_t>(param_.max_bin) - 1;    
+		// TODO: This loop is probably not oblivious if input data was in LibSVM format (i.e. sparse)
+		for (size_t j = icol_start; j < icol_end; ++j) {
+			const uint32_t idx_bin = index[j];
+			CHECK(idx_bin < delta_stats.size())
+				<< "idx_bin=" << idx_bin << ", nbins=" << delta_stats.size();
+			size_t start_idx = (idx_bin / nbins) * nbins;
+			auto grad = ObliviousArrayAccess(delta_stats.data() + start_idx, idx_bin - start_idx, nbins); 
+			grad.Add(gpair_h[row_idx]);
+			ObliviousArrayAssign(delta_stats.data() + start_idx, idx_bin - start_idx, nbins, grad);
+		}
+
+		/*
+     *for (size_t j = icol_start; j < icol_end; ++j) {
+     *  const uint32_t idx_bin = index[j];
+     *  CHECK(idx_bin < delta_stats.size())
+     *    << "idx_bin=" << idx_bin << ", nbins=" << delta_stats.size();
+     *  auto grad = ObliviousArrayAccess(delta_stats.data(), idx_bin, delta_stats.size());
+     *  grad.Add(gpair_h[row_idx]);
+     *  ObliviousArrayAssign(delta_stats.data(), idx_bin, delta_stats.size(), grad);
+     *}
+		 */
     const int target_nid = row_node_map_.GetRowTarget(row_idx, depth);
     CHECK(target_nid >= 0 && target_nid < p_tree->param.num_nodes)
       << "Bad target_nid: " << target_nid;

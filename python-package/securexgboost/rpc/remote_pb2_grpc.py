@@ -94,6 +94,16 @@ class RemoteStub(object):
         request_serializer=remote__pb2.NumRowRequest.SerializeToString,
         response_deserializer=remote__pb2.Integer.FromString,
         )
+    self.rpc_RabitInit = channel.unary_unary(
+        '/remote.Remote/rpc_RabitInit',
+        request_serializer=remote__pb2.RabitParams.SerializeToString,
+        response_deserializer=remote__pb2.StatusMsg.FromString,
+        )
+    self.rpc_RabitFinalize = channel.unary_unary(
+        '/remote.Remote/rpc_RabitFinalize',
+        request_serializer=remote__pb2.RabitParams.SerializeToString,
+        response_deserializer=remote__pb2.StatusMsg.FromString,
+        )
 
 
 class RemoteServicer(object):
@@ -215,6 +225,20 @@ class RemoteServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def rpc_RabitInit(self, request, context):
+    """Initialize Rabit
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def rpc_RabitFinalize(self, request, context):
+    """Finalize Rabit
+    """
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_RemoteServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -297,6 +321,16 @@ def add_RemoteServicer_to_server(servicer, server):
           servicer.rpc_XGDMatrixNumRow,
           request_deserializer=remote__pb2.NumRowRequest.FromString,
           response_serializer=remote__pb2.Integer.SerializeToString,
+      ),
+      'rpc_RabitInit': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_RabitInit,
+          request_deserializer=remote__pb2.RabitParams.FromString,
+          response_serializer=remote__pb2.StatusMsg.SerializeToString,
+      ),
+      'rpc_RabitFinalize': grpc.unary_unary_rpc_method_handler(
+          servicer.rpc_RabitFinalize,
+          request_deserializer=remote__pb2.RabitParams.FromString,
+          response_serializer=remote__pb2.StatusMsg.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
