@@ -28,7 +28,7 @@ if [ ${TASK} == "python_test" ]; then
     python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools 
 
     # Start python tests
-    python -m pytest -v --fulltrace -s tests/python --cov=python-package/securexgboost || exit -1
+    python -m pytest -v --fulltrace -s tests/python/test_monotone_constraints.py --cov=python-package/securexgboost || exit -1
     codecov
 fi
 

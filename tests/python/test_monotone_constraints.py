@@ -99,34 +99,34 @@ class TestMonotoneConstraints(unittest.TestCase):
         )
         assert is_correctly_constrained(constrained_exact_method)
 
-    def test_monotone_constraints_for_depthwise_hist_tree_method(self):
-        training_dset = xgb.DMatrix({username: temp_enc_name})
-
-        # next check monotonicity for the 'hist' tree method
-        params_for_constrained_hist_method = {
-            'tree_method': 'hist', 'verbosity': 1,
-            'monotone_constraints': '(1, -1)'
-        }
-        constrained_hist_method = xgb.train(
-            params_for_constrained_hist_method, training_dset
-        )
-
-        assert is_correctly_constrained(constrained_hist_method)
-
-    def test_monotone_constraints_for_lossguide_hist_tree_method(self):
-        training_dset = xgb.DMatrix({username: temp_enc_name})
-
-        # next check monotonicity for the 'hist' tree method
-        params_for_constrained_hist_method = {
-            'tree_method': 'hist', 'verbosity': 1,
-            'grow_policy': 'lossguide',
-            'monotone_constraints': '(1, -1)'
-        }
-        constrained_hist_method = xgb.train(
-            params_for_constrained_hist_method, training_dset
-        )
-
-        assert is_correctly_constrained(constrained_hist_method)
+    #  def test_monotone_constraints_for_depthwise_hist_tree_method(self):
+    #      training_dset = xgb.DMatrix({username: temp_enc_name})
+    #  
+    #      # next check monotonicity for the 'hist' tree method
+    #      params_for_constrained_hist_method = {
+    #          'tree_method': 'hist', 'verbosity': 1,
+    #          'monotone_constraints': '(1, -1)'
+    #      }
+    #      constrained_hist_method = xgb.train(
+    #          params_for_constrained_hist_method, training_dset
+    #      )
+    #  
+    #      assert is_correctly_constrained(constrained_hist_method)
+    #  
+    #  def test_monotone_constraints_for_lossguide_hist_tree_method(self):
+    #      training_dset = xgb.DMatrix({username: temp_enc_name})
+    #  
+    #      # next check monotonicity for the 'hist' tree method
+    #      params_for_constrained_hist_method = {
+    #          'tree_method': 'hist', 'verbosity': 1,
+    #          'grow_policy': 'lossguide',
+    #          'monotone_constraints': '(1, -1)'
+    #      }
+    #      constrained_hist_method = xgb.train(
+    #          params_for_constrained_hist_method, training_dset
+    #      )
+    #  
+    #      assert is_correctly_constrained(constrained_hist_method)
 
     @pytest.mark.skipif(**tm.no_sklearn())
     def test_training_accuracy(self):
