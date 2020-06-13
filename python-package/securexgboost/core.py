@@ -976,7 +976,7 @@ class DMatrix(object):
         -------
         number of rows : int
         """
-        channel_addr = globals()["remote_addr"]
+        channel_addr = _CONF["remote_addr"]
         args = "XGDMatrixNumRow " + self.handle.value.decode('utf-8')
         sig, sig_len = create_client_signature(args)
 

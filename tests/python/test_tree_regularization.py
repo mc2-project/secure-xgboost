@@ -12,9 +12,9 @@ HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 temp_name = HOME_DIR + "demo/data/temp_file.txt"
 temp_enc_name = HOME_DIR + "demo/data/temp_file.txt.enc"
 
-xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
-xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
-xgb.attest(verify=False)
+#  xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
+#  xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
+#  xgb.attest(verify=False)
 
 from numpy.testing import assert_approx_equal
 
@@ -39,7 +39,7 @@ class TestTreeRegularization(unittest.TestCase):
         }
 
         model = xgb.train(params, train_data, 1)
-        preds = model.predict(train_data)
+        preds = model.predict(train_data, decrypt=True)
 
         # Default prediction (with no trees) is 0.5
         # sum_grad = (0.5 - 1.0)
@@ -58,7 +58,7 @@ class TestTreeRegularization(unittest.TestCase):
         }
 
         model = xgb.train(params, train_data, 1)
-        preds = model.predict(train_data)
+        preds = model.predict(train_data, decrypt=True)
 
         # Default prediction (with no trees) is 0.5
         # sum_grad = (0.5 - 1.0)
@@ -77,7 +77,7 @@ class TestTreeRegularization(unittest.TestCase):
         }
 
         model = xgb.train(params, train_data, 1)
-        preds = model.predict(train_data)
+        preds = model.predict(train_data, decrypt=True)
 
         # Default prediction (with no trees) is 0.5
         # sum_grad = (0.5 - 1.0)

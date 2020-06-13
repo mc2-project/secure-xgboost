@@ -14,9 +14,9 @@ HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 temp_name = HOME_DIR + "demo/data/temp_file.txt"
 temp_enc_name = HOME_DIR + "demo/data/temp_file.txt.enc"
 
-xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
-xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
-xgb.attest(verify=False)
+#  xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
+#  xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
+#  xgb.attest(verify=False)
 
 dpath = HOME_DIR + 'demo/data/'
 
@@ -85,19 +85,19 @@ def is_correctly_constrained(learner):
 
 class TestMonotoneConstraints(unittest.TestCase):
 
-    def test_monotone_constraints_for_exact_tree_method(self):
-
-        training_dset = xgb.DMatrix({username: temp_enc_name})
-
-        # first check monotonicity for the 'exact' tree method
-        params_for_constrained_exact_method = {
-            'tree_method': 'exact', 'verbosity': 1,
-            'monotone_constraints': '(1, -1)'
-        }
-        constrained_exact_method = xgb.train(
-            params_for_constrained_exact_method, training_dset
-        )
-        assert is_correctly_constrained(constrained_exact_method)
+    #  def test_monotone_constraints_for_exact_tree_method(self):
+    #  
+    #      training_dset = xgb.DMatrix({username: temp_enc_name})
+    #  
+    #      # first check monotonicity for the 'exact' tree method
+    #      params_for_constrained_exact_method = {
+    #          'tree_method': 'exact', 'verbosity': 1,
+    #          'monotone_constraints': '(1, -1)'
+    #      }
+    #      constrained_exact_method = xgb.train(
+    #          params_for_constrained_exact_method, training_dset
+    #      )
+    #      assert is_correctly_constrained(constrained_exact_method)
 
     def test_monotone_constraints_for_depthwise_hist_tree_method(self):
         training_dset = xgb.DMatrix({username: temp_enc_name})
