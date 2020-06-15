@@ -39,7 +39,7 @@ y = (
 dump_svmlight_file(X, y, temp_name) 
 xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
  
-#  training_dset = xgb.DMatrix({username: temp_enc_name})
+training_dset = xgb.DMatrix({username: temp_enc_name})
 
 
 def is_increasing(y):
@@ -85,22 +85,22 @@ def is_correctly_constrained(learner):
 
 class TestMonotoneConstraints(unittest.TestCase):
 
-    #  def test_monotone_constraints_for_exact_tree_method(self):
-    #  
-    #      training_dset = xgb.DMatrix({username: temp_enc_name})
-    #  
-    #      # first check monotonicity for the 'exact' tree method
-    #      params_for_constrained_exact_method = {
-    #          'tree_method': 'exact', 'verbosity': 1,
-    #          'monotone_constraints': '(1, -1)'
-    #      }
-    #      constrained_exact_method = xgb.train(
-    #          params_for_constrained_exact_method, training_dset
-    #      )
-    #      assert is_correctly_constrained(constrained_exact_method)
+    def test_monotone_constraints_for_exact_tree_method(self):
+    
+        #  training_dset = xgb.DMatrix({username: temp_enc_name})
+    
+        # first check monotonicity for the 'exact' tree method
+        params_for_constrained_exact_method = {
+            'tree_method': 'exact', 'verbosity': 1,
+            'monotone_constraints': '(1, -1)'
+        }
+        constrained_exact_method = xgb.train(
+            params_for_constrained_exact_method, training_dset
+        )
+        assert is_correctly_constrained(constrained_exact_method)
 
     def test_monotone_constraints_for_depthwise_hist_tree_method(self):
-        training_dset = xgb.DMatrix({username: temp_enc_name})
+        #  training_dset = xgb.DMatrix({username: temp_enc_name})
     
         # next check monotonicity for the 'hist' tree method
         params_for_constrained_hist_method = {
@@ -114,7 +114,7 @@ class TestMonotoneConstraints(unittest.TestCase):
         assert is_correctly_constrained(constrained_hist_method)
     
     def test_monotone_constraints_for_lossguide_hist_tree_method(self):
-        training_dset = xgb.DMatrix({username: temp_enc_name})
+        #  training_dset = xgb.DMatrix({username: temp_enc_name})
     
         # next check monotonicity for the 'hist' tree method
         params_for_constrained_hist_method = {
