@@ -9,7 +9,7 @@ if [ ${TASK} == "python_test" ]; then
     # Build the enclave in simulate mode
     rm -rf build
     mkdir build && cd build
-    cmake .. ${CMAKE_COMMON_FLAGS} -DOE_DEBUG=1 -DLOGGING=ON -DSIMULATE=ON -DOBLIVIOUS=OFF -DUSE_AVX2=OFF -DCLIENT_LIST=user1
+    cmake .. ${CMAKE_COMMON_FLAGS} -DOE_DEBUG=1 -DLOGGING=ON -DSIMULATE=ON -DOBLIVIOUS=ON -DUSE_AVX2=OFF -DCLIENT_LIST=user1
     make -j4
     cd ..
 
