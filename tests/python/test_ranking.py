@@ -163,8 +163,8 @@ class TestRanking(unittest.TestCase):
         Cleanup test artifacts from download and unpacking
         :return:
         """
-        os.remove(cls.dpath + "MQ2008.zip")
-        shutil.rmtree(cls.dpath + "MQ2008")
+        #  os.remove(cls.dpath + "MQ2008.zip")
+        #  shutil.rmtree(cls.dpath + "MQ2008")
 
     def test_training(self):
         """
