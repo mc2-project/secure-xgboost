@@ -6,18 +6,13 @@ import json
 import pytest
 import locale
 from sklearn.datasets import dump_svmlight_file
-from paths import sym_key_file, priv_key_file, cert_file
+from config import sym_key_file, priv_key_file, cert_file
 
 username = "user1"
 HOME_DIR = os.path.dirname(os.path.realpath(__file__)) + "/../../"
 
 temp_name = HOME_DIR + "demo/data/temp_file.txt"
 temp_enc_name = HOME_DIR + "demo/data/temp_file.txt.enc"
-
-#  xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
-#  xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed")
-#  xgb.attest(verify=False)
-
 
 dpath = HOME_DIR + 'demo/data/'
 dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
