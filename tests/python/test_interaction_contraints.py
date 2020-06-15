@@ -65,7 +65,6 @@ class TestInteractionConstraints(unittest.TestCase):
             return bst.predict(tmat)[0]
 
         preds = [f(x) for x in [1, 2, 3]]
-
         # Check incrementing x3 has the same effect on all observations
         #   since x3 is constrained to be independent of x1 and x2
         #   and all observations start off from the same x3 value

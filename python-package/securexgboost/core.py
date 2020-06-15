@@ -1776,7 +1776,7 @@ class Booster(object):
 
         Returns
         -------
-        preds : list 
+        preds : numpy array 
             plaintext predictions
         """
         try:
@@ -1796,7 +1796,7 @@ class Booster(object):
 
             # Convert c pointer to numpy array
             preds = ctypes2numpy(preds, num_preds, np.float32)
-            return list(preds)
+            return preds
         else:
             preds_list = []
             for i in range(len(encrypted_preds)):
@@ -1810,7 +1810,7 @@ class Booster(object):
                 preds_list.append(preds)
 
             concatenated_preds = np.concatenate(preds_list)
-            return list(concatenated_preds)
+            return concatenated_preds
 
     def save_model(self, fname):
         """
