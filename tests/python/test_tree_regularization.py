@@ -40,6 +40,7 @@ class TestTreeRegularization(unittest.TestCase):
 
         model = xgb.train(params, train_data, 1)
         preds = model.predict(train_data)[0]
+        print(preds[0])
 
         # Default prediction (with no trees) is 0.5
         # sum_grad = (0.5 - 1.0)
@@ -59,6 +60,7 @@ class TestTreeRegularization(unittest.TestCase):
 
         model = xgb.train(params, train_data, 1)
         preds = model.predict(train_data)[0]
+        print(preds)
 
         # Default prediction (with no trees) is 0.5
         # sum_grad = (0.5 - 1.0)
@@ -78,6 +80,7 @@ class TestTreeRegularization(unittest.TestCase):
 
         model = xgb.train(params, train_data, 1)
         preds = model.predict(train_data)[0]
+        print(preds)
 
         # Default prediction (with no trees) is 0.5
         # sum_grad = (0.5 - 1.0)
