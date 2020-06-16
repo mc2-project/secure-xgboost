@@ -69,7 +69,7 @@ class TestRPC(unittest.TestCase):
     def tearDown(self):
         # FIXME: more graceful shut down
         # Kill server
-        subprocess.Popen(["pkill", "-f", "enclave_serve.py"], stdout=subprocess.PIPE)
+        subprocess.Popen(["pkill", "-f", "start_enclave.py"], stdout=subprocess.PIPE)
 
         # Kill orchestrator
         subprocess.Popen(["pkill", "-f", "start_orchestrator.py"], stdout=subprocess.PIPE)
