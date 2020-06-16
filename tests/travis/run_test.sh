@@ -31,7 +31,7 @@ if [ ${TASK} == "python_test" ]; then
     python -m pytest -v --fulltrace -s tests/python/ --cov=python-package/securexgboost || exit -1
 
     # Start RPC test
-    python -m pytest -v --fultrace -s tests/rpc/ --cov=python-package/securexgboost || exit -1
+    python -m pytest -v --fulltrace -s tests/rpc/ --cov=python-package/securexgboost || exit -1
     codecov
 fi
 
