@@ -24,10 +24,10 @@ dpath = HOME_DIR + 'demo/data/'
 class TestRPC(unittest.TestCase):
     def setUp(self):
         # Initialize server
-        subprocess.Popen(["python3", HOME_DIR + "demo/python/remote-control/server/enclave_serve.py"], stdout=subprocess.PIPE)
+        subprocess.Popen(["python3", HOME_DIR + "tests/rpc/start_enclave.py"], stdout=subprocess.PIPE)
 
         # Start orchestrator
-        subprocess.Popen(["python3", HOME_DIR + "demo/python/remote-control/orchestrator/start_orchestrator.py"], stdout=subprocess.PIPE)
+        subprocess.Popen(["python3", HOME_DIR + "tests/rpc/start_orchestrator.py"], stdout=subprocess.PIPE)
 
         # Give some time for server and orchestrator to start
         time.sleep(5)
