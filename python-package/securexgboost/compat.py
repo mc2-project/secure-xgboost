@@ -62,6 +62,20 @@ except ImportError:
 
     DT_INSTALLED = False
 
+# cudf
+try:
+    from cudf import DataFrame as CUDF_DataFrame
+    from cudf import Series as CUDF_Series
+    from cudf import MultiIndex as CUDF_MultiIndex
+    from cudf import concat as CUDF_concat
+    CUDF_INSTALLED = True
+except ImportError:
+    CUDF_DataFrame = object
+    CUDF_Series = object
+    CUDF_MultiIndex = object
+    CUDF_INSTALLED = False
+    CUDF_concat = None
+
 # sklearn
 try:
     from sklearn.base import BaseEstimator
@@ -92,3 +106,29 @@ except ImportError:
     XGBKFold = None
     XGBStratifiedKFold = None
     XGBLabelEncoder = None
+
+# dask
+try:
+    import dask
+    from dask import delayed
+    from dask import dataframe as dd
+    from dask import array as da
+    from dask.distributed import Client, get_client
+    from dask.distributed import comm as distributed_comm
+    from dask.distributed import wait as distributed_wait
+    from distributed import get_worker as distributed_get_worker
+
+    DASK_INSTALLED = True
+except ImportError:
+    dd = None
+    da = None
+    Client = None
+    delayed = None
+    get_client = None
+    distributed_comm = None
+    distributed_wait = None
+    distributed_get_worker = None
+    dask = None
+
+    DASK_INSTALLED = False
+

@@ -6,7 +6,9 @@ dist: bionic
 env:
   matrix:
     # cmake test
-    - TASK=cmake_test
+    # - TASK=cmake_test
+    # python test
+    - TASK=python_test
 
 before_install:
   # Configure Intel and Microsoft APT repositories
@@ -22,12 +24,15 @@ before_install:
   - sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave libmbedtls-dev
   - wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
   - sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
+  - export PATH=/usr/local:/usr/local/bin:$PATH 
   # Setup OE environment variables
   - source /opt/openenclave/share/openenclave/openenclaverc
+  # Append to $PYTHONPATH
+  - if [ "${TASK}" != "python_sdist_test" ]; then export PYTHONPATH=${PYTHONPATH}:${PWD}/python-package; fi
+  - export PYTHONPATH=${PYTHONPATH}:${PWD}/tests/python
 
-
-#install:
-#  - source tests/travis/setup.sh
+install:
+  - source tests/travis/setup.sh
 
 script:
   - tests/travis/run_test.sh
@@ -43,9 +48,8 @@ script:
 #after_failure:
 #  - tests/travis/travis_after_failure.sh
 #
-#after_success:
-#  - tree build
-#  - bash <(curl -s https://codecov.io/bash) -a '-o src/ src/*.c'
+after_success:
+   - bash <(curl -s https://codecov.io/bash) -a '-o src/ src/*.c'
 
 #notifications:
 #  email:

@@ -976,6 +976,7 @@ class DMatrix(object):
         -------
         number of rows : int
         """
+        channel_addr = _CONF["remote_addr"]
         args = "XGDMatrixNumRow " + self.handle.value.decode('utf-8')
         sig, sig_len = create_client_signature(args)
 
@@ -1775,7 +1776,7 @@ class Booster(object):
 
         Returns
         -------
-        preds : numpy array
+        preds : numpy array 
             plaintext predictions
         """
         try:
@@ -3063,7 +3064,6 @@ def generate_client_key(keyfile):
     """
     KEY_BYTES = 32
 
-    print("Generating client key...")
     key = os.urandom(KEY_BYTES)
     with open(keyfile, "wb") as _keyfile:
         _keyfile.write(key)
@@ -3084,8 +3084,6 @@ def encrypt_file(input_file, output_file, key_file):
     if not os.path.exists(input_file):
         print("Error: File {} does not exist".format(input_file))
         return
-
-    print("Encrypting file {}".format(input_file))
 
     input_file_bytes = input_file.encode('utf-8')
     output_file_bytes = output_file.encode('utf-8')
