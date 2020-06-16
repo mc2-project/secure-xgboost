@@ -1088,17 +1088,18 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
     level_width++;
   }
 
+  // Only need to build histograms for nodes that are left children
+  // Histograms for right nodes will be computed using subtraction trick)
+  size_t num_left_nodes = (level_width == 1) ? 1 : level_width / 2;
   std::vector<HistCollection> hists(this->nthread_);
   for (auto& hist : hists) {
-    hist.Init(hist_.nbins(), level_width);
+    hist.Init(hist_.nbins(), num_left_nodes);
   }
 
   const uint32_t* index = gmat.index.data();
   const size_t* row_ptr =  gmat.row_ptr.data();
   const auto nrows = gmat.row_ptr.size() - 1;
 
-  // The subtraction trick does not benefit obliviousness.
-  // O(n_cols * n_rows * O(`oaccess`)).
   int last_offset = -1;
 #pragma omp parallel for schedule(static) num_threads(this->nthread_)
   for (size_t row_idx = 0; row_idx < nrows; ++row_idx) {
@@ -1119,16 +1120,6 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
 			ObliviousArrayAssign(delta_stats.data() + start_idx, idx_bin - start_idx, nbins, grad);
 		}
 
-		/*
-     *for (size_t j = icol_start; j < icol_end; ++j) {
-     *  const uint32_t idx_bin = index[j];
-     *  CHECK(idx_bin < delta_stats.size())
-     *    << "idx_bin=" << idx_bin << ", nbins=" << delta_stats.size();
-     *  auto grad = ObliviousArrayAccess(delta_stats.data(), idx_bin, delta_stats.size());
-     *  grad.Add(gpair_h[row_idx]);
-     *  ObliviousArrayAssign(delta_stats.data(), idx_bin, delta_stats.size(), grad);
-     *}
-		 */
     const int target_nid = row_node_map_.GetRowTarget(row_idx, depth);
     CHECK(target_nid >= 0 && target_nid < p_tree->param.num_nodes)
       << "Bad target_nid: " << target_nid;
@@ -1141,29 +1132,37 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
         << "range.first=" << range.first << ", last_offset=" << last_offset;
     last_offset = range.first;
 
-    // oaccess in range [level_begin_nid, level_end_nid]
+    // We only need to update histograms for left children;
+    // Histograms for right nodes will be computed using subtraction trick)
+    size_t left_node_idx = ObliviousChoose(level_idx % 2, level_width, level_idx / 2);
     ObliviousArrayAccessBytes(
         previous_stats.data(), hists[tid][0].data(),
         previous_stats.size() * sizeof(decltype(previous_stats)::value_type),
-        level_idx, level_width);
-    // Add.
+        left_node_idx, num_left_nodes);
     for (size_t bin_idx = 0; bin_idx < delta_stats.size(); ++bin_idx) {
       delta_stats[bin_idx].Add(previous_stats[bin_idx]);
     }
-    // oaccess in range [level_begin_nid, level_end_nid]
     ObliviousArrayAssignBytes(
         hists[tid][0].data(), delta_stats.data(),
         delta_stats.size() * sizeof(decltype(delta_stats)::value_type),
-        level_idx, level_width);
+        left_node_idx, num_left_nodes);
   }
 
   // Merge threading results.
   for (const auto& hist : hists) {
-    for (size_t level_idx = 0; level_idx < level_width; ++level_idx) {
-      const size_t nid = level_idx + last_offset;
+    for (size_t left_node_idx = 0; left_node_idx < num_left_nodes; left_node_idx++) {
+      const size_t nid = left_node_idx * 2 + last_offset;
       for (size_t bin_idx = 0; bin_idx < hist_.nbins(); ++bin_idx) {
-        hist_[nid][bin_idx].Add(hist[level_idx][bin_idx]);
+        hist_[nid][bin_idx].Add(hist[left_node_idx][bin_idx]);
       }
+    }
+  }
+
+  for (auto const& entry : qexpand_depth_wise_) {
+    int nid = entry.nid;
+    RegTree::Node &node = (*p_tree)[nid];
+    if (!node.IsRoot() && node.IsLeftChild()) {
+      nodes_for_subtraction_trick_[(*p_tree)[node.Parent()].RightChild()] = nid;
     }
   }
 

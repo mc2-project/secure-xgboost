@@ -277,7 +277,7 @@ class HistCollection {
     if (nid >= row_ptr_.size()) {
       row_ptr_.resize(nid + 1, kMax);
     }
-    CHECK_EQ(row_ptr_[nid], kMax);
+    //CHECK_EQ(row_ptr_[nid], kMax);
 
     row_ptr_[nid] = data_.size();
     data_.resize(data_.size() + nbins_);
