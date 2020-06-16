@@ -178,13 +178,11 @@ class TestBasic(unittest.TestCase):
 
     def test_load_file_invalid(self):
         # TODO(rishabh): implement load_model()
-        """
         self.assertRaises(xgb.core.XGBoostError, xgb.Booster,
                           model_file='incorrect_path')
 
         self.assertRaises(xgb.core.XGBoostError, xgb.Booster,
                           model_file=u'不正なパス')
-        """
 
     def test_dmatrix_numpy_init_omp(self):
 

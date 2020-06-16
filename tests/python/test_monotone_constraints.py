@@ -82,9 +82,6 @@ def is_correctly_constrained(learner):
 class TestMonotoneConstraints(unittest.TestCase):
 
     def test_monotone_constraints_for_exact_tree_method(self):
-    
-        #  training_dset = xgb.DMatrix({username: temp_enc_name})
-    
         # first check monotonicity for the 'exact' tree method
         params_for_constrained_exact_method = {
             'tree_method': 'exact', 'verbosity': 1,
@@ -96,8 +93,6 @@ class TestMonotoneConstraints(unittest.TestCase):
         assert is_correctly_constrained(constrained_exact_method)
 
     def test_monotone_constraints_for_depthwise_hist_tree_method(self):
-        #  training_dset = xgb.DMatrix({username: temp_enc_name})
-    
         # next check monotonicity for the 'hist' tree method
         params_for_constrained_hist_method = {
             'tree_method': 'hist', 'verbosity': 1,
@@ -110,8 +105,6 @@ class TestMonotoneConstraints(unittest.TestCase):
         assert is_correctly_constrained(constrained_hist_method)
     
     def test_monotone_constraints_for_lossguide_hist_tree_method(self):
-        #  training_dset = xgb.DMatrix({username: temp_enc_name})
-    
         # next check monotonicity for the 'hist' tree method
         params_for_constrained_hist_method = {
             'tree_method': 'hist', 'verbosity': 1,
