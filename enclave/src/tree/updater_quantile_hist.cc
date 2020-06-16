@@ -1141,6 +1141,28 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
         << "range.first=" << range.first << ", last_offset=" << last_offset;
     last_offset = range.first;
 
+    // We only need to update histograms for left children;
+    // (right histograms will be computed using subtraction trick)
+    for (int i = 0; i < level_width; i+=2) {
+      //oaccess in range [level_begin_nid, level_end_nid]
+      ObliviousArrayAccessBytes(
+          previous_stats.data(),
+          hists[tid][0].data() + previous_stats.size() * i,
+          previous_stats.size() * sizeof(decltype(previous_stats)::value_type),
+          level_idx - i, 1);
+      //Add.
+      for (size_t bin_idx = 0; bin_idx < delta_stats.size(); ++bin_idx) {
+        delta_stats[bin_idx].Add(previous_stats[bin_idx]);
+      }
+      //oaccess in range [level_begin_nid, level_end_nid]
+      ObliviousArrayAssignBytes(
+          hists[tid][0].data() + delta_stats.size() * i,
+          delta_stats.data(),
+          delta_stats.size() * sizeof(decltype(delta_stats)::value_type),
+          level_idx - i, 1);
+    }
+
+    /*
     // oaccess in range [level_begin_nid, level_end_nid]
     ObliviousArrayAccessBytes(
         previous_stats.data(), hists[tid][0].data(),
@@ -1155,6 +1177,7 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
         hists[tid][0].data(), delta_stats.data(),
         delta_stats.size() * sizeof(decltype(delta_stats)::value_type),
         level_idx, level_width);
+    */
   }
 
   // Merge threading results.
@@ -1164,6 +1187,14 @@ void QuantileHistMaker::Builder::BuildLocalHistogramsLevelWise(
       for (size_t bin_idx = 0; bin_idx < hist_.nbins(); ++bin_idx) {
         hist_[nid][bin_idx].Add(hist[level_idx][bin_idx]);
       }
+    }
+  }
+  
+  for (auto const& entry : qexpand_depth_wise_) {
+    int nid = entry.nid;
+    RegTree::Node &node = (*p_tree)[nid];
+    if (!node.IsRoot() && node.IsLeftChild()) {
+      nodes_for_subtraction_trick_[(*p_tree)[node.Parent()].RightChild()] = nid;
     }
   }
 
