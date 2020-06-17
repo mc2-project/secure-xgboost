@@ -74,6 +74,3 @@ class TestRPC(unittest.TestCase):
         # Kill orchestrator
         subprocess.Popen(["pkill", "-f", "start_orchestrator.py"], stdout=subprocess.PIPE)
 
-
-                
-
