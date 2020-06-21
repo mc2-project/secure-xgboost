@@ -12,4 +12,4 @@ Please feel free to reach out to us if you would like use Secure XGBoost for you
 
 ## Documentation
 
-To get started with the library, please refer to the [documentation](https://mc2-xgboost.readthedocs.io/en/latest/).
+To get started with the library, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
