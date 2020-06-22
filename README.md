@@ -1,5 +1,6 @@
 # Secure XGBoost
-
+[![Build Status](https://travis-ci.org/mc2-project/secure-xgboost.svg?branch=master)](https://travis-ci.org/mc2-project/secure-xgboost)
+[![Documentation Status](https://readthedocs.org/projects/secure-xgboost/badge/?version=latest)](https://secure-xgboost.readthedocs.io/en/latest/?badge=latest)
 ## Introduction
 
 **Secure XGBoost** is a privacy-preserving gradient boosting library based off the popular [XGBoost](https://github.com/dmlc/xgboost) project. In addition to offering the same efficiency, flexibility, and portability that vanilla XGBoost provides, Secure XGBoost enables privacy-preserving model training and inference by leveraging hardware enclaves and data-oblivious algorithms. 
