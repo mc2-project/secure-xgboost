@@ -8,7 +8,8 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 2. Next install the Secure XGBoost dependencies
 3. Then build Secure XGBoost from source. 
 
-Please refer to the `Troubleshooting`_ section first if you have any problem
+.. Please refer to the :doc:`Troubleshooting <./troubleshoot.rst>` section first if you have any problem
+Please refer to the :ref:`troubleshoot` section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
 to open an issue on `GitHub <https://github.com/mc2-project/mc2-xgboost/issues>`_.
 
@@ -111,7 +112,7 @@ Building the Targets
 
       git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
 
-2. **Configure the build parameters** listed in ``CMakeLists.txt``. 
+2. **Configure the build parameters listed in** ``CMakeLists.txt``. 
 
    * ``CLIENT_LIST``: This is a list of usernames of all parties in the collaboration. 
    * ``SIGNER_PUB_FILE``: Path to the file containing the enclave developer's public key. This is used during remote attestation to authenticate the enclaves.
@@ -141,7 +142,7 @@ Building the Targets
    * ``LVI_MITIGATION_BINDIR``: Set this variable to point to the location where you installed the LVI mitigated Open Enclave libraries.
 
 
-3. **Build the Secure XGBoost targets** by running CMake:
+3. **Build the Secure XGBoost targets**:
 
    .. code-block:: bash
 

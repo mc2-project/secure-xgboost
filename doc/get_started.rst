@@ -43,7 +43,7 @@ This demo runs the enclave server on the same machine as the client for simplici
    # Remote Attestation
    xgb.attest()
 
-   # Load the encerypted data
+   # Load the encrypted data remotely
    dtrain = xgb.DMatrix({"user1": "demo/data/agaricus.txt.train.enc"})
    dtest = xgb.DMatrix({"user1": "demo/data/agaricus.txt.test.enc"})
 
@@ -53,16 +53,10 @@ This demo runs the enclave server on the same machine as the client for simplici
       "max_depth": "3"
    }
 
-   # Train
+   # Train a model remotely
    num_rounds = 5 
    booster = xgb.train(params, dtrain, num_rounds, evals=[(dtrain, "train"), (dtest, "test")])
 
-   # Get encrypted predictions
-   predictions, num_preds = booster.predict(dtest)
-
-   # Save model to a file
-   booster.save_model("modelfile.model")
-
-   # Get predictions
+   # Get encrypted predictions and decrypt them locally
    predictions, num_preds = booster.predict(dtest)
 

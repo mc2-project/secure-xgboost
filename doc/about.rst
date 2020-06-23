@@ -20,7 +20,7 @@ In a nutshell, multiple clients (or data owners) can use Secure XGBoost to colla
 
 At its core, Secure XGBoost uses hardware enclaves (such as Intel SGX) to protect the data even in the presence of a hostile cloud environment. That is, even though the training runs in the cloud, each client's data remains hidden from the cloud provider and other clients. The clients orchestrate the training pipeline remotely but collaboratively, and Secure XGBoost guarantees that each client retains control of its own data.
 
-Secure enclaves
+Secure Enclaves
 ***************
 
 Secure enclaves are a recent advance in computer processor technology that enables the creation of a secure region of memory (called an enclave) on an otherwise untrusted machine. Any data or software placed within the enclave is isolated from the rest of the system. No other process on the same processor -- not even privileged software such as the OS or the hypervisor -- can access that memory. Examples of secure enclave technology include Intel SGX, ARM TrustZone, and AMD Memory Encryption.
@@ -44,7 +44,7 @@ However, the extra security comes at the cost of performance. If such attacks fa
 System Architecture
 *******************
 
-A deployment of Secure XGBoost consist of the following entities: (i) multiple data owners (or clients) who wish to collaboratively train a model on their individual data; and (ii) an untrusted cloud service that hosts the Secure XGBoost platform within a cluster of enclave machines.
+A deployment of Secure XGBoost consist of the following entities: (i) multiple data owners (or clients) who wish to collaboratively train a model on their individual data; and (ii) an untrusted cloud service that hosts the Secure XGBoost platform within a cluster of enclave machines, along with an orchestrator service outside the enclaves to mediate communication.
 
 
 .. image:: images/arch.png
