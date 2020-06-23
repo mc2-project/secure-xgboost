@@ -16,7 +16,7 @@ Secure collaborative learning enables many data owners to **build robust models 
 Secure XGBoost
 **************
 
-In a nutshell, multiple clients (or data owners) can use Secure XGBoost to collaboratively train an XGBoost model on their collective data in a cloud environment, while preserving the privacy of their individual data. Though we focus on collaborative learning in the rest of this document, Secure XGBoost also supports a single party who simply wants to outsource computation to the cloud but who doesn't want to transfer data to the cloud in plaintext. 
+In a nutshell, multiple clients (or data owners) can use Secure XGBoost to collaboratively train an XGBoost model on their collective data in a cloud environment, while preserving the privacy of their individual data. Secure XGBoost also supports a single party who simply wants to outsource computation to the cloud but who doesn't want to transfer data to the cloud in plaintext. 
 
 At its core, Secure XGBoost uses hardware enclaves (such as Intel SGX) to protect the data even in the presence of a hostile cloud environment. That is, even though the training runs in the cloud, each client's data remains hidden from the cloud provider and other clients. The clients orchestrate the training pipeline remotely but collaboratively, and Secure XGBoost guarantees that each client retains control of its own data.
 

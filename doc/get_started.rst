@@ -19,17 +19,17 @@ The following snippet shows how clients can generate a symmetric key and use it 
 
    KEY_FILE = "key.txt"
    xgb.generate_client_key(KEY_FILE)
-   xgb.encrypt_file("demo/data/agaricus.txt.train", "demodata/train.enc", KEY_FILE)
+   xgb.encrypt_file("demo/data/agaricus.txt.train", "demo/data/train.enc", KEY_FILE)
    xgb.encrypt_file("demo/data/agaricus.txt.test", "demo/data/test.enc", KEY_FILE)
 
 ***********************************
 Train a model on the encrypted data
 ***********************************
 
-Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
+Below is a snippet of the full Python demo located at :code:`secure-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 This demo runs the enclave server on the same machine as the client for simplicity.
 
-.. note:: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets>`, remote attestation will not work, as the simulated enclave will not generate a report. Consequently, report verification will not work, and you should ``verify=False`` when calling ``attest()``.
+.. note:: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets>`, remote attestation will not work, as the simulated enclave will not generate a report. Consequently, report verification will not work, and you should set ``verify=False`` when calling ``attest()``.
 
 .. code-block:: python
 
