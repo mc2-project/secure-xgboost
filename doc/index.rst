@@ -13,7 +13,7 @@ On top of the enclaves, we add a second layer of security that additionally prot
 
 This project is currently under development as part of the broader `MC^2 project <https://github.com/mc2-project/mc2>`_ by the UC Berkeley `RISE Lab <https://rise.cs.berkeley.edu/>`_. 
 
-Secure XGBoost is open source, and we welcome contributions to our work `here <https://github.com/mc2-project/mc2-xgboost>`_. For questions, please `open an issue <https://github.com/mc2-project/mc2-xgboost/issues>`_.
+Secure XGBoost is open source, and we welcome contributions to our work `here <https://github.com/mc2-project/secure-xgboost>`_. For questions, please `open an issue <https://github.com/mc2-project/secure-xgboost/issues>`_.
 
 ********
 Contents

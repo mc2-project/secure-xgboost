@@ -5,9 +5,9 @@ Get Started with Secure XGBoost
 This is a quick start tutorial showing snippets for you to quickly try out Secure XGBoost
 on the demo dataset on a binary classification task. This sanity check ensures that setup was done properly. This quickstart uses encrypted versions of the :code:`agaricus.txt.train` and :code:`agaricus.txt.test` data files from :code:`demo/data/`.
 
-**************
+************
 Encrypt data
-**************
+************
 
 Secure XGBoost currently only supports data ingestion from text files. It supports two file formats: LibSVM and CSV files. See the original XGBoost documentation for more details on the input format for these file types, `here <https://xgboost.readthedocs.io/en/latest/tutorials/input_format.html>`_.
 
@@ -22,9 +22,10 @@ The following snippet shows how clients can generate a symmetric key and use it 
    xgb.encrypt_file("demo/data/agaricus.txt.train", "demodata/train.enc", KEY_FILE)
    xgb.encrypt_file("demo/data/agaricus.txt.test", "demo/data/test.enc", KEY_FILE)
 
-**************
-Train a model on the enrypted data
-**************
+***********************************
+Train a model on the encrypted data
+***********************************
+
 Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 This demo runs the enclave server on the same machine as the client for simplicity.
 

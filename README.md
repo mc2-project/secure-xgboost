@@ -10,6 +10,9 @@ This project is currently under development as part of the broader **mc<sup>2</s
 
 Please feel free to reach out to us if you would like use Secure XGBoost for your applications. We also welcome contributions to our work!
 
+[![Build Status](https://travis-ci.org/mc2-project/secure-xgboost.svg?branch=master)](https://travis-ci.org/mc2-project/secure-xgboost)
+[![Documentation Status](https://readthedocs.org/projects/secure-xgboost/badge/?version=latest)](https://secure-xgboost.readthedocs.io/en/latest/?badge=latest)
+
 ## Documentation
 
-To get started with the library, please refer to the [documentation](https://mc2-xgboost.readthedocs.io/en/latest/).
+To get started with the library, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).

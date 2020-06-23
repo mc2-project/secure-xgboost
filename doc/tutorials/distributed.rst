@@ -87,7 +87,7 @@ If you are using Azure Confidential Computing, all your VMs must be on the same 
 
    .. code-block:: bash
 
-      mc2-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_nodes_in_cluster> --worker-memory 4g python3 distr-training.py
+      secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_nodes_in_cluster> --worker-memory 4g python3 distr-training.py
 
 
    The command takes in the following arguments:
@@ -107,7 +107,7 @@ If you are using Azure Confidential Computing, all your VMs must be on the same 
 
    .. code-block:: bash
 
-      mc2-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster local --num-workers <num_nodes_in_cluster> --worker-memory 1g python3 distr-training.py
+      secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster local --num-workers <num_nodes_in_cluster> --worker-memory 1g python3 distr-training.py
 
   
 

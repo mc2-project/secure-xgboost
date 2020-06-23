@@ -11,7 +11,7 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 .. Please refer to the :doc:`Troubleshooting <./troubleshoot.rst>` section first if you have any problem
 Please refer to the :ref:`troubleshoot` section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
-to open an issue on `GitHub <https://github.com/mc2-project/mc2-xgboost/issues>`_.
+to open an issue on `GitHub <https://github.com/mc2-project/secure-xgboost/issues>`_.
 
 **Contents**
 
@@ -110,7 +110,7 @@ Building the Targets
 
    .. code-block:: bash
 
-      git clone --recursive https://github.com/mc2-project/mc2-xgboost.git
+      git clone --recursive https://github.com/mc2-project/secure-xgboost.git
 
 2. **Configure the build parameters listed in** ``CMakeLists.txt``. 
 
@@ -146,7 +146,7 @@ Building the Targets
 
    .. code-block:: bash
 
-      cd mc2-xgboost
+      cd secure-xgboost
       mkdir -p build
 
       pushd build
