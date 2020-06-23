@@ -1,5 +1,7 @@
 /*!
  *  Copyright (c) 2015 by Contributors
+ *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ *
  * \file text_parser.h
  * \brief iterator parser to parse text format
  * \author Tianqi Chen

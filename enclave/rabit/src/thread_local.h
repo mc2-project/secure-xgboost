@@ -1,5 +1,7 @@
 /*!
  *  Copyright (c) 2015 by Contributors
+ *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ *
  * \file thread_local.h
  * \brief Common utility for thread local storage.
  */

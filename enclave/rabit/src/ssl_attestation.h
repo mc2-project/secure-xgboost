@@ -1,3 +1,6 @@
+/*!
+ *  Copyright (c) 2020 by Secure XGBoost Contributors
+ */
 #ifndef RABIT_SSL_ATTESTATION_H_
 #define RABIT_SSL_ATTESTATION_H_
 

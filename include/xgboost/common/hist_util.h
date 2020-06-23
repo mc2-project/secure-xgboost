@@ -1,5 +1,6 @@
 /*!
  * Copyright 2017 by Contributors
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  * \file hist_util.h
  * \brief Utility for fast histogram aggregation
  * \author Philip Cho, Tianqi Chen

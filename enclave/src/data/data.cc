@@ -1,5 +1,6 @@
 /*!
  * Copyright 2015 by Contributors
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  * \file data.cc
  */
 #include <xgboost/data.h>

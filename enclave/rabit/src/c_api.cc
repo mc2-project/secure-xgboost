@@ -1,4 +1,5 @@
 // Copyright by Contributors
+// Modifications Copyright (c) 2020 by Secure XGBoost Contributors
 // implementations in ctypes
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
