@@ -14,15 +14,15 @@ Functions used to initialize clients and servers in Secure XGBoost.
 
 .. autofunction:: securexgboost.init_server
 
-Security API
+.. autofunction:: securexgboost.attest
+
+Crypto API
 ------------
-Functions for cryptography and remote attestation.
+Functions for clients to encrypt files
 
 .. autofunction:: securexgboost.generate_client_key
 
 .. autofunction:: securexgboost.encrypt_file
-
-.. autofunction:: securexgboost.attest
 
 Core Data Structure
 -------------------

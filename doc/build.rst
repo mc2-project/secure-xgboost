@@ -8,7 +8,8 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 2. Next install the Secure XGBoost dependencies
 3. Then build Secure XGBoost from source. 
 
-Please refer to the `Troubleshooting`_ section first if you have any problem
+.. Please refer to the :doc:`Troubleshooting <./troubleshoot.rst>` section first if you have any problem
+Please refer to the :ref:`troubleshoot` section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
 to open an issue on `GitHub <https://github.com/mc2-project/secure-xgboost/issues>`_.
 
@@ -22,8 +23,6 @@ to open an issue on `GitHub <https://github.com/mc2-project/secure-xgboost/issue
 
   - `Building the Targets`_
   - `Python Package Installation`_
-
-* `Troubleshooting`_
 
 *******************************
 Installing the Open Enclave SDK
@@ -107,13 +106,20 @@ The minimal building requirement is
 Building the Targets
 ==================
 
-1. Clone the repository recursively:
+1. **Clone the repository recursively**:
 
    .. code-block:: bash
 
       git clone --recursive https://github.com/mc2-project/secure-xgboost.git
 
-2. Configure the enclave parameters listed in ``CMakeLists.txt``; these parameters are used by the Open Enclave SDK to configure the enclave build.
+2. **Configure the build parameters listed in** ``CMakeLists.txt``. 
+
+   * ``CLIENT_LIST``: This is a list of usernames of all parties in the collaboration. 
+   * ``SIGNER_PUB_FILE``: Path to the file containing the enclave developer's public key. This is used during remote attestation to authenticate the enclaves.
+   * ``SIGNER_KEY_FILE``: Path to the file containing the enclave developer's private key. This is used to sign the enclave while building it.
+   * ``CA_CERT_FILE``: Path to the file containing the root certificate. Th enclaves use this certificate to authenticate the clients.
+
+   In addition, the following parameters are used by Open Enclave to configure the enclave build.
 
    * ``OE_DEBUG``: Set this parameter to 0 to build the enclave in release mode, or 1 to build in debug mode.
    * ``OE_NUM_HEAP_PAGES``: The amount of heap memory (in pages) committed to the enclave; this is the maximum amount of heap memory available to your enclave application.
@@ -130,10 +136,13 @@ Building the Targets
    * ``SIMULATE``: Set this parameter to ``ON`` to build the enclave in simulation mode (for local development and testing, in case your machine does not support hardware enclaves). This parameter requires ``OE_DEBUG`` to be set to 1.
    * ``OBLIVIOUS``: Set this parameter to ``ON`` to perform model training and inference using data-oblivious algorithms (to mitigate access-pattern based side-channel attacks).
 
-   Finally, we also provide options to build the library with LVI mitigation. To enable LVI mitigation, set the option ``LVI_MITIGATION`` to ``ON``, and set the variable ``LVI_MITIGATION_BINDIR`` to point to the location where you installed the LVI mitigated Open Enclave libraries.
+   Finally, we also provide options to build the library with LVI mitigation.
+   
+   * ``LVI_MITIGATION``: Set this to ``ON`` to enable LVI mitigation. 
+   * ``LVI_MITIGATION_BINDIR``: Set this variable to point to the location where you installed the LVI mitigated Open Enclave libraries.
 
 
-3. On Ubuntu, build the Secure XGBoost targets by running CMake:
+3. **Build the Secure XGBoost targets**:
 
    .. code-block:: bash
 
@@ -167,19 +176,5 @@ The Python package is located at ``python-package/``.
 
   If you recompiled Secure XGBoost, then you need to reinstall it again to make the new library take effect.
 
-
-***************
-Troubleshooting
-***************
-
-1. Can't find ``<openenclave/host.h>`` (no such file or directory).
-   
-   Please configure environment variables for Open Enclave SDK for Linux as described in the installation step:
-
-   .. code-block:: bash
-
-      source /opt/openenclave/share/openenclave/openenclaverc
-
-   Consider adding this line to your ``~/.bashrc`` to make the environment variables persist across sessions.
 
 
