@@ -14,7 +14,7 @@ Links to Other Helpful Resources
 Python
 ******
 
-Below is a snippet of the full Python demo located at :code:`mc2-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
+Below is a snippet of the full Python demo located at :code:`secure-xgboost/demo/python/basic/secure-xgboost-demo.py`. 
 
 Note: If you built Secure XGBoost in :ref:`simulation mode <Building the Targets>`, remote attestation will not work, as the simulated enclave will not generate a report. Consequently, report verification will not work, and you should ``verify=False`` when calling ``attest()``
 

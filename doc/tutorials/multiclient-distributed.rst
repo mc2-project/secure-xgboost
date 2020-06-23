@@ -48,7 +48,7 @@ First, set up machines that will act as the untrusted servers. We'll need to sta
 
       .. code-block:: bash
 
-         mc2-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_workers_in_cluster> --worker-memory 4g python3 server/enclave_serve.py
+         secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_workers_in_cluster> --worker-memory 4g python3 server/enclave_serve.py
 
 
 ******************
