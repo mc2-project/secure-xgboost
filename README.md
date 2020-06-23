@@ -16,3 +16,9 @@ Please feel free to reach out to us if you would like use Secure XGBoost for you
 ## Documentation
 
 To get started with the library, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
+
+## Contact
+If you would like to know more about our project or have questions, please contact us at:
+* Rishabh Poddar (rishabhp@eecs.berkeley.edu)
+* Chester Leung (chester.leung@berkeley.edu)
+* Wenting Zheng (wzheng@berkeley.edu)
