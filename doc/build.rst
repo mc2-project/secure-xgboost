@@ -28,33 +28,10 @@ to open an issue on `GitHub <https://github.com/mc2-project/secure-xgboost/issue
 Installing the Open Enclave SDK
 *******************************
 
-
-
-1. The requirements are:
-
-   - Open Enclave version 0.8.2
-   - Intel SGX DCAP Driver version 1.21
-   
-   If building on an SGX-enabled machine, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ to install the Open Enclave packages and dependencies, and the SGX DCAP driver. 
+1. Install the Open Enclave SDK (v0.8 or higher) and the Intel SGX DCAP driver.  
+   If building on an SGX-enabled machine, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_.
 
    .. note:: You may also build the SDK in "simulation mode" on a machine without SGX support (e.g., for local development and testing). To build in simulation mode, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Simulation.md>`_ instead. Notably, these instructions require that you skip the driver installation step.
-
-   Alternatively, you may also acquire a VM with the required features pre-installed from `Azure Confidential Compute <https://azure.microsoft.com/en-us/solutions/confidential-compute/>`_; in this case, however, you may need to manually upgrade the SDK installed in the VM to version 0.8.2, and the DCAP driver to version 1.21:
-
-
-   Confirm that Open Enclave is version 0.8.2:
-
-   .. code-block:: bash
-      
-      sudo apt list open-enclave
-
-   Confirm that the Intel SGX DCAP Driver is version 1.21:
-
-   .. code-block:: bash
-
-      modinfo intel_sgx
-
-   If not, follow `these <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_ instructions to update.
 
 
 2. Configure environment variables for Open Enclave SDK for Linux:
