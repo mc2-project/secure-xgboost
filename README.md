@@ -20,5 +20,5 @@ To get started with the library, please refer to the [documentation](https://sec
 ## Contact
 If you would like to know more about our project or have questions, please contact us at:
 * Rishabh Poddar (rishabhp@eecs.berkeley.edu)
-* Chester Leung (chester.leung@berkeley.edu)
+* Chester Leung (chester@eecs.berkeley.edu)
 * Wenting Zheng (wzheng@eecs.berkeley.edu)
