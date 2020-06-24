@@ -1,5 +1,6 @@
 /*!
  * Copyright 2015-2018 by Contributors
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  * \file logging.cc
  * \brief Implementation of loggers.
  * \author Tianqi Chen

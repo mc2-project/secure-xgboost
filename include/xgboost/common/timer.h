@@ -1,5 +1,6 @@
 /*!
  * Copyright by Contributors 2017
+ * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  */
 #pragma once
 #include <xgboost/logging.h>

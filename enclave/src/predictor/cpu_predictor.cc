@@ -1,5 +1,6 @@
 /*!
  * Copyright by Contributors 2017
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  */
 #include <xgboost/predictor.h>
 #include <xgboost/tree_model.h>

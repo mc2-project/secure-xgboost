@@ -1,3 +1,6 @@
+/*!
+ *  Copyright (c) 2020 by Secure XGBoost Contributors
+ */
 #include "ssl_attestation.h"
 #include <stdio.h>
 #include <enclave/crypto.h>

@@ -1,3 +1,6 @@
+/*
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
+ */
 #include <xgboost/common/quantile.h>
 
 namespace xgboost {

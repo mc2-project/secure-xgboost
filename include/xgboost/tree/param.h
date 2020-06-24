@@ -1,5 +1,6 @@
 /*!
  * Copyright 2014 by Contributors
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  * \file param.h
  * \brief training parameters, statistics used to support tree construction.
  * \author Tianqi Chen

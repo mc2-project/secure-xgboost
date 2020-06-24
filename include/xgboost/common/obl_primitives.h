@@ -1,5 +1,7 @@
+/*
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
+ */
 #pragma once
-
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>

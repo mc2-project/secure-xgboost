@@ -1,3 +1,6 @@
+/*!
+ *  Copyright (c) 2020 by Secure XGBoost Contributors
+ */
 #ifndef RABIT_TLS_SOCKET_H_
 #define RABIT_TLS_SOCKET_H_
 

@@ -1,3 +1,6 @@
+/*!
+ *  Copyright (c) 2020 by Secure XGBoost Contributors
+ */
 #include "ssl_socket.h"
 #include "ssl_attestation.h"
 #include "../include/dmlc/logging.h"

@@ -1,5 +1,7 @@
 /*!
  *  Copyright (c) 2017 by Contributors
+ *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ *
  * \file libfm_parser.h
  * \brief iterator parser to parse libfm format
  * \author formath

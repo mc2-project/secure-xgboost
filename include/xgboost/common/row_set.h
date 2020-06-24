@@ -1,5 +1,6 @@
 /*!
  * Copyright 2017 by Contributors
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  * \file row_set.h
  * \brief Quick Utility to compute subset of rows
  * \author Philip Cho, Tianqi Chen
