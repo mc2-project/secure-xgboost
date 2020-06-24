@@ -2,7 +2,8 @@
 
 ## Introduction
 
-**Secure XGBoost** is a privacy-preserving gradient boosting library based off the popular [XGBoost](https://github.com/dmlc/xgboost) project. In addition to offering the same efficiency, flexibility, and portability that vanilla XGBoost provides, Secure XGBoost enables privacy-preserving model training and inference by leveraging hardware enclaves and data-oblivious algorithms. 
+Secure XGBoost is a library that enables **collaborative training and inference of [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. In addition to offering the same efficiency, flexibility, and portability that vanilla XGBoost provides, Secure XGBoost enables privacy-preserving model training and inference by leveraging hardware enclaves and data-oblivious algorithms. 
+
 
 In a nutshell, data owners can use Secure XGBoost to train a model on a remote server _without_ revealing their data contents to the remote server. Furthermore, multiple data owners can use the library to _collaboratively_ train a model on their collective data, without revealing their individual data to each other.
 
