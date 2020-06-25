@@ -9,7 +9,7 @@ In a nutshell, data owners can use Secure XGBoost to train a model on a remote s
 
 This project is currently under development as part of the broader **mc<sup>2</sup>** effort (i.e., **M**ultiparty **C**ollaboration and **C**oopetition) by the UC Berkeley [RISE Lab](https://rise.cs.berkeley.edu/).
 
-Please feel free to reach out to us if you would like use Secure XGBoost for your applications. We also welcome contributions to our work!
+**NOTE:** The Secure XGBoost library is a research prototype, and has not yet received independent code review. Please feel free to reach out to us if you would like use Secure XGBoost for your applications. We also welcome contributions to the project.
 
 [![Build Status](https://travis-ci.org/mc2-project/secure-xgboost.svg?branch=master)](https://travis-ci.org/mc2-project/secure-xgboost)
 [![Documentation Status](https://readthedocs.org/projects/secure-xgboost/badge/?version=latest)](https://secure-xgboost.readthedocs.io/en/latest/?badge=latest)
