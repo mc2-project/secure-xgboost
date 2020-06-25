@@ -40,9 +40,9 @@ option(LOGGING
 option(SIMULATE
     "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS
-    "Enable oblivious training and inference" ON)
+    "Enable oblivious training and inference" OFF)
 option(USE_AVX2 
-    "Use AVX2 instructions to speed up oblivious primitives" ON)
+    "Use AVX2 instructions to speed up oblivious primitives" OFF)
 option(LVI_MITIGATION
     "Enable mitigations for LVI vulnerability" OFF)
 set(LVI_MITIGATION_BINDIR "/opt/openenclave/lvi_mitigation_bin"
