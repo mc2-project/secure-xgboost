@@ -317,9 +317,9 @@ int get_remote_report_with_pubkey_and_nonce(
 
 #else
   uint8_t report_data[CIPHER_PK_SIZE + CIPHER_IV_SIZE];
-  std::copy(public_key, public_key + CIPHER_PK_SIZE, report_data);
-  std::copy(enclave_nonce, enclave_nonce + CIPHER_IV_SIZE, report_data + CIPHER_PK_SIZE);
-  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE + CIPHER_KEY_SIZE, &report, &report_size)) {
+  memcpy(report_data, public_key, CIPHER_PK_SIZE);
+  memcpy(report_data + CIPHER_PK_SIZE, enclave_nonce, CIPHER_IV_SIZE);
+  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
     if (*remote_report == NULL) {
