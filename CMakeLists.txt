@@ -42,7 +42,7 @@ option(SIMULATE
 option(OBLIVIOUS
     "Enable oblivious training and inference" OFF)
 option(USE_AVX2 
-    "Use AVX2 instructions to speed up oblivious primitives" OFF)
+    "Use AVX2 instructions to speed up oblivious primitives" ON)
 option(LVI_MITIGATION
     "Enable mitigations for LVI vulnerability" OFF)
 set(LVI_MITIGATION_BINDIR "/opt/openenclave/lvi_mitigation_bin"
