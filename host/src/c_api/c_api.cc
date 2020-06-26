@@ -1459,8 +1459,8 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
   // Attest the remote report and accompanying key.
   size_t key_and_nonce_size = key_size + nonce_size;
   uint8_t key_and_nonce[key_and_nonce_size];
-  memcpy(key_and_nonce, pem_key, CIPHER_KEY_SIZE);
-  memcpy(key_and_nonce + CIPHER_KEY_SIZE, nonce, CIPHER_IV_SIZE);
+  memcpy(key_and_nonce, pem_key, CIPHER_PK_SIZE);
+  memcpy(key_and_nonce + CIPHER_PK_SIZE, nonce, CIPHER_IV_SIZE);
   if (!attest_remote_report(remote_report, remote_report_size, key_and_nonce, key_and_nonce_size)) {
     std::cout << "verify_report_and_set_pubkey_and_nonce failed." << std::endl;
     return -1;
