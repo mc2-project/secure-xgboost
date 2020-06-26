@@ -40,7 +40,7 @@ option(LOGGING
 option(SIMULATE
     "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS
-    "Enable oblivious training and inference" ON)
+    "Enable oblivious training and inference" OFF)
 option(USE_AVX2 
     "Use AVX2 instructions to speed up oblivious primitives" ON)
 option(LVI_MITIGATION
