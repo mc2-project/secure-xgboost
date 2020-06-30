@@ -1,3 +1,5 @@
+.. _multiclient-distributed-label:
+
 ##############################################
 Multiclient Outsourced Distributed Computation
 ##############################################
