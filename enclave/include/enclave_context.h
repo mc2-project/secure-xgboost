@@ -315,7 +315,7 @@ class EnclaveContext {
       uint32_t flags;
       if((ret = mbedtls_x509_crt_verify(&user_cert, &_cacert, NULL, NULL, &flags,
               NULL, NULL)) != 0) {
-        LOG(FATAL) << "verification failed - mbedtls_x509_crt_verify flags returned" << flags;
+        LOG(FATAL) << "verification failed - mbedtls_x509_crt_verify flags returned" << ret;
       }
 
       mbedtls_pk_context user_public_key_context = user_cert.pk;
