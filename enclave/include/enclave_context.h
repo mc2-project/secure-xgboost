@@ -288,8 +288,6 @@ class EnclaveContext {
                 uint8_t* signature,
                 size_t sig_len) {
       mbedtls_pk_context _pk_context;
-      LOG(DEBUG) << "Verifying signature with certificate";
-
       unsigned char hash[32];
       int ret = 1;
 
@@ -297,7 +295,7 @@ class EnclaveContext {
 
       mbedtls_x509_crt _cacert;
       mbedtls_x509_crt_init(&_cacert);
-      if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) CA_CERT,
+      if ((ret = mbedtls_x509_crt_parse(&_cacert, (const unsigned char*) CA_CERT,
                    strlen(CA_CERT)+1)) != 0) {
          LOG(FATAL) << "verification failed - Could not read root certificate\n" 
            << "mbedtls_x509_crt_parse returned " << ret;
@@ -305,7 +303,7 @@ class EnclaveContext {
 
       mbedtls_x509_crt user_cert;
       mbedtls_x509_crt_init(&user_cert);
-      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char *) cert,
+      if ((ret = mbedtls_x509_crt_parse(&user_cert, (const unsigned char*) cert,
                    cert_len)) != 0) {
          LOG(FATAL) << "verification failed - Could not read user certificate\n"
            << "mbedtls_x509_crt_parse returned " << ret;
@@ -313,14 +311,14 @@ class EnclaveContext {
       }
 
       uint32_t flags;
-      if((ret = mbedtls_x509_crt_verify(&user_cert, &_cacert, NULL, NULL, &flags,
+      if ((ret = mbedtls_x509_crt_verify(&user_cert, &_cacert, NULL, NULL, &flags,
               NULL, NULL)) != 0) {
-        LOG(FATAL) << "verification failed - mbedtls_x509_crt_verify flags returned" << flags;
+        LOG(FATAL) << "verification failed - mbedtls_x509_crt_verify flags returned " << ret;
       }
 
       mbedtls_pk_context user_public_key_context = user_cert.pk;
 
-      if(verifySignature(user_public_key_context, data, data_len, signature, sig_len) != 0) {
+      if (verifySignature(user_public_key_context, data, data_len, signature, sig_len) != 0) {
         LOG(FATAL) << "Signature verification failed";
       }
 
