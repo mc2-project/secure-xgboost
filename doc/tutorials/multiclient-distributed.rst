@@ -167,15 +167,4 @@ For convenience, we added a script ``run.sh`` in this directory that runs this c
 Once you have submitted commands from client 2, the orchestrator will relay commands to the cluster. The enclave cluster will load the two parties' data, train a model over both parties' data, and serve encrypted predictions back to each party. 
 
 
-***************
-Troubleshooting
-***************
-1. **Permission denied**
-
-   This may be symptomatic of an SSH authentication error. Be sure that the SSH public key of the machine running the tracker is in the ``~/.ssh/authorized_keys`` file of each node in the cluster.
-
-2. **Hung connection**
-
-   If the tracker is hung after logging a statement similar to ``start listen on ...``, the tracker may be hung listening for an initial signal from a node in the cluster. Ensure that ports 9000-9100 are open on each machine.
-
 
