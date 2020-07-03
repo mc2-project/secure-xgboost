@@ -54,3 +54,11 @@ Troubleshooting
       modinfo intel_sgx
 
    If the version is below 1.21, update the DCAP driver by following step 2 `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_.
+
+#. **Permission denied**
+
+   This may be symptomatic of an SSH authentication error. Be sure that the SSH public key of the machine running the tracker is in the ``~/.ssh/authorized_keys`` file of each node in the cluster.
+
+#. **Hung connection**
+
+   If the tracker is hung after logging a statement similar to ``start listen on ...``, the tracker may be hung listening for an initial signal from a node in the cluster. Ensure that ports 9000-9100 are open on each machine.
