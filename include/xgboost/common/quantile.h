@@ -460,9 +460,9 @@ struct WQSummary {
   /*!
    * \brief set current summary to be obliviously pruned summary of src
    *        assume data field is already allocated to be at least maxsize
-   *        dummy item will rank last of return and will involved in following computation
-   * \param src source summary
-   * \param maxsize size we can afford in the pruned sketch
+   *        dummy item will rank last of return and will involved in following
+   * computation \param src source summary \param maxsize size we can afford in
+   * the pruned sketch
    */
   inline void ObliviousSetPrune(const WQSummary &src, size_t maxsize) {
     if (src.size <= maxsize) {
@@ -538,7 +538,7 @@ struct WQSummary {
                       last_selected_entry_value, &last_selected_entry_value);
       ObliviousAssign(do_select, std::numeric_limits<RType>::min(),
                       items[i].rank, &items[i].rank);
-      ObliviousAssign(i == max_index - 1, src.data[i], lastEntry, &lastEntry);
+
       ObliviousAssign(do_select, items[i].entry, kDummyEntryWithMaxValue,
                       &items[i].entry);
       select_count += ObliviousChoose(do_select, 1, 0);
@@ -549,6 +549,11 @@ struct WQSummary {
     ObliviousSort(items.begin(), items.end());
     LOG(DEBUG) << __func__ << " PASSED 2" << std::endl;
 
+    // Assign actual last entry to lastEntry
+    for (size_t idx = 0; idx < src.size; ++idx) {
+      ObliviousAssign(idx == max_index - 1, src.data[idx], lastEntry,
+                      &lastEntry);
+    }
     // Append actual last item to items vector
     for (size_t i = 0; i < src.size; i++) {
       ObliviousAssign(i == select_count, lastEntry, items[i].entry,
@@ -645,7 +650,8 @@ struct WQSummary {
       return;
     }
     using EntryWithPartyInfo = EntryWithPartyInfo<DType, RType>;
-
+    const Entry kDummyEntryWithMaxValue{-1, -1, 0,
+                                        std::numeric_limits<DType>::max()};
     std::vector<EntryWithPartyInfo> merged_party_entrys(this->size);
     // Fill party info and build bitonic sequence.
     //
@@ -714,7 +720,6 @@ struct WQSummary {
     //    2、 use is_dummy to contral backward computation dataflow
     RType a_prev_rmax = sa.data[sa.size - 1].rmax;
     RType b_prev_rmax = sb.data[sb.size - 1].rmax;
-
     for (int idx = 0; idx < sa.size; idx++) {
       a_prev_rmax = ObliviousChoose(sa.data[idx].rmax > a_prev_rmax,
                                     sa.data[idx].rmax, a_prev_rmax);
@@ -725,6 +730,8 @@ struct WQSummary {
     }
     size_t duplicate_count = 0;
     size_t dummy_count = 0;
+    Entry prevEntry = merged_party_entrys[merged_party_entrys.size() - 1].entry;
+    Entry nextEntry = kDummyEntryWithMaxValue;
     for (ssize_t idx = merged_party_entrys.size() - 1; idx >= 0; --idx) {
       bool equal_prev =
           idx == 0 ? false
@@ -736,6 +743,11 @@ struct WQSummary {
               : ObliviousEqual(merged_party_entrys[idx].entry.value,
                                merged_party_entrys[idx + 1].entry.value);
       bool dummy_item = merged_party_entrys[idx].is_dummy;
+      prevEntry = idx == 0 ? kDummyEntryWithMaxValue
+                           : merged_party_entrys[idx - 1].entry;
+      nextEntry = idx == merged_party_entrys.size() - 1
+                      ? kDummyEntryWithMaxValue
+                      : merged_party_entrys[idx + 1].entry;
       duplicate_count += ObliviousChoose(equal_next, 1, 0);
       dummy_count += ObliviousChoose(merged_party_entrys[idx].is_dummy, 1, 0);
 
@@ -754,14 +766,11 @@ struct WQSummary {
       // Handle equals.
       // Handle dummys
       RType rmin_to_add = ObliviousChoose(
-          equal_prev && !dummy_item, merged_party_entrys[idx - 1].entry.rmin,
-          static_cast<RType>(0));
+          equal_prev && !dummy_item, prevEntry.rmin, static_cast<RType>(0));
       RType wmin_to_add = ObliviousChoose(
-          equal_prev && !dummy_item, merged_party_entrys[idx - 1].entry.wmin,
-          static_cast<RType>(0));
-      rmax_to_add =
-          ObliviousChoose(equal_prev && !dummy_item,
-                          merged_party_entrys[idx - 1].entry.rmax, rmax_to_add);
+          equal_prev && !dummy_item, prevEntry.wmin, static_cast<RType>(0));
+      rmax_to_add = ObliviousChoose(equal_prev && !dummy_item, prevEntry.rmax,
+                                    rmax_to_add);
       // Update.
       merged_party_entrys[idx].entry.rmax += rmax_to_add;
       merged_party_entrys[idx].entry.rmin += rmin_to_add;
@@ -770,9 +779,9 @@ struct WQSummary {
       // Copy rmin, rmax, wmin from previous if values are equal.
       // Value is ok to be infinite now since this is two party merge, at most
       // two items are the same given a specific value.
-      ObliviousAssign(
-          equal_next && !dummy_item, merged_party_entrys[idx + 1].entry,
-          merged_party_entrys[idx].entry, &merged_party_entrys[idx].entry);
+      ObliviousAssign(equal_next && !dummy_item, nextEntry,
+                      merged_party_entrys[idx].entry,
+                      &merged_party_entrys[idx].entry);
       ObliviousAssign(equal_next && !dummy_item,
                       std::numeric_limits<DType>::max(),
                       merged_party_entrys[idx].entry.value,
