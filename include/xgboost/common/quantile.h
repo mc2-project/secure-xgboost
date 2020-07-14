@@ -24,7 +24,6 @@ bool ObliviousSetCombineEnabled();
 bool ObliviousSetPruneEnabled();
 bool ObliviousDebugCheckEnabled();
 bool ObliviousEnabled();
-void SetObliviousMode(bool);
 
 template <typename DType, typename RType>
 struct WQSummaryEntry {
@@ -459,7 +458,8 @@ struct WQSummary {
    *        assume data field is already allocated to be at least maxsize
    *        dummy item will rank last of return and will involved in following
    *        computation
-   * \param src source summary \param maxsize size we can afford in
+   * \param src source summary
+   * \param maxsize size we can afford in
    *        the pruned sketch
    */
   inline void ObliviousSetPrune(const WQSummary &src, size_t maxsize) {
@@ -479,7 +479,7 @@ struct WQSummary {
     // find actually max item
     for (size_t idx = 0; idx < src.size; idx++) {
       max_index = ObliviousChoose(
-          src.data[idx].value != std::numeric_limits<DType>::max(), idx,
+          !ObliviousEqual(src.data[idx].value , std::numeric_limits<DType>::max()), idx,
           max_index);
       range = src.data[max_index].rmin - src.data[0].rmax;
     }
@@ -499,7 +499,7 @@ struct WQSummary {
     //
     for (size_t i = 1; i < src.size; ++i) {
       Item obliviousItem = ObliviousChoose(
-          i < max_index - 1,
+          ObliviousLess(i , max_index - 1),
           Item{src.data[i], src.data[i].rmax + src.data[i].rmin, true},
           Item{kDummyEntryWithMaxValue, std::numeric_limits<RType>::max(),
                true});
@@ -507,7 +507,7 @@ struct WQSummary {
     }
     for (size_t i = 1; i < src.size - 1; ++i) {
       Item obliviousItem = ObliviousChoose(
-          i < max_index - 1,
+          ObliviousLess(i , max_index - 1),
           Item{src.data[i], src.data[i].RMinNext() + src.data[i + 1].RMaxPrev(),
                true},
           Item{kDummyEntryWithMaxValue, std::numeric_limits<RType>::max(),
@@ -527,11 +527,11 @@ struct WQSummary {
       //   CASE max_index<=maxsize:All unique item will be select
       //   CASE other : select unique after dx2 index
       bool do_select = ObliviousChoose(
-          ObliviousLess(max_index , maxsize),
-          items[i].entry.value != last_selected_entry_value &&
-              items[i].entry.value != std::numeric_limits<RType>::max(),
-          !items[i - 1].has_entry && items[i].has_entry &&
-              items[i].entry.value != last_selected_entry_value);
+          ObliviousLessOrEqual(max_index , maxsize),
+          !ObliviousEqual(items[i].entry.value , last_selected_entry_value) &
+              !ObliviousEqual(items[i].entry.value , std::numeric_limits<DType>::max()),
+          !items[i - 1].has_entry & items[i].has_entry &
+              !ObliviousEqual(items[i].entry.value , last_selected_entry_value));
       ObliviousAssign(do_select, items[i].entry.value,
                       last_selected_entry_value, &last_selected_entry_value);
       ObliviousAssign(do_select, std::numeric_limits<RType>::min(),
@@ -549,12 +549,12 @@ struct WQSummary {
 
     // Assign actual last entry to lastEntry
     for (size_t idx = 0; idx < src.size; ++idx) {
-      ObliviousAssign(idx == max_index - 1, src.data[idx], lastEntry,
+      ObliviousAssign(ObliviousEqual(idx , max_index - 1), src.data[idx], lastEntry,
                       &lastEntry);
     }
     // Append actual last item to items vector
     for (size_t i = 0; i < src.size; i++) {
-      ObliviousAssign(i == select_count, lastEntry, items[i].entry,
+      ObliviousAssign(ObliviousEqual(i , select_count), lastEntry, items[i].entry,
                       &items[i].entry);
     }
 
