@@ -1,5 +1,6 @@
 /*!
  * Copyright 2014 by Contributors
+ * Modifications Copyright 2020 by Secure XGBoost Contributors
  * \file quantile.h
  * \brief util to compute quantiles
  * \author Tianqi Chen
@@ -231,9 +232,9 @@ template <typename DType, typename RType>
 void CheckEqualSummary(const WQSummary<DType, RType> &lhs,
                        const WQSummary<DType, RType> &rhs) {
   auto trace = [&]() {
-    LOG(CONSOLE) << "---------- lhs: ";
+    LOG(INFO) << "---------- lhs: ";
     lhs.Print();
-    LOG(CONSOLE) << "---------- rhs: ";
+    LOG(INFO) << "---------- rhs: ";
     rhs.Print();
   };
   // DEBUG CHECK
@@ -319,7 +320,7 @@ struct WQSummary {
         helper_entry.entry.weight = 0;
       }
 
-      size_t unique_count = 0;
+
       for (size_t idx = 0; idx < qhelper.size(); ++idx) {
         // sum weight for same value
         qhelper[idx].entry.weight += queue[idx].weight;
@@ -329,7 +330,6 @@ struct WQSummary {
                           : !ObliviousEqual(qhelper[idx + 1].entry.value,
                                             qhelper[idx].entry.value);
         qhelper[idx].is_new = is_new;
-        unique_count += is_new;
         if (idx != qhelper.size() - 1) {
           // Accumulate when next is same with me, otherwise reset to zero.
           qhelper[idx + 1].entry.weight =
@@ -753,11 +753,11 @@ struct WQSummary {
 
       // Need to save first since the rmax will be overwritten.
       RType next_aprev_rmax = ObliviousChoose(
-          merged_party_entrys[idx].is_party_a &&
+          merged_party_entrys[idx].is_party_a &
               !merged_party_entrys[idx].is_dummy,
           merged_party_entrys[idx].entry.RMaxPrev(), a_prev_rmax);
       RType next_bprev_rmax = ObliviousChoose(
-          !merged_party_entrys[idx].is_party_a &&
+          !merged_party_entrys[idx].is_party_a &
               !merged_party_entrys[idx].is_dummy,
           merged_party_entrys[idx].entry.RMaxPrev(), b_prev_rmax);
       // Add peer RMaxPrev.
@@ -799,7 +799,6 @@ struct WQSummary {
     ObliviousSort(this->data, this->data + this->size);
     // std::sort(this->data, this->data + this->size);
     LOG(DEBUG) << __func__ << " PASSED 3" << std::endl;
-    // exit(1);
     // Need to confirm shrink.
     if (ObliviousDebugCheckEnabled()) {
       std::vector<Entry> oblivious_results(this->data, this->data + this->size);
@@ -893,7 +892,7 @@ struct WQSummary {
   // helper function to print the current content of sketch
   inline void Print() const {
     for (size_t i = 0; i < this->size; ++i) {
-      LOG(CONSOLE) << "[" << i << "] rmin=" << data[i].rmin
+      LOG(INFO) << "[" << i << "] rmin=" << data[i].rmin
                    << ", rmax=" << data[i].rmax << ", wmin=" << data[i].wmin
                    << ", v=" << data[i].value;
     }
@@ -966,8 +965,10 @@ struct WXQSummary : public WQSummary<DType, RType> {
     size_t max_index = 0;
     // find actually max item
     for (size_t idx = 0; idx < src.size; idx++) {
+      bool is_valid = !ObliviousEqual(src.data[idx].value,
+                                      std::numeric_limits<DType>::max());
       max_index = ObliviousChoose(
-          src.data[idx].value != std::numeric_limits<DType>::max(), idx,
+          is_valid, idx,
           max_index);
     }
     max_index += 1;
@@ -1137,7 +1138,7 @@ struct GKSummary {
   /*! \brief used for debug purpose, print the summary */
   inline void Print() const {
     for (size_t i = 0; i < size; ++i) {
-      LOG(CONSOLE) << "x=" << data[i].value << "\t"
+      LOG(INFO) << "x=" << data[i].value << "\t"
                    << "[" << data[i].rmin << "," << data[i].rmax << "]";
     }
   }
