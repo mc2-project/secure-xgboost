@@ -459,7 +459,8 @@ struct WQSummary {
    *        assume data field is already allocated to be at least maxsize
    *        dummy item will rank last of return and will involved in following
    *        computation
-   * \param src source summary \param maxsize size we can afford in
+   * \param src source summary
+   * \param maxsize size we can afford in
    *        the pruned sketch
    */
   inline void ObliviousSetPrune(const WQSummary &src, size_t maxsize) {
@@ -479,7 +480,7 @@ struct WQSummary {
     // find actually max item
     for (size_t idx = 0; idx < src.size; idx++) {
       max_index = ObliviousChoose(
-          src.data[idx].value != std::numeric_limits<DType>::max(), idx,
+          !ObliviousEqual(src.data[idx].value , std::numeric_limits<DType>::max()), idx,
           max_index);
       range = src.data[max_index].rmin - src.data[0].rmax;
     }
@@ -527,7 +528,7 @@ struct WQSummary {
       //   CASE max_index<=maxsize:All unique item will be select
       //   CASE other : select unique after dx2 index
       bool do_select = ObliviousChoose(
-          ObliviousLess(max_index , maxsize),
+          ObliviousLessOrEqual(max_index , maxsize),
           !ObliviousEqual(items[i].entry.value , last_selected_entry_value) &
               !ObliviousEqual(items[i].entry.value , std::numeric_limits<DType>::max()),
           !items[i - 1].has_entry & items[i].has_entry &
