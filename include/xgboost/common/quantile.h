@@ -24,7 +24,6 @@ bool ObliviousSetCombineEnabled();
 bool ObliviousSetPruneEnabled();
 bool ObliviousDebugCheckEnabled();
 bool ObliviousEnabled();
-void SetObliviousMode(bool);
 
 template <typename DType, typename RType>
 struct WQSummaryEntry {
