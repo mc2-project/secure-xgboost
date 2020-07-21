@@ -28,9 +28,9 @@ int main(int argc, char* argv[]) {
   // test for MakeSummaryOblivious
   sketchs.inqueue.MakeSummaryOblivious(&out);
   sb.CopyFromSize(out, 30);
-  sa.CopyFromSize(out, 20);
+  sa.CopyFromSize(out, 30);
   // test fo ObliviousSetPrune
-  // out.ObliviousSetPrune(out,10);
+   out.ObliviousSetPrune(out,10);
   // test for ObliviousSetCombine
-  // out.ObliviousSetCombine(sa,sb);
+   out.ObliviousSetCombine(sa,sb);
 }
