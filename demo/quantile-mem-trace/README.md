@@ -29,6 +29,7 @@ Build Intel Pin
 This will auto generate files `arr_A.h` and `arr_B.h` containing random arrays, and then build the programs `test_A.cc` and `test_B.cc`.
 
 **src/common/quantile.h should be replaced by src/common/pin_quantile.h** 
+
 **because logging and Macro would effect compile and memtrace.**
 
     ./make.sh
@@ -36,10 +37,10 @@ This will auto generate files `arr_A.h` and `arr_B.h` containing random arrays, 
 #### Execute the tests and capture memory trace
 This will run both programs twice -- once using `std::sort` and once using our `ObliviousSort` routine. While running the programs, it will also capture memory traces during each run.
 
-    ./profile_sorts.sh
+    ./profile_script.sh
 
 #### Compare memory traces
-Compare the memory traces captured during the runs. Trace files `o_sort_A` and `o_sort_B` are the traces when the programs use `ObliviousSort`. Trace files `std_sort_A` and `std_sort_B` are traces captured when the programs use `std::sort`. Comparing the oblivious traces should show no difference between them, unlike the standard sort traces.
+Compare the memory traces captured during the runs. Trace files `test_A` and `test_B` traces should show no difference between them.
 
     diff test_A.trace test_B.trace
 
