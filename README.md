@@ -2,8 +2,10 @@
 
 [![Build Status](https://travis-ci.org/mc2-project/secure-xgboost.svg?branch=master)](https://travis-ci.org/mc2-project/secure-xgboost)
 [![Documentation Status](https://readthedocs.org/projects/secure-xgboost/badge/?version=latest)](https://secure-xgboost.readthedocs.io/en/latest/?badge=latest)
+![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+## Overview
 Secure XGBoost is a library that enables **collaborative training and inference of [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. by leveraging hardware enclaves and data-oblivious algorithms. 
 
 In a nutshell, data owners can use Secure XGBoost to train a model on a remote server _without_ revealing the underlying data to the remote server. Furthermore, multiple data owners can use the library to _collaboratively_ train a model on their collective data, without exposing their individual data to each other.
@@ -12,6 +14,12 @@ In a nutshell, data owners can use Secure XGBoost to train a model on a remote s
 This project is currently under development as part of the broader [**MC<sup>2</sup>** effort](https://github.com/mc2-project/mc2) (i.e., **M**ultiparty **C**ollaboration and **C**oopetition) by the UC Berkeley [RISE Lab](https://rise.cs.berkeley.edu/).
 
 **NOTE:** The Secure XGBoost library is a research prototype, and has not yet received independent code review. Please feel free to reach out to us if you would like to use Secure XGBoost for your applications. We also welcome contributions to the project.
+
+## Table of Contents
+[Installation](#installation)
+[Usage](#usage)
+[Documentation](#documentation)
+[Contact](#contact)
 
 ## Installation
 1. Install the Open Enclave SDK (0.8 or higher) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). Then configure the required environment variables.
@@ -55,44 +63,44 @@ This project is currently under development as part of the broader [**MC<sup>2</
 ## Usage
 For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible.
 
-	```python
-	# Replace the XGBoost import with securexgboost
-	# import xgboost as xgb
-	import securexgboost as xgb
+```python
+# Replace the XGBoost import with securexgboost
+# import xgboost as xgb
+import securexgboost as xgb
 
-	# Generate a key and use it to encrypt data
-    KEY_FILE = "key.txt"
-    xgb.generate_client_key(KEY_FILE)
-    xgb.encrypt_file("demo/data/agaricus.txt.train", "demo/data/train.enc", KEY_FILE)
-    xgb.encrypt_file("demo/data/agaricus.txt.test", "demo/data/test.enc", KEY_FILE)
+# Generate a key and use it to encrypt data
+KEY_FILE = "key.txt"
+xgb.generate_client_key(KEY_FILE)
+xgb.encrypt_file("demo/data/agaricus.txt.train", "demo/data/train.enc", KEY_FILE)
+xgb.encrypt_file("demo/data/agaricus.txt.test", "demo/data/test.enc", KEY_FILE)
 
-	# Initialize client and connect to enclave
-    xgb.init_client(user_name="user1",
-                    sym_key_file="key.txt",
-                    priv_key_file="config/user1.pem",
-                    cert_file="config/user1.crt")
-    xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed")
+# Initialize client and connect to enclave
+xgb.init_client(user_name="user1",
+				sym_key_file="key.txt",
+				priv_key_file="config/user1.pem",
+				cert_file="config/user1.crt")
+xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed")
 
-	# Remote attestation to authenticate enclave
-	xgb.attest()
+# Remote attestation to authenticate enclave
+xgb.attest()
 
-	# Load the encrypted data and associate it with your user
-    dtrain = xgb.DMatrix({"user1": "demo/data/train.enc"})
-    dtest = xgb.DMatrix({"user1": "demo/data/test.enc"})
+# Load the encrypted data and associate it with your user
+dtrain = xgb.DMatrix({"user1": "demo/data/train.enc"})
+dtest = xgb.DMatrix({"user1": "demo/data/test.enc"})
 
-    params = {
-    	"objective": "binary:logistic",
-		"gamma": "0.1",
-		"max_depth": "3"
-    }
+params = {
+	"objective": "binary:logistic",
+	"gamma": "0.1",
+	"max_depth": "3"
+}
 
-	# Train a model 
-	num_rounds = 5
-	booster = xgb.train(params, dtrain, num_rounds)
+# Train a model 
+num_rounds = 5
+booster = xgb.train(params, dtrain, num_rounds)
 
-	# Get encrypted predictions and decrypt them
-	predictions, num_preds = booster.predict(dtest)
-	```
+# Get encrypted predictions and decrypt them
+predictions, num_preds = booster.predict(dtest)
+```
 
 ## Documentation
 
