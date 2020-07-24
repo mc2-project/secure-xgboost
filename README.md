@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
-Secure XGBoost is a library that enables **collaborative training and inference of [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. by leveraging hardware enclaves and data-oblivious algorithms. 
+Secure XGBoost is a library that enables **collaborative training and inference of [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. by leveraging secure enclaves and data-oblivious algorithms. 
 
 In a nutshell, data owners can use Secure XGBoost to train a model on a remote server _without_ revealing the underlying data to the remote server. Furthermore, multiple data owners can use the library to _collaboratively_ train a model on their collective data, without exposing their individual data to each other.
 ![Alt Text](doc/images/workflow.gif)
@@ -16,10 +16,28 @@ This project is currently under development as part of the broader [**MC<sup>2</
 **NOTE:** The Secure XGBoost library is a research prototype, and has not yet received independent code review. Please feel free to reach out to us if you would like to use Secure XGBoost for your applications. We also welcome contributions to the project.
 
 ## Table of Contents
-[Installation](#installation)
-[Usage](#usage)
-[Documentation](#documentation)
-[Contact](#contact)
+* [Background](#background)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Documentation](#documentation)
+* [Contact](#contact)
+
+## Background
+### Secure Enclaves
+Secure enclaves are a recent advance in computer processor technology that enables the creation of a secure region of memory (called an enclave) on an otherwise untrusted machine. Any data or software placed within the enclave is isolated from the rest of the system. No other process on the same processor – not even privileged software such as the OS or the hypervisor – can access that memory. Examples of secure enclave technology include Intel SGX, ARM TrustZone, and AMD Memory Encryption.
+
+Moreover, enclaves typically support a feature called remote attestation. This feature enables clients to cryptographically verify that an enclave in the cloud is running trusted, unmodified code.
+
+Secure XGBoost builds upon the Open Enclave SDK – an open source SDK that provides a single unified abstraction across different enclave technologies. The use of Open Enclave enables our library to be compatible with many different enclave backends, such as Intel SGX and OP-TEE.
+
+### Data-Oblivious Algorithms
+On top of enclaves, Secure XGBoost adds a second layer of security that additionally protects the data and computation against a large class of attacks on enclaves.
+
+Researchers have shown that attackers may be able to learn sensitive information about the data within SGX enclaves by leveraging auxiliary sources of leakage (or “side-channels”), even though they can’t directly observe the data. Memory access patterns are an example of such a side-channel.
+
+In Secure XGBoost, we design and implement data-oblivious algorithms for model training and inference. At a high level, our algorithms produce an identical sequence of memory accesses, regardless of the input data. As a result, the memory access patterns reveal no information about the underlying data to the attacker.
+
+Unfortunately, the extra security comes at the cost of performance. If such attacks fall outside the users’ threat model, they can disable this extra protection.
 
 ## Installation
 1. Install the Open Enclave SDK (0.8 or higher) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). Then configure the required environment variables.
@@ -61,13 +79,16 @@ This project is currently under development as part of the broader [**MC<sup>2</
 	```
 
 ## Usage
+To use Secure XGBoost, replace the XGBoost import.
+
+```python
+# import xgboost as xgb
+import securexgboost as xgb
+```
+
 For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible.
 
 ```python
-# Replace the XGBoost import with securexgboost
-# import xgboost as xgb
-import securexgboost as xgb
-
 # Generate a key and use it to encrypt data
 KEY_FILE = "key.txt"
 xgb.generate_client_key(KEY_FILE)
@@ -103,7 +124,6 @@ predictions, num_preds = booster.predict(dtest)
 ```
 
 ## Documentation
-
 For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
 
 ## Contact
