@@ -19,7 +19,7 @@ This project is currently under development as part of the broader [**MC<sup>2</
 * [Installation](#installation)
 * [Usage](#usage)
 * [Documentation](#documentation)
-* [Contributing] (#contributing)
+* [Contributing](#contributing)
 * [Contact](#contact)
 
 ## Background
