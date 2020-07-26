@@ -39,51 +39,49 @@ In Secure XGBoost, we design and implement data-oblivious algorithms for model t
 Unfortunately, the extra security comes at the cost of performance. If such attacks fall outside the users’ threat model, they can disable this extra protection.
 
 ## Installation
-1. Install the Open Enclave SDK (0.8.2) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). 
+1. Install the Open Enclave SDK (0.8.2) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3, install Open Enclave version 0.8.2 by specifying the version:
 
-**Note**: In Step 3, install Open Enclave version 0.8.2 by specifying the version:
-
-    ```sh
-    sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.8.2
-    ```
+```sh
+sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.8.2
+```
 
 Then configure the required environment variables.
 
-	```sh
-	source /opt/openenclave/share/openenclave/openenclaverc
-	```
+```sh
+source /opt/openenclave/share/openenclave/openenclaverc
+```
 
 2. Install CMake and other Secure XGBoost dependencies.
 
-	```sh
-	wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
-	sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
+```sh
+wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
+sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
-	sudo apt-get install -y libmbedtls-dev python3-pip
-	pip3 install numpy pandas sklearn numproto grpcio grpcio-tools   
-	```
+sudo apt-get install -y libmbedtls-dev python3-pip
+pip3 install numpy pandas sklearn numproto grpcio grpcio-tools   
+```
 
 3. Clone Secure XGBoost.
 
-	```sh
-	git clone https://github.com/mc2-project/secure-xgboost.git
-	```
+```sh
+git clone https://github.com/mc2-project/secure-xgboost.git
+```
 
 4. Before building, you may choose to configure the [build parameters](https://secure-xgboost.readthedocs.io/en/latest/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
 
 5. Build Secure XGBoost and install the Python package.
 
-	```sh
-	cd secure-xgboost
-	mkdir build
+```sh
+cd secure-xgboost
+mkdir build
 
-	cd build
-	cmake ..
-	make -j4
+cd build
+cmake ..
+make -j4
 
-	cd ../python-package
-	sudo python3 setup.py install
-	```
+cd ../python-package
+sudo python3 setup.py install
+```
 
 ## Usage
 To use Secure XGBoost, replace the XGBoost import.
