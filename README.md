@@ -12,7 +12,7 @@ Data owners can use Secure XGBoost to train a model on a remote server, e.g., th
 
 This project is currently under development as part of the broader [**MC<sup>2</sup>** effort](https://github.com/mc2-project/mc2) (i.e., **M**ultiparty **C**ollaboration and **C**oopetition) by the UC Berkeley [RISE Lab](https://rise.cs.berkeley.edu/).
 
-**NOTE:** The Secure XGBoost library is a research prototype, and has not yet received independent code review. Please feel free to reach out to us if you would like to use Secure XGBoost for your applications. We also welcome contributions to the project.
+**NOTE:** The Secure XGBoost library is a research prototype, and has not yet received independent code review. 
 
 ## Table of Contents
 * [Background](#background)
@@ -45,13 +45,13 @@ Unfortunately, the extra security comes at the cost of performance. If such atta
     sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.8.2
     ```
 
-Then configure the required environment variables.
+2. Configure the required environment variables.
 
     ```sh
     source /opt/openenclave/share/openenclave/openenclaverc
     ```
 
-2. Install CMake and other Secure XGBoost dependencies.
+3. Install CMake and other Secure XGBoost dependencies.
 
     ```sh
     wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
@@ -61,15 +61,15 @@ Then configure the required environment variables.
     pip3 install numpy pandas sklearn numproto grpcio grpcio-tools   
     ```
 
-3. Clone Secure XGBoost.
+4. Clone Secure XGBoost.
 
     ```sh
     git clone https://github.com/mc2-project/secure-xgboost.git
     ```
 
-4. Before building, you may choose to configure the [build parameters](https://secure-xgboost.readthedocs.io/en/latest/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
+5. Before building, you may choose to configure the [build parameters](https://secure-xgboost.readthedocs.io/en/latest/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
 
-5. Build Secure XGBoost and install the Python package.
+6. Build Secure XGBoost and install the Python package.
 
     ```sh
     cd secure-xgboost
