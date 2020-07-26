@@ -6,9 +6,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
-Secure XGBoost is a library that enables the **collaborative training and inference of [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data** by leveraging secure enclaves and data-oblivious algorithms. 
+Secure XGBoost is a library that leverages secure enclaves and data-oblivious algorithms to enable the **collaborative training of and inference using [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. 
 
-Data owners can use Secure XGBoost to train a model on a remote server _without_ revealing the underlying data to the remote server. Collaborating data owners can use the library to jointly train a model on their collective data without exposing their individual data to each other.
+Data owners can use Secure XGBoost to train a model on a remote server, e.g., the cloud, _without_ revealing the underlying data to the remote server. Collaborating data owners can use the library to jointly train a model on their collective data without exposing their individual data to each other.
 ![Alt Text](doc/images/workflow.gif)
 
 This project is currently under development as part of the broader [**MC<sup>2</sup>** effort](https://github.com/mc2-project/mc2) (i.e., **M**ultiparty **C**ollaboration and **C**oopetition) by the UC Berkeley [RISE Lab](https://rise.cs.berkeley.edu/).
@@ -20,6 +20,7 @@ This project is currently under development as part of the broader [**MC<sup>2</
 * [Installation](#installation)
 * [Usage](#usage)
 * [Documentation](#documentation)
+* [Contributing] (#contributing)
 * [Contact](#contact)
 
 ## Background
@@ -127,12 +128,9 @@ predictions, num_preds = booster.predict(dtest)
 For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
 
 ## Contributing
-We welcome contributions to our project! Please feel free to open an issue and/or submit a pull request to address a bug or feature request.
-* [GitHub Issues](https://github.com/mc2-project/secure-xgboost/issues): For reporting bugs and feature requests.
-* [Pull Requests](https://github.com/mc2-project/secure-xgboost/pulls): For submitting code contributions.
+We welcome contributions to our project! Please feel free to open an issue and/or submit a pull request. 
+* [GitHub Issues](https://github.com/mc2-project/secure-xgboost/issues): For bug reports and feature requests.
+* [Pull Requests](https://github.com/mc2-project/secure-xgboost/pulls): For code contributions.
 
 ## Contact
-If you would like to know more about our project or have questions, please open an issue or contact us at:
-* Rishabh Poddar (rishabhp@eecs.berkeley.edu)
-* Chester Leung (chester@eecs.berkeley.edu)
-* Wenting Zheng (wzheng@eecs.berkeley.edu)
+Contact us at mc2-dev@googlegroups.com.
