@@ -77,7 +77,7 @@ else (USE_CUDA)
   add_library(objxgboost OBJECT ${CPU_SOURCES} ${PLUGINS_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_u.c)
   # add_library(objxgboost STATIC ${CPU_SOURCES} ${PLUGINS_SOURCES})
   # add_library(objxgboost SHARED ${CPU_SOURCES} ${PLUGINS_SOURCES})
-  target_link_libraries(objxgboost openenclave::oehost ${LINKED_LIBRARIES_PRIVATE})
+  target_link_libraries(objxgboost openenclave::oehostapp ${LINKED_LIBRARIES_PRIVATE})
 endif (USE_CUDA)
 
 target_include_directories(objxgboost
