@@ -19,8 +19,7 @@ This project is currently under development as part of the broader [**MC<sup>2</
 * [Installation](#installation)
 * [Usage](#usage)
 * [Documentation](#documentation)
-* [Contributing](#contributing)
-* [Contact](#contact)
+* [Getting Involved](#getting_involved)
 
 ## Background
 ### Secure Enclaves
@@ -126,10 +125,7 @@ predictions, num_preds = booster.predict(dtest)
 ## Documentation
 For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
 
-## Contributing
-We welcome contributions to our project! Please feel free to open an issue and/or submit a pull request. 
+## Getting Involved
+* mc2-dev@googlegroups.com: For questions and general discussion
 * [GitHub Issues](https://github.com/mc2-project/secure-xgboost/issues): For bug reports and feature requests.
 * [Pull Requests](https://github.com/mc2-project/secure-xgboost/pulls): For code contributions.
-
-## Contact
-Contact us at mc2-dev@googlegroups.com.
