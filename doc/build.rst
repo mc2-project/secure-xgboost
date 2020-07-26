@@ -31,7 +31,7 @@ Installing the Open Enclave SDK
 1. Install the Open Enclave SDK (v0.8.2) and the Intel SGX DCAP driver.  
    If building on an SGX-enabled machine, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_. 
    
-   **Note**: In step 3, make sure that you install Open Enclave version 0.8.2 by specifying the version
+   **Note**: In step 3 of the instructions, make sure that you install Open Enclave version 0.8.2 by specifying the version
 
    .. code-block:: bash
 
