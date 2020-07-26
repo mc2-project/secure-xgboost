@@ -39,7 +39,15 @@ In Secure XGBoost, we design and implement data-oblivious algorithms for model t
 Unfortunately, the extra security comes at the cost of performance. If such attacks fall outside the users’ threat model, they can disable this extra protection.
 
 ## Installation
-1. Install the Open Enclave SDK (0.8 or higher) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). Then configure the required environment variables.
+1. Install the Open Enclave SDK (0.8.2) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). 
+
+**Note**: In Step 3, install Open Enclave version 0.8.2 by specifying the version:
+
+    ```sh
+    sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.8.2
+    ```
+
+Then configure the required environment variables.
 
 	```sh
 	source /opt/openenclave/share/openenclave/openenclaverc
