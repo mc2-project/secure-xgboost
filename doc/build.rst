@@ -28,14 +28,14 @@ to open an issue on `GitHub <https://github.com/mc2-project/secure-xgboost/issue
 Installing the Open Enclave SDK
 *******************************
 
-1. Install the Open Enclave SDK (v0.9) and the Intel SGX DCAP driver.  
+1. Install the Open Enclave SDK (v0.9.0) and the Intel SGX DCAP driver.  
    If building on an SGX-enabled machine, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_. 
    
-   **Note**: In step 3 of the instructions, make sure that you install Open Enclave version 0.9 by specifying the version
+   **Note**: In step 3 of the instructions, make sure that you install Open Enclave version 0.9.0 by specifying the version
 
    .. code-block:: bash
 
-   sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.9   
+   sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.9.0   
 
    .. note:: You may also build the SDK in "simulation mode" on a machine without SGX support (e.g., for local development and testing). To build in simulation mode, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Simulation.md>`_ instead. Notably, these instructions require that you skip the driver installation step.
 
