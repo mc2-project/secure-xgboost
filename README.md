@@ -39,10 +39,10 @@ In Secure XGBoost, we design and implement data-oblivious algorithms for model t
 Unfortunately, the extra security comes at the cost of performance. If such attacks fall outside the users’ threat model, they can disable this extra protection.
 
 ## Installation
-1. Install the Open Enclave SDK (0.8.2) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3 of the instructions, install Open Enclave version 0.8.2 by specifying the version:
+1. Install the Open Enclave SDK (0.9) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3 of the instructions, install Open Enclave version 0.9 by specifying the version:
 
     ```sh
-    sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.8.2
+    sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.9
     ```
 
 2. Configure the required environment variables.
@@ -91,7 +91,7 @@ To use Secure XGBoost, replace the XGBoost import.
 import securexgboost as xgb
 ```
 
-For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible.
+For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible. Note that while the below block demonstrates usage on a single machine, Secure XGBoost is meant for the client-server model of computation. More information can be found [here](https://secure-xgboost.readthedocs.io/en/latest/about.html#system-architecture).
 
 ```python
 # Generate a key and use it to encrypt data
