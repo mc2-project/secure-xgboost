@@ -91,7 +91,9 @@ To use Secure XGBoost, replace the XGBoost import.
 import securexgboost as xgb
 ```
 
-For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible. Note that while the below block demonstrates usage on a single machine, Secure XGBoost is meant for the client-server model of computation. More information can be found [here](https://secure-xgboost.readthedocs.io/en/latest/about.html#system-architecture).
+For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible. While the below block demonstrates usage on a single machine, Secure XGBoost is meant for the client-server model of computation. More information can be found [here](https://secure-xgboost.readthedocs.io/en/latest/about.html#system-architecture).
+
+**Note**: If running Secure XGBoost in simulation mode, pass in `verify=False` to the `attest()` function.
 
 ```python
 # Generate a key and use it to encrypt data
@@ -108,7 +110,8 @@ xgb.init_client(user_name="user1",
 xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed")
 
 # Remote attestation to authenticate enclave
-xgb.attest()
+# If running in simulation mode, pass in `verify=False` below
+xgb.attest(verify=True)
 
 # Load the encrypted data and associate it with your user
 dtrain = xgb.DMatrix({"user1": "demo/data/train.enc"})
