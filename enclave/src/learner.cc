@@ -23,8 +23,6 @@
 #include <xgboost/common/enum_class_param.h>
 #include <xgboost/common/timer.h>
 
-#include "xgboost_t.h"
-
 namespace {
 
 const char* kMaxDeltaStepDefaultValue = "0.7";

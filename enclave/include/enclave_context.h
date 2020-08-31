@@ -1,7 +1,11 @@
 #ifndef ENCLAVE_CONTEXT_H_
 #define ENCLAVE_CONTEXT_H_
 
+#ifdef __ENCLAVE_CONSENSUS__
+#include "xgboost_mc_t.h"
+#else
 #include "xgboost_t.h"
+#endif
 #include <enclave/crypto.h>
 #include <enclave/attestation.h>
 

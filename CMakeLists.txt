@@ -10,6 +10,8 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
+## Bindings
+option(JVM_BINDINGS "Build JVM bindings" OFF)
 
 # Build options
 set(CLIENT_LIST user1 user2
@@ -47,6 +49,8 @@ option(LVI_MITIGATION
     "Enable mitigations for LVI vulnerability" OFF)
 set(LVI_MITIGATION_BINDIR "/opt/openenclave/lvi_mitigation_bin"
     CACHE STRING "Path to LVI mitigation dependencies")
+option(CONSENSUS
+    "Enable cryptographic multiparty consensus" ON)
 
 # Generate conf file
 FILE(WRITE ${PROJECT_SOURCE_DIR}/enclave/xgboost.conf
@@ -117,3 +121,9 @@ set_default_configuration_release()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)
 add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)
+
+# This creates its own shared library `xgboost4j'.
+if (JVM_BINDINGS)
+	add_subdirectory(${PROJECT_SOURCE_DIR}/jvm-packages)
+endif (JVM_BINDINGS)
+#-- End shared library`

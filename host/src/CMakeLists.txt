@@ -1,5 +1,10 @@
 file(GLOB_RECURSE CPU_SOURCES *.cc)
 list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/cli_main.cc)
+if (CONSENSUS)
+    list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/c_api/c_api.cc)
+else (CONSENSUS)
+    list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/c_api/c_api_mc.cc)
+endif (CONSENSUS)
 
 # find_package(OpenEnclave CONFIG REQUIRED)
 include(CheckCXXSourceCompiles)
@@ -30,55 +35,28 @@ if (PLUGIN_DENSE_PARSER)
   list(APPEND PLUGINS_SOURCES ${PROJECT_SOURCE_DIR}/plugin/dense_parser/dense_libsvm.cc)
 endif (PLUGIN_DENSE_PARSER)
 
-
-
-add_custom_command(OUTPUT xgboost_u.h xgboost_u.c xgboost_args.h 
-    DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl
-  COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl)
+if (CONSENSUS)
+    add_custom_command(OUTPUT xgboost_mc_u.h xgboost_mc_u.c xgboost_mc_args.h 
+        DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl
+        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl)
+else()
+    add_custom_command(OUTPUT xgboost_u.h xgboost_u.c xgboost_args.h 
+        DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl
+        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl)
+endif()
 
 
 #-- Object library
 # Object library is necessary for jvm-package, which creates its own shared
 # library.
-if (USE_CUDA)
-  file(GLOB_RECURSE CUDA_SOURCES *.cu)
-  add_library(objxgboost OBJECT ${CPU_SOURCES} ${CUDA_SOURCES} ${PLUGINS_SOURCES})
-  target_compile_definitions(objxgboost
-    PRIVATE -DXGBOOST_USE_CUDA=1)
-  target_include_directories(objxgboost PRIVATE ${PROJECT_SOURCE_DIR}/cub/)
-  target_compile_options(objxgboost PRIVATE
-    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>
-    $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
-    $<$<COMPILE_LANGUAGE:CUDA>:-lineinfo>
-    $<$<AND:$<NOT:$<CXX_COMPILER_ID:MSVC>>,$<COMPILE_LANGUAGE:CUDA>>:--std=c++11>
-    $<$<COMPILE_LANGUAGE:CUDA>:${GEN_CODE}>)
-
-  if (USE_NCCL)
-    find_package(Nccl REQUIRED)
-    target_include_directories(objxgboost PRIVATE ${NCCL_INCLUDE_DIR})
-    target_compile_definitions(objxgboost PRIVATE -DXGBOOST_USE_NCCL=1)
-    list(APPEND SRC_LIBS ${NCCL_LIBRARY})
-  endif (USE_NCCL)
-
-  if (USE_NVTX)
-    target_include_directories(objxgboost PRIVATE "${NVTX_HEADER_DIR}")
-    target_compile_definitions(objxgboost PRIVATE -DXGBOOST_USE_NVTX=1)
-  endif (USE_NVTX)
-
-  # OpenMP is mandatory for cuda version
-  find_package(OpenMP REQUIRED)
-  target_compile_options(objxgboost PRIVATE  
-    $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=${OpenMP_CXX_FLAGS}>
-  )
-
-  set_target_properties(objxgboost PROPERTIES
-    CUDA_SEPARABLE_COMPILATION OFF)
-else (USE_CUDA)
-  add_library(objxgboost OBJECT ${CPU_SOURCES} ${PLUGINS_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_u.c)
+if (CONSENSUS)
+    add_library(objxgboost OBJECT ${CPU_SOURCES} ${PLUGINS_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_mc_u.c)
+else ()
+    add_library(objxgboost OBJECT ${CPU_SOURCES} ${PLUGINS_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_u.c)
+endif ()
   # add_library(objxgboost STATIC ${CPU_SOURCES} ${PLUGINS_SOURCES})
   # add_library(objxgboost SHARED ${CPU_SOURCES} ${PLUGINS_SOURCES})
   target_link_libraries(objxgboost openenclave::oehostapp ${LINKED_LIBRARIES_PRIVATE})
-endif (USE_CUDA)
 
 target_include_directories(objxgboost
   PRIVATE

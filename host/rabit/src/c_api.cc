@@ -8,7 +8,11 @@
 #include "../include/rabit/rabit.h"
 #include "../include/rabit/c_api.h"
 
+#ifdef __ENCLAVE_CONSENSUS__
+#include "../../../build/host/xgboost_mc_u.h"
+#else
 #include "../../../build/host/xgboost_u.h"
+#endif
 #include <enclave/enclave.h>
 
 namespace rabit {

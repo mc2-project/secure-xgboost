@@ -4,7 +4,7 @@
 
 #include <xgboost/data.h>
 #include <xgboost/learner.h>
-#include <xgboost/c_api.h>
+#include <xgboost/c_api_mc.h>
 #include <xgboost/logging.h>
 
 #include <dmlc/thread_local.h>
@@ -26,7 +26,7 @@
 #include <xgboost/common/group_data.h>
 
 #include <xgboost/common/common.h>
-#include "xgboost_t.h"
+#include "xgboost_mc_t.h"
 #include <enclave/crypto.h>
 #include "enclave_context.h"
 
@@ -442,11 +442,37 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
   API_END();
 }
 
+void check_signed_input(std::ostringstream& ss, char** signers, uint8_t** signatures, size_t* sig_lengths) {
+  std::string const& s = ss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  EnclaveContext::getInstance().verify_signatures_with_nonce(&bytes, signers, signatures, sig_lengths);
+}
+
+void get_signed_output(std::vector<uint8_t> *bytes, uint8_t** out_sig, size_t* out_sig_length) {
+  // Sign the data and copy to host
+  uint8_t* _out_sig = (uint8_t*) malloc(SIG_ALLOC_SIZE * sizeof(uint8_t));
+  size_t _out_sig_length = SIG_ALLOC_SIZE;
+  EnclaveContext::getInstance().sign_bytes_with_nonce(bytes, _out_sig,  &_out_sig_length);
+  uint8_t* host_buf  = (uint8_t*) oe_host_malloc(_out_sig_length);
+  memcpy(host_buf, _out_sig, _out_sig_length);
+  *out_sig_length = _out_sig_length;
+  *out_sig = host_buf;
+  free(_out_sig);
+}
+
 int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      char* usernames[],
                                      xgboost::bst_ulong num_files,
                                      int silent,
-                                     DMatrixHandle *out) {
+                                     uint8_t* nonce,
+                                     size_t nonce_size,
+                                     uint32_t nonce_ctr,
+                                     DMatrixHandle *out,
+                                     uint8_t** out_sig,
+                                     size_t *out_sig_length,
+                                     char **signers,
+                                     uint8_t** signatures,
+                                     size_t* sig_lengths) {
     API_BEGIN();
     bool load_row_split = false;
     if (rabit::IsDistributed()) {
@@ -454,6 +480,15 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                   << "will split data among workers";
         load_row_split = true;
     }
+
+    //signature verification
+    std::ostringstream oss;
+    oss << "XGDMatrixCreateFromEncryptedFile";
+    for (xgboost::bst_ulong i = 0; i < num_files; i++) {
+        oss << " username " << usernames[i] << " filename " << fnames[i];
+    }
+    oss << " silent " << silent;
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     char* keys[num_files];
     std::vector<const std::string> fnames_vector;
@@ -468,10 +503,18 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
     char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, usernames, num_files);
     *out = oe_host_strndup(out_str, strlen(out_str));
 
+    // sign the output
+    std::ostringstream sss;
+    sss << "handle " << out_str;
+    std::string const& s = sss.str();
+    std::vector<uint8_t> bytes(s.begin(), s.end());
+    get_signed_output(&bytes, out_sig, out_sig_length);
+
     free(out_str);
     for (int i = 0; i < num_files; ++i) {
         free(keys[i]);
     }
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 
@@ -1084,34 +1127,87 @@ XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
-                            xgboost::bst_ulong *out) {
+                            uint8_t* nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
+                            xgboost::bst_ulong *out,
+                            uint8_t** out_sig,
+                            size_t *out_sig_length,
+                            char **signers,
+                            uint8_t** signatures,
+                            size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGDMatrixNumRow " << handle;
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<xgboost::bst_ulong>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_row_);
 
+  // sign the output
+  std::ostringstream sss;
+  sss << *out;
+  std::string const& s = sss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  get_signed_output(&bytes, out_sig, out_sig_length);
+
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
-                            xgboost::bst_ulong *out) {
+                            uint8_t* nonce,
+                            size_t nonce_size,
+                            uint32_t nonce_ctr,
+                            xgboost::bst_ulong *out,
+                            uint8_t** out_sig,
+                            size_t *out_sig_length,
+                            char **signers,
+                            uint8_t** signatures,
+                            size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGDMatrixNumCol " << handle;
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   void* mat = EnclaveContext::getInstance().get_dmatrix(handle);
   *out = static_cast<size_t>(
       static_cast<std::shared_ptr<DMatrix>*>(mat)->get()->Info().num_col_);
 
+  // sign the output
+  std::ostringstream sss;
+  sss << *out;
+  std::string const& s = sss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  get_signed_output(&bytes, out_sig, out_sig_length);
+
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
 // xgboost implementation
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     xgboost::bst_ulong len,
-                    BoosterHandle *out) {
+                    uint8_t *nonce,
+                    size_t nonce_size,
+                    uint32_t nonce_ctr,
+                    BoosterHandle *out,
+                    uint8_t** out_sig,
+                    size_t *out_sig_length,
+                    char **signers,
+                    uint8_t** signatures,
+                    size_t* sig_lengths) {
   API_BEGIN();
+
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGBoosterCreate";
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   std::vector<std::shared_ptr<DMatrix> > mats;
   for (xgboost::bst_ulong i = 0; i < len; ++i) {
@@ -1124,7 +1220,15 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
   char* out_str = EnclaveContext::getInstance().add_booster(booster);
   *out = oe_host_strndup(out_str, strlen(out_str));
 
+  // sign the output
+  std::ostringstream sss;
+  sss << "handle " << out_str;
+  std::string const& s = sss.str();
+  std::vector<uint8_t> bytes(s.begin(), s.end());
+  get_signed_output(&bytes, out_sig, out_sig_length);
+
   free(out_str);
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
@@ -1139,22 +1243,53 @@ XGB_DLL int XGBoosterFree(BoosterHandle handle) {
 
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               const char *name,
-                              const char *value) {
+                              const char *value,
+                              uint8_t *nonce,
+                              size_t nonce_size,
+                              uint32_t nonce_ctr,
+                              uint8_t** out_sig,
+                              size_t *out_sig_length,
+                              char **signers,
+                              uint8_t** signatures,
+                              size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGBoosterSetParam " << handle << " " << name << "," << value;
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   void* bst = EnclaveContext::getInstance().get_booster(handle);
   static_cast<Booster*>(bst)->SetParam(name, value);
 
+  // sign the output
+  std::vector<uint8_t> bytes;
+  get_signed_output(&bytes, out_sig, out_sig_length);
+
+  CHECK_SEQUENCE_NUMBER(); 
   API_END();
 }
 
 
 XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    int iter,
-                                   DMatrixHandle dtrain) {
+                                   DMatrixHandle dtrain,
+                                   uint8_t *nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
+                                   uint8_t** out_sig,
+                                   size_t *out_sig_length,
+                                   char **signers,
+                                   uint8_t** signatures,
+                                   size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGBoosterUpdateOneIter booster_handle " << handle << " iteration " << iter << " train_data_handle " << dtrain;
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   auto *dtr =
@@ -1162,6 +1297,11 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
   bst->LazyInit();
   bst->learner()->UpdateOneIter(iter, dtr->get());
 
+  // sign the output
+  std::vector<uint8_t> bytes;
+  get_signed_output(&bytes, out_sig, out_sig_length);
+
+  CHECK_SEQUENCE_NUMBER(); 
   API_END();
 }
 
@@ -1216,10 +1356,23 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              DMatrixHandle dmat,
                              int option_mask,
                              unsigned ntree_limit,
+                             uint8_t *nonce,
+                             size_t nonce_size,
+                             uint32_t nonce_ctr,
                              xgboost::bst_ulong *len,
-                             uint8_t **out_result) {
+                             uint8_t **out_result,
+                             uint8_t** out_sig,
+                             size_t *out_sig_length,
+                             char** signers,
+                             uint8_t** signatures,
+                             size_t* sig_lengths) {
   API_BEGIN();
   CHECK_HANDLE();
+
+  // signature verification
+  std::ostringstream oss;
+  oss << "XGBoosterPredict booster_handle " << handle << " data_handle " << dmat << " option_mask " << option_mask << " ntree_limit " << ntree_limit;
+  check_signed_input(oss, signers, signatures, sig_lengths);
 
   std::vector<bst_float>&preds =
     XGBAPIThreadLocalStore::Get()->ret_vec_float;
@@ -1265,14 +1418,24 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
   *len = static_cast<xgboost::bst_ulong>(preds.size());
   *out_result = (uint8_t*)host_buf;
 
+  // sign the output
+  std::vector<uint8_t> bytes(buf, buf + buf_len);
+  get_signed_output(&bytes, out_sig, out_sig_length);
+
   free(buf);
+  CHECK_SEQUENCE_NUMBER();
   API_END();
 }
 
 // TODO(rishabh): Server can replace file contents
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
     CHECK_HANDLE();
+
+    // signature verification
+    std::ostringstream oss;
+    oss << "XGBoosterLoadModel handle " << handle << " filename " << fname;
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname, "r"));
     size_t buf_len;
@@ -1306,12 +1469,22 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
     static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle))->LoadModel(&fs);
     free(output);
 
+    // sign the output
+    std::vector<uint8_t> bytes;
+    get_signed_output(&bytes, out_sig, out_sig_length);
+
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, uint8_t** signatures, size_t* sig_lengths) {
     API_BEGIN();
     CHECK_HANDLE();
+
+    // check signature
+    std::ostringstream oss;
+    oss << "XGBoosterSaveModel handle " << handle << " filename " << fname;
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
     raw_str.resize(0);
@@ -1344,15 +1517,33 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
     fs->Write(buf, buf_len);
     free(buf);
 
+    // sign the output
+    // TODO(rishabh): Should we include the ciphertext in the signature?
+    std::vector<uint8_t> bytes;
+    get_signed_output(&bytes, out_sig, out_sig_length);
+
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 
 // TODO(rishabh): Add nonce + output signatures
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          const void* buf,
-                                         xgboost::bst_ulong len) {
+                                         xgboost::bst_ulong len,
+                                         uint8_t** out_sig,
+                                         size_t *out_sig_length,
+                                         char **signers,
+                                         uint8_t** signatures,
+                                         size_t* sig_lengths) {
     API_BEGIN();
     CHECK_HANDLE();
+
+    // check signature
+    std::ostringstream oss;
+    oss << "handle " << handle;
+    char* buff = strdup(oss.str().c_str());
+    // FIXME: Add buf to signature
+    EnclaveContext::getInstance().verifyClientSignatures((uint8_t*)buf, len, signers, signatures, sig_lengths);
 
     len -= (CIPHER_IV_SIZE + CIPHER_TAG_SIZE);
 
@@ -1380,13 +1571,26 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
+                                 uint8_t* nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  xgboost::bst_ulong* out_len,
-                                 const char** out_dptr) {
+                                 const char** out_dptr,
+                                 uint8_t** out_sig,
+                                 size_t *out_sig_length,
+                                 char** signers,
+                                 uint8_t** signatures,
+                                 size_t* sig_lengths) {
     std::string& raw_str = XGBAPIThreadLocalStore::Get()->ret_str;
     raw_str.resize(0);
 
     API_BEGIN();
     CHECK_HANDLE();
+
+    // check signature
+    std::ostringstream oss;
+    oss << "XGBoosterGetModelRaw handle " << handle;
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     common::MemoryBufferStream fo(&raw_str);
     auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
@@ -1415,7 +1619,12 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     *out_dptr = (const char*)host_buf;
     *out_len = static_cast<xgboost::bst_ulong>(raw_str.length()) + CIPHER_IV_SIZE + CIPHER_TAG_SIZE;
 
+    // sign the output
+    std::vector<uint8_t> bytes(buf, buf + buf_len);
+    get_signed_output(&bytes, out_sig, out_sig_length);
+
     free(buf);
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 
@@ -1476,6 +1685,9 @@ inline void XGBoostDumpModelImpl(
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
                        const char* fmap,
                        int with_stats,
+                       uint8_t* nonce,
+                       size_t nonce_size,
+                       uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
                        const char*** out_models) {
   LOG(FATAL) << "XGBoosterDumpModel not supported";
@@ -1486,10 +1698,21 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  const char* fmap,
                                  int with_stats,
                                  const char *format,
+                                 uint8_t *nonce,
+                                 size_t nonce_size,
+                                 uint32_t nonce_ctr,
                                  xgboost::bst_ulong* len,
-                                 const char*** out_models) {
+                                 const char*** out_models,
+                                 uint8_t** out_sig,
+                                 size_t *out_sig_length,
+                                 char **signers,
+                                 uint8_t** signatures,
+                                 size_t* sig_lengths) {
     API_BEGIN();
     CHECK_HANDLE();
+    std::ostringstream oss;
+    oss << "XGBoosterDumpModelEx booster_handle " << handle << " fmap " << fmap << " with_stats " << with_stats << " dump_format " << format;
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     FeatureMap featmap;
     if (strlen(fmap) != 0) {
@@ -1500,6 +1723,16 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
     }
     XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
 
+    // sign the output
+    std::ostringstream sss;
+    for (int i = 0; i < *len; i++) {
+      sss << (*out_models)[i];
+    }
+    std::string const& s = sss.str();
+    std::vector<uint8_t> bytes(s.begin(), s.end());
+    get_signed_output(&bytes, out_sig, out_sig_length);
+
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 
@@ -1509,8 +1742,17 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
                                    const char** fname,
                                    const char** ftype,
                                    int with_stats,
+                                   uint8_t* nonce,
+                                   size_t nonce_size,
+                                   uint32_t nonce_ctr,
                                    xgboost::bst_ulong* len,
-                                   const char*** out_models) {
+                                   const char*** out_models,
+                                   uint8_t** out_sig,
+                                   size_t *out_sig_length,
+                                   char **signers,
+                                   size_t signer_lengths[],
+                                   uint8_t* signatures[],
+                                   size_t sig_lengths[]) {
   LOG(FATAL) << "XGBoosterDumpModelWithFeatures not supported";
   //return XGBoosterDumpModelExWithFeatures(handle, fnum, fname, ftype, with_stats,
   //                                 "text", len, out_models);
@@ -1542,10 +1784,26 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              const char** ftype,
                                              int with_stats,
                                              const char *format,
+                                             uint8_t* nonce,
+                                             size_t nonce_size,
+                                             uint32_t nonce_ctr,
                                              xgboost::bst_ulong* len,
-                                             const char*** out_models) {
+                                             const char*** out_models,
+                                             uint8_t** out_sig,
+                                             size_t *out_sig_length,
+                                             char **signers,
+                                             uint8_t** signatures,
+                                             size_t* sig_lengths) {
     API_BEGIN();
     CHECK_HANDLE();
+
+    //check signature
+    std::ostringstream oss;
+    oss << "XGBoosterDumpModelExWithFeatures booster_handle " << handle << " flen " << fnum << " with_stats " << with_stats << " dump_format " << format;
+    for (int i = 0; i <fnum; i++){
+        oss << " fname " << fname[i] << " ftype " << ftype[i];
+    }
+    check_signed_input(oss, signers, signatures, sig_lengths);
 
     FeatureMap featmap;
     for (int i = 0; i < fnum; ++i) {
@@ -1553,6 +1811,16 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     }
     XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
 
+    // sign the output
+    std::ostringstream sss;
+    for (int i = 0; i < *len; i++) {
+      sss << (*out_models)[i];
+    }
+    std::string const& s = sss.str();
+    std::vector<uint8_t> bytes(s.begin(), s.end());
+    get_signed_output(&bytes, out_sig, out_sig_length);
+
+    CHECK_SEQUENCE_NUMBER();
     API_END();
 }
 

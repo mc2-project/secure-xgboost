@@ -18,8 +18,6 @@
 #include <xgboost/data/sparse_page_dmatrix.h>
 #endif  // DMLC_ENABLE_STD_THREAD
 
-#include "xgboost_t.h"
-
 namespace dmlc {
 DMLC_REGISTRY_ENABLE(::xgboost::data::SparsePageFormatReg);
 }  // namespace dmlc

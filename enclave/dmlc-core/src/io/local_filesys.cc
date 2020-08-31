@@ -22,7 +22,6 @@ extern "C" {
 
 #include <cstring>
 
-#include "xgboost_t.h"
 #include <xgboost/common/common.h>
 
 

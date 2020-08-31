@@ -52,12 +52,21 @@ endif()
 message("../host/dmlc-core/cmake/build_config.h.in -> ${PROJECT_SOURCE_DIR}/../host/dmlc-core/include/dmlc/build_config.h")
 configure_file("../host/dmlc-core/cmake/build_config.h.in" "${PROJECT_SOURCE_DIR}/../host/dmlc-core/include/dmlc/build_config.h")
 
-add_custom_command(OUTPUT xgboost_t.h xgboost_t.c xgboost_args.h 
-    DEPENDS ${PROJECT_SOURCE_DIR}/xgboost.edl
-    COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost.edl)
+if (CONSENSUS)
+    list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/c_api/c_api.cc)
+    add_custom_command(OUTPUT xgboost_mc_t.h xgboost_mc_t.c xgboost_mc_args.h 
+        DEPENDS ${PROJECT_SOURCE_DIR}/xgboost_mc.edl
+        COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost_mc.edl)
 
-add_executable(xgboost_enclave ${PROJECT_SOURCE_DIR}/ecalls.cpp ${CPU_SOURCES} ${RABIT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_t.c)
+    add_executable(xgboost_enclave ${PROJECT_SOURCE_DIR}/ecalls_mc.cpp ${CPU_SOURCES} ${RABIT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_mc_t.c)
+else()
+    list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/c_api/c_api_mc.cc)
+    add_custom_command(OUTPUT xgboost_t.h xgboost_t.c xgboost_args.h 
+        DEPENDS ${PROJECT_SOURCE_DIR}/xgboost.edl
+        COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost.edl)
 
+    add_executable(xgboost_enclave ${PROJECT_SOURCE_DIR}/ecalls.cpp ${CPU_SOURCES} ${RABIT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_t.c)
+endif()
 
 target_include_directories(xgboost_enclave
   PRIVATE
@@ -103,6 +112,9 @@ endif(SIMULATE)
 if(OBLIVIOUS)
   target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_OBLIVIOUS__)
 endif(OBLIVIOUS)
+if(CONSENSUS)
+    target_compile_definitions(xgboost_enclave PUBLIC -D__ENCLAVE_CONSENSUS__)
+endif(CONSENSUS)
 
 if (LVI_MITIGATION)
     # Helper to enable compiler options for LVI mitigation.
