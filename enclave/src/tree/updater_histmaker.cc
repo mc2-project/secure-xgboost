@@ -10,9 +10,9 @@
 #include <vector>
 #include <algorithm>
 
-#include <xgboost/common/quantile.h>
-#include <xgboost/common/group_data.h>
-#include <xgboost/tree/updater_basemaker-inl.h>
+#include "../common/quantile.h"
+#include "../common/group_data.h"
+#include "./updater_basemaker-inl.h"
 
 namespace xgboost {
 namespace tree {

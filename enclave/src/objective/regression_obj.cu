@@ -12,10 +12,10 @@
 #include <memory>
 #include <vector>
 
-#include <xgboost/common/span.h>
-#include <xgboost/common/transform.h>
-#include <xgboost/common/common.h>
-#include <xgboost/common/host_device_vector.h>
+#include "../common/span.h"
+#include "../common/transform.h"
+#include "../common/common.h"
+#include "../common/host_device_vector.h"
 #include "./regression_loss.h"
 
 

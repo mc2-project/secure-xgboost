@@ -1,7 +1,7 @@
 /*
  * Modifications Copyright 2020 by Secure XGBoost Contributors
  */
-#include <xgboost/common/obl_primitives.h>
+#include <enclave/obl_primitives.h>
 
 #include <iostream>
 

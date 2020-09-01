@@ -7,7 +7,7 @@
 #include <dmlc/omp.h>
 #include <xgboost/logging.h>
 #include <algorithm>
-#include <xgboost/common/math.h>
+#include "../common/math.h"
 
 namespace xgboost {
 namespace obj {

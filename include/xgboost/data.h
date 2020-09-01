@@ -19,9 +19,9 @@
 #include <vector>
 #include "./base.h"
 
-#include "common/span.h"
-#include "common/group_data.h"
-#include "common/host_device_vector.h"
+#include "../../enclave/src/common/span.h"
+#include "../../enclave/src/common/group_data.h"
+#include "../../enclave/src/common/host_device_vector.h"
 
 namespace xgboost {
 // forward declare learner.

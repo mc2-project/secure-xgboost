@@ -5,8 +5,8 @@
  */
 #include <dmlc/thread_local.h>
 
-#include <xgboost/common/common.h>
-#include <xgboost/common/random.h>
+#include "common.h"
+#include "random.h"
 
 namespace xgboost {
 namespace common {

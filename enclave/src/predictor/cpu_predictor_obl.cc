@@ -8,8 +8,8 @@
 #include <xgboost/tree_model.h>
 #include <xgboost/tree_updater.h>
 #include "dmlc/logging.h"
-#include <xgboost/common/host_device_vector.h>
-#include <xgboost/common/quantile.h>
+#include "../common/host_device_vector.h"
+#include "../common/quantile.h"
 
 namespace xgboost {
 namespace predictor {

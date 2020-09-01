@@ -17,7 +17,7 @@
 #include <cstring>
 #include <iostream>
 #include <vector>
-#include "obl_primitives.h"
+#include <enclave/obl_primitives.h>
 
 namespace xgboost {
 namespace common {

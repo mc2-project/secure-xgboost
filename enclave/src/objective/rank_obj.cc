@@ -10,8 +10,8 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
-#include <xgboost/common/math.h>
-#include <xgboost/common/random.h>
+#include "../common/math.h"
+#include "../common/random.h"
 
 namespace xgboost {
 namespace obj {

@@ -2,7 +2,7 @@
  * Modifications Copyright 2020 by Secure XGBoost Contributors
  */
 #ifdef __ENCLAVE_OBLIVIOUS__
-#include <xgboost/common/quantile.h>
+#include "quantile.h"
 
 namespace xgboost {
 namespace common {

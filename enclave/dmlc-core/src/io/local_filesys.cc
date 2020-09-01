@@ -22,8 +22,6 @@ extern "C" {
 
 #include <cstring>
 
-#include <xgboost/common/common.h>
-
 
 namespace dmlc {
 namespace io {

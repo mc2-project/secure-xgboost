@@ -5,7 +5,7 @@
  */
 #include <xgboost/base.h>
 #include <xgboost/logging.h>
-#include <xgboost/data/sparse_page_writer.h>
+#include "sparse_page_writer.h"
 
 #if DMLC_ENABLE_STD_THREAD
 namespace xgboost {

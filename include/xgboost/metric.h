@@ -15,7 +15,7 @@
 
 #include "./data.h"
 #include "./base.h"
-#include "common/host_device_vector.h"
+#include "../../enclave/src/common/host_device_vector.h"
 
 namespace xgboost {
 /*!

@@ -22,7 +22,7 @@
 #include "./data.h"
 #include "./logging.h"
 #include "./feature_map.h"
-#include "common/obl_primitives.h"
+#include <enclave/obl_primitives.h>
 
 namespace xgboost {
 

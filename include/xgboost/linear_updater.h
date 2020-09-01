@@ -11,8 +11,8 @@
 #include <utility>
 #include <vector>
 
-#include "common/host_device_vector.h"
-#include "gbm/gblinear_model.h"
+#include "../../enclave/src/common/host_device_vector.h"
+#include "../../enclave/src/gbm/gblinear_model.h"
 
 
 namespace xgboost {

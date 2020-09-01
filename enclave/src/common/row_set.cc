@@ -1,4 +1,4 @@
-#include <xgboost/common/row_set.h>
+#include "row_set.h"
 
 namespace xgboost {
 namespace common {

@@ -5,7 +5,7 @@
 
 #include <xgboost/linear_updater.h>
 #include "./param.h"
-#include <xgboost/common/timer.h>
+#include "../common/timer.h"
 #include "coordinate_common.h"
 
 namespace xgboost {

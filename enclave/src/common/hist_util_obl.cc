@@ -10,11 +10,11 @@
 #include <numeric>
 #include <vector>
 
-#include <xgboost/common/random.h>
-#include <xgboost/common/column_matrix.h>
-#include <xgboost/common/hist_util.h>
-#include <xgboost/common/quantile.h>
-#include <xgboost/tree/updater_quantile_hist.h>
+#include "./random.h"
+#include "./column_matrix.h"
+#include "./hist_util.h"
+#include "./quantile.h"
+#include "./../tree/updater_quantile_hist.h"
 
 #if defined(XGBOOST_MM_PREFETCH_PRESENT)
   #include <xmmintrin.h>

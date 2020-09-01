@@ -7,15 +7,15 @@
 #include <xgboost/logging.h>
 #include <dmlc/registry.h>
 #include <cstring>
-#include <xgboost/data/sparse_page_writer.h>
-#include <xgboost/data/simple_dmatrix.h>
-#include <xgboost/data/simple_csr_source.h>
-#include <xgboost/common/common.h>
-#include <xgboost/common/io.h>
+#include "./sparse_page_writer.h"
+#include "./simple_dmatrix.h"
+#include "./simple_csr_source.h"
+#include "../common/common.h"
+#include "../common/io.h"
 
 #if DMLC_ENABLE_STD_THREAD
-#include <xgboost/data/sparse_page_source.h>
-#include <xgboost/data/sparse_page_dmatrix.h>
+#include "./sparse_page_source.h"
+#include "./sparse_page_dmatrix.h"
 #endif  // DMLC_ENABLE_STD_THREAD
 
 namespace dmlc {
