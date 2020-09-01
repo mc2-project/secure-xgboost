@@ -6,7 +6,7 @@
  * \author Philip Cho
  */
 
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
 
 #ifndef XGBOOST_COMMON_COLUMN_MATRIX_H_
 #define XGBOOST_COMMON_COLUMN_MATRIX_H_
@@ -144,15 +144,28 @@ class ColumnMatrix {
     std::vector<size_t> num_nonzeros;
     num_nonzeros.resize(nfeature);
     std::fill(num_nonzeros.begin(), num_nonzeros.end(), 0);
+
+    // For oblivious.
+    row_wise_index_.resize(nrow * nfeature);
+    std::fill(row_wise_index_.begin(), row_wise_index_.end(),
+              std::numeric_limits<uint32_t>::max());
+    nfeature_ = nfeature;
+
     for (size_t rid = 0; rid < nrow; ++rid) {
       const size_t ibegin = gmat.row_ptr[rid];
       const size_t iend = gmat.row_ptr[rid + 1];
       size_t fid = 0;
       for (size_t i = ibegin; i < iend; ++i) {
+        // NOTE: For dense data structure, below codes are already oblivious,
+        // given the |gmat.index| in one instance are already sorted.
         const uint32_t bin_id = gmat.index[i];
         while (bin_id >= gmat.cut.row_ptr[fid + 1]) {
           ++fid;
         }
+
+        // For oblivious. Note this contains index_base.
+        row_wise_index_[rid * nfeature + fid] = bin_id;
+
         if (type_[fid] == kDenseColumn) {
           uint32_t* begin = &index_[boundary_[fid].index_begin];
           begin[rid] = bin_id - index_base_[fid];
@@ -176,6 +189,13 @@ class ColumnMatrix {
     return c;
   }
 
+  inline uint32_t OGetRowFeatureBinIndex(size_t row_idx, int fid) const {
+    // NOTE: `oaccess` between [row_idx * nfeature, (row_idx + 1) * nfeature]
+    // return row_wise_index_[row_idx * nfeature_ + fid];
+    return ObliviousArrayAccess(row_wise_index_.data() + row_idx * nfeature_,
+                                fid, nfeature_);
+  }
+
  private:
   struct ColumnBoundary {
     // indicate where each column's index and row_ind is stored.
@@ -192,6 +212,11 @@ class ColumnMatrix {
   SimpleArray<uint32_t> index_;  // index_: may store smaller integers; needs padding
   SimpleArray<size_t> row_ind_;
   std::vector<ColumnBoundary> boundary_;
+
+  // For oblivious.
+  // Row wise feature index, this helps reduce `oaccess` range to number of features.
+  SimpleArray<uint32_t> row_wise_index_;
+  int32_t nfeature_;
 
   // index_base_[fid]: least bin id for feature fid
   std::vector<uint32_t> index_base_;

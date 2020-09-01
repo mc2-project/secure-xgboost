@@ -2,7 +2,7 @@
  * Copyright by Contributors 2017
  * Modifications Copyright 2020 by Secure XGBoost Contributors
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
 
 #include <xgboost/predictor.h>
 #include <xgboost/tree_model.h>
@@ -27,8 +27,18 @@ class CPUPredictor : public Predictor {
     p_feats->Fill(inst);
     for (size_t i = tree_begin; i < tree_end; ++i) {
       if (tree_info[i] == bst_group) {
-        int tid = trees[i]->GetLeafIndex(*p_feats, root_index);
-        psum += (*trees[i])[tid].LeafValue();
+        if (common::ObliviousEnabled()) {
+          auto leaf_value = trees[i]->OGetLeafValue(*p_feats, root_index);
+          if (common::ObliviousDebugCheckEnabled()) {
+            int tid = trees[i]->GetLeafIndex(*p_feats, root_index);
+            auto leaf_value2 = (*trees[i])[tid].LeafValue();
+            CHECK_EQ(leaf_value, leaf_value2) << leaf_value << ", " << leaf_value2;
+          }
+          psum += leaf_value;
+        } else {
+          int tid = trees[i]->GetLeafIndex(*p_feats, root_index);
+          psum += (*trees[i])[tid].LeafValue();
+        }
       }
     }
     p_feats->Drop(inst);

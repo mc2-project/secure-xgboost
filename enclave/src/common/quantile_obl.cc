@@ -1,6 +1,7 @@
 /*
  * Modifications Copyright 2020 by Secure XGBoost Contributors
  */
+#ifdef __ENCLAVE_OBLIVIOUS__
 #include <xgboost/common/quantile.h>
 
 namespace xgboost {
@@ -39,3 +40,4 @@ bool ObliviousDebugCheckEnabled() {
 
 }  // namespace common
 }  // namespace xgboost
+#endif  // __ENCLAVE_OBLIVIOUS__ 
