@@ -5,7 +5,9 @@
  * \brief Utility for fast histogram aggregation
  * \author Philip Cho, Tianqi Chen
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "hist_util_obl.h"
+#else
 
 #ifndef XGBOOST_COMMON_HIST_UTIL_H_
 #define XGBOOST_COMMON_HIST_UTIL_H_

@@ -5,7 +5,9 @@
  * \brief Quick Utility to compute subset of rows
  * \author Philip Cho, Tianqi Chen
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "row_set_obl.h"
+#else
 
 #ifndef XGBOOST_COMMON_ROW_SET_H_
 #define XGBOOST_COMMON_ROW_SET_H_

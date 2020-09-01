@@ -6,7 +6,9 @@
  * \author Philip Cho
  */
 
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "column_matrix_obl.h"
+#else
 
 #ifndef XGBOOST_COMMON_COLUMN_MATRIX_H_
 #define XGBOOST_COMMON_COLUMN_MATRIX_H_

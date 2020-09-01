@@ -5,7 +5,9 @@
  * \brief use quantized feature values to construct a tree
  * \author Philip Cho, Tianqi Chen
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "updater_quantile_hist_obl.h"
+#else
 
 #ifndef XGBOOST_TREE_UPDATER_QUANTILE_HIST_H_
 #define XGBOOST_TREE_UPDATER_QUANTILE_HIST_H_

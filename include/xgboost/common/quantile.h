@@ -5,7 +5,9 @@
  * \brief util to compute quantiles
  * \author Tianqi Chen
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "quantile_obl.h"
+#else
 
 #ifndef XGBOOST_COMMON_QUANTILE_H_
 #define XGBOOST_COMMON_QUANTILE_H_

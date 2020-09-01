@@ -5,7 +5,9 @@
  * \brief training parameters, statistics used to support tree construction.
  * \author Tianqi Chen
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "param_obl.h"
+#else
 
 #ifndef XGBOOST_TREE_PARAM_H_
 #define XGBOOST_TREE_PARAM_H_
