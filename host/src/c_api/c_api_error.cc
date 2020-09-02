@@ -1,5 +1,6 @@
 /*!
  *  Copyright (c) 2015 by Contributors
+ *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  * \file c_api_error.cc
  * \brief C error handling
  */
@@ -13,14 +14,10 @@ struct XGBAPIErrorEntry {
 
 using XGBAPIErrorStore = dmlc::ThreadLocalStore<XGBAPIErrorEntry>;
 
-const char *XGBGetLastError() {
+XGB_DLL const char *XGBGetLastError() {
   return XGBAPIErrorStore::Get()->last_error.c_str();
 }
 
 void XGBAPISetLastError(const char* msg) {
   XGBAPIErrorStore::Get()->last_error = msg;
-}
-
-void host_XGBAPISetLastError(const char* msg) {
-  XGBAPISetLastError(msg);
 }

@@ -1,5 +1,5 @@
 /*!
- * Copyright 2017 XGBoost contributors
+ * Copyright 2017-2019 XGBoost contributors
  */
 #ifndef XGBOOST_OBJECTIVE_REGRESSION_LOSS_H_
 #define XGBOOST_OBJECTIVE_REGRESSION_LOSS_H_
@@ -34,6 +34,33 @@ struct LinearSquareLoss {
   static bst_float ProbToMargin(bst_float base_score) { return base_score; }
   static const char* LabelErrorMsg() { return ""; }
   static const char* DefaultEvalMetric() { return "rmse"; }
+
+  static const char* Name() { return "reg:squarederror"; }
+};
+
+struct SquaredLogError {
+  XGBOOST_DEVICE static bst_float PredTransform(bst_float x) { return x; }
+  XGBOOST_DEVICE static bool CheckLabel(bst_float label) {
+    return label > -1;
+  }
+  XGBOOST_DEVICE static bst_float FirstOrderGradient(bst_float predt, bst_float label) {
+    predt = fmaxf(predt, -1 + 1e-6);  // ensure correct value for log1p
+    return (std::log1p(predt) - std::log1p(label)) / (predt + 1);
+  }
+  XGBOOST_DEVICE static bst_float SecondOrderGradient(bst_float predt, bst_float label) {
+    predt = fmaxf(predt, -1 + 1e-6);
+    float res = (-std::log1p(predt) + std::log1p(label) + 1) /
+                std::pow(predt + 1, 2);
+    res = fmaxf(res, 1e-6f);
+    return res;
+  }
+  static bst_float ProbToMargin(bst_float base_score) { return base_score; }
+  static const char* LabelErrorMsg() {
+    return "label must be greater than -1 for rmsle so that log(label + 1) can be valid.";
+  }
+  static const char* DefaultEvalMetric() { return "rmsle"; }
+
+  static const char* Name() { return "reg:squaredlogerror"; }
 };
 
 // logistic loss for probability regression task
@@ -60,18 +87,52 @@ struct LogisticRegression {
   }
   static bst_float ProbToMargin(bst_float base_score) {
     CHECK(base_score > 0.0f && base_score < 1.0f)
-      << "base_score must be in (0,1) for logistic loss";
+        << "base_score must be in (0,1) for logistic loss, got: " << base_score;
     return -logf(1.0f / base_score - 1.0f);
   }
   static const char* LabelErrorMsg() {
     return "label must be in [0,1] for logistic regression";
   }
   static const char* DefaultEvalMetric() { return "rmse"; }
+
+  static const char* Name() { return "reg:logistic"; }
+};
+
+struct PseudoHuberError {
+  XGBOOST_DEVICE static bst_float PredTransform(bst_float x) {
+    return x;
+  }
+  XGBOOST_DEVICE static bool CheckLabel(bst_float label) {
+    return true;
+  }
+  XGBOOST_DEVICE static bst_float FirstOrderGradient(bst_float predt, bst_float label) {
+    const float z = predt - label;
+    const float scale_sqrt = std::sqrt(1 + std::pow(z, 2));
+    return z/scale_sqrt;
+  }
+  XGBOOST_DEVICE static bst_float SecondOrderGradient(bst_float predt, bst_float label) {
+    const float scale = 1 + std::pow(predt - label, 2);
+    const float scale_sqrt = std::sqrt(scale);
+    return 1/(scale*scale_sqrt);
+  }
+  static bst_float ProbToMargin(bst_float base_score) {
+    return base_score;
+  }
+  static const char* LabelErrorMsg() {
+    return "";
+  }
+  static const char* DefaultEvalMetric() {
+    return "mphe";
+  }
+  static const char* Name() {
+    return "reg:pseudohubererror";
+  }
 };
 
 // logistic loss for binary classification task
 struct LogisticClassification : public LogisticRegression {
   static const char* DefaultEvalMetric() { return "error"; }
+  static const char* Name() { return "binary:logistic"; }
 };
 
 // logistic loss, but predict un-transformed margin
@@ -102,6 +163,8 @@ struct LogisticRaw : public LogisticRegression {
     return std::max(predt * (T(1.0f) - predt), eps);
   }
   static const char* DefaultEvalMetric() { return "auc"; }
+
+  static const char* Name() { return "binary:logitraw"; }
 };
 
 }  // namespace obj

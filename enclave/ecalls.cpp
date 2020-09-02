@@ -42,7 +42,7 @@ void free_array(char* arr[], size_t len) {
 void enclave_init(int log_verbosity) {
   std::vector<std::pair<std::string, std::string> > args;
   args.emplace_back("verbosity", std::to_string(log_verbosity));
-  xgboost::ConsoleLogger::Configure(args.cbegin(), args.cend());
+  xgboost::ConsoleLogger::Configure(args);
 
   LOG(DEBUG) << "Ecall: init";
   oe_result_t result;
@@ -238,10 +238,10 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
 }
 
 
-int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, bst_ulong *len, uint8_t **out_result) {
+int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, int training, bst_ulong *len, uint8_t **out_result) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
 
-  int ret = XGBoosterPredict(handle, dmat, option_mask, ntree_limit, len, out_result);
+  int ret = XGBoosterPredict(handle, dmat, option_mask, ntree_limit, training, len, out_result);
 
   return ret;
 }

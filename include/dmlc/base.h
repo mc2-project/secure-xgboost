@@ -93,6 +93,10 @@
 #endif
 #endif
 
+/*! \brief Whether to use modern thread local construct */
+#ifndef DMLC_MODERN_THREAD_LOCAL
+#define DMLC_MODERN_THREAD_LOCAL 1
+#endif
 
 /*! \brief whether RTTI is enabled */
 #ifndef DMLC_ENABLE_RTTI
@@ -148,6 +152,15 @@
 #define DMLC_ATTRIBUTE_UNUSED __attribute__((unused))
 #else
 #define DMLC_ATTRIBUTE_UNUSED
+#endif
+
+/*! \brief helper macro to supress Undefined Behavior Sanitizer for a specific function */
+#if defined(__clang__)
+#define DMLC_SUPPRESS_UBSAN __attribute__((no_sanitize("undefined")))
+#elif defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 409)
+#define DMLC_SUPPRESS_UBSAN __attribute__((no_sanitize_undefined))
+#else
+#define DMLC_SUPPRESS_UBSAN
 #endif
 
 /*! \brief helper macro to generate string concat */
@@ -286,7 +299,7 @@ inline const char* BeginPtr(const std::string &str) {
 /* If fopen64 is not defined by current machine,
    replace fopen64 with std::fopen. Also determine ability to print stack trace
    for fatal error and define DMLC_LOG_STACK_TRACE if stack trace can be
-   produced. Always keep this #include at the bottom of dmlc/base.h */
+   produced. Always keep this include directive at the bottom of dmlc/base.h */
 #ifdef DMLC_CORE_USE_CMAKE
 #include <dmlc/build_config.h>
 #else

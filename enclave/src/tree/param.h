@@ -1,32 +1,26 @@
 /*!
- * Copyright 2014 by Contributors
- * Modifications Copyright 2020 by Secure XGBoost Contributors
+ * Copyright 2014-2019 by Contributors
  * \file param.h
  * \brief training parameters, statistics used to support tree construction.
  * \author Tianqi Chen
  */
-#ifdef __ENCLAVE_OBLIVIOUS__
-#include "param_obl.h"
-#else
-
 #ifndef XGBOOST_TREE_PARAM_H_
 #define XGBOOST_TREE_PARAM_H_
 
-#include <dmlc/parameter.h>
-#include <xgboost/data.h>
 #include <cmath>
 #include <cstring>
 #include <limits>
 #include <string>
 #include <vector>
 
-#include "../common/quantile.h"
+#include "xgboost/parameter.h"
+#include "xgboost/data.h"
 
 namespace xgboost {
 namespace tree {
 
 /*! \brief training parameters for regression tree */
-struct TrainParam : public dmlc::Parameter<TrainParam> {
+struct TrainParam : public XGBoostParameter<TrainParam> {
   // learning step size for a time
   float learning_rate;
   // minimum loss change required for a split
@@ -56,32 +50,28 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
   float max_delta_step;
   // whether we want to do subsample
   float subsample;
+  // sampling method
+  enum SamplingMethod { kUniform = 0, kGradientBased = 1 };
+  int sampling_method;
   // whether to subsample columns in each split (node)
   float colsample_bynode;
   // whether to subsample columns in each level
   float colsample_bylevel;
   // whether to subsample columns during tree construction
   float colsample_bytree;
-  // speed optimization for dense column
-  float opt_dense_col;
   // accuracy of sketch
   float sketch_eps;
   // accuracy of sketch
   float sketch_ratio;
-  // leaf vector size
-  int size_leaf_vector;
-  // option for parallelization
-  int parallel_option;
   // option to open cacheline optimization
   bool cache_opt;
   // whether refresh updater needs to update the leaf values
   bool refresh_leaf;
-  // auxiliary data structure
+
   std::vector<int> monotone_constraints;
-  // gpu to use for single gpu algorithms
-  int gpu_id;
-  // number of GPUs to use
-  int n_gpus;
+  // Stored as a JSON string.
+  std::string interaction_constraints;
+
   // the criteria to use for ranking splits
   std::string split_evaluator;
 
@@ -157,6 +147,14 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_range(0.0f, 1.0f)
         .set_default(1.0f)
         .describe("Row subsample ratio of training instance.");
+    DMLC_DECLARE_FIELD(sampling_method)
+        .set_default(kUniform)
+        .add_enum("uniform", kUniform)
+        .add_enum("gradient_based", kGradientBased)
+        .describe(
+            "Sampling method. 0: select random training instances uniformly. "
+            "1: select random training instances with higher probability when the "
+            "gradient and hessian are larger. (cf. CatBoost)");
     DMLC_DECLARE_FIELD(colsample_bynode)
         .set_range(0.0f, 1.0f)
         .set_default(1.0f)
@@ -169,10 +167,6 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_range(0.0f, 1.0f)
         .set_default(1.0f)
         .describe("Subsample ratio of columns, resample on each tree construction.");
-    DMLC_DECLARE_FIELD(opt_dense_col)
-        .set_range(0.0f, 1.0f)
-        .set_default(1.0f)
-        .describe("EXP Param: speed optimization for dense column.");
     DMLC_DECLARE_FIELD(sketch_eps)
         .set_range(0.0f, 1.0f)
         .set_default(0.03f)
@@ -181,13 +175,6 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
         .set_lower_bound(0.0f)
         .set_default(2.0f)
         .describe("EXP Param: Sketch accuracy related parameter of approximate algorithm.");
-    DMLC_DECLARE_FIELD(size_leaf_vector)
-        .set_lower_bound(0)
-        .set_default(0)
-        .describe("Size of leaf vectors, reserved for vector trees");
-    DMLC_DECLARE_FIELD(parallel_option)
-        .set_default(0)
-        .describe("Different types of parallelization algorithm.");
     DMLC_DECLARE_FIELD(cache_opt)
         .set_default(true)
         .describe("EXP Param: Cache aware optimization.");
@@ -197,16 +184,15 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
     DMLC_DECLARE_FIELD(monotone_constraints)
         .set_default(std::vector<int>())
         .describe("Constraint of variable monotonicity");
-    DMLC_DECLARE_FIELD(gpu_id)
-        .set_lower_bound(0)
-        .set_default(0)
-        .describe("gpu to use for single gpu algorithms");
-    DMLC_DECLARE_FIELD(n_gpus)
-        .set_lower_bound(-1)
-        .set_default(1)
-        .describe("Number of GPUs to use for multi-gpu algorithms: -1=use all GPUs");
+    DMLC_DECLARE_FIELD(interaction_constraints)
+        .set_default("")
+        .describe("Constraints for interaction representing permitted interactions."
+                  "The constraints must be specified in the form of a nest list,"
+                  "e.g. [[0, 1], [2, 3, 4]], where each inner list is a group of"
+                  "indices of features that are allowed to interact with each other."
+                  "See tutorial for more information");
     DMLC_DECLARE_FIELD(split_evaluator)
-        .set_default("elastic_net,monotonic,interaction")
+        .set_default("elastic_net,monotonic")
         .describe("The criteria to use for ranking splits");
 
     // ------ From cpu quantile histogram -------.
@@ -232,29 +218,31 @@ struct TrainParam : public dmlc::Parameter<TrainParam> {
     DMLC_DECLARE_ALIAS(min_split_loss, gamma);
     DMLC_DECLARE_ALIAS(learning_rate, eta);
   }
-  /*! \brief whether need forward small to big search: default right */
-  inline bool NeedForwardSearch(float col_density, bool indicator) const {
-    return this->default_direction == 2 ||
-           (default_direction == 0 && (col_density < opt_dense_col) &&
-            !indicator);
-  }
-  /*! \brief whether need backward big to small search: default left */
-  inline bool NeedBackwardSearch(float col_density, bool indicator) const {
-    return this->default_direction != 2;
-  }
+
   /*! \brief given the loss change, whether we need to invoke pruning */
-  inline bool NeedPrune(double loss_chg, int depth) const {
-    return loss_chg < this->min_split_loss;
-  }
-  /*! \brief whether we can split with current hessian */
-  inline bool CannotSplit(double sum_hess, int depth) const {
-    return sum_hess < this->min_child_weight * 2.0;
+  bool NeedPrune(double loss_chg, int depth) const {
+    return loss_chg < this->min_split_loss ||
+           (this->max_depth != 0 && depth > this->max_depth);
   }
   /*! \brief maximum sketch size */
   inline unsigned MaxSketchSize() const {
     auto ret = static_cast<unsigned>(sketch_ratio / sketch_eps);
     CHECK_GT(ret, 0U);
     return ret;
+  }
+
+  bst_node_t MaxNodes() const {
+    if (this->max_depth == 0 && this->max_leaves == 0) {
+      LOG(FATAL) << "Max leaves and max depth cannot both be unconstrained.";
+    }
+    bst_node_t n_nodes{0};
+    if (this->max_leaves > 0) {
+      n_nodes = this->max_leaves * 2 - 1;
+    } else {
+      n_nodes = (1 << (this->max_depth + 1)) - 1;
+    }
+    CHECK_NE(n_nodes, 0);
+    return n_nodes;
   }
 };
 
@@ -312,19 +300,6 @@ XGBOOST_DEVICE inline T CalcGain(const TrainingParams &p, StatT stat) {
   return CalcGain(p, stat.GetGrad(), stat.GetHess());
 }
 
-// calculate cost of loss function with four statistics
-template <typename TrainingParams, typename T>
-XGBOOST_DEVICE inline T CalcGain(const TrainingParams &p, T sum_grad, T sum_hess,
-                                 T test_grad, T test_hess) {
-  T w = CalcWeight(sum_grad, sum_hess);
-  T ret = CalcGainGivenWeight(p, test_grad, test_hess);
-  if (p.reg_alpha == 0.0f) {
-    return ret;
-  } else {
-    return ret + p.reg_alpha * std::abs(w);
-  }
-}
-
 // calculate weight given the statistics
 template <typename TrainingParams, typename T>
 XGBOOST_DEVICE inline T CalcWeight(const TrainingParams &p, T sum_grad,
@@ -357,16 +332,22 @@ XGBOOST_DEVICE inline float CalcWeight(const TrainingParams &p, GpairT sum_grad)
 
 /*! \brief core statistics used for tree construction */
 struct XGBOOST_ALIGNAS(16) GradStats {
+  using GradType = double;
   /*! \brief sum gradient statistics */
-  double sum_grad;
+  GradType sum_grad { 0 };
   /*! \brief sum hessian statistics */
-  double sum_hess;
+  GradType sum_hess { 0 };
 
  public:
-  XGBOOST_DEVICE double GetGrad() const { return sum_grad; }
-  XGBOOST_DEVICE double GetHess() const { return sum_hess; }
+  XGBOOST_DEVICE GradType GetGrad() const { return sum_grad; }
+  XGBOOST_DEVICE GradType GetHess() const { return sum_hess; }
 
-  XGBOOST_DEVICE GradStats() : sum_grad{0}, sum_hess{0} {
+  friend std::ostream& operator<<(std::ostream& os, GradStats s) {
+    os << s.GetGrad() << "/" << s.GetHess();
+    return os;
+  }
+
+  XGBOOST_DEVICE GradStats() {
     static_assert(sizeof(GradStats) == 16,
                   "Size of GradStats is not 16 bytes.");
   }
@@ -374,7 +355,7 @@ struct XGBOOST_ALIGNAS(16) GradStats {
   template <typename GpairT>
   XGBOOST_DEVICE explicit GradStats(const GpairT &sum)
       : sum_grad(sum.GetGrad()), sum_hess(sum.GetHess()) {}
-  explicit GradStats(const double grad, const double hess)
+  explicit GradStats(const GradType grad, const GradType hess)
       : sum_grad(grad), sum_hess(hess) {}
   /*!
    * \brief accumulate statistics
@@ -399,78 +380,9 @@ struct XGBOOST_ALIGNAS(16) GradStats {
   /*! \return whether the statistics is not used yet */
   inline bool Empty() const { return sum_hess == 0.0; }
   /*! \brief add statistics to the data */
-  inline void Add(double grad, double hess) {
+  inline void Add(GradType grad, GradType hess) {
     sum_grad += grad;
     sum_hess += hess;
-  }
-};
-
-// TODO(trivialfis): Remove this class.
-struct ValueConstraint {
-  double lower_bound;
-  double upper_bound;
-  XGBOOST_DEVICE ValueConstraint()
-      : lower_bound(-std::numeric_limits<double>::max()),
-        upper_bound(std::numeric_limits<double>::max()) {}
-  inline static void Init(TrainParam *param, unsigned num_feature) {
-    param->monotone_constraints.resize(num_feature, 0);
-  }
-  template <typename ParamT>
-  XGBOOST_DEVICE inline double CalcWeight(const ParamT &param, GradStats stats) const {
-    double w = xgboost::tree::CalcWeight(param, stats);
-    if (w < lower_bound) {
-      return lower_bound;
-    }
-    if (w > upper_bound) {
-      return upper_bound;
-    }
-    return w;
-  }
-
-  template <typename ParamT>
-  XGBOOST_DEVICE inline double CalcGain(const ParamT &param, GradStats stats) const {
-    return CalcGainGivenWeight(param, stats.sum_grad, stats.sum_hess,
-                               CalcWeight(param, stats));
-  }
-
-  template <typename ParamT>
-  XGBOOST_DEVICE inline double CalcSplitGain(const ParamT &param, int constraint,
-                              GradStats left, GradStats right) const {
-    const double negative_infinity = -std::numeric_limits<double>::infinity();
-    double wleft = CalcWeight(param, left);
-    double wright = CalcWeight(param, right);
-    double gain =
-        CalcGainGivenWeight(param, left.sum_grad, left.sum_hess, wleft) +
-        CalcGainGivenWeight(param, right.sum_grad, right.sum_hess, wright);
-    if (constraint == 0) {
-      return gain;
-    } else if (constraint > 0) {
-      return wleft <= wright ? gain : negative_infinity;
-    } else {
-      return wleft >= wright ? gain : negative_infinity;
-    }
-  }
-
-  inline void SetChild(const TrainParam &param, bst_uint split_index,
-                       GradStats left, GradStats right, ValueConstraint *cleft,
-                       ValueConstraint *cright) {
-    int c = param.monotone_constraints.at(split_index);
-    *cleft = *this;
-    *cright = *this;
-    if (c == 0) {
-      return;
-    }
-    double wleft = CalcWeight(param, left);
-    double wright = CalcWeight(param, right);
-    double mid = (wleft + wright) / 2;
-    CHECK(!std::isnan(mid));
-    if (c < 0) {
-      cleft->lower_bound = mid;
-      cright->upper_bound = mid;
-    } else {
-      cleft->upper_bound = mid;
-      cright->lower_bound = mid;
-    }
   }
 };
 
@@ -478,29 +390,47 @@ struct ValueConstraint {
  * \brief statistics that is helpful to store
  *   and represent a split solution for the tree
  */
-struct SplitEntry {
+template<typename GradientT>
+struct SplitEntryContainer {
   /*! \brief loss change after split this node */
-  bst_float loss_chg{0.0f};
+  bst_float loss_chg {0.0f};
   /*! \brief split index */
-  unsigned sindex{0};
+  bst_feature_t sindex{0};
   bst_float split_value{0.0f};
-  GradStats left_sum;
-  GradStats right_sum;
 
-  /*! \brief constructor */
-  SplitEntry()  = default;
+  GradientT left_sum;
+  GradientT right_sum;
+
+  SplitEntryContainer() = default;
+
+  friend std::ostream& operator<<(std::ostream& os, SplitEntryContainer const& s) {
+    os << "loss_chg: " << s.loss_chg << ", "
+       << "split index: " << s.SplitIndex() << ", "
+       << "split value: " << s.split_value << ", "
+       << "left_sum: " << s.left_sum << ", "
+       << "right_sum: " << s.right_sum;
+    return os;
+  }
+  /*!\return feature index to split on */
+  bst_feature_t SplitIndex() const { return sindex & ((1U << 31) - 1U); }
+  /*!\return whether missing value goes to left branch */
+  bool DefaultLeft() const { return (sindex >> 31) != 0; }
   /*!
-   * \brief decides whether we can replace current entry with the given
-   * statistics
-   *   This function gives better priority to lower index when loss_chg ==
-   * new_loss_chg.
+   * \brief decides whether we can replace current entry with the given statistics
+   *
+   *   This function gives better priority to lower index when loss_chg == new_loss_chg.
    *   Not the best way, but helps to give consistent result during multi-thread
-   * execution.
+   *   execution.
+   *
    * \param new_loss_chg the loss reduction get through the split
    * \param split_index the feature index where the split is on
    */
-  inline bool NeedReplace(bst_float new_loss_chg, unsigned split_index) const {
-    if (this->SplitIndex() <= split_index) {
+  bool NeedReplace(bst_float new_loss_chg, unsigned split_index) const {
+    if (std::isinf(new_loss_chg)) {  // in some cases new_loss_chg can be NaN or Inf,
+                                         // for example when lambda = 0 & min_child_weight = 0
+                                         // skip value in this case
+      return false;
+    } else if (this->SplitIndex() <= split_index) {
       return new_loss_chg > this->loss_chg;
     } else {
       return !(this->loss_chg > new_loss_chg);
@@ -511,7 +441,7 @@ struct SplitEntry {
    * \param e candidate split solution
    * \return whether the proposed split is better and can replace current split
    */
-  inline bool Update(const SplitEntry &e) {
+  inline bool Update(const SplitEntryContainer &e) {
     if (this->NeedReplace(e.loss_chg, e.SplitIndex())) {
       this->loss_chg = e.loss_chg;
       this->sindex = e.sindex;
@@ -531,9 +461,10 @@ struct SplitEntry {
    * \param default_left whether the missing value goes to left
    * \return whether the proposed split is better and can replace current split
    */
-  inline bool Update(bst_float new_loss_chg, unsigned split_index,
-                     bst_float new_split_value, bool default_left,
-                     const GradStats &left_sum, const GradStats &right_sum) {
+  bool Update(bst_float new_loss_chg, unsigned split_index,
+              bst_float new_split_value, bool default_left,
+              const GradientT &left_sum,
+              const GradientT &right_sum) {
     if (this->NeedReplace(new_loss_chg, split_index)) {
       this->loss_chg = new_loss_chg;
       if (default_left) {
@@ -548,18 +479,30 @@ struct SplitEntry {
       return false;
     }
   }
+
   /*! \brief same as update, used by AllReduce*/
-  inline static void Reduce(SplitEntry &dst, // NOLINT(*)
-                            const SplitEntry &src) { // NOLINT(*)
+  inline static void Reduce(SplitEntryContainer &dst,         // NOLINT(*)
+                            const SplitEntryContainer &src) { // NOLINT(*)
     dst.Update(src);
   }
-  /*!\return feature index to split on */
-  inline unsigned SplitIndex() const { return sindex & ((1U << 31) - 1U); }
-  /*!\return whether missing value goes to left branch */
-  inline bool DefaultLeft() const { return (sindex >> 31) != 0; }
 };
 
+using SplitEntry = SplitEntryContainer<GradStats>;
 }  // namespace tree
+
+/*
+ * \brief Parse the interaction constraints from string.
+ * \param constraint_str String storing the interfaction constraints:
+ *
+ *  Example input string:
+ *
+ *    "[[1, 2], [3, 4]]""
+ *
+ * \param p_out Pointer to output
+ */
+void ParseInteractionConstraint(
+    std::string const &constraint_str,
+    std::vector<std::vector<xgboost::bst_feature_t>> *p_out);
 }  // namespace xgboost
 
 // define string serializer for vector, to get the arguments
@@ -580,64 +523,7 @@ inline std::ostream &operator<<(std::ostream &os, const std::vector<int> &t) {
   return os;
 }
 
-inline std::istream &operator>>(std::istream &is, std::vector<int> &t) {
-  // get (
-  while (true) {
-    char ch = is.peek();
-    if (isdigit(ch)) {
-      int idx;
-      if (is >> idx) {
-        t.assign(&idx, &idx + 1);
-      }
-      return is;
-    }
-    is.get();
-    if (ch == '(') {
-      break;
-    }
-    if (!isspace(ch)) {
-      is.setstate(std::ios::failbit);
-      return is;
-    }
-  }
-  int idx;
-  std::vector<int> tmp;
-  while (is >> idx) {
-    tmp.push_back(idx);
-    char ch;
-    do {
-      ch = is.get();
-    } while (isspace(ch));
-    if (ch == 'L') {
-      ch = is.get();
-    }
-    if (ch == ',') {
-      while (true) {
-        ch = is.peek();
-        if (isspace(ch)) {
-          is.get();
-          continue;
-        }
-        if (ch == ')') {
-          is.get();
-          break;
-        }
-        break;
-      }
-      if (ch == ')') {
-        break;
-      }
-    } else if (ch == ')') {
-      break;
-    } else {
-      is.setstate(std::ios::failbit);
-      return is;
-    }
-  }
-  t.assign(tmp.begin(), tmp.end());
-  return is;
-}
+std::istream &operator>>(std::istream &is, std::vector<int> &t);
 }  // namespace std
 
 #endif  // XGBOOST_TREE_PARAM_H_
-#endif  // __ENCLAVE_OBLIVIOUS__ 

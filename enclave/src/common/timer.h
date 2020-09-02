@@ -1,5 +1,5 @@
 /*!
- * Copyright by Contributors 2017
+ * Copyright by Contributors 2017-2019
  * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  */
 #pragma once
@@ -8,13 +8,12 @@
 #include <iostream>
 #include <map>
 #include <string>
-
-#if defined(XGBOOST_USE_NVTX) && defined(__CUDACC__)
-#include <nvToolsExt.h>
-#endif
+#include <utility>
+#include <vector>
 
 namespace xgboost {
 namespace common {
+
 struct Timer {
 #ifdef __ENCLAVE__ // replace high_resolution_clock with system_clock for OE
   using ClockT = std::chrono::system_clock;
@@ -41,7 +40,7 @@ struct Timer {
     char buffer[255];
     snprintf(buffer, sizeof(buffer), "%s:\t %fs", label.c_str(),
              SecondsT(elapsed).count());
-    LOG(INFO) << buffer;
+    LOG(CONSOLE) << buffer;
     Reset();
   }
 };
@@ -52,7 +51,6 @@ struct Timer {
  * \brief Timing utility used to measure total method execution time over the
  * lifetime of the containing object.
  */
-
 struct Monitor {
  private:
   struct Statistics {
@@ -60,66 +58,37 @@ struct Monitor {
     size_t count{0};
     uint64_t nvtx_id;
   };
-  std::string label = "";
-  std::map<std::string, Statistics> statistics_map;
-  Timer self_timer;
+
+  // from left to right, <name <count, elapsed>>
+  using StatMap = std::map<std::string, std::pair<size_t, size_t>>;
+
+  std::string label_ = "";
+  std::map<std::string, Statistics> statistics_map_;
+  Timer self_timer_;
+
+  /*! \brief Collect time statistics across all workers. */
+  std::vector<StatMap> CollectFromOtherRanks() const;
+  void PrintStatistics(StatMap const& statistics) const;
 
  public:
-  Monitor() { 
-    self_timer.Start(); 
-  }
-
+  Monitor() { self_timer_.Start(); }
+  /*\brief Print statistics info during destruction.
+   *
+   * Please note that this may not work, as with distributed frameworks like Dask, the
+   * model is pickled to other workers, and the global parameters like `global_verbosity_`
+   * are not included in the pickle.
+   */
   ~Monitor() {
-    if (!ConsoleLogger::ShouldLog(ConsoleLogger::LV::kDebug)) return;
+    this->Print();
+    self_timer_.Stop();
+  }
 
-    LOG(INFO) << "======== Enclave Monitor: " << label << " ========";
-    for (auto &kv : statistics_map) {
-      if (kv.second.count == 0) {
-        LOG(WARNING) <<
-            "Timer for " << kv.first << " did not get stopped properly.";
-        continue;
-      }
-      LOG(INFO) << kv.first << ": " << kv.second.timer.ElapsedSeconds()
-                   << "s, " << kv.second.count << " calls @ "
-                   << std::chrono::duration_cast<std::chrono::microseconds>(
-                          kv.second.timer.elapsed / kv.second.count)
-                          .count()
-                   << "us";
-    }
-    self_timer.Stop();
-  }
-  void Init(std::string label) { this->label = label; }
-  void Start(const std::string &name) {
-    if (ConsoleLogger::ShouldLog(ConsoleLogger::LV::kDebug)) {
-      statistics_map[name].timer.Start();
-    }
-  }
-  void Stop(const std::string &name) {
-    if (ConsoleLogger::ShouldLog(ConsoleLogger::LV::kDebug)) {
-      auto &stats = statistics_map[name];
-      stats.timer.Stop();
-      stats.count++;
-    }
-  }
-  void StartCuda(const std::string &name) {
-    if (ConsoleLogger::ShouldLog(ConsoleLogger::LV::kDebug)) {
-      auto &stats = statistics_map[name];
-      stats.timer.Start();
-#if defined(XGBOOST_USE_NVTX) && defined(__CUDACC__)
-      stats.nvtx_id = nvtxRangeStartA(name.c_str());
-#endif
-    }
-  }
-  void StopCuda(const std::string &name) {
-    if (ConsoleLogger::ShouldLog(ConsoleLogger::LV::kDebug)) {
-      auto &stats = statistics_map[name];
-      stats.timer.Stop();
-      stats.count++;
-#if defined(XGBOOST_USE_NVTX) && defined(__CUDACC__)
-      nvtxRangeEnd(stats.nvtx_id);
-#endif
-    }
-  }
+  /*! \brief Print all the statistics. */
+  void Print() const;
+
+  void Init(std::string label) { this->label_ = label; }
+  void Start(const std::string &name);
+  void Stop(const std::string &name);
 };
 }  // namespace common
 }  // namespace xgboost

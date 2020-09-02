@@ -6,11 +6,15 @@
  */
 #ifndef RABIT_INTERNAL_UTILS_H_
 #define RABIT_INTERNAL_UTILS_H_
-#define _CRT_SECURE_NO_WARNINGS
+
+#include <rabit/base.h>
+#include <string.h>
 #include <cstdio>
 #include <string>
 #include <cstdlib>
+#include <stdexcept>
 #include <vector>
+#include "dmlc/io.h"
 
 #ifndef RABIT_STRICT_CXX98_
 #include <cstdarg>
@@ -61,29 +65,63 @@ namespace utils {
 /*! \brief error message buffer length */
 const int kPrintBuffer = 1 << 12;
 
+/*! \brief we may want to keep the process alive when there are multiple workers
+ * co-locate in the same process */
+extern bool STOP_PROCESS_ON_ERROR;
+
+/* \brief Case-insensitive string comparison */
+inline int CompareStringsCaseInsensitive(const char* s1, const char* s2) {
+#ifdef _MSC_VER
+  return _stricmp(s1, s2);
+#else  // _MSC_VER
+  return strcasecmp(s1, s2);
+#endif  // _MSC_VER
+}
+
+/* \brief parse config string too bool*/
+inline bool StringToBool(const char* s) {
+  return CompareStringsCaseInsensitive(s, "true") == 0 || atoi(s) != 0;
+}
+
 #ifndef RABIT_CUSTOMIZE_MSG_
 /*!
  * \brief handling of Assert error, caused by inappropriate input
  * \param msg error message
  */
 inline void HandleAssertError(const char *msg) {
-  fprintf(stderr, "AssertError:%s\n", msg);
-  exit(-1);
+  if (STOP_PROCESS_ON_ERROR) {
+    fprintf(stderr, "AssertError:%s, shutting down process\n", msg);
+    exit(-1);
+  } else {
+    fprintf(stderr, "AssertError:%s, rabit is configured to keep process running\n", msg);
+    throw dmlc::Error(msg);
+  }
 }
 /*!
  * \brief handling of Check error, caused by inappropriate input
  * \param msg error message
  */
 inline void HandleCheckError(const char *msg) {
-  fprintf(stderr, "%s\n", msg);
-  exit(-1);
+  if (STOP_PROCESS_ON_ERROR) {
+    fprintf(stderr, "%s, shutting down process\n", msg);
+    exit(-1);
+  } else {
+    fprintf(stderr, "%s, rabit is configured to keep process running\n", msg);
+    throw dmlc::Error(msg);
+  }
 }
 inline void HandlePrint(const char *msg) {
   printf("%s", msg);
 }
-inline void HandleLogPrint(const char *msg) {
-  fprintf(stderr, "%s", msg);
-  fflush(stderr);
+
+inline void HandleLogInfo(const char *fmt, ...) {
+  std::string msg(kPrintBuffer, '\0');
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(&msg[0], kPrintBuffer, fmt, args);
+  va_end(args);
+  fprintf(stdout, "%s", msg.c_str());
+  fflush(stdout);
 }
 #else
 #ifndef RABIT_STRICT_CXX98_

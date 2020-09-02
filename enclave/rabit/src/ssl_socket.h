@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 
-#include "socket.h"
+#include "rabit/internal/socket.h"
 #include "../include/dmlc/logging.h"
 
 namespace rabit {

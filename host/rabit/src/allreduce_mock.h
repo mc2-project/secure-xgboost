@@ -11,9 +11,9 @@
 #include <vector>
 #include <map>
 #include <sstream>
-#include "../include/rabit/internal/engine.h"
-#include "../include/rabit/internal/timer.h"
-#include "./allreduce_robust.h"
+#include "rabit/internal/engine.h"
+#include "rabit/internal/timer.h"
+#include "allreduce_robust.h"
 
 namespace rabit {
 namespace engine {
@@ -25,6 +25,7 @@ class AllreduceMock : public AllreduceRobust {
     force_local = 0;
     report_stats = 0;
     tsum_allreduce = 0.0;
+    tsum_allgather = 0.0;
   }
   // destructor
   virtual ~AllreduceMock(void) {}
@@ -48,20 +49,43 @@ class AllreduceMock : public AllreduceRobust {
                          size_t count,
                          ReduceFunction reducer,
                          PreprocFunction prepare_fun,
-                         void *prepare_arg) {
+                         void *prepare_arg,
+                         const char* _file = _FILE,
+                         const int _line = _LINE,
+                         const char* _caller = _CALLER) {
     this->Verify(MockKey(rank, version_number, seq_counter, num_trial), "AllReduce");
     double tstart = utils::GetTime();
     AllreduceRobust::Allreduce(sendrecvbuf_, type_nbytes,
-                               count, reducer, prepare_fun, prepare_arg);
+                               count, reducer, prepare_fun, prepare_arg,
+                               _file, _line, _caller);
     tsum_allreduce += utils::GetTime() - tstart;
   }
-  virtual void Broadcast(void *sendrecvbuf_, size_t total_size, int root) {
+  virtual void Allgather(void *sendrecvbuf,
+                             size_t total_size,
+                             size_t slice_begin,
+                             size_t slice_end,
+                             size_t size_prev_slice,
+                             const char* _file = _FILE,
+                             const int _line = _LINE,
+                             const char* _caller = _CALLER) {
+    this->Verify(MockKey(rank, version_number, seq_counter, num_trial), "Allgather");
+    double tstart = utils::GetTime();
+    AllreduceRobust::Allgather(sendrecvbuf, total_size,
+                                   slice_begin, slice_end,
+                                   size_prev_slice, _file, _line, _caller);
+    tsum_allgather += utils::GetTime() - tstart;
+  }
+  virtual void Broadcast(void *sendrecvbuf_, size_t total_size, int root,
+                         const char* _file = _FILE,
+                         const int _line = _LINE,
+                         const char* _caller = _CALLER) {
     this->Verify(MockKey(rank, version_number, seq_counter, num_trial), "Broadcast");
-    AllreduceRobust::Broadcast(sendrecvbuf_, total_size, root);
+    AllreduceRobust::Broadcast(sendrecvbuf_, total_size, root, _file, _line, _caller);
   }
   virtual int LoadCheckPoint(Serializable *global_model,
                              Serializable *local_model) {
     tsum_allreduce = 0.0;
+    tsum_allgather = 0.0;
     time_checkpoint = utils::GetTime();
     if (force_local == 0) {
       return AllreduceRobust::LoadCheckPoint(global_model, local_model);
@@ -91,10 +115,12 @@ class AllreduceMock : public AllreduceRobust {
          << ",local_size=" << (local_chkpt[0].length() + local_chkpt[1].length())
          << ",check_tcost="<< tcost <<" sec"
          << ",allreduce_tcost=" << tsum_allreduce << " sec"
+         << ",allgather_tcost=" << tsum_allgather << " sec"
          << ",between_chpt=" << tbet_chkpt << "sec\n";
       this->TrackerPrint(ss.str());
     }
     tsum_allreduce = 0.0;
+    tsum_allgather = 0.0;
   }
 
   virtual void LazyCheckPoint(const Serializable *global_model) {
@@ -109,6 +135,8 @@ class AllreduceMock : public AllreduceRobust {
   int report_stats;
   // sum of allreduce
   double tsum_allreduce;
+  // sum of allgather
+  double tsum_allgather;
   double time_checkpoint;
 
  private:
@@ -168,8 +196,8 @@ class AllreduceMock : public AllreduceRobust {
   inline void Verify(const MockKey &key, const char *name) {
     if (mock_map.count(key) != 0) {
       num_trial += 1;
-      fprintf(stderr, "[%d]@@@Hit Mock Error:%s\n", rank, name);
-      exit(-2);
+      // data processing frameworks runs on shared process
+      _error("[%d]@@@Hit Mock Error:%s ", rank, name);
     }
   }
 };

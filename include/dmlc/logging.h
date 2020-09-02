@@ -36,9 +36,20 @@ struct Error : public std::runtime_error {
 };
 
 #if DMLC_LOG_STACK_TRACE
+// get stack trace logging depth from env variable.
+inline size_t LogStackTraceLevel() {
+  size_t level;
+  if (auto var = std::getenv("DMLC_LOG_STACK_TRACE_DEPTH")) {
+    if (1 == sscanf(var, "%zu", &level)) {
+      return level + 1;
+    }
+  }
+  return DMLC_LOG_STACK_TRACE_SIZE;
+}
+
 inline std::string Demangle(char const *msg_str) {
   using std::string;
-#if false  // FIXME: Enable demangling
+#if false // FIXME: Enable demangling
   string msg(msg_str);
   size_t symbol_start = string::npos;
   size_t symbol_end = string::npos;
@@ -72,7 +83,9 @@ inline std::string StackTrace(
   std::ostringstream stacktrace_os;
   std::vector<void*> stack(stack_size);
   int nframes = backtrace(stack.data(), static_cast<int>(stack_size));
-  stacktrace_os << "Stack trace:\n";
+  if (start_frame < static_cast<size_t>(nframes)) {
+    stacktrace_os << "Stack trace:\n";
+  }
   char **msgs = backtrace_symbols(stack.data(), nframes);
   if (msgs != nullptr) {
     for (int frameno = start_frame; frameno < nframes; ++frameno) {
@@ -86,6 +99,10 @@ inline std::string StackTrace(
 }
 
 #else  // DMLC_LOG_STACK_TRACE is off
+
+inline size_t LogStackTraceLevel() {
+  return 0;
+}
 
 inline std::string demangle(char const* msg_str) {
   return std::string();
@@ -404,7 +421,7 @@ class LogMessageFatal : public LogMessage {
  public:
   LogMessageFatal(const char* file, int line) : LogMessage(file, line) {}
   ~LogMessageFatal() {
-    log_stream_ << "\n" << StackTrace() << "\n";
+    log_stream_ << "\n" << StackTrace(1, LogStackTraceLevel()) << "\n";
     abort();
   }
 
@@ -422,7 +439,7 @@ class LogMessageFatal {
   std::ostringstream &stream() { return log_stream_; }
   ~LogMessageFatal() DMLC_THROW_EXCEPTION {
 #if DMLC_LOG_STACK_TRACE
-    log_stream_ << "\n" << StackTrace() << "\n";
+    log_stream_ << "\n" << StackTrace(1, LogStackTraceLevel()) << "\n";
 #endif
 
     // throwing out of destructor is evil

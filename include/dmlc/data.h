@@ -315,10 +315,10 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
          const char* key);
 #else
   static Parser<IndexType, DType> *
-  Create(const char *uri_,
-         unsigned part_index,
-         unsigned num_parts,
-         const char *type);
+    Create(const char *uri_,
+        unsigned part_index,
+        unsigned num_parts,
+        const char *type);
 #endif
   /*! \return size of bytes read so far */
   virtual size_t BytesRead(void) const = 0;
@@ -333,10 +333,10 @@ class Parser : public DataIter<RowBlock<IndexType, DType> > {
      const char* key);
 #else
   typedef Parser<IndexType, DType>* (*Factory)
-      (const std::string& path,
-       const std::map<std::string, std::string>& args,
-       unsigned part_index,
-       unsigned num_parts);
+    (const std::string& path,
+     const std::map<std::string, std::string>& args,
+     unsigned part_index,
+     unsigned num_parts);
 #endif
 #ifdef __ENCLAVE__ // row indices
   uint64_t starting_row_index;
