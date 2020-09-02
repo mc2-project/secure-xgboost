@@ -104,11 +104,13 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
 /*!
  * \brief load a data matrix
  * \param fname the name of the file
+ * \param username the name of the file owner
  * \param silent whether print messages during loading
  * \param out a loaded data matrix
  * \return 0 when success, -1 when failure happens
  */
 XGB_DLL int XGDMatrixCreateFromFile(const char *fname,
+                                    char* username,
                                     int silent,
                                     DMatrixHandle *out);
 

@@ -86,9 +86,10 @@ XGB_DLL int XGBRegisterLogCallback(void (*callback)(const char*)) {
 }
 
 int XGDMatrixCreateFromFile(const char *fname,
+														char* username,
                             int silent,
                             DMatrixHandle *out) {
-    safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
+    safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, username, silent, out));
 }
 
 int XGDMatrixCreateFromEncryptedFile(const char *fnames[],

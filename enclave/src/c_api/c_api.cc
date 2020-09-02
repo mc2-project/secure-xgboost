@@ -266,6 +266,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
 }
 
 int XGDMatrixCreateFromFile(const char *fname,
+			  char* username,	
         int silent,
         DMatrixHandle *out) {
 	API_BEGIN();
@@ -276,7 +277,8 @@ int XGDMatrixCreateFromFile(const char *fname,
 		load_row_split = true;
 	}
 	void *mat = new std::shared_ptr<DMatrix>(DMatrix::Load(fname, silent != 0, load_row_split, false, NULL));
-	char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, NULL, 0);
+	char* usernames[1] = {username};
+	char* out_str  = EnclaveContext::getInstance().add_dmatrix(mat, usernames, 1);
 	*out = oe_host_strndup(out_str, strlen(out_str));
 	free(out_str);
 	API_END();
@@ -498,7 +500,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 	std::vector<bst_float>&preds = entry.predictions.HostVector();
   unsigned char key[CIPHER_KEY_SIZE];
   std::vector<std::string> owners = EnclaveContext::getInstance().get_dmatrix_owners(dmat);
-  if (owners.size() != 1) {
+  if (owners.size() > 1) {
     LOG(FATAL) << "Cannot run prediction on data owned by multiple users";
   }
   EnclaveContext::getInstance().get_client_key((uint8_t*)key, (char*)owners[0].c_str());
@@ -584,11 +586,12 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname) {
       LOG(FATAL) << "Loading from JSON not yet supported";
     } else {
 			auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
+			bst->Configure();
 			std::string& raw_str = bst->GetThreadLocal().ret_str;
       raw_str.resize(0);
 
       common::MemoryBufferStream fo(&raw_str);
-      bst->Save(&fo);
+      bst->SaveModel(&fo);
 
       size_t buf_len = CIPHER_IV_SIZE + CIPHER_TAG_SIZE + raw_str.length();
       unsigned char* buf  = (unsigned char*) malloc(buf_len);
@@ -656,6 +659,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     CHECK_HANDLE();
 
     auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
+		bst->Configure();
 		std::string& raw_str = bst->GetThreadLocal().ret_str;
 		raw_str.resize(0);
 		common::MemoryBufferStream fo(&raw_str);

@@ -218,11 +218,17 @@ void GenericParameter::ConfigureGpuId(bool require_gpu) {
 #endif  // defined(XGBOOST_USE_CUDA)
 }
 
+#ifdef __ENCLAVE__ // FIXME Thread locals get cleaned up after ecall exits
+using LearnerAPIThreadLocalStore =
+    dmlc::NonThreadLocalStore<std::map<Learner const *, XGBAPIThreadLocalEntry>>;
+using ThreadLocalPredictionCache =
+    dmlc::NonThreadLocalStore<std::map<Learner const *, PredictionContainer>>;
+#else
 using LearnerAPIThreadLocalStore =
     dmlc::ThreadLocalStore<std::map<Learner const *, XGBAPIThreadLocalEntry>>;
-
 using ThreadLocalPredictionCache =
     dmlc::ThreadLocalStore<std::map<Learner const *, PredictionContainer>>;
+#endif
 
 class LearnerConfiguration : public Learner {
  protected:

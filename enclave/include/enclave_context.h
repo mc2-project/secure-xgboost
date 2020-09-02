@@ -162,7 +162,7 @@ class EnclaveContext {
     }
 
     std::vector<std::string> get_dmatrix_owners(DMatrixHandle handle) {
-      LOG(DEBUG) << "Getting dmatrix " << handle;
+      LOG(DEBUG) << "Getting dmatrix owner" << handle;
       std::string str(handle);
       auto iter = dmatrix_owner_map.find(str);
       if (iter == dmatrix_owner_map.end()) {

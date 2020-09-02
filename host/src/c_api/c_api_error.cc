@@ -21,3 +21,7 @@ XGB_DLL const char *XGBGetLastError() {
 void XGBAPISetLastError(const char* msg) {
   XGBAPIErrorStore::Get()->last_error = msg;
 }
+
+void host_XGBAPISetLastError(const char* msg) {
+	XGBAPISetLastError(msg);
+}

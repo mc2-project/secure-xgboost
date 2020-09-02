@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
 	char *path=NULL;
 	path = getcwd(path,size);
 	std::string cwd(path);
-  std::string fname1(cwd + "/../data/agaricus.txt.train.enc");
-  std::string fname2(cwd + "/../data/agaricus.txt.test.enc");
+  std::string fname1(cwd + "/../data/agaricus.txt.train");
+  std::string fname2(cwd + "/../data/agaricus.txt.test");
 
   safe_xgboost(get_remote_report_with_pubkey_and_nonce(&pem_key, &key_size, &nonce, &nonce_size, &remote_report, &remote_report_size));
   // NOTE: Verification will fail in simulation mode
@@ -86,7 +86,6 @@ int main(int argc, char** argv) {
   safe_xgboost(add_client_key_with_certificate((char*)crt.c_str(), crt.length() + 1, encrypted_data, encrypted_data_size, signature, sig_len));
 
   int silent = 1;
-  int use_gpu = 0; // set to 1 to use the GPU for training
   
   // load the data
   const char* fnames1[1] = {fname1.c_str()};
@@ -94,9 +93,11 @@ int main(int argc, char** argv) {
   char* unames[1] = {"user1"};
   DMatrixHandle dtrain, dtest;
   std::cout << "Loading train data\n";
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames1, unames, 1, silent, &dtrain));
+  //safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames1, unames, 1, silent, &dtrain));
+  safe_xgboost(XGDMatrixCreateFromFile(fname1.c_str(), "user1", silent, &dtrain));
   std::cout << "Loading test data\n";
-  safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames2, unames, 1, silent, &dtest));
+  //safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames2, unames, 1, silent, &dtest));
+  safe_xgboost(XGDMatrixCreateFromFile(fname2.c_str(), "user1", silent, &dtest));
   std::cout << "Data loaded" << std::endl;
 
   // create the booster
@@ -108,17 +109,7 @@ int main(int argc, char** argv) {
   // configure the training
   // available parameters are described here:
   // https://xgboost.readthedocs.io/en/latest/parameter.html
-  safe_xgboost(XGBoosterSetParam(booster, "tree_method", use_gpu ? "gpu_hist" : "hist"));
-  std::cout << "First parameter set" << std::endl;
-  if (use_gpu) {
-    // set the number of GPUs and the first GPU to use;
-    // this is not necessary, but provided here as an illustration
-    safe_xgboost(XGBoosterSetParam(booster, "n_gpus", "1"));
-    safe_xgboost(XGBoosterSetParam(booster, "gpu_id", "0"));
-  } else {
-    safe_xgboost(XGBoosterSetParam(booster, "n_gpus", "0"));
-  }
-
+  safe_xgboost(XGBoosterSetParam(booster, "tree_method", "hist"));
   safe_xgboost(XGBoosterSetParam(booster, "objective", "binary:logistic"));
   safe_xgboost(XGBoosterSetParam(booster, "min_child_weight", "1"));
   safe_xgboost(XGBoosterSetParam(booster, "gamma", "0.1"));
@@ -131,15 +122,18 @@ int main(int argc, char** argv) {
   const char* eval_names[2] = {"train", "test"};
   const char* eval_result = NULL;
   for (int i = 0; i < n_trees; ++i) {
+    std::cout << "Training " << i << std::endl;
     safe_xgboost(XGBoosterUpdateOneIter(booster, i, dtrain));
-    safe_xgboost(XGBoosterEvalOneIter(booster, i, eval_dmats, eval_names, 2, &eval_result));
-    printf("%s\n", eval_result);
+    //safe_xgboost(XGBoosterEvalOneIter(booster, i, eval_dmats, eval_names, 2, &eval_result));
+    //printf("%s\n", eval_result);
   }
+  std::cout << "Training done" << std::endl;
   
   // save model
   std::string fname(cwd + "/demo_model.model");
   safe_xgboost(XGBoosterSaveModel(booster, fname.c_str()));
   std::cout << "Saved model to demo_model.model" << std::endl;
+
   // load model
   booster = NULL;
   safe_xgboost(XGBoosterCreate(eval_dmats, 2, &booster));
@@ -152,7 +146,8 @@ int main(int argc, char** argv) {
   float* out_result = NULL;
   int n_print = 10;
   
-  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, &out_len, &enc_result));
+  std::cout << "Running predictions" << std::endl;
+  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, 0, &out_len, &enc_result));
   safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
   printf("n_pred: %d %x\n", out_len, out_result);
   printf("y_pred: ");
