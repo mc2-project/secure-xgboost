@@ -59,8 +59,8 @@ int main(int argc, char** argv) {
 	char *path=NULL;
 	path = getcwd(path,size);
 	std::string cwd(path);
-  std::string fname1(cwd + "/../data/agaricus.txt.train");
-  std::string fname2(cwd + "/../data/agaricus.txt.test");
+  std::string fname1(cwd + "/../data/agaricus.txt.train.enc");
+  std::string fname2(cwd + "/../data/agaricus.txt.test.enc");
 
   safe_xgboost(get_remote_report_with_pubkey_and_nonce(&pem_key, &key_size, &nonce, &nonce_size, &remote_report, &remote_report_size));
   // NOTE: Verification will fail in simulation mode
@@ -88,16 +88,16 @@ int main(int argc, char** argv) {
   int silent = 1;
   
   // load the data
-  const char* fnames1[1] = {fname1.c_str()};
+  const char* fnames1[2] = {fname1.c_str(), fname1.c_str()};
   const char* fnames2[1] = {fname2.c_str()};
-  char* unames[1] = {"user1"};
+  char* unames[2] = {"user1", "user1"};
   DMatrixHandle dtrain, dtest;
   std::cout << "Loading train data\n";
-  //safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames1, unames, 1, silent, &dtrain));
-  safe_xgboost(XGDMatrixCreateFromFile(fname1.c_str(), "user1", silent, &dtrain));
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames1, unames, 2, silent, &dtrain));
+  //safe_xgboost(XGDMatrixCreateFromFile(fname1.c_str(), "user1", silent, &dtrain));
   std::cout << "Loading test data\n";
-  //safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames2, unames, 1, silent, &dtest));
-  safe_xgboost(XGDMatrixCreateFromFile(fname2.c_str(), "user1", silent, &dtest));
+  safe_xgboost(XGDMatrixCreateFromEncryptedFile(fnames2, unames, 1, silent, &dtest));
+  //safe_xgboost(XGDMatrixCreateFromFile(fname2.c_str(), "user1", silent, &dtest));
   std::cout << "Data loaded" << std::endl;
 
   // create the booster
@@ -122,7 +122,6 @@ int main(int argc, char** argv) {
   const char* eval_names[2] = {"train", "test"};
   const char* eval_result = NULL;
   for (int i = 0; i < n_trees; ++i) {
-    std::cout << "Training " << i << std::endl;
     safe_xgboost(XGBoosterUpdateOneIter(booster, i, dtrain));
     //safe_xgboost(XGBoosterEvalOneIter(booster, i, eval_dmats, eval_names, 2, &eval_result));
     //printf("%s\n", eval_result);
@@ -147,7 +146,7 @@ int main(int argc, char** argv) {
   int n_print = 10;
   
   std::cout << "Running predictions" << std::endl;
-  safe_xgboost(XGBoosterPredict(booster, dtrain, 0, 0, 0, &out_len, &enc_result));
+  safe_xgboost(XGBoosterPredict(booster, dtest, 0, 0, 0, &out_len, &enc_result));
   safe_xgboost(decrypt_predictions(test_key, enc_result, out_len, &out_result));
   printf("n_pred: %d %x\n", out_len, out_result);
   printf("y_pred: ");
@@ -156,7 +155,7 @@ int main(int argc, char** argv) {
   }
   printf("\n");
   
-  safe_xgboost(XGDMatrixGetFloatInfo(dtrain, "label", &out_len, (const float**)&out_result));
+  safe_xgboost(XGDMatrixGetFloatInfo(dtest, "label", &out_len, (const float**)&out_result));
   printf("y_test: ");
   for (int i = 0; i < n_print; ++i) {
     printf("%1.4f ", out_result[i]);

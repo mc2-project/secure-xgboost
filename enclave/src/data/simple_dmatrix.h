@@ -1,5 +1,6 @@
 /*!
  * Copyright 2015 by Contributors
+ * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  * \file simple_dmatrix.h
  * \brief In-memory version of DMatrix.
  * \author Tianqi Chen
@@ -13,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "adapter.h"
 
 namespace xgboost {
 namespace data {
@@ -22,6 +24,8 @@ class SimpleDMatrix : public DMatrix {
   SimpleDMatrix() = default;
   template <typename AdapterT>
   explicit SimpleDMatrix(AdapterT* adapter, float missing, int nthread);
+
+  explicit SimpleDMatrix(std::vector<data::FileAdapter*> adapters, float missing, int nthread);
 
   explicit SimpleDMatrix(dmlc::Stream* in_stream);
   ~SimpleDMatrix() override = default;

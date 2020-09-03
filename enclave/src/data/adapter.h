@@ -1,5 +1,6 @@
 /*!
  *  Copyright (c) 2019~2020 by Contributors
+ *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  * \file adapter.h
  */
 #ifndef XGBOOST_DATA_ADAPTER_H_
@@ -487,6 +488,12 @@ class FileAdapter : dmlc::DataIter<FileAdapterBatch> {
   // Indicates a number of rows/columns must be inferred
   size_t NumRows() const { return kAdapterUnknownSize; }
   size_t NumColumns() const { return kAdapterUnknownSize; }
+
+#ifdef __ENCLAVE__ // row indices
+  uint64_t TotalRowsInChunk() { return parser_->total_rows_in_chunk; }
+  uint64_t TotalRowsGlobal() { return parser_->total_rows_global; }
+  uint64_t StartingRowIndex() { return parser_->starting_row_index; }
+#endif
 
  private:
   size_t row_offset_{0};

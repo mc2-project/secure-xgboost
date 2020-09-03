@@ -1,6 +1,6 @@
 /*!
  *  Copyright (c) 2015 by Contributors
- * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  * \file data.h
  * \brief defines common input data structure,
  *  and interface for handling the input data

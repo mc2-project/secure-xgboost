@@ -331,8 +331,13 @@ class SparsePage {
    *
    * \return  The maximum number of columns encountered in this input batch. Useful when pushing many adapter batches to work out the total number of columns.
    */
+#ifdef __ENCLAVE__ // Required for handling multiple files correctly
+  template <typename AdapterBatchT>
+  uint64_t Push(const AdapterBatchT& batch, float missing, int nthread, size_t line_offset=0);
+#else
   template <typename AdapterBatchT>
   uint64_t Push(const AdapterBatchT& batch, float missing, int nthread);
+#endif
 
   /*!
    * \brief Push a sparse page
@@ -545,6 +550,11 @@ class DMatrix {
   static DMatrix* Create(AdapterT* adapter, float missing, int nthread,
                          const std::string& cache_prefix = "",
                          size_t page_size = kPageSize);
+
+  template <typename AdapterT>
+  static DMatrix* Create(std::vector<AdapterT*> adapters, float missing, int nthread,
+      const std::string& cache_prefix = "",
+      size_t page_size = kPageSize);
 
   /**
    * \brief Create a new Quantile based DMatrix used for histogram based algorithm.

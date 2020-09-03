@@ -5,6 +5,7 @@
  */
 #include <dmlc/registry.h>
 #include <cstring>
+#include <memory>
 
 #include "dmlc/io.h"
 #include "xgboost/data.h"
@@ -621,7 +622,7 @@ DMatrix* DMatrix::Load(const std::string& uri,
   }
 
   if (npart != 1) {
-    LOG(CONSOLE) << "Load part of data " << partid
+    LOG(INFO) << "Load part of data " << partid
                  << " of " << npart << " parts";
   }
 
@@ -635,7 +636,7 @@ DMatrix* DMatrix::Load(const std::string& uri,
         magic == data::SimpleDMatrix::kMagic) {
         DMatrix* dmat = new data::SimpleDMatrix(&is);
         if (!silent) {
-          LOG(CONSOLE) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+          LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
             << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
         }
         return dmat;
@@ -676,7 +677,7 @@ DMatrix* DMatrix::Load(const std::string& uri,
   }
 
   if (!silent) {
-    LOG(CONSOLE) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+    LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
                  << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
   }
   /* sync up number of features after matrix loaded.
@@ -731,11 +732,173 @@ DMatrix* DMatrix::Load(std::vector<const std::string>& uris,
                        bool is_encrypted,
                        char* keys[],
                        const std::string& file_format,
-                       const size_t page_size) {}
+                       const size_t page_size) {
+  std::string fname, cache_file;
+  int num_uris = uris.size();
+
+  std::vector<std::unique_ptr<dmlc::Parser<uint32_t>>> parsers(num_uris);
+  std::vector<data::FileAdapter*> adapters;
+  int partid, npart;
+
+  data::FileAdapter* adapter;
+  for (int j = 0; j < num_uris; ++j) {
+    const std::string uri = uris[j];
+    size_t dlm_pos = uri.find('#');
+    if (dlm_pos != std::string::npos) {
+      cache_file = uri.substr(dlm_pos + 1, uri.length());
+      fname = uri.substr(0, dlm_pos);
+      CHECK_EQ(cache_file.find('#'), std::string::npos)
+        << "Only one `#` is allowed in file path for cache file specification.";
+      if (load_row_split) {
+        std::ostringstream os;
+        std::vector<std::string> cache_shards = common::Split(cache_file, ':');
+        for (size_t i = 0; i < cache_shards.size(); ++i) {
+          size_t pos = cache_shards[i].rfind('.');
+          if (pos == std::string::npos) {
+            os << cache_shards[i]
+              << ".r" << rabit::GetRank()
+              << "-" <<  rabit::GetWorldSize();
+          } else {
+            os << cache_shards[i].substr(0, pos)
+              << ".r" << rabit::GetRank()
+              << "-" <<  rabit::GetWorldSize()
+              << cache_shards[i].substr(pos, cache_shards[i].length());
+          }
+          if (i + 1 != cache_shards.size()) {
+            os << ':';
+          }
+        }
+        cache_file = os.str();
+      }
+    } else {
+      fname = uri;
+    }
+    partid = 0, npart = 1;
+    if (load_row_split) {
+      partid = rabit::GetRank();
+      npart = rabit::GetWorldSize();
+    } else {
+      // test option to load in part
+      npart = dmlc::GetEnv("XGBOOST_TEST_NPART", 1);
+    }
+
+    if (npart != 1) {
+      LOG(INFO) << "Load part of data " << partid
+        << " of " << npart << " parts";
+    }
+
+    // legacy handling of binary data loading
+    if (file_format == "auto" && npart == 1) {
+      int magic;
+      std::unique_ptr<dmlc::Stream> fi(dmlc::Stream::Create(fname.c_str(), "r", true));
+      if (fi != nullptr) {
+        common::PeekableInStream is(fi.get());
+        if (is.PeekRead(&magic, sizeof(magic)) == sizeof(magic) &&
+            magic == data::SimpleDMatrix::kMagic) {
+          DMatrix* dmat = new data::SimpleDMatrix(&is);
+          if (!silent) {
+            LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+              << dmat->Info().num_nonzero_ << " entries loaded from " << uri;
+          }
+          return dmat;
+        }
+      }
+    }
+
+    std::unique_ptr<dmlc::Parser<uint32_t> > parser(
+        dmlc::Parser<uint32_t>::Create(fname.c_str(), partid, npart, file_format.c_str(), is_encrypted, keys[j]));
+    parsers[j] = std::move(parser);
+    //parser->total_rows_global = 999;
+    //data::FileAdapter adapter(parser.get());
+    adapter = new data::FileAdapter(parsers[j].get());
+    adapters.push_back(adapter);
+  }
+
+  DMatrix* dmat {nullptr};
+  try {
+    dmat = DMatrix::Create(adapters, std::numeric_limits<float>::quiet_NaN(), 1,
+        cache_file, page_size);
+  } catch (dmlc::Error& e) {
+    std::vector<std::string> splited = common::Split(fname, '#');
+    std::vector<std::string> args = common::Split(splited.front(), '?');
+    std::string format {file_format};
+    if (args.size() == 1 && file_format == "auto") {
+      auto extension = common::Split(args.front(), '.').back();
+      if (extension == "csv" || extension == "libsvm") {
+        format = extension;
+      }
+      if (format == extension) {
+        LOG(WARNING)
+          << "No format parameter is provided in input uri, but found file extension: "
+          << format << " .  "
+          << "Consider providing a uri parameter: filename?format=" << format;
+      } else {
+        LOG(WARNING)
+          << "No format parameter is provided in input uri.  "
+          << "Choosing default parser in dmlc-core.  "
+          << "Consider providing a uri parameter like: filename?format=csv";
+      }
+    }
+    LOG(FATAL) << "Encountered parser error:\n" << e.what();
+  }
+
+  if (!silent) {
+    LOG(INFO) << dmat->Info().num_row_ << 'x' << dmat->Info().num_col_ << " matrix with "
+      << dmat->Info().num_nonzero_ << " entries loaded from " 
+      << std::accumulate(uris.begin(), uris.end(), std::string(", "));
+  }
+  /* sync up number of features after matrix loaded.
+   * partitioned data will fail the train/val validation check
+   * since partitioned data not knowing the real number of features. */
+  rabit::Allreduce<rabit::op::Max>(&dmat->Info().num_col_, 1, nullptr,
+      nullptr, fname.c_str());
+
+  // check that row indices and total rows in file are correct
+  for (int i = 0; i < num_uris; ++i) {
+    data::FileAdapter* adapter = adapters[i];
+    if (is_encrypted) {
+      int *indices = new int[npart];
+      memset(indices, 0, sizeof(indices));
+      indices[partid] = adapter->TotalRowsInChunk();
+      rabit::Allreduce<rabit::op::Max>(indices, npart);
+      uint64_t sum = 0;
+      uint64_t sum_prev = 0;
+      for (int i = 0; i < npart; i++) {
+        if (i < partid)
+          sum_prev += indices[i];
+        sum += indices[i];
+      }
+      CHECK_EQ(adapter->StartingRowIndex(), sum_prev + 1);
+      CHECK_EQ(adapter->TotalRowsGlobal(), sum);
+    }
+  }
+
+  // backward compatiblity code.
+#if false  // FIXME: currently disabled to prevent OE errors if file not found
+  if (!load_row_split) {
+    MetaInfo& info = dmat->Info();
+    if (MetaTryLoadGroup(fname + ".group", &info.group_ptr_) && !silent) {
+      LOG(CONSOLE) << info.group_ptr_.size() - 1
+        << " groups are loaded from " << fname << ".group";
+    }
+    if (MetaTryLoadFloatInfo
+        (fname + ".base_margin", &info.base_margin_.HostVector()) && !silent) {
+      LOG(CONSOLE) << info.base_margin_.Size()
+        << " base_margin are loaded from " << fname << ".base_margin";
+    }
+    if (MetaTryLoadFloatInfo
+        (fname + ".weight", &info.weights_.HostVector()) && !silent) {
+      LOG(CONSOLE) << info.weights_.Size()
+        << " weights are loaded from " << fname << ".weight";
+    }
+  }
+#endif
+  return dmat;
+}
 
 
 template <typename DataIterHandle, typename DMatrixHandle,
-          typename DataIterResetCallback, typename XGDMatrixCallbackNext>
+         typename DataIterResetCallback, typename XGDMatrixCallbackNext>
 DMatrix *DMatrix::Create(DataIterHandle iter, DMatrixHandle proxy,
                          DataIterResetCallback *reset,
                          XGDMatrixCallbackNext *next, float missing,
@@ -765,6 +928,23 @@ DMatrix* DMatrix::Create(AdapterT* adapter, float missing, int nthread,
 #if DMLC_ENABLE_STD_THREAD
     return new data::SparsePageDMatrix(adapter, missing, nthread, cache_prefix,
                                        page_size);
+#else
+    LOG(FATAL) << "External memory is not enabled in mingw";
+    return nullptr;
+#endif  // DMLC_ENABLE_STD_THREAD
+  }
+}
+
+template <typename AdapterT>
+DMatrix* DMatrix::Create(std::vector<AdapterT*> adapters, float missing, int nthread,
+    const std::string& cache_prefix,  size_t page_size) {
+  if (cache_prefix.length() == 0) {
+    // Data split mode is fixed to be row right now.
+    return new data::SimpleDMatrix(adapters, missing, nthread);
+  } else {
+#if DMLC_ENABLE_STD_THREAD
+    return new data::SparsePageDMatrix(adapter, missing, nthread, cache_prefix,
+        page_size);
 #else
     LOG(FATAL) << "External memory is not enabled in mingw";
     return nullptr;
@@ -840,7 +1020,7 @@ void SparsePage::Push(const SparsePage &batch) {
 }
 
 template <typename AdapterBatchT>
-uint64_t SparsePage::Push(const AdapterBatchT& batch, float missing, int nthread) {
+uint64_t SparsePage::Push(const AdapterBatchT& batch, float missing, int nthread, size_t line_offset) {
   // Set number of threads but keep old value so we can reset it after
   const int nthreadmax = omp_get_max_threads();
   if (nthread <= 0) nthread = nthreadmax;
@@ -877,7 +1057,11 @@ uint64_t SparsePage::Push(const AdapterBatchT& batch, float missing, int nthread
       max_columns =
           std::max(max_columns, static_cast<uint64_t>(element.column_idx + 1));
       if (!common::CheckNAN(element.value) && element.value != missing) {
+#ifdef __ENCLAVE__ // Required for handling multiple files correctly
+        size_t key = element.row_idx - base_rowid + line_offset;
+#else
         size_t key = element.row_idx - base_rowid;
+#endif
         // Adapter row index is absolute, here we want it relative to
         // current page
         CHECK_GE(key, builder_base_row_offset);
@@ -896,9 +1080,15 @@ uint64_t SparsePage::Push(const AdapterBatchT& batch, float missing, int nthread
     for (auto j = 0ull; j < line.Size(); j++) {
       auto element = line.GetElement(j);
       if (!common::CheckNAN(element.value) && element.value != missing) {
+#ifdef __ENCLAVE__ // Required for handling multiple files correctly
+        size_t key = element.row_idx + line_offset -
+                     base_rowid;  // Adapter row index is absolute, here we want
+                                  // it relative to current page
+#else
         size_t key = element.row_idx -
                      base_rowid;  // Adapter row index is absolute, here we want
                                   // it relative to current page
+#endif
         builder.Push(key, Entry(element.column_idx, element.value), tid);
       }
     }
@@ -967,15 +1157,15 @@ void SparsePage::PushCSC(const SparsePage &batch) {
 }
 
 template uint64_t
-SparsePage::Push(const data::DenseAdapterBatch& batch, float missing, int nthread);
+SparsePage::Push(const data::DenseAdapterBatch& batch, float missing, int nthread, size_t line_offset=0);
 template uint64_t
-SparsePage::Push(const data::CSRAdapterBatch& batch, float missing, int nthread);
+SparsePage::Push(const data::CSRAdapterBatch& batch, float missing, int nthread, size_t line_offset=0);
 template uint64_t
-SparsePage::Push(const data::CSCAdapterBatch& batch, float missing, int nthread);
+SparsePage::Push(const data::CSCAdapterBatch& batch, float missing, int nthread, size_t line_offset=0);
 template uint64_t
-SparsePage::Push(const data::DataTableAdapterBatch& batch, float missing, int nthread);
+SparsePage::Push(const data::DataTableAdapterBatch& batch, float missing, int nthread, size_t line_offset=0);
 template uint64_t
-SparsePage::Push(const data::FileAdapterBatch& batch, float missing, int nthread);
+SparsePage::Push(const data::FileAdapterBatch& batch, float missing, int nthread, size_t line_offset=0);
 
 namespace data {
 

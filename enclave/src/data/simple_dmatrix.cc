@@ -1,5 +1,6 @@
 /*!
  * Copyright 2014~2020 by Contributors
+ * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
  * \file simple_dmatrix.cc
  * \brief the input data structure for gradient boosting
  * \author Tianqi Chen
@@ -185,6 +186,101 @@ SimpleDMatrix::SimpleDMatrix(AdapterT* adapter, float missing, int nthread) {
       offset_vec.emplace_back(offset_vec.back());
     }
     info_.num_row_ = adapter->NumRows();
+  }
+  info_.num_nonzero_ = data_vec.size();
+  omp_set_num_threads(nthread_original);
+}
+
+SimpleDMatrix::SimpleDMatrix(std::vector<data::FileAdapter*> adapters, float missing, int nthread) {
+  // Set number of threads but keep old value so we can reset it after
+  const int nthreadmax = omp_get_max_threads();
+  if (nthread <= 0) nthread = nthreadmax;
+  int nthread_original = omp_get_max_threads();
+  omp_set_num_threads(nthread);
+
+  std::vector<uint64_t> qids;
+  uint64_t default_max = std::numeric_limits<uint64_t>::max();
+  uint64_t last_group_id = default_max;
+  bst_uint group_size = 0;
+  auto& offset_vec = sparse_page_.offset.HostVector();
+  auto& data_vec = sparse_page_.data.HostVector();
+  uint64_t inferred_num_columns = 0;
+  uint64_t total_batch_size = 0;
+  size_t prev_adapter_size;
+  // batch_size is either number of rows or cols, depending on data layout
+
+  for (int i = 0; i < adapters.size(); i++) {
+    prev_adapter_size = total_batch_size;
+    data::FileAdapter* adapter = adapters[i];
+    adapter->BeforeFirst();
+    // Iterate over batches of input data
+    while (adapter->Next()) {
+      auto& batch = adapter->Value();
+      auto batch_max_columns = sparse_page_.Push(batch, missing, nthread, prev_adapter_size);
+      inferred_num_columns = std::max(batch_max_columns, inferred_num_columns);
+      total_batch_size += batch.Size();
+      // Append meta information if available
+      if (batch.Labels() != nullptr) {
+        auto& labels = info_.labels_.HostVector();
+        labels.insert(labels.end(), batch.Labels(),
+            batch.Labels() + batch.Size());
+      }
+      if (batch.Weights() != nullptr) {
+        auto& weights = info_.weights_.HostVector();
+        weights.insert(weights.end(), batch.Weights(),
+            batch.Weights() + batch.Size());
+      }
+      if (batch.BaseMargin() != nullptr) {
+        auto& base_margin = info_.base_margin_.HostVector();
+        base_margin.insert(base_margin.end(), batch.BaseMargin(),
+            batch.BaseMargin() + batch.Size());
+      }
+      if (batch.Qid() != nullptr) {
+        qids.insert(qids.end(), batch.Qid(), batch.Qid() + batch.Size());
+        // get group
+        for (size_t i = 0; i < batch.Size(); ++i) {
+          const uint64_t cur_group_id = batch.Qid()[i];
+          if (last_group_id == default_max || last_group_id != cur_group_id) {
+            info_.group_ptr_.push_back(group_size);
+          }
+          last_group_id = cur_group_id;
+          ++group_size;
+        }
+      }
+    }
+
+    if (last_group_id != default_max) {
+      if (group_size > info_.group_ptr_.back()) {
+        info_.group_ptr_.push_back(group_size);
+      }
+    }
+
+    // Deal with empty rows/columns if necessary
+    if (adapter->NumColumns() == kAdapterUnknownSize) {
+      info_.num_col_ = inferred_num_columns;
+    } else {
+      info_.num_col_ = adapter->NumColumns();
+    }
+
+
+    // Synchronise worker columns
+    rabit::Allreduce<rabit::op::Max>(&info_.num_col_, 1);
+
+    if (adapter->NumRows() == kAdapterUnknownSize) {
+      info_.num_row_ = total_batch_size;
+      // Ensure offset_vec.size() - 1 == [number of rows]
+      while (offset_vec.size() - 1 < total_batch_size) {
+        offset_vec.emplace_back(offset_vec.back());
+      }
+    } else {
+      if (offset_vec.empty()) {
+        offset_vec.emplace_back(0);
+      }
+      while (offset_vec.size() - 1 < adapter->NumRows()) {
+        offset_vec.emplace_back(offset_vec.back());
+      }
+      info_.num_row_ = adapter->NumRows();
+    }
   }
   info_.num_nonzero_ = data_vec.size();
   omp_set_num_threads(nthread_original);
