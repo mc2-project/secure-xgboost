@@ -97,6 +97,7 @@ enclave {
                 [in, string] char* dmat,
                 int option_mask,
                 unsigned ntree_limit,
+                int training,
                 [in, count=nonce_size] uint8_t *nonce,
                 size_t nonce_size,
                 uint32_t nonce_ctr,

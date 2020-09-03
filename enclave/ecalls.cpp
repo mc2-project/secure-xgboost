@@ -10,26 +10,12 @@
 
 #include <string>
 
-void copy_sigs_to_enclave(uint8_t* dst[], uint8_t* src[], size_t lengths[]) {
-  for (int i = 0; i < NUM_CLIENTS; i++) {
-    check_host_buffer(src[i], lengths[i]);
-    dst[i] = (uint8_t*) malloc(lengths[i] * sizeof(uint8_t));
-    memcpy(dst[i], src[i], lengths[i]);
-  }
-}
-
 void copy_arr_to_enclave(char* dst[], size_t num, char* src[], size_t lengths[]) {
   for (int i = 0; i < num; i++) {
     size_t nlen = lengths[i];
     check_host_buffer(src[i], nlen);
     dst[i] = strndup(src[i], nlen);
     dst[i][nlen] = '\0';
-  }
-}
-
-void free_sigs(uint8_t* sigs[]) {
-  for (int i = 0; i < NUM_CLIENTS; i++) {
-    free(sigs[i]);
   }
 }
 

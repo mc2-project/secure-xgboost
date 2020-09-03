@@ -5,7 +5,7 @@
 #include <rabit/c_api.h>
 
 #include "xgboost_mc_t.h"
-#include <xgboost/common/common.h>
+#include "src/common/common.h"
 #include <enclave/attestation.h>
 
 #include <string>
@@ -42,7 +42,7 @@ void free_array(char* arr[], size_t len) {
 void enclave_init(int log_verbosity) {
   std::vector<std::pair<std::string, std::string> > args;
   args.emplace_back("verbosity", std::to_string(log_verbosity));
-  xgboost::ConsoleLogger::Configure(args.cbegin(), args.cend());
+  xgboost::ConsoleLogger::Configure(args);
 
   LOG(DEBUG) << "Ecall: init";
   oe_result_t result;
@@ -337,7 +337,7 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
 }
 
 
-int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *len, uint8_t **out_result, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
+int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, int training, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *len, uint8_t **out_result, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
 
   char* signers_cpy[NUM_CLIENTS];
@@ -346,7 +346,7 @@ int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int optio
   copy_arr_to_enclave(signers_cpy, NUM_CLIENTS, signers, signer_lengths);
   copy_sigs_to_enclave(sigs, signatures, sig_lengths);
 
-  int ret = XGBoosterPredict(handle, dmat, option_mask, ntree_limit, nonce, nonce_size, nonce_ctr, len, out_result, out_sig, out_sig_length, signers_cpy, sigs, sig_lengths);
+  int ret = XGBoosterPredict(handle, dmat, option_mask, ntree_limit, training, nonce, nonce_size, nonce_ctr, len, out_result, out_sig, out_sig_length, signers_cpy, sigs, sig_lengths);
 
   free_array(signers_cpy, NUM_CLIENTS);
   free_sigs(sigs);

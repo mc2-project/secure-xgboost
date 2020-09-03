@@ -253,7 +253,8 @@ message PredictParams {
     string dmatrix_handle = 2;
     uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
-    string username = 5; // [deprecated] moved to PredictParamsRequest
+    uint32 training = 5;
+    string username = 6; // [deprecated] moved to PredictParamsRequest
 }
 
 // Wrapper around PredictParams to include sequence number
