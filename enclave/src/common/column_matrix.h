@@ -4,6 +4,9 @@
  * \brief Utility for fast column-wise access
  * \author Philip Cho
  */
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "column_matrix_obl.h"
+#else
 
 #ifndef XGBOOST_COMMON_COLUMN_MATRIX_H_
 #define XGBOOST_COMMON_COLUMN_MATRIX_H_
@@ -105,6 +108,117 @@ class ColumnMatrix {
     return static_cast<bst_uint>(type_.size());
   }
 
+#ifdef __ENCLAVE_OBLIVIOUS__
+  // construct column matrix from GHistIndexMatrix
+  inline void Init(const GHistIndexMatrix& gmat,
+      double  sparse_threshold) {
+    const int32_t nfeature = static_cast<int32_t>(gmat.cut.Ptrs().size() - 1);
+    const size_t nrow = gmat.row_ptr.size() - 1;
+
+    // identify type of each column
+    feature_counts_.resize(nfeature);
+    type_.resize(nfeature);
+    std::fill(feature_counts_.begin(), feature_counts_.end(), 0);
+
+    uint32_t max_val = std::numeric_limits<uint32_t>::max();
+    for (bst_uint fid = 0; fid < nfeature; ++fid) {
+      CHECK_LE(gmat.cut.Ptrs()[fid + 1] - gmat.cut.Ptrs()[fid], max_val);
+    }
+
+    gmat.GetFeatureCounts(&feature_counts_[0]);
+    // classify features
+    for (int32_t fid = 0; fid < nfeature; ++fid) {
+      if (static_cast<double>(feature_counts_[fid])
+          < sparse_threshold * nrow) {
+        type_[fid] = kSparseColumn;
+      } else {
+        type_[fid] = kDenseColumn;
+      }
+    }
+
+    // want to compute storage boundary for each feature
+    // using variants of prefix sum scan
+    boundary_.resize(nfeature);
+    size_t accum_index_ = 0;
+    size_t accum_row_ind_ = 0;
+    for (int32_t fid = 0; fid < nfeature; ++fid) {
+      boundary_[fid].index_begin = accum_index_;
+      boundary_[fid].row_ind_begin = accum_row_ind_;
+      if (type_[fid] == kDenseColumn) {
+        accum_index_ += static_cast<size_t>(nrow);
+        accum_row_ind_ += static_cast<size_t>(nrow);
+      } else {
+        accum_index_ += feature_counts_[fid];
+        accum_row_ind_ += feature_counts_[fid];
+      }
+      boundary_[fid].index_end = accum_index_;
+      boundary_[fid].row_ind_end = accum_row_ind_;
+    }
+
+    index_.resize(boundary_[nfeature - 1].index_end);
+    row_ind_.resize(boundary_[nfeature - 1].row_ind_end);
+
+    // store least bin id for each feature
+    index_base_ = const_cast<uint32_t*>(gmat.cut.Ptrs().data());
+
+    // pre-fill index_ for dense columns
+
+#pragma omp parallel for
+    for (int32_t fid = 0; fid < nfeature; ++fid) {
+      if (type_[fid] == kDenseColumn) {
+        const size_t ibegin = boundary_[fid].index_begin;
+        //uint32_t* begin = &index_[ibegin];
+        //uint32_t* end = begin + nrow;
+        //std::fill(begin, end, std::numeric_limits<uint32_t>::max());
+        for (uint32_t i = 0; i < nrow; i++) {
+          index_[ibegin + i] = std::numeric_limits<uint32_t>::max();
+        }
+        // max() indicates missing values
+      }
+    }
+
+    // loop over all rows and fill column entries
+    // num_nonzeros[fid] = how many nonzeros have this feature accumulated so far?
+    std::vector<size_t> num_nonzeros;
+    num_nonzeros.resize(nfeature);
+    std::fill(num_nonzeros.begin(), num_nonzeros.end(), 0);
+
+    // For oblivious.
+    row_wise_index_.resize(nrow * nfeature);
+    std::fill(row_wise_index_.begin(), row_wise_index_.end(),
+        std::numeric_limits<uint32_t>::max());
+    nfeature_ = nfeature;
+
+    for (size_t rid = 0; rid < nrow; ++rid) {
+      const size_t ibegin = gmat.row_ptr[rid];
+      const size_t iend = gmat.row_ptr[rid + 1];
+      size_t fid = 0;
+      for (size_t i = ibegin; i < iend; ++i) {
+        // NOTE: For dense data structure, below codes are already oblivious,
+        // given the |gmat.index| in one instance are already sorted.
+        const uint32_t bin_id = gmat.index[i];
+        while (bin_id >= gmat.cut.Ptrs()[fid + 1]) {
+          ++fid;
+        }
+
+        // For oblivious. Note this contains index_base.
+        row_wise_index_[rid * nfeature + fid] = bin_id;
+
+        if (type_[fid] == kDenseColumn) {
+          //uint32_t* begin = &index_[boundary_[fid].index_begin];
+          //begin[rid] = bin_id - index_base_[fid];
+          index_[boundary_[fid].index_begin + rid] = bin_id - index_base_[fid];
+        } else {
+          //uint32_t* begin = &index_[boundary_[fid].index_begin];
+          //begin[num_nonzeros[fid]] = bin_id - index_base_[fid];
+          index_[boundary_[fid].index_begin + num_nonzeros[fid]] = bin_id - index_base_[fid];
+          row_ind_[boundary_[fid].row_ind_begin + num_nonzeros[fid]] = rid;
+          ++num_nonzeros[fid];
+        }
+      }
+    }
+  }
+#else
   // construct column matrix from GHistIndexMatrix
   inline void Init(const GHistIndexMatrix& gmat,
                    double  sparse_threshold) {
@@ -188,6 +302,7 @@ class ColumnMatrix {
       }
     }
   }
+#endif
 
   /* Set the number of bytes based on numeric limit of maximum number of bins provided by user */
   void SetTypeSize(size_t max_num_bins) {
@@ -326,6 +441,15 @@ class ColumnMatrix {
     return any_missing_;
   }
 
+#ifdef __ENCLAVE_OBLIVIOUS__
+  inline uint32_t OGetRowFeatureBinIndex(size_t row_idx, int fid) const {
+    // NOTE: `oaccess` between [row_idx * nfeature, (row_idx + 1) * nfeature]
+    // return row_wise_index_[row_idx * nfeature_ + fid];
+    return ObliviousArrayAccess(row_wise_index_.data() + row_idx * nfeature_,
+        fid, nfeature_);
+  }
+#endif
+
  private:
   std::vector<uint8_t> index_;
 
@@ -340,8 +464,26 @@ class ColumnMatrix {
   std::vector<bool> missing_flags_;
   BinTypeSize bins_type_size_;
   bool any_missing_;
+
+#ifdef __ENCLAVE_OBLIVIOUS__
+  struct ColumnBoundary {	
+    // indicate where each column's index and row_ind is stored.	
+    // index_begin and index_end are logical offsets, so they should be converted to	
+    // actual offsets by scaling with packing_factor_	
+    size_t index_begin;	
+    size_t index_end;	
+    size_t row_ind_begin;	
+    size_t row_ind_end;	
+  };
+  std::vector<ColumnBoundary> boundary_;	
+
+  // Row wise feature index, this helps reduce `oaccess` range to number of features.
+  std::vector<uint32_t> row_wise_index_;
+  int32_t nfeature_;
+#endif
 };
 
 }  // namespace common
 }  // namespace xgboost
 #endif  // XGBOOST_COMMON_COLUMN_MATRIX_H_
+#endif  // __ENCLAVE_OBLIVIOUS__

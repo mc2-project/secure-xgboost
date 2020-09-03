@@ -4,6 +4,10 @@
  * \brief use quantized feature values to construct a tree
  * \author Philip Cho, Tianqi Chen, Egor Smirnov
  */
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "updater_quantile_hist_obl.h"
+#else
+
 #ifndef XGBOOST_TREE_UPDATER_QUANTILE_HIST_H_
 #define XGBOOST_TREE_UPDATER_QUANTILE_HIST_H_
 
@@ -534,3 +538,4 @@ class DistributedHistRowsAdder: public HistRowsAdder<GradientSumT> {
 }  // namespace xgboost
 
 #endif  // XGBOOST_TREE_UPDATER_QUANTILE_HIST_H_
+#endif  // __ENCLAVE_OBLIVIOUS__

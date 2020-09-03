@@ -16,6 +16,10 @@
 #include "xgboost/parameter.h"
 #include "xgboost/data.h"
 
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "../common/quantile.h"
+#endif
+
 namespace xgboost {
 namespace tree {
 
@@ -465,6 +469,67 @@ struct SplitEntryContainer {
               bst_float new_split_value, bool default_left,
               const GradientT &left_sum,
               const GradientT &right_sum) {
+#ifdef __ENCLAVE_OBLIVIOUS__
+    return common::ObliviousEnabled()
+      ? ObliviousUpdate(new_loss_chg, split_index, new_split_value,
+          default_left, left_sum, right_sum)
+      : RawUpdate(new_loss_chg, split_index, new_split_value,
+          default_left, left_sum, right_sum);
+#else
+    if (this->NeedReplace(new_loss_chg, split_index)) {
+      this->loss_chg = new_loss_chg;
+      if (default_left) {
+        split_index |= (1U << 31);
+      }
+      this->sindex = split_index;
+      this->split_value = new_split_value;
+      this->left_sum = left_sum;
+      this->right_sum = right_sum;
+      return true;
+    } else {
+      return false;
+    }
+#endif
+  }
+
+#ifdef __ENCLAVE_OBLIVIOUS__
+  /*!
+   * \brief update the split entry, replace it if e is better
+   * \param new_loss_chg loss reduction of new candidate
+   * \param split_index feature index to split on
+   * \param new_split_value the split point
+   * \param default_left whether the missing value goes to left
+   * \return whether the proposed split is better and can replace current split
+   */
+  inline bool ObliviousUpdate(bst_float new_loss_chg, unsigned split_index,
+      bst_float new_split_value, bool default_left,
+      const GradStats &new_left_sum,
+      const GradStats &new_right_sum) {
+    bool need_replace = this->NeedReplace(new_loss_chg, split_index);
+    this->loss_chg =
+      ObliviousChoose(need_replace, new_loss_chg, this->loss_chg);
+    split_index |= ObliviousChoose(default_left && need_replace, 1U << 31, 0U);
+    this->sindex = ObliviousChoose(need_replace, split_index, this->sindex);
+    this->split_value =
+      ObliviousChoose(need_replace, new_split_value, this->split_value);
+    this->left_sum =
+      ObliviousChoose(need_replace, new_left_sum, this->left_sum);
+    this->right_sum =
+      ObliviousChoose(need_replace, new_right_sum, this->right_sum);
+    return need_replace;
+  }
+
+  /*!
+   * \brief update the split entry, replace it if e is better
+   * \param new_loss_chg loss reduction of new candidate
+   * \param split_index feature index to split on
+   * \param new_split_value the split point
+   * \param default_left whether the missing value goes to left
+   * \return whether the proposed split is better and can replace current split
+   */
+  inline bool RawUpdate(bst_float new_loss_chg, unsigned split_index,
+      bst_float new_split_value, bool default_left,
+      const GradStats &left_sum, const GradStats &right_sum) {
     if (this->NeedReplace(new_loss_chg, split_index)) {
       this->loss_chg = new_loss_chg;
       if (default_left) {
@@ -479,6 +544,7 @@ struct SplitEntryContainer {
       return false;
     }
   }
+#endif
 
   /*! \brief same as update, used by AllReduce*/
   inline static void Reduce(SplitEntryContainer &dst,         // NOLINT(*)

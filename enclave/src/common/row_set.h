@@ -91,12 +91,48 @@ class RowSetCollection {
   }
 
   std::vector<size_t>* Data() { return &row_indices_; }
+
+#ifdef __ENCLAVE_OBLIVIOUS__
   // split rowset into two
   inline void AddSplit(unsigned node_id,
+                       const std::vector<Split>& row_split_tloc,
                        unsigned left_node_id,
-                       unsigned right_node_id,
-                       size_t n_left,
-                       size_t n_right) {
+                       unsigned right_node_id) {
+    const Elem e = elem_of_each_node_[node_id];
+    const auto nthread = static_cast<bst_omp_uint>(row_split_tloc.size());
+    CHECK(e.begin != nullptr);
+    size_t* all_begin = dmlc::BeginPtr(row_indices_);
+    size_t* begin = all_begin + (e.begin - all_begin);
+
+    size_t* it = begin;
+    for (bst_omp_uint tid = 0; tid < nthread; ++tid) {
+      std::copy(row_split_tloc[tid].left.begin(), row_split_tloc[tid].left.end(), it);
+      it += row_split_tloc[tid].left.size();
+    }
+    size_t* split_pt = it;
+    for (bst_omp_uint tid = 0; tid < nthread; ++tid) {
+      std::copy(row_split_tloc[tid].right.begin(), row_split_tloc[tid].right.end(), it);
+      it += row_split_tloc[tid].right.size();
+    }
+
+    if (left_node_id >= elem_of_each_node_.size()) {
+      elem_of_each_node_.resize(left_node_id + 1, Elem(nullptr, nullptr, -1));
+    }
+    if (right_node_id >= elem_of_each_node_.size()) {
+      elem_of_each_node_.resize(right_node_id + 1, Elem(nullptr, nullptr, -1));
+    }
+
+    elem_of_each_node_[left_node_id] = Elem(begin, split_pt, left_node_id);
+    elem_of_each_node_[right_node_id] = Elem(split_pt, e.end, right_node_id);
+    elem_of_each_node_[node_id] = Elem(nullptr, nullptr, -1);
+  }
+#else
+  // split rowset into two
+  inline void AddSplit(unsigned node_id,
+      unsigned left_node_id,
+      unsigned right_node_id,
+      size_t n_left,
+      size_t n_right) {
     const Elem e = elem_of_each_node_[node_id];
     CHECK(e.begin != nullptr);
     size_t* all_begin = dmlc::BeginPtr(row_indices_);
@@ -117,6 +153,7 @@ class RowSetCollection {
     elem_of_each_node_[right_node_id] = Elem(begin + n_left, e.end, right_node_id);
     elem_of_each_node_[node_id] = Elem(nullptr, nullptr, -1);
   }
+#endif
 
  private:
   // stores the row indexes in the set
@@ -239,6 +276,34 @@ class PartitionBuilder {
   size_t max_n_tasks_ = 0;
 };
 
+#ifdef __ENCLAVE_OBLIVIOUS__
+class RowNodeMap {
+  public:
+    inline void Init(size_t nrows, uint32_t max_depth)  {
+      max_depth_ = max_depth;
+      nrows_ = nrows;
+      index_.resize(nrows * (max_depth + 1));
+      // Init called on every tree construction. Set all target_nid to |0| to
+      // make sure all nodes go to root node at first level.
+      std::fill(index_.begin(), index_.end(), 0);
+    }
+
+    inline int GetRowTarget(size_t row_idx, uint32_t depth) const {
+      DCHECK(depth <= max_depth_);
+      return index_[nrows_ * depth + row_idx];
+    }
+
+    inline void SetRowTarget(size_t row_idx, uint32_t depth, int node_id) {
+      DCHECK(depth <= max_depth_);
+      index_[nrows_ * depth + row_idx] = node_id;
+    }
+
+  private:
+    uint32_t max_depth_;
+    uint32_t nrows_;
+    std::vector<int> index_;
+};
+#endif
 
 }  // namespace common
 }  // namespace xgboost

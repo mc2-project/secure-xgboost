@@ -5,10 +5,6 @@
  * \brief model structure for tree
  * \author Tianqi Chen
  */
-#ifdef __ENCLAVE_OBLIVIOUS__
-#include "tree_model_obl.h"
-#include "common/obl_primitives.h"
-#else
 #ifndef XGBOOST_TREE_MODEL_H_
 #define XGBOOST_TREE_MODEL_H_
 
@@ -28,6 +24,11 @@
 #include <algorithm>
 #include <tuple>
 #include <stack>
+
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "enclave/obl_primitives.h"
+#endif
+
 
 namespace xgboost {
 
@@ -483,7 +484,6 @@ class RegTree : public Model {
      */
     bool IsMissing(size_t i) const;
 
-   private:
     /*!
      * \brief a union value of value and flag
      *  when flag == -1, this indicate the value is missing
@@ -492,6 +492,21 @@ class RegTree : public Model {
       bst_float fvalue;
       int flag;
     };
+
+#ifdef __ENCLAVE_OBLIVIOUS__
+    /*!
+     * \brief get ith entry obliviously
+     * \param i feature index.
+     * \return the i-th feature value
+     */
+    Entry OGetEntry(size_t i) const;
+
+    static bool IsEntryMissing(Entry e) {	
+      return e.flag == -1;	
+    }
+#endif
+
+   private:
     std::vector<Entry> data_;
   };
   /*!
@@ -500,6 +515,15 @@ class RegTree : public Model {
    * \return the leaf index of the given feature
    */
   int GetLeafIndex(const FVec& feat) const;
+#ifdef __ENCLAVE_OBLIVIOUS__
+  /*!
+   * \brief get the leaf value obliviously
+   * \param feat dense feature vector, if the feature is missing the field is set to NaN
+   * \param root_id starting root index of the instance
+   * \return the leaf index of the given feature
+   */
+  bst_float OGetLeafValue(const FVec& feat, unsigned root_id = 0) const;
+#endif
   /*!
    * \brief calculate the feature contributions (https://arxiv.org/abs/1706.06060) for the tree
    * \param feat dense feature vector, if the feature is missing the field is set to NaN
@@ -544,6 +568,15 @@ class RegTree : public Model {
    * \param is_unknown Whether current required feature is missing.
    */
   inline int GetNext(int pid, bst_float fvalue, bool is_unknown) const;
+#ifdef __ENCLAVE_OBLIVIOUS__
+  /*!
+   * \brief get next position of the tree given current pid obliviously
+   * \param pid Current node id.
+   * \param fvalue feature value if not missing.
+   * \param is_unknown Whether current required feature is missing.
+   */
+  inline int OGetNext(int pid, bst_float fvalue, bool is_unknown) const;
+#endif
   /*!
    * \brief dump the model in the requested format as a text string
    * \param fmap feature map that may help give interpretations of feature
@@ -659,6 +692,49 @@ inline int RegTree::GetNext(int pid, bst_float fvalue, bool is_unknown) const {
     }
   }
 }
+
+#ifdef __ENCLAVE_OBLIVIOUS__
+inline RegTree::FVec::Entry RegTree::FVec::OGetEntry(size_t i) const {	
+  return ObliviousArrayAccess(data_.data(), i, data_.size());	
+}
+
+inline bst_float RegTree::OGetLeafValue(const RegTree::FVec& feat, unsigned root_id) const {
+  auto next_id = static_cast<int>(root_id);
+  // Need to access every node.
+  // Complexity: O(n_tree_nodes * oaccess(feat))
+  bst_float sum = 0;
+  for (int idx = next_id; idx < this->GetNodes().size(); ++idx) {
+    // This is deterministic in oblivious model, i.e. the last layer will be
+    // leaf node.
+    bool is_leaf = (*this)[idx].IsLeaf();
+    // This is deterministic.
+    bst_float leaf_value = is_leaf ? (*this)[idx].LeafValue() : 0.0f;
+    // We are accessing the node in prediction path.
+    bool is_in_path = ObliviousEqual(next_id, idx);
+    leaf_value = ObliviousChoose(is_in_path, leaf_value, 0.0f);
+    sum += leaf_value;
+
+    unsigned split_index = (*this)[idx].SplitIndex();
+    // oaccess to protect the feature to split on.
+    auto entry = feat.OGetEntry(split_index);
+    // update next node if have not encounter the leaf layer.
+    if (!is_leaf) {
+      next_id = ObliviousChoose(
+          is_in_path,
+          OGetNext(idx, entry.fvalue, RegTree::FVec::IsEntryMissing(entry)),
+          next_id);
+    }
+  }
+  return sum;
+}
+
+inline int RegTree::OGetNext(int pid, bst_float fvalue, bool is_unknown) const {
+  bst_float split_value = (*this)[pid].SplitCond();
+  auto next_id =
+    ObliviousChoose(ObliviousLess(fvalue, split_value),
+        (*this)[pid].LeftChild(), (*this)[pid].RightChild());
+  return ObliviousChoose(is_unknown, (*this)[pid].DefaultChild(), next_id);
+}
+#endif
 }  // namespace xgboost
 #endif  // XGBOOST_TREE_MODEL_H_
-#endif  // __ENCLAVE_OBLIVIOUS__ 

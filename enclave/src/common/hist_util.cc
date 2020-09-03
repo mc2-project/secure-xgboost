@@ -2,6 +2,8 @@
  * Copyright 2017-2020 by Contributors
  * \file hist_util.cc
  */
+#ifndef __ENCLAVE_OBLIVIOUS__
+
 #include <dmlc/timer.h>
 #include <dmlc/omp.h>
 
@@ -1175,3 +1177,4 @@ void GHistBuilder<double>::SubtractionTrick(GHistRow<double> self,
 
 }  // namespace common
 }  // namespace xgboost
+#endif  // __ENCLAVE_OBLIVIOUS__

@@ -4,6 +4,10 @@
  * \brief Utility for fast histogram aggregation
  * \author Philip Cho, Tianqi Chen
  */
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "hist_util_obl.h"
+#else
+
 #ifndef XGBOOST_COMMON_HIST_UTIL_H_
 #define XGBOOST_COMMON_HIST_UTIL_H_
 
@@ -703,3 +707,4 @@ class GHistBuilder {
 }  // namespace common
 }  // namespace xgboost
 #endif  // XGBOOST_COMMON_HIST_UTIL_H_
+#endif  // __ENCLAVE_OBLIVIOUS__ 

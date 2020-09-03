@@ -4,6 +4,8 @@
  * \brief use quantized feature values to construct a tree
  * \author Philip Cho, Tianqi Checn, Egor Smirnov
  */
+#ifndef __ENCLAVE_OBLIVIOUS__
+
 #include <dmlc/timer.h>
 #include <rabit/rabit.h>
 
@@ -1386,3 +1388,4 @@ XGBOOST_REGISTER_TREE_UPDATER(QuantileHistMaker, "grow_quantile_histmaker")
     });
 }  // namespace tree
 }  // namespace xgboost
+#endif // __ENCLAVE_OBLIVIOUS__

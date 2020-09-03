@@ -2,7 +2,6 @@
  * Copyright by Contributors 2017-2020
  * Modifications Copyright 2020 by Secure XGBoost Contributors
  */
-#ifndef __ENCLAVE_OBLIVIOUS__
 #include <dmlc/omp.h>
 #include <dmlc/any.h>
 
@@ -22,6 +21,10 @@
 #include "../common/math.h"
 #include "../gbm/gbtree_model.h"
 
+#ifdef __ENCLAVE_OBLIVIOUS__
+#include "../common/quantile.h"
+#endif
+
 namespace xgboost {
 namespace predictor {
 
@@ -36,8 +39,23 @@ bst_float PredValue(const SparsePage::Inst &inst,
   p_feats->Fill(inst);
   for (size_t i = tree_begin; i < tree_end; ++i) {
     if (tree_info[i] == bst_group) {
+#ifdef __ENCLAVE_OBLIVIOUS__
+      if (common::ObliviousEnabled()) {
+        auto leaf_value = trees[i]->OGetLeafValue(*p_feats);
+        if (common::ObliviousDebugCheckEnabled()) {
+          int tid = trees[i]->GetLeafIndex(*p_feats);
+          auto leaf_value2 = (*trees[i])[tid].LeafValue();
+          CHECK_EQ(leaf_value, leaf_value2) << leaf_value << ", " << leaf_value2;
+        }
+        psum += leaf_value;
+      } else {
+        int tid = trees[i]->GetLeafIndex(*p_feats);
+        psum += (*trees[i])[tid].LeafValue();
+      }
+#else
       int tid = trees[i]->GetLeafIndex(*p_feats);
       psum += (*trees[i])[tid].LeafValue();
+#endif
     }
   }
   p_feats->Drop(inst);
@@ -487,4 +505,3 @@ XGBOOST_REGISTER_PREDICTOR(CPUPredictor, "cpu_predictor")
           });
 }  // namespace predictor
 }  // namespace xgboost
-#endif  // __ENCLAVE_OBLIVIOUS__
