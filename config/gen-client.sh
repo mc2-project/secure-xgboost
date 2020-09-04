@@ -15,7 +15,7 @@ openssl req -new -key ${USERNAME}.pem -out ${USERNAME}.csr -subj "/CN=${USERNAME
 
 # Generate a certificate for the client signed by the signer
 echo "Signing CSR"
-openssl x509 -req -in ${USERNAME}.csr -days 3650 -CA signer.crt -CAkey signer.pem -CAcreateserial -out ${USERNAME}.crt
+openssl x509 -req -in ${USERNAME}.csr -days 3650 -CA root.crt -CAkey root.pem -CAcreateserial -out ${USERNAME}.crt
 
 rm ${USERNAME}.csr
 rm *.srl

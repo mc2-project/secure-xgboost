@@ -16,11 +16,11 @@ option(JVM_BINDINGS "Build JVM bindings" OFF)
 # Build options
 set(CLIENT_LIST user1 user2
     CACHE STRING "List of usernames of clients in federation")
-set(SIGNER_PUB_FILE config/signer.pub
+set(SIGNER_PUB_FILE config/enclave_signer.pub
     CACHE STRING "Public key of enclave signing authority")
-set(SIGNER_KEY_FILE config/signer.pem
+set(SIGNER_KEY_FILE config/enclave_signer.pem
     CACHE STRING "Private key of enclave signing authority")
-set(CA_CERT_FILE config/signer.crt
+set(CA_CERT_FILE config/root.crt
     CACHE STRING "Root certificate of CA for signing client identities")
 
 # OE configuration options for enclave
