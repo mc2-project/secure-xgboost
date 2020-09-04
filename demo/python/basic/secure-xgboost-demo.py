@@ -18,7 +18,7 @@ print("Remote attestation")
 
 # Note: Simulation mode does not support attestation
 # pass in `verify=False` to attest()
-xgb.attest(verify=False)
+xgb.attest()
 
 print("Creating training matrix from encrypted file")
 dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"})

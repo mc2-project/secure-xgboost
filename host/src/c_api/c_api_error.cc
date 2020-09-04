@@ -7,6 +7,12 @@
 #include <dmlc/thread_local.h>
 #include <xgboost/c_api/c_api_error.h>
 
+#ifdef __ENCLAVE_CONSENSUS__
+#include "xgboost_mc_u.h"
+#else
+#include "xgboost_u.h"
+#endif
+
 struct XGBAPIErrorEntry {
   std::string last_error;
 };
