@@ -10,7 +10,8 @@ namespace {
 #ifdef __ENCLAVE_OBLIVIOUS__
 constexpr bool kEnableObliviousCombine = true;
 constexpr bool kEnableObliviousPrune = true;
-constexpr bool kEnableObliviousDebugCheck = true;
+// FIXME will setting to true work after the changes for padding?
+constexpr bool kEnableObliviousDebugCheck = false;
 constexpr bool kEnableOblivious = true;
 #else
 constexpr bool kEnableObliviousCombine = false;

@@ -75,10 +75,7 @@ class TestInteractionConstraints(unittest.TestCase):
         self.run_interaction_constraints(tree_method='hist')
 
     def test_approx_interaction_constraints(self):
-        #TODO: This is failing on line 87
-        """
         self.run_interaction_constraints(tree_method='approx')
-        """
 
     @pytest.mark.skipif(**tm.no_sklearn())
     def training_accuracy(self, tree_method):
