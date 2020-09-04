@@ -72,10 +72,13 @@ set(XGBOOST_OBJ_SOURCES "${XGBOOST_OBJ_SOURCES};$<TARGET_OBJECTS:objxgboost>")
 
 #-- Shared library
 add_library(xgboost SHARED ${XGBOOST_OBJ_SOURCES} ${PLUGINS_SOURCES})
+target_compile_definitions(xgboost PUBLIC -D__ENCLAVE_CONSENSUS__)
 target_include_directories(xgboost
   INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
+target_include_directories(xgboost
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(xgboost PRIVATE ${LINKED_LIBRARIES_PRIVATE} openenclave::oehostapp mbedcrypto mbedtls)
 
 set_output_directory(xgboost ${CMAKE_SOURCE_DIR}/build)

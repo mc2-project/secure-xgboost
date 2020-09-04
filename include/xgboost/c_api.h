@@ -5,6 +5,10 @@
  * \author Tianqi Chen
  * \brief C API of XGBoost, used for interfacing to other languages.
  */
+#ifdef __ENCLAVE_CONSENSUS__
+#include "c_api_mc.h"
+#else 
+
 #ifndef XGBOOST_C_API_H_
 #define XGBOOST_C_API_H_
 
@@ -26,31 +30,31 @@
 
 #ifdef __ENCLAVE__ // macros for errors / safety checks
 #define safe_ocall(call) {                                \
-  oe_result_t result = (call);                              \
-  if (result != OE_OK) {                                    \
-    fprintf(stderr,                                         \
-        "%s:%d: Ocall failed; error in %s: %s\n",           \
-        __FILE__, __LINE__, #call, oe_result_str(result));  \
-    exit(1);                                                \
-  }                                                         \
+oe_result_t result = (call);                              \
+if (result != OE_OK) {                                    \
+  fprintf(stderr,                                         \
+      "%s:%d: Ocall failed; error in %s: %s\n",           \
+      __FILE__, __LINE__, #call, oe_result_str(result));  \
+  exit(1);                                                \
+}                                                         \
 }
 
 #define check_enclave_buffer(ptr, size) {                 \
-  if (!oe_is_within_enclave((ptr), size)) {                 \
+if (!oe_is_within_enclave((ptr), size)) {                 \
     fprintf(stderr,                                       \
-        "%s:%d: Buffer bounds check failed\n",        \
-        __FILE__, __LINE__);                          \
+            "%s:%d: Buffer bounds check failed\n",        \
+            __FILE__, __LINE__);                          \
     exit(1);                                              \
-  }                                                         \
+}                                                         \
 }
 
 #define check_host_buffer(ptr, size) {                    \
-  if (!oe_is_outside_enclave((ptr), size)) {                \
+if (!oe_is_outside_enclave((ptr), size)) {                \
     fprintf(stderr,                                       \
-        "%s:%d: Buffer bounds check failed\n",        \
-        __FILE__, __LINE__);                          \
+            "%s:%d: Buffer bounds check failed\n",        \
+            __FILE__, __LINE__);                          \
     exit(1);                                              \
-  }                                                         \
+}                                                         \
 }
 #endif
 
@@ -1027,3 +1031,4 @@ int ocall_rabit__GetWorldSize();
 int ocall_rabit__IsDistributed();
 #endif  // __HOST__
 #endif  // XGBOOST_C_API_H_
+#endif  // __ENCLAVE_CONSENSUS__
