@@ -13,7 +13,7 @@ openssl genrsa -out ${USERNAME}.pem -3 3072
 echo "Generating CSR"
 openssl req -new -key ${USERNAME}.pem -out ${USERNAME}.csr -subj "/CN=${USERNAME}"
 
-# Generate a certificate for the client signed by the signer
+# Generate a certificate for the client signed by the root CA
 echo "Signing CSR"
 openssl x509 -req -in ${USERNAME}.csr -days 3650 -CA root.crt -CAkey root.pem -CAcreateserial -out ${USERNAME}.crt
 

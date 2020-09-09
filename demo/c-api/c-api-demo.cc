@@ -1,8 +1,11 @@
 /*!
  * Copyright 2019 XGBoost contributors
+ * Modifications copyright 2020 Secure XGBoost contributors
  *
  * \file c-api-demo.c
  * \brief A simple example of using xgboost C API.
+ *
+ * Note: This demo requires the library to be built with the build parameter CONSENSUS=OFF.
  */
 
 #include <iostream>

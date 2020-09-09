@@ -11,7 +11,7 @@ cert_file = DIR + "/../../../config/user1.crt"
 
 print("Init user and enclave parameters")
 xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file)
-xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity=3)
+xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed", log_verbosity=0)
 
 # Remote Attestation
 print("Remote attestation")
@@ -35,7 +35,7 @@ params = {
         "min_child_weight": "1",
         "gamma": "0.1",
         "max_depth": "3",
-        "verbosity": "3" 
+        "verbosity": "0" 
 }
 
 # Train and evaluate
