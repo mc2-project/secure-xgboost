@@ -5,6 +5,8 @@ C-APIs
 bindings.  For detailed reference, please check xgboost/c_api.h.  Here is a
 demonstration of using the API.
 
+**NOTE:** Currently, this demo requires the library to be built with the build parameter `CONSENSUS=OFF`.
+
 # CMake
 If you use **CMake** for your project, you can either install **XGBoost**
 somewhere in your system and tell CMake to find it by calling
