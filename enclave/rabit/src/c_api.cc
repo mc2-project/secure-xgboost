@@ -221,8 +221,7 @@ struct WriteWrapper : public Serializable {
 }  // namespace rabit
 
 RABIT_DLL bool RabitInit(int argc, char *argv[]) {
-  return rabit::Init(argc, argv);
-
+  rabit::Init(argc, argv);
   // Master enclave shares its symmetric key, public/private keypair, and nonce to maintain consistency across the cluster
   EnclaveContext::getInstance().share_keys_and_nonce();
 }

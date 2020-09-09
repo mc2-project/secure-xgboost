@@ -1,10 +1,18 @@
 // Copyright by Contributors
+// Modifications copyright by Secure XGBoost Contributors
 // implementations in ctypes
 #include <rabit/base.h>
 #include <cstring>
 #include <string>
 #include "rabit/rabit.h"
 #include "rabit/c_api.h"
+
+#ifdef __ENCLAVE_CONSENSUS__
+#include "../../../build/host/xgboost_mc_u.h"
+#else
+#include "../../../build/host/xgboost_u.h"
+#endif
+#include <enclave/enclave.h>
 
 namespace rabit {
 namespace c_api {
@@ -219,11 +227,15 @@ struct WriteWrapper : public Serializable {
 }  // namespace rabit
 
 RABIT_DLL bool RabitInit(int argc, char *argv[]) {
-  return rabit::Init(argc, argv);
+  size_t arg_lengths[argc];
+  for (int i = 0; i < argc; i++) {
+    arg_lengths[i] = strlen(argv[i]);
+  }
+  enclave_RabitInit(Enclave::getInstance().getEnclave(), argc, argv, arg_lengths);
 }
 
 RABIT_DLL bool RabitFinalize() {
-  return rabit::Finalize();
+  enclave_RabitFinalize(Enclave::getInstance().getEnclave());
 }
 
 RABIT_DLL int RabitGetRingPrevRank() {
@@ -231,7 +243,8 @@ RABIT_DLL int RabitGetRingPrevRank() {
 }
 
 RABIT_DLL int RabitGetRank() {
-  return rabit::GetRank();
+  enclave_RabitGetRank(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret);
+  return Enclave::getInstance().enclave_ret;
 }
 
 RABIT_DLL int RabitGetWorldSize() {
@@ -239,7 +252,8 @@ RABIT_DLL int RabitGetWorldSize() {
 }
 
 RABIT_DLL int RabitIsDistributed() {
-  return rabit::IsDistributed();
+  enclave_RabitIsDistributed(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret);
+  return Enclave::getInstance().enclave_ret;
 }
 
 RABIT_DLL void RabitTrackerPrint(const char *msg) {
