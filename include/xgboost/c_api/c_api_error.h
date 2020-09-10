@@ -10,7 +10,6 @@
 #include <dmlc/logging.h>
 #include <xgboost/c_api.h>
 
-
 /*! \brief  macro to guard beginning and end section of all functions */
 #define API_BEGIN() try {
 /*! \brief every function starts with API_BEGIN();

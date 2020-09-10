@@ -6,13 +6,17 @@
  *  This is usually NOT needed, use engine_mpi or engine for real distributed version
  * \author Tianqi Chen
  */
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_DEPRECATE
 #define NOMINMAX
 
-#include "../include/rabit/internal/engine.h"
+#include <rabit/base.h>
+#include "rabit/internal/engine.h"
 
 namespace rabit {
+
+namespace utils {
+  bool STOP_PROCESS_ON_ERROR = true;
+}
+
 namespace engine {
 /*! \brief EmptyEngine */
 class EmptyEngine : public IEngine {
@@ -20,16 +24,34 @@ class EmptyEngine : public IEngine {
   EmptyEngine(void) {
     version_number = 0;
   }
+  virtual void Allgather(void *sendrecvbuf_,
+                         size_t total_size,
+                         size_t slice_begin,
+                         size_t slice_end,
+                         size_t size_prev_slice,
+                         const char* _file,
+                         const int _line,
+                         const char* _caller) {
+    utils::Error("EmptyEngine:: Allgather is not supported");
+  }
+  virtual int GetRingPrevRank(void) const {
+    utils::Error("EmptyEngine:: GetRingPrevRank is not supported");
+    return -1;
+  }
   virtual void Allreduce(void *sendrecvbuf_,
                          size_t type_nbytes,
                          size_t count,
                          ReduceFunction reducer,
                          PreprocFunction prepare_fun,
-                         void *prepare_arg) {
+                         void *prepare_arg,
+                         const char* _file,
+                         const int _line,
+                         const char* _caller) {
     utils::Error("EmptyEngine:: Allreduce is not supported,"\
                  "use Allreduce_ instead");
   }
-  virtual void Broadcast(void *sendrecvbuf_, size_t size, int root) {
+  virtual void Broadcast(void *sendrecvbuf_, size_t size, int root,
+                          const char* _file, const int _line, const char* _caller) {
   }
   virtual void InitAfterException(void) {
     utils::Error("EmptyEngine is not fault tolerant");
@@ -77,10 +99,12 @@ class EmptyEngine : public IEngine {
 EmptyEngine manager;
 
 /*! \brief intiialize the synchronization module */
-void Init(int argc, char *argv[]) {
+bool Init(int argc, char *argv[]) {
+  return true;
 }
 /*! \brief finalize syncrhonization module */
-void Finalize(void) {
+bool Finalize(void) {
+  return true;
 }
 
 /*! \brief singleton method to get engine */
@@ -95,7 +119,10 @@ void Allreduce_(void *sendrecvbuf,
                 mpi::DataType dtype,
                 mpi::OpType op,
                 IEngine::PreprocFunction prepare_fun,
-                void *prepare_arg) {
+                void *prepare_arg,
+                const char* _file,
+                const int _line,
+                const char* _caller) {
   if (prepare_fun != NULL) prepare_fun(prepare_arg);
 }
 
@@ -111,7 +138,10 @@ void ReduceHandle::Init(IEngine::ReduceFunction redfunc, size_t type_nbytes) {}
 void ReduceHandle::Allreduce(void *sendrecvbuf,
                              size_t type_nbytes, size_t count,
                              IEngine::PreprocFunction prepare_fun,
-                             void *prepare_arg) {
+                             void *prepare_arg,
+                             const char* _file,
+                             const int _line,
+                             const char* _caller) {
   if (prepare_fun != NULL) prepare_fun(prepare_arg);
 }
 }  // namespace engine

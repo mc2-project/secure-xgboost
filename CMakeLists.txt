@@ -10,15 +10,17 @@ include(cmake/Utils.cmake)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 cmake_policy(SET CMP0022 NEW)
 
+## Bindings
+option(JVM_BINDINGS "Build JVM bindings" OFF)
 
 # Build options
 set(CLIENT_LIST user1 user2
     CACHE STRING "List of usernames of clients in federation")
-set(SIGNER_PUB_FILE config/signer.pub
+set(SIGNER_PUB_FILE config/enclave_signer.pub
     CACHE STRING "Public key of enclave signing authority")
-set(SIGNER_KEY_FILE config/signer.pem
+set(SIGNER_KEY_FILE config/enclave_signer.pem
     CACHE STRING "Private key of enclave signing authority")
-set(CA_CERT_FILE config/signer.crt
+set(CA_CERT_FILE config/root.crt
     CACHE STRING "Root certificate of CA for signing client identities")
 
 # OE configuration options for enclave
@@ -47,6 +49,8 @@ option(LVI_MITIGATION
     "Enable mitigations for LVI vulnerability" OFF)
 set(LVI_MITIGATION_BINDIR "/opt/openenclave/lvi_mitigation_bin"
     CACHE STRING "Path to LVI mitigation dependencies")
+option(CONSENSUS
+    "Enable cryptographic multiparty consensus" ON)
 
 # Generate conf file
 FILE(WRITE ${PROJECT_SOURCE_DIR}/enclave/xgboost.conf
@@ -107,6 +111,11 @@ if(OBLIVIOUS)
 else()
     message("\nDisabling obliviousness.\n")
 endif(OBLIVIOUS)
+if(CONSENSUS)
+    message("\nEnabling consensus.\n")
+else()
+    message("\nDisabling consensus.\n")
+endif(CONSENSUS)
 if(LVI_MITIGATION)
     message("\nEnabling LVI mitigation.\n")
 else()
@@ -117,3 +126,9 @@ set_default_configuration_release()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)
 add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)
+
+# This creates its own shared library `xgboost4j'.
+if (JVM_BINDINGS)
+	add_subdirectory(${PROJECT_SOURCE_DIR}/jvm-packages)
+endif (JVM_BINDINGS)
+#-- End shared library`

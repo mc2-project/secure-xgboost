@@ -16,9 +16,15 @@ if (USE_SANITIZER)
   enable_sanitizers("${ENABLED_SANITIZERS}")
 endif (USE_SANITIZER)
 
-add_custom_command(OUTPUT xgboost_u.h xgboost_u.c xgboost_args.h 
-    DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl
-    COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl)
+if (CONSENSUS)
+    add_custom_command(OUTPUT xgboost_mc_u.h xgboost_mc_u.c xgboost_mc_args.h 
+        DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl
+        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl)
+else()
+    add_custom_command(OUTPUT xgboost_u.h xgboost_u.c xgboost_args.h 
+        DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl
+        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl)
+endif()
 
 # dmlc-core
 add_subdirectory(${PROJECT_SOURCE_DIR}/dmlc-core)
@@ -41,7 +47,14 @@ else ()
     rabit/src/engine.cc
     rabit/src/c_api.cc)
 endif (MINGW OR R_LIB)
-add_library(rabit STATIC ${RABIT_SOURCES} ${PROJECT_BINARY_DIR}/xgboost_u.c)
+
+if (CONSENSUS)
+    add_library(rabit STATIC ${RABIT_SOURCES} ${PROJECT_BINARY_DIR}/xgboost_mc_u.c)
+    target_compile_definitions(rabit PUBLIC -D__ENCLAVE_CONSENSUS__)
+else ()
+    add_library(rabit STATIC ${RABIT_SOURCES} ${PROJECT_BINARY_DIR}/xgboost_u.c)
+endif ()
+
 target_include_directories(rabit PRIVATE
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/rabit>)
@@ -59,10 +72,13 @@ set(XGBOOST_OBJ_SOURCES "${XGBOOST_OBJ_SOURCES};$<TARGET_OBJECTS:objxgboost>")
 
 #-- Shared library
 add_library(xgboost SHARED ${XGBOOST_OBJ_SOURCES} ${PLUGINS_SOURCES})
+target_compile_definitions(xgboost PUBLIC -D__ENCLAVE_CONSENSUS__)
 target_include_directories(xgboost
   INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
+target_include_directories(xgboost
+  PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(xgboost PRIVATE ${LINKED_LIBRARIES_PRIVATE} openenclave::oehostapp mbedcrypto mbedtls)
 
 set_output_directory(xgboost ${CMAKE_SOURCE_DIR}/build)

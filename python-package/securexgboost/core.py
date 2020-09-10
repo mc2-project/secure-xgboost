@@ -1569,7 +1569,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True, decrypt=True):
+                validate_features=True, training=False, decrypt=True):
         """
         Predict with data.
 
@@ -1623,6 +1623,16 @@ class Booster(object):
             pred_contribs), and the sum of the entire matrix equals the raw untransformed margin
             value of the prediction. Note the last row and column correspond to the bias term.
 
+        training : bool
+            Whether the prediction value is used for training.  This can effect
+            `dart` booster, which performs dropouts during training iterations.
+
+        .. note:: Using ``predict()`` with DART booster
+
+          If the booster object is DART type, ``predict()`` will not perform
+          dropouts, i.e. all the trees will be evaluated.  If you want to
+          obtain result with dropouts, provide `training=True`.
+
         validate_features : bool
             When this is True, validate that the Booster's and data's feature_names are identical.
             Otherwise, it is assumed that the feature_names are the same.
@@ -1674,6 +1684,7 @@ class Booster(object):
                     dmatrix_handle=data.handle.value,
                     option_mask=option_mask,
                     ntree_limit=ntree_limit,
+                    training=training,
                     username=username)
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=_CONF["current_user"],
@@ -1719,6 +1730,7 @@ class Booster(object):
                                               data.handle,
                                               ctypes.c_int(option_mask),
                                               ctypes.c_uint(ntree_limit),
+                                              ctypes.c_int(training),
                                               nonce,
                                               nonce_size,
                                               ctypes.c_uint32(nonce_ctr),
@@ -2729,6 +2741,7 @@ class RemoteAPI:
         dmatrix_handle = request.predict_params.dmatrix_handle
         option_mask = request.predict_params.option_mask
         ntree_limit = request.predict_params.ntree_limit
+        training = request.predict_params.training
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2743,6 +2756,7 @@ class RemoteAPI:
             c_str(dmatrix_handle),
             ctypes.c_int(option_mask),
             ctypes.c_uint(ntree_limit),
+            ctypes.c_int(training),
             nonce,
             ctypes.c_size_t(nonce_size),
             ctypes.c_uint32(nonce_ctr),

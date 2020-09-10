@@ -6,15 +6,12 @@
  *
  * \author Tianqi Chen, Ignacio Cano, Tianyi Zhou
  */
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_DEPRECATE
-#define NOMINMAX
-
+#include <rabit/base.h>
 #include <memory>
-#include <rabit/internal/engine.h>
-#include "./allreduce_base.h"
-#include "./allreduce_robust.h"
-#include "./thread_local.h"
+#include "rabit/internal/engine.h"
+#include "allreduce_base.h"
+#include "allreduce_robust.h"
+#include "rabit/internal/thread_local.h"
 
 namespace rabit {
 namespace engine {
@@ -43,23 +40,31 @@ struct ThreadLocalEntry {
 typedef ThreadLocalStore<ThreadLocalEntry> EngineThreadLocal;
 
 /*! \brief intiialize the synchronization module */
-void Init(int argc, char *argv[]) {
+bool Init(int argc, char *argv[]) {
   ThreadLocalEntry* e = EngineThreadLocal::Get();
   if (e->engine.get() == nullptr) {
     e->initialized = true;
     e->engine.reset(new Manager());
-    e->engine->Init(argc, argv);
+    return e->engine->Init(argc, argv);
+  } else {
+    return true;
   }
 }
 
 /*! \brief finalize syncrhonization module */
-void Finalize() {
+bool Finalize() {
   ThreadLocalEntry* e = EngineThreadLocal::Get();
-  utils::Check(e->engine.get() != nullptr,
-               "rabit::Finalize engine is not initialized or already been finalized.");
-  e->engine->Shutdown();
-  e->engine.reset(nullptr);
-  e->initialized = false;
+  if (e->engine.get() != nullptr) {
+    if (e->engine->Shutdown()) {
+      e->engine.reset(nullptr);
+      e->initialized = false;
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    return true;
+  }
 }
 
 /*! \brief singleton method to get engine */
@@ -76,6 +81,19 @@ IEngine *GetEngine() {
   }
 }
 
+// perform in-place allgather, on sendrecvbuf
+void Allgather(void *sendrecvbuf_, size_t total_size,
+                   size_t slice_begin,
+                   size_t slice_end,
+                   size_t size_prev_slice,
+                   const char* _file,
+                   const int _line,
+                   const char* _caller) {
+  GetEngine()->Allgather(sendrecvbuf_, total_size, slice_begin,
+    slice_end, size_prev_slice, _file, _line, _caller);
+}
+
+
 // perform in-place allreduce, on sendrecvbuf
 void Allreduce_(void *sendrecvbuf,
                 size_t type_nbytes,
@@ -84,9 +102,12 @@ void Allreduce_(void *sendrecvbuf,
                 mpi::DataType dtype,
                 mpi::OpType op,
                 IEngine::PreprocFunction prepare_fun,
-                void *prepare_arg) {
-  GetEngine()->Allreduce(sendrecvbuf, type_nbytes, count,
-                         red, prepare_fun, prepare_arg);
+                void *prepare_arg,
+                const char* _file,
+                const int _line,
+                const char* _caller) {
+  GetEngine()->Allreduce(sendrecvbuf, type_nbytes, count, red, prepare_fun,
+    prepare_arg, _file, _line, _caller);
 }
 
 // code for reduce handle
@@ -108,10 +129,14 @@ void ReduceHandle::Init(IEngine::ReduceFunction redfunc, size_t type_nbytes) {
 void ReduceHandle::Allreduce(void *sendrecvbuf,
                              size_t type_nbytes, size_t count,
                              IEngine::PreprocFunction prepare_fun,
-                             void *prepare_arg) {
+                             void *prepare_arg,
+                             const char* _file,
+                             const int _line,
+                             const char* _caller) {
   utils::Assert(redfunc_ != NULL, "must intialize handle to call AllReduce");
   GetEngine()->Allreduce(sendrecvbuf, type_nbytes, count,
-                         redfunc_, prepare_fun, prepare_arg);
+                         redfunc_, prepare_fun, prepare_arg,
+                         _file, _line, _caller);
 }
 }  // namespace engine
 }  // namespace rabit

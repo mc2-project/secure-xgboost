@@ -1,0 +1,345 @@
+enclave {
+    include "xgboost/c_api_mc.h"
+    include "rabit/c_api.h"
+    trusted {
+        public void enclave_init(
+                int log_verbosity);
+
+        public int enclave_XGDMatrixCreateFromFile(
+                [in, string] const char *fname,
+                int silent,
+                [out] char** handle);
+
+        public int enclave_XGDMatrixCreateFromEncryptedFile(
+                [in, count=num_files] const char **fnames,
+                [in, count=num_files] size_t* fname_lengths,
+                [in, count=num_files] char** usernames,
+                [in, count=num_files] size_t* username_lengths,
+                bst_ulong num_files,
+                int silent,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr, 
+                [out] char** handle,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterCreate(
+                [in, count=len] char** dmat_handles, 
+                [in, count=len] size_t* handle_lengths, 
+                bst_ulong len, 
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] char** handle,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+        
+        public int enclave_XGBoosterSetParam(
+                [in, string] char* handle,
+                [in, string] const char *name,
+                [in, string] const char *value,
+                [in, count=nonce_size] uint8_t *nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterUpdateOneIter(
+                [in, string] char* handle,
+                int iter,
+                [in, string] char* dtrain,
+                [in, count=nonce_size] uint8_t *nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterBoostOneIter(
+                [in, string] char* handle,
+                [in, string] char* dtrain,
+                [in, count=len] bst_float *grad,
+                [in, count=len] bst_float *hess,
+                bst_ulong len);
+
+        public int enclave_XGBoosterEvalOneIter(
+                [in, string] char* handle,
+                int iter,
+                [in, count=len] char** dmat_handles,
+                [in, count=len] size_t* handle_lengths,
+                [in, count=len] const char** evnames,
+                [in, count=len] size_t* name_lengths,
+                bst_ulong len,
+                [out] char** out_str);
+
+        public int enclave_XGBoosterPredict(
+                [in, string] char* handle,
+                [in, string] char* dmat,
+                int option_mask,
+                unsigned ntree_limit,
+                int training,
+                [in, count=nonce_size] uint8_t *nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong *out_len,
+                [out] uint8_t **out_result,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+        
+        public int enclave_XGDMatrixGetFloatInfo(
+                [in, string] char* handle,
+                [in, string] const char* field,
+                [out] bst_ulong *out_len,
+                [out] bst_float **out_dptr);
+
+        public int enclave_XGDMatrixGetUintInfo(
+                [in, string] char* handle,
+                [in, string] const char* field,
+                [out] bst_ulong *out_len,
+                [out] unsigned **out_dptr);
+
+        public int enclave_XGDMatrixSetFloatInfo(
+                [in, string] char* handle,
+                [in, string] const char* field,
+                [in] const bst_float* info,
+                bst_ulong len);
+
+        public int enclave_XGDMatrixSetUIntInfo(
+                [in, string] char* handle,
+                [in, string] const char* field,
+                [in] const unsigned* info,
+                bst_ulong len);
+
+        public int enclave_XGDMatrixNumRow(
+                [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong *out,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGDMatrixNumCol(
+                [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong *out,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterGetAttr(
+                [in, string] char* handle,
+                [in, string] const char* key,
+                [out] char** out,
+                [out] int* success);
+
+        public int enclave_XGBoosterGetAttrNames(
+                [in, string] char* handle,
+                [out] bst_ulong* out_len,
+                [out] char*** out);
+
+        public int enclave_XGBoosterLoadModel(
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterSaveModel(
+                [in, string] char* handle,
+                [in, string] const char* fname,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr, 
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterDumpModel(
+                [in, string] char* handle,
+                [in, string] const char* fmap,
+                int with_stats,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong* len,
+                [out] char*** out_models);
+
+        public int enclave_XGBoosterDumpModelEx(
+                [in, string] char* handle,
+                [in, string] const char* fmap,
+                int with_stats,
+                [in, string] const char* format,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong* len,
+                [out] char*** out_models,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterDumpModelWithFeatures(
+                [in, string] char* handle,
+                unsigned int fnum,
+                [in, count=fnum] const char** fname,
+                [in, count=fnum] size_t* fname_lengths,
+                [in, count=fnum] const char** ftype,
+                [in, count=fnum] size_t* ftype_lengths,
+                int with_stats,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong* len,
+                [out] char*** out_models,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterDumpModelExWithFeatures(
+                [in, string] char* handle,
+                unsigned int fnum,
+                [in, count=fnum] const char** fname,
+                [in, count=fnum] size_t* fname_lengths,
+                [in, count=fnum] const char** ftype,
+                [in, count=fnum] size_t* ftype_lengths,
+                int with_stats,
+                [in, string] const char* format,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong* len,
+                [out] char*** out_models,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterGetModelRaw(
+                [in, string] char* handle,
+                [in, count=nonce_size] uint8_t* nonce,
+                size_t nonce_size,
+                uint32_t nonce_ctr,
+                [out] bst_ulong *out_len,
+                [out] char **out_dptr,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGBoosterLoadModelFromBuffer(
+                [in, string] char* handle,
+                [in, size=len] const void* buf,
+                bst_ulong len,
+                [out] uint8_t** out_sig,
+                [out] size_t *out_sig_length,
+                [in, count=num_sigs] char **signers,
+                [in, count=num_sigs] size_t* signer_lengths,
+                [in, count=num_sigs] uint8_t **signatures,
+                [in, count=num_sigs] size_t* sig_lengths,
+                size_t num_sigs);
+
+        public int enclave_XGDMatrixFree(
+                [in, string] char* handle);
+
+        public int enclave_XGBoosterFree(
+                [in, string] char* handle);
+
+        public int enclave_get_remote_report_with_pubkey_and_nonce(
+                [out] uint8_t **pem_key, 
+                [out] size_t *key_size,
+                [out] uint8_t **nonce,
+                [out] size_t *nonce_size,
+                [out] uint8_t **remote_report,
+                [out] size_t  *remote_report_size);
+
+        public int enclave_add_client_key_with_certificate(
+                [in, size=cert_len] char *cert,
+                int cert_len,
+                [in, size=data_len] uint8_t* data,
+                size_t data_len,
+                [in, size=sig_len] uint8_t* signature,
+                size_t sig_len);
+
+        public int enclave_get_enclave_symm_key(
+                [in, string] char *username,
+                [out] uint8_t **out,
+                [out] size_t *out_size);
+
+        public void enclave_RabitInit(
+                int argc,
+                [in, count=argc] char **argv,
+                [in, count=argc] size_t* arg_lengths);
+
+        public void enclave_RabitFinalize();
+
+        public int enclave_RabitGetRank();
+
+        public int enclave_RabitIsDistributed();
+    };
+    untrusted {
+        void host_XGBAPISetLastError(
+                [in, string] const char* msg);
+    };
+};

@@ -24,7 +24,11 @@ void XGBAPISetLastError(const char* msg) {
 #else 
 // Enclave thread locals get erased on an enclave exit
 // So we save the error message at the host instead
+#ifdef __ENCLAVE_CONSENSUS__
+#include "xgboost_mc_t.h"
+#else
 #include "xgboost_t.h"
+#endif
 
 void XGBAPISetLastError(const char* msg) {
   // FIXME: safe ocall

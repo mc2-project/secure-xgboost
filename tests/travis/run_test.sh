@@ -9,7 +9,7 @@ if [ ${TASK} == "python_test" ]; then
     # Build the enclave in simulate mode
     rm -rf build
     mkdir build && cd build
-    cmake .. ${CMAKE_COMMON_FLAGS} -DOE_DEBUG=1 -DLOGGING=ON -DSIMULATE=ON -DOBLIVIOUS=ON -DUSE_AVX2=OFF -DCLIENT_LIST=user1
+    cmake .. ${CMAKE_COMMON_FLAGS} -DOE_DEBUG=1 -DLOGGING=ON -DSIMULATE=ON -DOBLIVIOUS=ON -DUSE_AVX2=OFF -DCLIENT_LIST=user1 -DCONSENSUS=ON
     make -j4
     cd ..
 
@@ -39,24 +39,32 @@ if [ ${TASK} == "cmake_test" ]; then
     set -e
 
     CMAKE_COMMON_FLAGS='-DOE_DEBUG=1 -DSIMULATE=ON -DLVI_MITIGATION=OFF'
+    # Build/test without consensus
+    rm -rf build
+    mkdir build && cd build
+    cmake .. ${CMAKE_COMMON_FLAGS} -DCONSENSUS=OFF -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
+    make -j4
+    cd ..
+    rm -rf build
+
     # Build/test without obliviousness
     rm -rf build
     mkdir build && cd build
-    cmake .. ${CMAKE_COMMON_FLAGS} -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
+    cmake .. ${CMAKE_COMMON_FLAGS} -DCONSENSUS=ON -DOBLIVIOUS=OFF -DUSE_AVX2=OFF
     make -j4
     cd ..
     rm -rf build
 
     # Build/test with obliviousness, without AVX
     mkdir build && cd build
-    cmake .. ${CMAKE_COMMON_FLAGS} -DOBLIVIOUS=ON -DUSE_AVX2=OFF
+    cmake .. ${CMAKE_COMMON_FLAGS} -DCONSENSUS=ON -DOBLIVIOUS=ON -DUSE_AVX2=OFF
     make -j4
     cd ..
     rm -rf build
 
     # Build/test with obliviousness and AVX
     mkdir build && cd build
-    cmake .. ${CMAKE_COMMON_FLAGS} -DOBLIVIOUS=ON -DUSE_AVX2=ON
+    cmake .. ${CMAKE_COMMON_FLAGS} -DCONSENSUS=ON -DOBLIVIOUS=ON -DUSE_AVX2=ON
     make -j4
     cd ..
     rm -rf build

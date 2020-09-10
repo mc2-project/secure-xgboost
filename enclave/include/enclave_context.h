@@ -1,7 +1,11 @@
 #ifndef ENCLAVE_CONTEXT_H_
 #define ENCLAVE_CONTEXT_H_
 
+#ifdef __ENCLAVE_CONSENSUS__
+#include "xgboost_mc_t.h"
+#else
 #include "xgboost_t.h"
+#endif
 #include <enclave/crypto.h>
 #include <enclave/attestation.h>
 
@@ -158,7 +162,7 @@ class EnclaveContext {
     }
 
     std::vector<std::string> get_dmatrix_owners(DMatrixHandle handle) {
-      LOG(DEBUG) << "Getting dmatrix " << handle;
+      LOG(DEBUG) << "Getting dmatrix owner" << handle;
       std::string str(handle);
       auto iter = dmatrix_owner_map.find(str);
       if (iter == dmatrix_owner_map.end()) {

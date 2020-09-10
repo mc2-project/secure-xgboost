@@ -7,6 +7,8 @@
 #ifndef XGBOOST_FEATURE_MAP_H_
 #define XGBOOST_FEATURE_MAP_H_
 
+#include <xgboost/logging.h>
+
 #include <vector>
 #include <string>
 #include <cstring>
@@ -63,7 +65,7 @@ class FeatureMap {
     return names_[idx].c_str();
   }
   /*! \return type of specific feature */
-  Type type(size_t idx) const {
+  Type TypeOf(size_t idx) const {
     CHECK_LT(idx, names_.size()) << "FeatureMap feature index exceed bound";
     return types_[idx];
   }

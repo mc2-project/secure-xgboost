@@ -5,7 +5,7 @@
  */
 #ifndef XGBOOST_LINEAR_PARAM_H_
 #define XGBOOST_LINEAR_PARAM_H_
-#include <dmlc/parameter.h>
+#include "xgboost/parameter.h"
 
 namespace xgboost {
 namespace linear {
@@ -20,7 +20,7 @@ enum FeatureSelectorEnum {
   kRandom
 };
 
-struct LinearTrainParam : public dmlc::Parameter<LinearTrainParam> {
+struct LinearTrainParam : public XGBoostParameter<LinearTrainParam> {
   /*! \brief learning_rate */
   float learning_rate;
   /*! \brief regularization weight for L2 norm */
@@ -28,8 +28,6 @@ struct LinearTrainParam : public dmlc::Parameter<LinearTrainParam> {
   /*! \brief regularization weight for L1 norm */
   float reg_alpha;
   int feature_selector;
-  int n_gpus;
-  int gpu_id;
   // declare parameters
   DMLC_DECLARE_PARAMETER(LinearTrainParam) {
     DMLC_DECLARE_FIELD(learning_rate)
@@ -52,10 +50,6 @@ struct LinearTrainParam : public dmlc::Parameter<LinearTrainParam> {
         .add_enum("greedy", kGreedy)
         .add_enum("random", kRandom)
         .describe("Feature selection or ordering method.");
-    DMLC_DECLARE_FIELD(n_gpus).set_default(1).describe(
-        "Number of devices to use.");
-    DMLC_DECLARE_FIELD(gpu_id).set_default(0).describe(
-        "Primary device ordinal.");
     // alias of parameters
     DMLC_DECLARE_ALIAS(learning_rate, eta);
     DMLC_DECLARE_ALIAS(reg_lambda, lambda);

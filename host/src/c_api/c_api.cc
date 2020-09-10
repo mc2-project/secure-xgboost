@@ -1,27 +1,30 @@
-// A
-// Copyright (c) 2014 by Contributors
-
-#include <xgboost/data.h>
-#include <xgboost/learner.h>
-#include <xgboost/c_api.h>
-#include <xgboost/logging.h>
-
-#include <dmlc/thread_local.h>
+// Copyright (c) 2014-2020 by Contributors
+// Modifications Copyright (c) 2020 by Secure XGBoost Contributors
 #include <rabit/rabit.h>
 #include <rabit/c_api.h>
 
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <algorithm>
 #include <vector>
 #include <string>
 #include <memory>
 
-#include <xgboost/c_api/c_api_error.h>
-#include <xgboost/data/simple_csr_source.h>
-#include <xgboost/common/math.h>
-#include <xgboost/common/io.h>
-#include <xgboost/common/group_data.h>
+#include "xgboost/base.h"
+#include "xgboost/data.h"
+#include "xgboost/host_device_vector.h"
+#include "xgboost/learner.h"
+#include "xgboost/c_api.h"
+#include "xgboost/logging.h"
+#include "xgboost/version_config.h"
+#include "xgboost/json.h"
+
+#include "xgboost/c_api/c_api_error.h"
+#include "../enclave/src/common/io.h"
+#include "../enclave/src/data/adapter.h"
+#include "../enclave/src/data/simple_dmatrix.h"
+#include "../enclave/src/data/proxy_dmatrix.h"
 
 #include <openenclave/host.h>
 #include "xgboost_u.h"
@@ -29,18 +32,12 @@
 #include <enclave/attestation.h>
 #include <enclave/enclave.h>
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <dmlc/base64.h>
-
 #include <mbedtls/entropy.h>    // mbedtls_entropy_context
 #include <mbedtls/ctr_drbg.h>   // mbedtls_ctr_drbg_context
 #include <mbedtls/cipher.h>     // MBEDTLS_CIPHER_ID_AES
 #include <mbedtls/gcm.h>        // mbedtls_gcm_context
+
+#include <dmlc/base64.h>
 
 #define safe_ecall(call) {                                      \
 if (!Enclave::getInstance().getEnclave()) {                     \
@@ -61,222 +58,27 @@ if (result != OE_OK) {                                          \
 }                                                               \
 return Enclave::getInstance().enclave_ret;                      \
 }
-
 void get_str_lengths(char** arr, size_t size, size_t* lengths) {
   for (int i = 0; i < size; i++) {
     lengths[i] = strlen(arr[i]);
   }
 }
 
-/*
- * namespace xgboost {
- * // booster wrapper for backward compatible reason.
- * class Booster {
- *  public:
- *   explicit Booster(const std::vector<std::shared_ptr<DMatrix> >& cache_mats)
- *       : configured_(false),
- *         initialized_(false),
- *         learner_(Learner::Create(cache_mats)) {}
- *
- *   inline Learner* learner() {  // NOLINT
- *     return learner_.get();
- *   }
- *
- *   inline void SetParam(const std::string& name, const std::string& val) {
- *     auto it = std::find_if(cfg_.begin(), cfg_.end(),
- *       [&name, &val](decltype(*cfg_.begin()) &x) {
- *         if (name == "eval_metric") {
- *           return x.first == name && x.second == val;
- *         }
- *         return x.first == name;
- *       });
- *     if (it == cfg_.end()) {
- *       cfg_.emplace_back(name, val);
- *     } else {
- *       (*it).second = val;
- *     }
- *     if (configured_) {
- *       learner_->Configure(cfg_);
- *     }
- *   }
- *
- *   inline void LazyInit() {
- *     if (!configured_) {
- *       LoadSavedParamFromAttr();
- *       learner_->Configure(cfg_);
- *       configured_ = true;
- *     }
- *     if (!initialized_) {
- *       learner_->InitModel();
- *       initialized_ = true;
- *     }
- *   }
- *
- *   inline void LoadSavedParamFromAttr() {
- *     // Locate saved parameters from learner attributes
- *     const std::string prefix = "SAVED_PARAM_";
- *     for (const std::string& attr_name : learner_->GetAttrNames()) {
- *       if (attr_name.find(prefix) == 0) {
- *         const std::string saved_param = attr_name.substr(prefix.length());
- *         if (std::none_of(cfg_.begin(), cfg_.end(),
- *                          [&](const std::pair<std::string, std::string>& x)
- *                              { return x.first == saved_param; })) {
- *           // If cfg_ contains the parameter already, skip it
- *           //   (this is to allow the user to explicitly override its value)
- *           std::string saved_param_value;
- *           CHECK(learner_->GetAttr(attr_name, &saved_param_value));
- *           cfg_.emplace_back(saved_param, saved_param_value);
- *         }
- *       }
- *     }
- *   }
- *
- *   inline void LoadModel(dmlc::Stream* fi) {
- *     learner_->Load(fi);
- *     initialized_ = true;
- *   }
- *
- *   bool IsInitialized() const { return initialized_; }
- *   void Intialize() { initialized_ = true; }
- *
- *  private:
- *   bool configured_;
- *   bool initialized_;
- *   std::unique_ptr<Learner> learner_;
- *   std::vector<std::pair<std::string, std::string> > cfg_;
- * };
- *
- * // declare the data callback.
- * XGB_EXTERN_C int XGBoostNativeDataIterSetData(
- *     void *handle, XGBoostBatchCSR batch);
- *
- * [>! \brief Native data iterator that takes callback to return data <]
- * class NativeDataIter : public dmlc::Parser<uint32_t> {
- *  public:
- *   NativeDataIter(DataIterHandle data_handle,
- *                  XGBCallbackDataIterNext* next_callback)
- *       :  at_first_(true), bytes_read_(0),
- *          data_handle_(data_handle), next_callback_(next_callback) {
- *   }
- *
- *   // override functions
- *   void BeforeFirst() override {
- *     CHECK(at_first_) << "cannot reset NativeDataIter";
- *   }
- *
- *   bool Next() override {
- *     if ((*next_callback_)(
- *             data_handle_,
- *             XGBoostNativeDataIterSetData,
- *             this) != 0) {
- *       at_first_ = false;
- *       return true;
- *     } else {
- *       return false;
- *     }
- *   }
- *
- *   const dmlc::RowBlock<uint32_t>& Value() const override {
- *     return block_;
- *   }
- *
- *   size_t BytesRead() const override {
- *     return bytes_read_;
- *   }
- *
- *   // callback to set the data
- *   void SetData(const XGBoostBatchCSR& batch) {
- *     offset_.clear();
- *     label_.clear();
- *     weight_.clear();
- *     index_.clear();
- *     value_.clear();
- *     offset_.insert(offset_.end(), batch.offset, batch.offset + batch.size + 1);
- *     if (batch.label != nullptr) {
- *       label_.insert(label_.end(), batch.label, batch.label + batch.size);
- *     }
- *     if (batch.weight != nullptr) {
- *       weight_.insert(weight_.end(), batch.weight, batch.weight + batch.size);
- *     }
- *     if (batch.index != nullptr) {
- *       index_.insert(index_.end(), batch.index + offset_[0], batch.index + offset_.back());
- *     }
- *     if (batch.value != nullptr) {
- *       value_.insert(value_.end(), batch.value + offset_[0], batch.value + offset_.back());
- *     }
- *     if (offset_[0] != 0) {
- *       size_t base = offset_[0];
- *       for (size_t& item : offset_) {
- *         item -= base;
- *       }
- *     }
- *     block_.size = batch.size;
- *     block_.offset = dmlc::BeginPtr(offset_);
- *     block_.label = dmlc::BeginPtr(label_);
- *     block_.weight = dmlc::BeginPtr(weight_);
- *     block_.qid = nullptr;
- *     block_.field = nullptr;
- *     block_.index = dmlc::BeginPtr(index_);
- *     block_.value = dmlc::BeginPtr(value_);
- *     bytes_read_ += offset_.size() * sizeof(size_t) +
- *         label_.size() * sizeof(dmlc::real_t) +
- *         weight_.size() * sizeof(dmlc::real_t) +
- *         index_.size() * sizeof(uint32_t) +
- *         value_.size() * sizeof(dmlc::real_t);
- *   }
- *
- *  private:
- *   // at the beinning.
- *   bool at_first_;
- *   // bytes that is read.
- *   size_t bytes_read_;
- *   // handle to the iterator,
- *   DataIterHandle data_handle_;
- *   // call back to get the data.
- *   XGBCallbackDataIterNext* next_callback_;
- *   // internal offset
- *   std::vector<size_t> offset_;
- *   // internal label data
- *   std::vector<dmlc::real_t> label_;
- *   // internal weight data
- *   std::vector<dmlc::real_t> weight_;
- *   // internal index.
- *   std::vector<uint32_t> index_;
- *   // internal value.
- *   std::vector<dmlc::real_t> value_;
- *   // internal Rowblock
- *   dmlc::RowBlock<uint32_t> block_;
- * };
- *
- * int XGBoostNativeDataIterSetData(
- *     void *handle, XGBoostBatchCSR batch) {
- *   API_BEGIN();
- *   static_cast<xgboost::NativeDataIter*>(handle)->SetData(batch);
- *   API_END();
- * }
- * }  // namespace xgboost
- */
-
 using namespace xgboost; // NOLINT(*);
 
-/*! \brief entry to to easily hold returning information */
-struct XGBAPIThreadLocalEntry {
-  /*! \brief result holder for returning string */
-  std::string ret_str;
-  /*! \brief result holder for returning strings */
-  std::vector<std::string> ret_vec_str;
-  /*! \brief result holder for returning string pointers */
-  std::vector<const char *> ret_vec_charp;
-  /*! \brief returning float vector. */
-  std::vector<bst_float> ret_vec_float;
-  /*! \brief temp variable of gradient pairs. */
-  std::vector<GradientPair> tmp_gpair;
-};
+XGB_DLL void XGBoostVersion(int* major, int* minor, int* patch) {
+  if (major) {
+    *major = XGBOOST_VER_MAJOR;
+  }
+  if (minor) {
+    *minor = XGBOOST_VER_MINOR;
+  }
+  if (patch) {
+    *patch = XGBOOST_VER_PATCH;
+  }
+}
 
-// define the threadlocal store.
-using XGBAPIThreadLocalStore = dmlc::ThreadLocalStore<XGBAPIThreadLocalEntry>;
-
-int XGBRegisterLogCallback(void (*callback)(const char*)) {
+XGB_DLL int XGBRegisterLogCallback(void (*callback)(const char*)) {
   API_BEGIN();
   LogCallbackRegistry* registry = LogCallbackRegistryStore::Get();
   registry->Register(callback);
@@ -284,616 +86,316 @@ int XGBRegisterLogCallback(void (*callback)(const char*)) {
 }
 
 int XGDMatrixCreateFromFile(const char *fname,
+														char* username,
                             int silent,
                             DMatrixHandle *out) {
-    safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, silent, out));
+    safe_ecall(enclave_XGDMatrixCreateFromFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, fname, username, silent, out));
 }
 
 int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      char* usernames[],
                                      xgboost::bst_ulong num_files,
                                      int silent,
-                                     uint8_t *nonce,
-                                     size_t nonce_size,
-                                     uint32_t nonce_ctr,
-                                     DMatrixHandle *out,
-                                     uint8_t** out_sig,
-                                     size_t *out_sig_length,
-                                     char **signers,
-                                     uint8_t* signatures[],
-                                     size_t* sig_lengths) {
+                                     DMatrixHandle *out) {
     size_t fname_lengths[num_files];
     size_t username_lengths[num_files];
-    size_t signer_lengths[NUM_CLIENTS];
 
     get_str_lengths((char**)fnames, num_files, fname_lengths);
     get_str_lengths(usernames, num_files, username_lengths);
-    get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
-    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, nonce, nonce_size, nonce_ctr, out, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    safe_ecall(enclave_XGDMatrixCreateFromEncryptedFile(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, (const char**) fnames, fname_lengths, usernames, username_lengths, num_files, silent, out));
 }
 
-
-/* TODO(rishabhp): Enable this
+/*
+ *XGB_DLL int XGDMatrixCreateFromDataIter(
+ *    void *data_handle,                  // a Java iterator
+ *    XGBCallbackDataIterNext *callback,  // C++ callback defined in xgboost4j.cpp
+ *    const char *cache_info, DMatrixHandle *out) {
+ *  API_BEGIN();
  *
- * int XGDMatrixCreateFromDataIter(
- *     void* data_handle,
- *     XGBCallbackDataIterNext* callback,
- *     const char *cache_info,
- *     DMatrixHandle *out) {
- *   API_BEGIN();
+ *  std::string scache;
+ *  if (cache_info != nullptr) {
+ *    scache = cache_info;
+ *  }
+ *  xgboost::data::IteratorAdapter<DataIterHandle, XGBCallbackDataIterNext,
+ *                                 XGBoostBatchCSR> adapter(data_handle, callback);
+ *  *out = new std::shared_ptr<DMatrix> {
+ *    DMatrix::Create(
+ *        &adapter, std::numeric_limits<float>::quiet_NaN(),
+ *        1, scache
+ *    )
+ *  };
+ *  API_END();
+ *}
  *
- *   std::string scache;
- *   if (cache_info != nullptr) {
- *     scache = cache_info;
- *   }
- *   NativeDataIter parser(data_handle, callback);
- *   *out = new std::shared_ptr<DMatrix>(DMatrix::Create(&parser, scache));
- *   API_END();
- * }
+ *#ifndef XGBOOST_USE_CUDA
+ *XGB_DLL int XGDMatrixCreateFromArrayInterfaceColumns(char const* c_json_strs,
+ *                                                     bst_float missing,
+ *                                                     int nthread,
+ *                                                     DMatrixHandle* out) {
+ *  API_BEGIN();
+ *  common::AssertGPUSupport();
+ *  API_END();
+ *}
  *
- * XGB_DLL int XGDMatrixCreateFromCSREx(const size_t* indptr,
- *                                      const unsigned* indices,
- *                                      const bst_float* data,
- *                                      size_t nindptr,
- *                                      size_t nelem,
- *                                      size_t num_col,
- *                                      DMatrixHandle* out) {
- *   std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+ *XGB_DLL int XGDMatrixCreateFromArrayInterface(char const* c_json_strs,
+ *                                              bst_float missing,
+ *                                              int nthread,
+ *                                              DMatrixHandle* out) {
+ *  API_BEGIN();
+ *  common::AssertGPUSupport();
+ *  API_END();
+ *}
  *
- *   API_BEGIN();
- *   data::SimpleCSRSource& mat = *source;
- *   auto& offset_vec = mat.page_.offset.HostVector();
- *   auto& data_vec = mat.page_.data.HostVector();
- *   offset_vec.reserve(nindptr);
- *   data_vec.reserve(nelem);
- *   offset_vec.resize(1);
- *   offset_vec[0] = 0;
- *   size_t num_column = 0;
- *   for (size_t i = 1; i < nindptr; ++i) {
- *     for (size_t j = indptr[i - 1]; j < indptr[i]; ++j) {
- *       if (!common::CheckNAN(data[j])) {
- *         // automatically skip nan.
- *         data_vec.emplace_back(Entry(indices[j], data[j]));
- *         num_column = std::max(num_column, static_cast<size_t>(indices[j] + 1));
- *       }
- *     }
- *     offset_vec.push_back(mat.page_.data.Size());
- *   }
+ *#endif
  *
- *   mat.info.num_col_ = num_column;
- *   if (num_col > 0) {
- *     CHECK_LE(mat.info.num_col_, num_col)
- *         << "num_col=" << num_col << " vs " << mat.info.num_col_;
- *     mat.info.num_col_ = num_col;
- *   }
- *   mat.info.num_row_ = nindptr - 1;
- *   mat.info.num_nonzero_ = mat.page_.data.Size();
- *   *out = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
- *   API_END();
- * }
+ * // Create from data iterator
+ *XGB_DLL int XGProxyDMatrixCreate(DMatrixHandle* out) {
+ *  API_BEGIN();
+ *  *out = new std::shared_ptr<xgboost::DMatrix>(new xgboost::data::DMatrixProxy);;
+ *  API_END();
+ *}
  *
- * XGB_DLL int XGDMatrixCreateFromCSCEx(const size_t* col_ptr,
- *                                      const unsigned* indices,
- *                                      const bst_float* data,
- *                                      size_t nindptr,
- *                                      size_t nelem,
- *                                      size_t num_row,
- *                                      DMatrixHandle* out) {
- *   std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+ *XGB_DLL int
+ *XGDeviceQuantileDMatrixSetDataCudaArrayInterface(DMatrixHandle handle,
+ *                                                 char const *c_interface_str) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto p_m = static_cast<std::shared_ptr<xgboost::DMatrix> *>(handle);
+ *  CHECK(p_m);
+ *  auto m =   static_cast<xgboost::data::DMatrixProxy*>(p_m->get());
+ *  CHECK(m) << "Current DMatrix type does not support set data.";
+ *  m->SetData(c_interface_str);
+ *  API_END();
+ *}
  *
- *   API_BEGIN();
- *   // FIXME: User should be able to control number of threads
- *   const int nthread = omp_get_max_threads();
- *   data::SimpleCSRSource& mat = *source;
- *   auto& offset_vec = mat.page_.offset.HostVector();
- *   auto& data_vec = mat.page_.data.HostVector();
- *   common::ParallelGroupBuilder<Entry> builder(&offset_vec, &data_vec);
- *   builder.InitBudget(0, nthread);
- *   size_t ncol = nindptr - 1;  // NOLINT(*)
- *   #pragma omp parallel for schedule(static)
- *   for (omp_ulong i = 0; i < static_cast<omp_ulong>(ncol); ++i) {  // NOLINT(*)
- *     int tid = omp_get_thread_num();
- *     for (size_t j = col_ptr[i]; j < col_ptr[i+1]; ++j) {
- *       if (!common::CheckNAN(data[j])) {
- *         builder.AddBudget(indices[j], tid);
- *       }
- *     }
- *   }
- *   builder.InitStorage();
- *   #pragma omp parallel for schedule(static)
- *   for (omp_ulong i = 0; i < static_cast<omp_ulong>(ncol); ++i) {  // NOLINT(*)
- *     int tid = omp_get_thread_num();
- *     for (size_t j = col_ptr[i]; j < col_ptr[i+1]; ++j) {
- *       if (!common::CheckNAN(data[j])) {
- *         builder.Push(indices[j],
- *                      Entry(static_cast<bst_uint>(i), data[j]),
- *                      tid);
- *       }
- *     }
- *   }
- *   mat.info.num_row_ = mat.page_.offset.Size() - 1;
- *   if (num_row > 0) {
- *     CHECK_LE(mat.info.num_row_, num_row);
- *     // provision for empty rows at the bottom of matrix
- *     auto& offset_vec = mat.page_.offset.HostVector();
- *     for (uint64_t i = mat.info.num_row_; i < static_cast<uint64_t>(num_row); ++i) {
- *       offset_vec.push_back(offset_vec.back());
- *     }
- *     mat.info.num_row_ = num_row;
- *     CHECK_EQ(mat.info.num_row_, offset_vec.size() - 1);  // sanity check
- *   }
- *   mat.info.num_col_ = ncol;
- *   mat.info.num_nonzero_ = nelem;
- *   *out  = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
- *   API_END();
- * }
+ *XGB_DLL int
+ *XGDeviceQuantileDMatrixSetDataCudaColumnar(DMatrixHandle handle,
+ *                                           char const *c_interface_str) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto p_m = static_cast<std::shared_ptr<xgboost::DMatrix> *>(handle);
+ *  CHECK(p_m);
+ *  auto m =   static_cast<xgboost::data::DMatrixProxy*>(p_m->get());
+ *  CHECK(m) << "Current DMatrix type does not support set data.";
+ *  m->SetData(c_interface_str);
+ *  API_END();
+ *}
  *
- * XGB_DLL int XGDMatrixCreateFromMat(const bst_float* data,
- *                                    xgboost::bst_ulong nrow,
- *                                    xgboost::bst_ulong ncol,
- *                                    bst_float missing,
- *                                    DMatrixHandle* out) {
- *   std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+ *XGB_DLL int XGDeviceQuantileDMatrixCreateFromCallback(
+ *    DataIterHandle iter, DMatrixHandle proxy, DataIterResetCallback *reset,
+ *    XGDMatrixCallbackNext *next, float missing, int nthread,
+ *    int max_bin, DMatrixHandle *out) {
+ *  API_BEGIN();
+ *  *out = new std::shared_ptr<xgboost::DMatrix>{
+ *    xgboost::DMatrix::Create(iter, proxy, reset, next, missing, nthread, max_bin)};
+ *  API_END();
+ *}
+ * // End Create from data iterator
  *
- *   API_BEGIN();
- *   data::SimpleCSRSource& mat = *source;
- *   auto& offset_vec = mat.page_.offset.HostVector();
- *   auto& data_vec = mat.page_.data.HostVector();
- *   offset_vec.resize(1+nrow);
- *   bool nan_missing = common::CheckNAN(missing);
- *   mat.info.num_row_ = nrow;
- *   mat.info.num_col_ = ncol;
- *   const bst_float* data0 = data;
+ *XGB_DLL int XGDMatrixCreateFromCSREx(const size_t* indptr,
+ *                                     const unsigned* indices,
+ *                                     const bst_float* data,
+ *                                     size_t nindptr,
+ *                                     size_t nelem,
+ *                                     size_t num_col,
+ *                                     DMatrixHandle* out) {
+ *  API_BEGIN();
+ *  data::CSRAdapter adapter(indptr, indices, data, nindptr - 1, nelem, num_col);
+ *  *out = new std::shared_ptr<DMatrix>(DMatrix::Create(&adapter, std::nan(""), 1));
+ *  API_END();
+ *}
  *
- *   // count elements for sizing data
- *   data = data0;
- *   for (xgboost::bst_ulong i = 0; i < nrow; ++i, data += ncol) {
- *     xgboost::bst_ulong nelem = 0;
- *     for (xgboost::bst_ulong j = 0; j < ncol; ++j) {
- *       if (common::CheckNAN(data[j])) {
- *         CHECK(nan_missing)
- *           << "There are NAN in the matrix, however, you did not set missing=NAN";
- *       } else {
- *         if (nan_missing || data[j] != missing) {
- *           ++nelem;
- *         }
- *       }
- *     }
- *     offset_vec[i+1] = offset_vec[i] + nelem;
- *   }
- *   data_vec.resize(mat.page_.data.Size() + offset_vec.back());
+ *XGB_DLL int XGDMatrixCreateFromCSCEx(const size_t* col_ptr,
+ *                                     const unsigned* indices,
+ *                                     const bst_float* data,
+ *                                     size_t nindptr,
+ *                                     size_t nelem,
+ *                                     size_t num_row,
+ *                                     DMatrixHandle* out) {
+ *  API_BEGIN();
+ *  data::CSCAdapter adapter(col_ptr, indices, data, nindptr - 1, num_row);
+ *  *out = new std::shared_ptr<DMatrix>(DMatrix::Create(&adapter, std::nan(""), 1));
+ *  API_END();
+ *}
  *
- *   data = data0;
- *   for (xgboost::bst_ulong i = 0; i < nrow; ++i, data += ncol) {
- *     xgboost::bst_ulong matj = 0;
- *     for (xgboost::bst_ulong j = 0; j < ncol; ++j) {
- *       if (common::CheckNAN(data[j])) {
- *       } else {
- *         if (nan_missing || data[j] != missing) {
- *           data_vec[offset_vec[i] + matj] = Entry(j, data[j]);
- *           ++matj;
- *         }
- *       }
- *     }
- *   }
- *
- *   mat.info.num_nonzero_ = mat.page_.data.Size();
- *   *out  = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
- *   API_END();
- * }
- *
- * void PrefixSum(size_t *x, size_t N) {
- *   size_t *suma;
- * #pragma omp parallel
- *   {
- *     const int ithread = omp_get_thread_num();
- *     const int nthreads = omp_get_num_threads();
- * #pragma omp single
- *     {
- *       suma = new size_t[nthreads+1];
- *       suma[0] = 0;
- *     }
- *     size_t sum = 0;
- *     size_t offset = 0;
- * #pragma omp for schedule(static)
- *     for (omp_ulong i = 0; i < N; i++) {
- *       sum += x[i];
- *       x[i] = sum;
- *     }
- *     suma[ithread+1] = sum;
- * #pragma omp barrier
- *     for (omp_ulong i = 0; i < static_cast<omp_ulong>(ithread+1); i++) {
- *       offset += suma[i];
- *     }
- * #pragma omp for schedule(static)
- *     for (omp_ulong i = 0; i < N; i++) {
- *       x[i] += offset;
- *     }
- *   }
- *   delete[] suma;
- * }
- *
- * XGB_DLL int XGDMatrixCreateFromMat_omp(const bst_float* data,  // NOLINT
- *                                        xgboost::bst_ulong nrow,
- *                                        xgboost::bst_ulong ncol,
- *                                        bst_float missing, DMatrixHandle* out,
- *                                        int nthread) {
- *   // avoid openmp unless enough data to be worth it to avoid overhead costs
- *   if (nrow*ncol <= 10000*50) {
- *     return(XGDMatrixCreateFromMat(data, nrow, ncol, missing, out));
- *   }
- *
- *   API_BEGIN();
- *   const int nthreadmax = std::max(omp_get_num_procs() / 2 - 1, 1);
- *   //  const int nthreadmax = omp_get_max_threads();
- *   if (nthread <= 0) nthread=nthreadmax;
- *   int nthread_orig = omp_get_max_threads();
- *   omp_set_num_threads(nthread);
- *
- *   std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
- *   data::SimpleCSRSource& mat = *source;
- *   auto& offset_vec = mat.page_.offset.HostVector();
- *   auto& data_vec = mat.page_.data.HostVector();
- *   offset_vec.resize(1+nrow);
- *   mat.info.num_row_ = nrow;
- *   mat.info.num_col_ = ncol;
- *
- *   // Check for errors in missing elements
- *   // Count elements per row (to avoid otherwise need to copy)
- *   bool nan_missing = common::CheckNAN(missing);
- *   std::vector<int> badnan;
- *   badnan.resize(nthread, 0);
- *
- * #pragma omp parallel num_threads(nthread)
- *   {
- *     int ithread  = omp_get_thread_num();
- *
- *     // Count elements per row
- * #pragma omp for schedule(static)
- *     for (omp_ulong i = 0; i < nrow; ++i) {
- *       xgboost::bst_ulong nelem = 0;
- *       for (xgboost::bst_ulong j = 0; j < ncol; ++j) {
- *         if (common::CheckNAN(data[ncol*i + j]) && !nan_missing) {
- *           badnan[ithread] = 1;
- *         } else if (common::CheckNAN(data[ncol * i + j])) {
- *         } else if (nan_missing || data[ncol * i + j] != missing) {
- *           ++nelem;
- *         }
- *       }
- *       offset_vec[i+1] = nelem;
- *     }
- *   }
- *   // Inform about any NaNs and resize data matrix
- *   for (int i = 0; i < nthread; i++) {
- *     CHECK(!badnan[i]) << "There are NAN in the matrix, however, you did not set missing=NAN";
- *   }
- *
- *   // do cumulative sum (to avoid otherwise need to copy)
- *   PrefixSum(&offset_vec[0], offset_vec.size());
- *   data_vec.resize(mat.page_.data.Size() + offset_vec.back());
- *
- *   // Fill data matrix (now that know size, no need for slow push_back())
- * #pragma omp parallel num_threads(nthread)
- *   {
- * #pragma omp for schedule(static)
- *     for (omp_ulong i = 0; i < nrow; ++i) {
- *       xgboost::bst_ulong matj = 0;
- *       for (xgboost::bst_ulong j = 0; j < ncol; ++j) {
- *         if (common::CheckNAN(data[ncol * i + j])) {
- *         } else if (nan_missing || data[ncol * i + j] != missing) {
- *           data_vec[offset_vec[i] + matj] =
- *               Entry(j, data[ncol * i + j]);
- *           ++matj;
- *         }
- *       }
- *     }
- *   }
- *   // restore omp state
- *   omp_set_num_threads(nthread_orig);
- *
- *   mat.info.num_nonzero_ = mat.page_.data.Size();
- *   *out  = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
- *   API_END();
- * }
- *
- * enum class DTType : uint8_t {
- *   kFloat32 = 0,
- *   kFloat64 = 1,
- *   kBool8 = 2,
- *   kInt32 = 3,
- *   kInt8 = 4,
- *   kInt16 = 5,
- *   kInt64 = 6,
- *   kUnknown = 7
- * };
- *
- * DTType DTGetType(std::string type_string) {
- *   if (type_string == "float32") {
- *     return DTType::kFloat32;
- *   } else if (type_string == "float64") {
- *     return DTType::kFloat64;
- *   } else if (type_string == "bool8") {
- *     return DTType::kBool8;
- *   } else if (type_string == "int32") {
- *     return DTType::kInt32;
- *   } else if (type_string == "int8") {
- *     return DTType::kInt8;
- *   } else if (type_string == "int16") {
- *     return DTType::kInt16;
- *   } else if (type_string == "int64") {
- *     return DTType::kInt64;
- *   } else {
- *     LOG(FATAL) << "Unknown data table type.";
- *     return DTType::kUnknown;
- *   }
- * }
- *
- * float DTGetValue(void* column, DTType dt_type, size_t ridx) {
- *   float missing = std::numeric_limits<float>::quiet_NaN();
- *   switch (dt_type) {
- *     case DTType::kFloat32: {
- *       float val = reinterpret_cast<float*>(column)[ridx];
- *       return std::isfinite(val) ? val : missing;
- *     }
- *     case DTType::kFloat64: {
- *       double val = reinterpret_cast<double*>(column)[ridx];
- *       return std::isfinite(val) ? static_cast<float>(val) : missing;
- *     }
- *     case DTType::kBool8: {
- *       bool val = reinterpret_cast<bool*>(column)[ridx];
- *       return static_cast<float>(val);
- *     }
- *     case DTType::kInt32: {
- *       int32_t val = reinterpret_cast<int32_t*>(column)[ridx];
- *       return val != (-2147483647 - 1) ? static_cast<float>(val) : missing;
- *     }
- *     case DTType::kInt8: {
- *       int8_t val = reinterpret_cast<int8_t*>(column)[ridx];
- *       return val != -128 ? static_cast<float>(val) : missing;
- *     }
- *     case DTType::kInt16: {
- *       int16_t val = reinterpret_cast<int16_t*>(column)[ridx];
- *       return val != -32768 ? static_cast<float>(val) : missing;
- *     }
- *     case DTType::kInt64: {
- *       int64_t val = reinterpret_cast<int64_t*>(column)[ridx];
- *       return val != -9223372036854775807 - 1 ? static_cast<float>(val)
- *                                              : missing;
- *     }
- *     default: {
- *       LOG(FATAL) << "Unknown data table type.";
- *       return 0.0f;
- *     }
- *   }
- * }
- *
- * XGB_DLL int XGDMatrixCreateFromDT(void** data, const char** feature_stypes,
+ *XGB_DLL int XGDMatrixCreateFromMat(const bst_float* data,
  *                                   xgboost::bst_ulong nrow,
- *                                   xgboost::bst_ulong ncol, DMatrixHandle* out,
- *                                   int nthread) {
- *   // avoid openmp unless enough data to be worth it to avoid overhead costs
- *   if (nrow * ncol <= 10000 * 50) {
- *     nthread = 1;
- *   }
- *
- *   API_BEGIN();
- *   const int nthreadmax = std::max(omp_get_num_procs() / 2 - 1, 1);
- *   if (nthread <= 0) nthread = nthreadmax;
- *   int nthread_orig = omp_get_max_threads();
- *   omp_set_num_threads(nthread);
- *
- *   std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
- *   data::SimpleCSRSource& mat = *source;
- *   mat.page_.offset.Resize(1 + nrow);
- *   mat.info.num_row_ = nrow;
- *   mat.info.num_col_ = ncol;
- *
- *   auto& page_offset = mat.page_.offset.HostVector();
- * #pragma omp parallel num_threads(nthread)
- *   {
- *     // Count elements per row, column by column
- *     for (auto j = 0u; j < ncol; ++j) {
- *       DTType dtype = DTGetType(feature_stypes[j]);
- * #pragma omp for schedule(static)
- *       for (omp_ulong i = 0; i < nrow; ++i) {
- *         float val = DTGetValue(data[j], dtype, i);
- *         if (!std::isnan(val)) {
- *           page_offset[i + 1]++;
- *         }
- *       }
- *     }
- *   }
- *   // do cumulative sum (to avoid otherwise need to copy)
- *   PrefixSum(&page_offset[0], page_offset.size());
- *
- *   mat.page_.data.Resize(mat.page_.data.Size() + page_offset.back());
- *
- *   auto& page_data = mat.page_.data.HostVector();
- *
- *   // Fill data matrix (now that know size, no need for slow push_back())
- *   std::vector<size_t> position(nrow);
- * #pragma omp parallel num_threads(nthread)
- *   {
- *     for (xgboost::bst_ulong j = 0; j < ncol; ++j) {
- *       DTType dtype = DTGetType(feature_stypes[j]);
- * #pragma omp for schedule(static)
- *       for (omp_ulong i = 0; i < nrow; ++i) {
- *         float val = DTGetValue(data[j], dtype, i);
- *         if (!std::isnan(val)) {
- *           page_data[page_offset[i] + position[i]] = Entry(j, val);
- *           position[i]++;
- *         }
- *       }
- *     }
- *   }
- *
- *   // restore omp state
- *   omp_set_num_threads(nthread_orig);
- *
- *   mat.info.num_nonzero_ = mat.page_.data.Size();
- *   *out = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
- *   API_END();
- * }
- *
- * XGB_DLL int XGDMatrixSliceDMatrix(DMatrixHandle handle,
- *                                   const int* idxset,
- *                                   xgboost::bst_ulong len,
+ *                                   xgboost::bst_ulong ncol, bst_float missing,
  *                                   DMatrixHandle* out) {
- *   std::unique_ptr<data::SimpleCSRSource> source(new data::SimpleCSRSource());
+ *  API_BEGIN();
+ *  data::DenseAdapter adapter(data, nrow, ncol);
+ *  *out = new std::shared_ptr<DMatrix>(DMatrix::Create(&adapter, missing, 1));
+ *  API_END();
+ *}
  *
- *   API_BEGIN();
- *   CHECK_HANDLE();
- *   data::SimpleCSRSource src;
- *   src.CopyFrom(static_cast<std::shared_ptr<DMatrix>*>(handle)->get());
- *   data::SimpleCSRSource& ret = *source;
+ *XGB_DLL int XGDMatrixCreateFromMat_omp(const bst_float* data,  // NOLINT
+ *                                       xgboost::bst_ulong nrow,
+ *                                       xgboost::bst_ulong ncol,
+ *                                       bst_float missing, DMatrixHandle* out,
+ *                                       int nthread) {
+ *  API_BEGIN();
+ *  data::DenseAdapter adapter(data, nrow, ncol);
+ *  *out = new std::shared_ptr<DMatrix>(DMatrix::Create(&adapter, missing, nthread));
+ *  API_END();
+ *}
  *
- *   CHECK_EQ(src.info.group_ptr_.size(), 0U)
- *       << "slice does not support group structure";
+ *XGB_DLL int XGDMatrixCreateFromDT(void** data, const char** feature_stypes,
+ *                                  xgboost::bst_ulong nrow,
+ *                                  xgboost::bst_ulong ncol, DMatrixHandle* out,
+ *                                  int nthread) {
+ *  API_BEGIN();
+ *  data::DataTableAdapter adapter(data, feature_stypes, nrow, ncol);
+ *  *out = new std::shared_ptr<DMatrix>(
+ *      DMatrix::Create(&adapter, std::nan(""), nthread));
+ *  API_END();
+ *}
  *
- *   ret.Clear();
- *   ret.info.num_row_ = len;
- *   ret.info.num_col_ = src.info.num_col_;
+ *XGB_DLL int XGDMatrixSliceDMatrix(DMatrixHandle handle,
+ *                                  const int* idxset,
+ *                                  xgboost::bst_ulong len,
+ *                                  DMatrixHandle* out) {
+ *  return XGDMatrixSliceDMatrixEx(handle, idxset, len, out, 0);
+ *}
  *
- *   auto iter = &src;
- *   iter->BeforeFirst();
- *   CHECK(iter->Next());
- *
- *   const auto& batch = iter->Value();
- *   const auto& src_labels = src.info.labels_.ConstHostVector();
- *   const auto& src_weights = src.info.weights_.ConstHostVector();
- *   const auto& src_base_margin = src.info.base_margin_.ConstHostVector();
- *   auto& ret_labels = ret.info.labels_.HostVector();
- *   auto& ret_weights = ret.info.weights_.HostVector();
- *   auto& ret_base_margin = ret.info.base_margin_.HostVector();
- *   auto& offset_vec = ret.page_.offset.HostVector();
- *   auto& data_vec = ret.page_.data.HostVector();
- *
- *   for (xgboost::bst_ulong i = 0; i < len; ++i) {
- *     const int ridx = idxset[i];
- *     auto inst = batch[ridx];
- *     CHECK_LT(static_cast<xgboost::bst_ulong>(ridx), batch.Size());
- *     data_vec.insert(data_vec.end(), inst.data(),
- *                     inst.data() + inst.size());
- *     offset_vec.push_back(offset_vec.back() + inst.size());
- *     ret.info.num_nonzero_ += inst.size();
- *
- *     if (src_labels.size() != 0) {
- *       ret_labels.push_back(src_labels[ridx]);
- *     }
- *     if (src_weights.size() != 0) {
- *       ret_weights.push_back(src_weights[ridx]);
- *     }
- *     if (src_base_margin.size() != 0) {
- *       ret_base_margin.push_back(src_base_margin[ridx]);
- *     }
- *     if (src.info.root_index_.size() != 0) {
- *       ret.info.root_index_.push_back(src.info.root_index_[ridx]);
- *     }
- *   }
- *   *out = new std::shared_ptr<DMatrix>(DMatrix::Create(std::move(source)));
- *   API_END();
- * }
+ *XGB_DLL int XGDMatrixSliceDMatrixEx(DMatrixHandle handle,
+ *                                    const int* idxset,
+ *                                    xgboost::bst_ulong len,
+ *                                    DMatrixHandle* out,
+ *                                    int allow_groups) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  if (!allow_groups) {
+ *    CHECK_EQ(static_cast<std::shared_ptr<DMatrix>*>(handle)
+ *                 ->get()
+ *                 ->Info()
+ *                 .group_ptr_.size(),
+ *             0U)
+ *        << "slice does not support group structure";
+ *  }
+ *  DMatrix* dmat = static_cast<std::shared_ptr<DMatrix>*>(handle)->get();
+ *  *out = new std::shared_ptr<DMatrix>(
+ *      dmat->Slice({idxset, static_cast<std::size_t>(len)}));
+ *  API_END();
+ *}
  */
-
 
 XGB_DLL int XGDMatrixFree(DMatrixHandle handle) {
-    safe_ecall(enclave_XGDMatrixFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
+  safe_ecall(enclave_XGDMatrixFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
 }
 
-/* TODO(rishabhp): Enable this
- *
- * XGB_DLL int XGDMatrixSaveBinary(DMatrixHandle handle,
- *                                 const char* fname,
- *                                 int silent) {
- *   API_BEGIN();
- *   CHECK_HANDLE();
- *   static_cast<std::shared_ptr<DMatrix>*>(handle)->get()->SaveToLocalFile(fname);
- *   API_END();
- * }
+/*
+ *XGB_DLL int XGDMatrixSaveBinary(DMatrixHandle handle, const char* fname,
+ *                                int silent) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto dmat = static_cast<std::shared_ptr<DMatrix>*>(handle)->get();
+ *  if (data::SimpleDMatrix* derived = dynamic_cast<data::SimpleDMatrix*>(dmat)) {
+ *    derived->SaveToLocalFile(fname);
+ *  } else {
+ *    LOG(FATAL) << "binary saving only supported by SimpleDMatrix";
+ *  }
+ *  API_END();
+ *}
  */
-
 XGB_DLL int XGDMatrixSetFloatInfo(DMatrixHandle handle,
-                          const char* field,
-                          const bst_float* info,
-                          xgboost::bst_ulong len) {
+    const char* field,
+    const bst_float* info,
+    xgboost::bst_ulong len) {
 
   safe_ecall(enclave_XGDMatrixSetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
 }
 
 XGB_DLL int XGDMatrixSetUIntInfo(DMatrixHandle handle,
-                         const char* field,
-                         const unsigned* info,
-                         xgboost::bst_ulong len) {
+    const char* field,
+    const unsigned* info,
+    xgboost::bst_ulong len) {
   safe_ecall(enclave_XGDMatrixSetUIntInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, info, len));
 }
 
-/* TODO(rishabhp): Enable this
+/*
+ *XGB_DLL int XGDMatrixSetInfoFromInterface(DMatrixHandle handle,
+ *                                          char const* field,
+ *                                          char const* interface_c_str) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  static_cast<std::shared_ptr<DMatrix>*>(handle)
+ *      ->get()->Info().SetInfo(field, interface_c_str);
+ *  API_END();
+ *}
+ */
+
+/*
+ *XGB_DLL int XGDMatrixSetStrFeatureInfo(DMatrixHandle handle, const char *field,
+ *                                       const char **c_info,
+ *                                       const xgboost::bst_ulong size) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto &info = static_cast<std::shared_ptr<DMatrix> *>(handle)->get()->Info();
+ *  info.SetFeatureInfo(field, c_info, size);
+ *  API_END();
+ *}
  *
- * XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
- *                               const unsigned* group,
- *                               xgboost::bst_ulong len) {
- *   API_BEGIN();
- *   CHECK_HANDLE();
- *   auto *pmat = static_cast<std::shared_ptr<DMatrix>*>(handle);
- *   MetaInfo& info = pmat->get()->Info();
- *   info.group_ptr_.resize(len + 1);
- *   info.group_ptr_[0] = 0;
- *   for (uint64_t i = 0; i < len; ++i) {
- *     info.group_ptr_[i + 1] = info.group_ptr_[i] + group[i];
- *   }
- *   API_END();
- * }
+ *XGB_DLL int XGDMatrixGetStrFeatureInfo(DMatrixHandle handle, const char *field,
+ *                                       xgboost::bst_ulong *len,
+ *                                       const char ***out_features) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto m = *static_cast<std::shared_ptr<DMatrix>*>(handle);
+ *  auto &info = static_cast<std::shared_ptr<DMatrix> *>(handle)->get()->Info();
+ *
+ *  std::vector<const char *> &charp_vecs = m->GetThreadLocal().ret_vec_charp;
+ *  std::vector<std::string> &str_vecs = m->GetThreadLocal().ret_vec_str;
+ *
+ *  info.GetFeatureInfo(field, &str_vecs);
+ *
+ *  charp_vecs.resize(str_vecs.size());
+ *  for (size_t i = 0; i < str_vecs.size(); ++i) {
+ *    charp_vecs[i] = str_vecs[i].c_str();
+ *  }
+ *  *out_features = dmlc::BeginPtr(charp_vecs);
+ *  *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
+ *  API_END();
+ *}
+ *
+ *XGB_DLL int XGDMatrixSetGroup(DMatrixHandle handle,
+ *                              const unsigned* group,
+ *                              xgboost::bst_ulong len) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  LOG(WARNING) << "XGDMatrixSetGroup is deprecated, use `XGDMatrixSetUIntInfo` instead.";
+ *  static_cast<std::shared_ptr<DMatrix>*>(handle)
+ *      ->get()->Info().SetInfo("group", group, xgboost::DataType::kUInt32, len);
+ *  API_END();
+ *}
  */
 
 XGB_DLL int XGDMatrixGetFloatInfo(const DMatrixHandle handle,
-                                  const char* field,
-                                  xgboost::bst_ulong* out_len,
-                                  const bst_float** out_dptr) {
-    safe_ecall(enclave_XGDMatrixGetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (bst_float**) out_dptr));
+    const char* field,
+    xgboost::bst_ulong* out_len,
+    const bst_float** out_dptr) {
+  safe_ecall(enclave_XGDMatrixGetFloatInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (bst_float**) out_dptr));
 }
 
 XGB_DLL int XGDMatrixGetUIntInfo(const DMatrixHandle handle,
-                                 const char *field,
-                                 xgboost::bst_ulong *out_len,
-                                 const unsigned **out_dptr) {
+    const char *field,
+    xgboost::bst_ulong *out_len,
+    const unsigned **out_dptr) {
   safe_ecall(enclave_XGDMatrixGetUintInfo(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, field, out_len, (unsigned**) out_dptr));
 }
 
 XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
-                            uint8_t* nonce,
-                            size_t nonce_size,
-                            uint32_t nonce_ctr,
-                            xgboost::bst_ulong *out,
-                            uint8_t** out_sig,
-                            size_t *out_sig_length,
-                            char **signers,
-                            uint8_t* signatures[],
-                            size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-  safe_ecall(enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, nonce, nonce_size, nonce_ctr, out, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    xgboost::bst_ulong *out) {
+  safe_ecall(enclave_XGDMatrixNumRow(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
 }
 
 XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
-                            uint8_t* nonce,
-                            size_t nonce_size,
-                            uint32_t nonce_ctr,
-                            xgboost::bst_ulong *out,
-                            uint8_t** out_sig,
-                            size_t *out_sig_length,
-                            char **signers,
-                            uint8_t* signatures[],
-                            size_t* sig_lengths) {                          
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-  safe_ecall(enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, nonce, nonce_size, nonce_ctr, out, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    xgboost::bst_ulong *out) {
+  safe_ecall(enclave_XGDMatrixNumCol(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out));
 }
 
 // xgboost implementation
-
+//
 XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
     oe_result_t result;
@@ -925,77 +427,79 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
 }
 
 XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
-                    xgboost::bst_ulong len,
-                    uint8_t *nonce,
-                    size_t nonce_size,
-                    uint32_t nonce_ctr,
-                    BoosterHandle *out,
-                    uint8_t** out_sig,
-                    size_t *out_sig_length,
-                    char **signers,
-                    uint8_t* signatures[],
-                    size_t* sig_lengths) {
+    xgboost::bst_ulong len,
+    BoosterHandle *out) {
   size_t handle_lengths[len];
-  size_t signer_lengths[NUM_CLIENTS];
-
   get_str_lengths((char**)dmats, len, handle_lengths);
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
-  safe_ecall(enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, const_cast<char**>(dmats), handle_lengths, len, nonce, nonce_size, nonce_ctr, out, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+  safe_ecall(enclave_XGBoosterCreate(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, const_cast<char**>(dmats), handle_lengths, len, out));
 }
 
 XGB_DLL int XGBoosterFree(BoosterHandle handle) {
-    safe_ecall(enclave_XGBoosterFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
+  safe_ecall(enclave_XGBoosterFree(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle));
 }
 
 XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
-                              const char *name,
-                              const char *value,
-                              uint8_t *nonce,
-                              size_t nonce_size,
-                              uint32_t nonce_ctr, 
-                              uint8_t** out_sig,
-                              size_t *out_sig_length,
-                              char **signers,
-                              uint8_t* signatures[],
-                              size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-    safe_ecall(enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value, nonce, nonce_size, nonce_ctr, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    const char *name,
+    const char *value) {
+  safe_ecall(enclave_XGBoosterSetParam(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, name, value));
 }
 
-XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
-                                   int iter,
-                                   DMatrixHandle dtrain,
-                                   uint8_t* nonce,
-                                   size_t nonce_size,
-                                   uint32_t nonce_ctr,
-                                   uint8_t** out_sig,
-                                   size_t *out_sig_length,
-                                   char **signers,
-                                   uint8_t* signatures[],
-                                   size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
+/*
+ *XGB_DLL int XGBoosterGetNumFeature(BoosterHandle handle,
+ *                                   xgboost::bst_ulong *out) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  *out = static_cast<Learner*>(handle)->GetNumFeature();
+ *  API_END();
+ *}
+ *
+ *XGB_DLL int XGBoosterLoadJsonConfig(BoosterHandle handle, char const* json_parameters) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  std::string str {json_parameters};
+ *  Json config { Json::Load(StringView{str.c_str(), str.size()}) };
+ *  static_cast<Learner*>(handle)->LoadConfig(config);
+ *  API_END();
+ *}
+ *
+ *XGB_DLL int XGBoosterSaveJsonConfig(BoosterHandle handle,
+ *                                    xgboost::bst_ulong *out_len,
+ *                                    char const** out_str) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  Json config { Object() };
+ *  auto* learner = static_cast<Learner*>(handle);
+ *  learner->Configure();
+ *  learner->SaveConfig(&config);
+ *  std::string& raw_str = learner->GetThreadLocal().ret_str;
+ *  Json::Dump(config, &raw_str);
+ *  *out_str = raw_str.c_str();
+ *  *out_len = static_cast<xgboost::bst_ulong>(raw_str.length());
+ *  API_END();
+ *}
+ */
 
-    safe_ecall(enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain, nonce, nonce_size, nonce_ctr, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
+    int iter,
+    DMatrixHandle dtrain) {
+  safe_ecall(enclave_XGBoosterUpdateOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, iter, dtrain));
 }
 
 XGB_DLL int XGBoosterBoostOneIter(BoosterHandle handle,
-                                  DMatrixHandle dtrain,
-                                  bst_float *grad,
-                                  bst_float *hess,
-                                  xgboost::bst_ulong len) {
+    DMatrixHandle dtrain,
+    bst_float *grad,
+    bst_float *hess,
+    xgboost::bst_ulong len) {
   safe_ecall(enclave_XGBoosterBoostOneIter(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dtrain, grad, hess, len));
 }
 
 XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
-                                 int iter,
-                                 DMatrixHandle dmats[],
-                                 const char* evnames[],
-                                 xgboost::bst_ulong len,
-                                 const char** out_str) {
+    int iter,
+    DMatrixHandle dmats[],
+    const char* evnames[],
+    xgboost::bst_ulong len,
+    const char** out_str) {
   size_t handle_lengths[len];
   size_t name_lengths[len];
 
@@ -1006,258 +510,299 @@ XGB_DLL int XGBoosterEvalOneIter(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterPredict(BoosterHandle handle,
-                             DMatrixHandle dmat,
-                             int option_mask,
-                             unsigned ntree_limit,
-                             uint8_t *nonce,
-                             size_t nonce_size,
-                             uint32_t nonce_ctr,
-                             xgboost::bst_ulong *len,
-                             uint8_t **out_result,
-                             uint8_t** out_sig,
-                             size_t *out_sig_length,
-                             char **signers,
-                             uint8_t* signatures[],
-                             size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-    safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, nonce, nonce_size, nonce_ctr, len, out_result, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    DMatrixHandle dmat,
+    int option_mask,
+    unsigned ntree_limit,
+    int training,
+    xgboost::bst_ulong *len,
+    uint8_t **out_result) {
+  safe_ecall(enclave_XGBoosterPredict(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, dmat, option_mask, ntree_limit, training, len, out_result));
 }
 
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t* signatures[], size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
+// A hidden API as cache id is not being supported yet.
+/*
+ *XGB_DLL int XGBoosterPredictFromDense(BoosterHandle handle, float *values,
+ *                                      xgboost::bst_ulong n_rows,
+ *                                      xgboost::bst_ulong n_cols,
+ *                                      float missing,
+ *                                      unsigned iteration_begin,
+ *                                      unsigned iteration_end,
+ *                                      char const* c_type,
+ *                                      xgboost::bst_ulong cache_id,
+ *                                      xgboost::bst_ulong *out_len,
+ *                                      const float **out_result) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  CHECK_EQ(cache_id, 0) << "Cache ID is not supported yet";
+ *  auto *learner = static_cast<xgboost::Learner *>(handle);
+ *
+ *  std::shared_ptr<xgboost::data::DenseAdapter> x{
+ *    new xgboost::data::DenseAdapter(values, n_rows, n_cols)};
+ *  HostDeviceVector<float>* p_predt { nullptr };
+ *  std::string type { c_type };
+ *  learner->InplacePredict(x, type, missing, &p_predt);
+ *  CHECK(p_predt);
+ *
+ *  *out_result = dmlc::BeginPtr(p_predt->HostVector());
+ *  *out_len = static_cast<xgboost::bst_ulong>(p_predt->Size());
+ *  API_END();
+ *}
+ */
 
-  safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, nonce, nonce_size, nonce_ctr, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+// A hidden API as cache id is not being supported yet.
+/*
+ *XGB_DLL int XGBoosterPredictFromCSR(BoosterHandle handle,
+ *                                    const size_t* indptr,
+ *                                    const unsigned* indices,
+ *                                    const bst_float* data,
+ *                                    size_t nindptr,
+ *                                    size_t nelem,
+ *                                    size_t num_col,
+ *                                    float missing,
+ *                                    unsigned iteration_begin,
+ *                                    unsigned iteration_end,
+ *                                    char const *c_type,
+ *                                    xgboost::bst_ulong cache_id,
+ *                                    xgboost::bst_ulong *out_len,
+ *                                    const float **out_result) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  CHECK_EQ(cache_id, 0) << "Cache ID is not supported yet";
+ *  auto *learner = static_cast<xgboost::Learner *>(handle);
+ *
+ *  std::shared_ptr<xgboost::data::CSRAdapter> x{
+ *    new xgboost::data::CSRAdapter(indptr, indices, data, nindptr - 1, nelem, num_col)};
+ *  HostDeviceVector<float>* p_predt { nullptr };
+ *  std::string type { c_type };
+ *  learner->InplacePredict(x, type, missing, &p_predt);
+ *  CHECK(p_predt);
+ *
+ *  *out_result = dmlc::BeginPtr(p_predt->HostVector());
+ *  *out_len = static_cast<xgboost::bst_ulong>(p_predt->Size());
+ *  API_END();
+ *}
+ *
+ *#if !defined(XGBOOST_USE_CUDA)
+ *XGB_DLL int XGBoosterPredictFromArrayInterfaceColumns(BoosterHandle handle,
+ *                                                      char const* c_json_strs,
+ *                                                      float missing,
+ *                                                      unsigned iteration_begin,
+ *                                                      unsigned iteration_end,
+ *                                                      char const* c_type,
+ *                                                      xgboost::bst_ulong cache_id,
+ *                                                      xgboost::bst_ulong *out_len,
+ *                                                      float const** out_result) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  common::AssertGPUSupport();
+ *  API_END();
+ *}
+ *XGB_DLL int XGBoosterPredictFromArrayInterface(BoosterHandle handle,
+ *                                               char const* c_json_strs,
+ *                                               float missing,
+ *                                               unsigned iteration_begin,
+ *                                               unsigned iteration_end,
+ *                                               char const* c_type,
+ *                                               xgboost::bst_ulong cache_id,
+ *                                               xgboost::bst_ulong *out_len,
+ *                                               const float **out_result) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  common::AssertGPUSupport();
+ *  API_END();
+ *}
+ *#endif  // !defined(XGBOOST_USE_CUDA)
+ */
+
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname) {
+  safe_ecall(enclave_XGBoosterLoadModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname));
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t* signatures[], size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-  safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname, nonce, nonce_size, nonce_ctr, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname)  {
+  safe_ecall(enclave_XGBoosterSaveModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fname));
 }
 
 XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
-                                         const void* buf,
-                                         xgboost::bst_ulong len,
-                                         uint8_t** out_sig,
-                                         size_t *out_sig_length,
-                                         char** signers,
-                                         uint8_t* signatures[],
-                                         size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    const void* buf,
+    xgboost::bst_ulong len) {
+  safe_ecall(enclave_XGBoosterLoadModelFromBuffer(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, buf, len));
 }
 
 XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
-                                 uint8_t* nonce,
-                                 size_t nonce_size,
-                                 uint32_t nonce_ctr,
-                                 bst_ulong *out_len,
-                                 const char **out_dptr,
-                                 uint8_t** out_sig,
-                                 size_t *out_sig_length,
-                                 char** signers,
-                                 uint8_t* signatures[],
-                                 size_t* sig_lengths) {
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-  safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, nonce, nonce_size, nonce_ctr, out_len, (char**)out_dptr, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    bst_ulong *out_len,
+    const char **out_dptr) {
+  safe_ecall(enclave_XGBoosterGetModelRaw(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char**)out_dptr));
 }
 
-/* TODO(rishabhp): Enable this
+// The following two functions are `Load` and `Save` for memory based
+// serialization methods. E.g. Python pickle.
+/*
+ *XGB_DLL int XGBoosterSerializeToBuffer(BoosterHandle handle,
+ *                                       xgboost::bst_ulong *out_len,
+ *                                       const char **out_dptr) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto *learner = static_cast<Learner*>(handle);
+ *  std::string &raw_str = learner->GetThreadLocal().ret_str;
+ *  raw_str.resize(0);
+ *  common::MemoryBufferStream fo(&raw_str);
+ *  learner->Configure();
+ *  learner->Save(&fo);
+ *  *out_dptr = dmlc::BeginPtr(raw_str);
+ *  *out_len = static_cast<xgboost::bst_ulong>(raw_str.length());
+ *  API_END();
+ *}
  *
- * inline void XGBoostDumpModelImpl(
- *     BoosterHandle handle,
- *     const FeatureMap& fmap,
- *     int with_stats,
- *     const char *format,
- *     xgboost::bst_ulong* len,
- *     const char*** out_models) {
- *   std::vector<std::string>& str_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_str;
- *   std::vector<const char*>& charp_vecs = XGBAPIThreadLocalStore::Get()->ret_vec_charp;
- *   auto *bst = static_cast<Booster*>(handle);
- *   bst->LazyInit();
- *   str_vecs = bst->learner()->DumpModel(fmap, with_stats != 0, format);
- *   charp_vecs.resize(str_vecs.size());
- *   for (size_t i = 0; i < str_vecs.size(); ++i) {
- *     charp_vecs[i] = str_vecs[i].c_str();
- *   }
- *   *out_models = dmlc::BeginPtr(charp_vecs);
- *   *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
- * }
+ *XGB_DLL int XGBoosterUnserializeFromBuffer(BoosterHandle handle,
+ *                                           const void *buf,
+ *                                           xgboost::bst_ulong len) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  common::MemoryFixSizeBuffer fs((void*)buf, len);  // NOLINT(*)
+ *  static_cast<Learner*>(handle)->Load(&fs);
+ *  API_END();
+ *}
+ */
+
+/*
+ *XGB_DLL int XGBoosterLoadRabitCheckpoint(BoosterHandle handle,
+ *                                         int* version) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto* bst = static_cast<Learner*>(handle);
+ *  *version = rabit::LoadCheckPoint(bst);
+ *  if (*version != 0) {
+ *    bst->Configure();
+ *  }
+ *  API_END();
+ *}
+ *
+ *XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto* learner = static_cast<Learner*>(handle);
+ *  learner->Configure();
+ *  if (learner->AllowLazyCheckPoint()) {
+ *    rabit::LazyCheckPoint(learner);
+ *  } else {
+ *    rabit::CheckPoint(learner);
+ *  }
+ *  API_END();
+ *}
+ */
+
+/*
+ *inline void XGBoostDumpModelImpl(BoosterHandle handle, const FeatureMap &fmap,
+ *                                 int with_stats, const char *format,
+ *                                 xgboost::bst_ulong *len,
+ *                                 const char ***out_models) {
+ *  auto *bst = static_cast<Learner*>(handle);
+ *  std::vector<std::string>& str_vecs = bst->GetThreadLocal().ret_vec_str;
+ *  std::vector<const char*>& charp_vecs = bst->GetThreadLocal().ret_vec_charp;
+ *  str_vecs = bst->DumpModel(fmap, with_stats != 0, format);
+ *  charp_vecs.resize(str_vecs.size());
+ *  for (size_t i = 0; i < str_vecs.size(); ++i) {
+ *    charp_vecs[i] = str_vecs[i].c_str();
+ *  }
+ *  *out_models = dmlc::BeginPtr(charp_vecs);
+ *  *len = static_cast<xgboost::bst_ulong>(charp_vecs.size());
+ *}
  */
 
 XGB_DLL int XGBoosterDumpModel(BoosterHandle handle,
-                       const char* fmap,
-                       int with_stats,
-                       uint8_t* nonce,
-                       size_t nonce_size,
-                       uint32_t nonce_ctr,
-                       xgboost::bst_ulong* len,
-                       const char*** out_models) {
-  safe_ecall(enclave_XGBoosterDumpModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, nonce, nonce_size, nonce_ctr, len, (char***) out_models));
+    const char* fmap,
+    int with_stats,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  safe_ecall(enclave_XGBoosterDumpModel(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, len, (char***) out_models));
 }
 
 XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
-                                 const char* fmap,
-                                 int with_stats,
-                                 const char *format,
-                                 uint8_t *nonce,
-                                 size_t nonce_size,
-                                 uint32_t nonce_ctr,
-                                 xgboost::bst_ulong* len,
-                                 const char*** out_models,
-                                 uint8_t** out_sig,
-                                 size_t *out_sig_length,
-                                 char** signers,
-                                 uint8_t* signatures[],
-                                 size_t* sig_lengths){
-  size_t signer_lengths[NUM_CLIENTS];
-  get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
-
-  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, nonce, nonce_size, nonce_ctr, len, (char***) out_models, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+    const char* fmap,
+    int with_stats,
+    const char *format,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  safe_ecall(enclave_XGBoosterDumpModelEx(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, fmap, with_stats, format, len, (char***) out_models));
 }
 
 
 XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
-                                   int fnum,
-                                   const char** fname,
-                                   const char** ftype,
-                                   int with_stats,
-                                   uint8_t* nonce,
-                                   size_t nonce_size,
-                                   uint32_t nonce_ctr,
-                                   xgboost::bst_ulong* len,
-                                   const char*** out_models,
-                                   uint8_t** out_sig,
-                                   size_t *out_sig_length,
-                                   char **signers,
-                                   size_t signer_lengths[],
-                                   uint8_t* signatures[],
-                                   size_t* sig_lengths) {
+    int fnum,
+    const char** fname,
+    const char** ftype,
+    int with_stats,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
   size_t fname_lengths[fnum];
   size_t ftype_lengths[fnum];
 
   get_str_lengths((char**)fname, fnum, fname_lengths);
   get_str_lengths((char**)ftype, fnum, ftype_lengths);
 
-  safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, nonce, nonce_size, nonce_ctr, len, (char***) out_models, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+  safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, len, (char***) out_models));
 }
 
 XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
-                                             int fnum,
-                                             const char** fname,
-                                             const char** ftype,
-                                             int with_stats,
-                                             const char *format,
-                                             uint8_t *nonce,
-                                             size_t nonce_size,
-                                             uint32_t nonce_ctr,
-                                             xgboost::bst_ulong* len,
-                                             const char*** out_models,
-                                             uint8_t** out_sig,
-                                             size_t *out_sig_length,
-                                             char **signers,
-                                             uint8_t* signatures[],
-                                             size_t* sig_lengths) {
-    size_t fname_lengths[fnum];
-    size_t ftype_lengths[fnum];
-    size_t signer_lengths[NUM_CLIENTS];
+    int fnum,
+    const char** fname,
+    const char** ftype,
+    int with_stats,
+    const char *format,
+    xgboost::bst_ulong* len,
+    const char*** out_models) {
+  size_t fname_lengths[fnum];
+  size_t ftype_lengths[fnum];
 
-    get_str_lengths((char**)fname, fnum, fname_lengths);
-    get_str_lengths((char**)ftype, fnum, ftype_lengths);
-    get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
+  get_str_lengths((char**)fname, fnum, fname_lengths);
+  get_str_lengths((char**)ftype, fnum, ftype_lengths);
 
-    safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, format, nonce, nonce_size, nonce_ctr, len, (char***) out_models, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
+  safe_ecall(enclave_XGBoosterDumpModelExWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, format, len, (char***) out_models));
 }
 
 
 XGB_DLL int XGBoosterGetAttr(BoosterHandle handle,
-                     const char* key,
-                     const char** out,
-                     int* success) {
+    const char* key,
+    const char** out,
+    int* success) {
   safe_ecall(enclave_XGBoosterGetAttr(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, key, (char**)out, success));
 }
 
-/* TODO(rishabhp): Enable this
- *
- * XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
- *                      const char* key,
- *                      const char* value) {
- *   auto* bst = static_cast<Booster*>(handle);
- *   API_BEGIN();
- *   CHECK_HANDLE();
- *   if (value == nullptr) {
- *     bst->learner()->DelAttr(key);
- *   } else {
- *     bst->learner()->SetAttr(key, value);
- *   }
- *   API_END();
- * }
+/*
+ *XGB_DLL int XGBoosterSetAttr(BoosterHandle handle,
+ *                             const char* key,
+ *                             const char* value) {
+ *  API_BEGIN();
+ *  CHECK_HANDLE();
+ *  auto* bst = static_cast<Learner*>(handle);
+ *  if (value == nullptr) {
+ *    bst->DelAttr(key);
+ *  } else {
+ *    bst->SetAttr(key, value);
+ *  }
+ *  API_END();
+ *}
  */
 
 XGB_DLL int XGBoosterGetAttrNames(BoosterHandle handle,
-                     xgboost::bst_ulong* out_len,
-                     const char*** out) {
+                                  xgboost::bst_ulong* out_len,
+                                  const char*** out) {
   safe_ecall(enclave_XGBoosterGetAttrNames(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, out_len, (char***)out));
 }
-
-/* TODO(rishabhp): Enable this
- *
- * XGB_DLL int XGBoosterLoadRabitCheckpoint(BoosterHandle handle,
- *                                  int* version) {
- *   API_BEGIN();
- *   CHECK_HANDLE();
- *   auto* bst = static_cast<Booster*>(handle);
- *   *version = rabit::LoadCheckPoint(bst->learner());
- *   if (*version != 0) {
- *     bst->Intialize();
- *   }
- *   API_END();
- * }
- *
- * XGB_DLL int XGBoosterSaveRabitCheckpoint(BoosterHandle handle) {
- *   API_BEGIN();
- *   CHECK_HANDLE();
- *   auto* bst = static_cast<Booster*>(handle);
- *   if (bst->learner()->AllowLazyCheckPoint()) {
- *     rabit::LazyCheckPoint(bst->learner());
- *   } else {
- *     rabit::CheckPoint(bst->learner());
- *   }
- *   API_END();
- * }
- *
- * [> hidden method; only known to C++ test suite <]
- * const std::map<std::string, std::string>&
- * QueryBoosterConfigurationArguments(BoosterHandle handle) {
- *   CHECK_HANDLE();
- *   auto* bst = static_cast<Booster*>(handle);
- *   bst->LazyInit();
- *   return bst->learner()->GetConfigurationArguments();
- * }
- */
 
 // force link rabit
 static DMLC_ATTRIBUTE_UNUSED int XGBOOST_LINK_RABIT_C_API_ = RabitLinkTag();
 
-
 int ocall_rabit__GetRank() {
-    return rabit::GetRank();
+  return rabit::GetRank();
 }
 
 int ocall_rabit__GetWorldSize() {
-    return rabit::GetWorldSize();
+  return rabit::GetWorldSize();
 }
 
 int ocall_rabit__IsDistributed() {
-    return rabit::IsDistributed();
+  return rabit::IsDistributed();
 }
 
 XGB_DLL int get_remote_report_with_pubkey_and_nonce(
@@ -1568,23 +1113,23 @@ XGB_DLL int sign_data_with_keyfile(char *keyfile, uint8_t* data, size_t data_siz
 }
 
 XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_preds, bst_float** preds) {
-    size_t len = num_preds*sizeof(float);
-    unsigned char* iv = (unsigned char*)encrypted_preds;
-    unsigned char* tag = iv + CIPHER_IV_SIZE;
-    unsigned char* data = tag + CIPHER_TAG_SIZE;
-    unsigned char* output = (unsigned char*) malloc(len);
+  size_t len = num_preds*sizeof(float);
+  unsigned char* iv = (unsigned char*)encrypted_preds;
+  unsigned char* tag = iv + CIPHER_IV_SIZE;
+  unsigned char* data = tag + CIPHER_TAG_SIZE;
+  unsigned char* output = (unsigned char*) malloc(len);
 
-    decrypt_symm(
-            (uint8_t*) key,
-            data,
-            len,
-            iv,
-            tag,
-            NULL,
-            0,
-            output);
-    *preds = reinterpret_cast<float*>(output);
-    return 0;
+  decrypt_symm(
+      (uint8_t*) key,
+      data,
+      len,
+      iv,
+      tag,
+      NULL,
+      0,
+      output);
+  *preds = reinterpret_cast<float*>(output);
+  return 0;
 }
 
 XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, uint8_t** out_key) {
@@ -1613,9 +1158,9 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
 
   mbedtls_gcm_init(&gcm);
   int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
-          MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
-          (const unsigned char*) key,     // encryption key
-          CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
+      MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
+      (const unsigned char*) key,     // encryption key
+      CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
   if (ret != 0) {
     //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
     LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
@@ -1629,14 +1174,14 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
     char* p = const_cast<char*>(total_encrypted);
     int iv_pos = 0;
     while(*p != '\0' && *p != ',') {
-        p++;
-        iv_pos++;
+      p++;
+      iv_pos++;
     }
     p++;
     int tag_pos = iv_pos + 1;
     while(*p != '\0' && *p != ',') {
-        p++;
-        tag_pos++;
+      p++;
+      tag_pos++;
     }
     size_t out_len;
     unsigned char tag[CIPHER_TAG_SIZE];
@@ -1650,15 +1195,15 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
 
     unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
     int ret = decrypt_symm(
-            &gcm,
-            (const unsigned char*) ct,
-            out_len,
-            iv,
-            tag,
-            NULL,
-            0,
-            decrypted
-            );
+        &gcm,
+        (const unsigned char*) ct,
+        out_len,
+        iv,
+        tag,
+        NULL,
+        0,
+        decrypted
+        );
     decrypted[out_len] = '\0';
     free(ct);
     if (ret != 0) {
@@ -1671,198 +1216,198 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
 
 // Input, output, key
 XGB_DLL int encrypt_file(char* fname, char* e_fname, char* k_fname) {
-    char key[CIPHER_KEY_SIZE];
-    std::ifstream keyfile;
-    keyfile.open(k_fname);
-    keyfile.read(key, CIPHER_KEY_SIZE);
-    keyfile.close();
-    return encrypt_file_with_keybuf(fname, e_fname, key);
+  char key[CIPHER_KEY_SIZE];
+  std::ifstream keyfile;
+  keyfile.open(k_fname);
+  keyfile.read(key, CIPHER_KEY_SIZE);
+  keyfile.close();
+  return encrypt_file_with_keybuf(fname, e_fname, key);
 }
 
 XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-    mbedtls_gcm_context gcm;
+  mbedtls_ctr_drbg_context ctr_drbg;
+  mbedtls_entropy_context entropy;
+  mbedtls_gcm_context gcm;
 
-    unsigned char iv[CIPHER_IV_SIZE];
-    unsigned char tag[CIPHER_TAG_SIZE];
+  unsigned char iv[CIPHER_IV_SIZE];
+  unsigned char tag[CIPHER_TAG_SIZE];
 
-    // Initialize the entropy pool and the random source
-    mbedtls_entropy_init( &entropy );
-    mbedtls_ctr_drbg_init( &ctr_drbg );
-    // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
-    mbedtls_gcm_init(&gcm);
-    // The personalization string should be unique to your application in order to add some
-    // personalized starting randomness to your random sources.
-    std::string pers = "aes generate key for MC^2";
-    // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
-    int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
-    if( ret != 0 )
-    {
-        //printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
-        LOG(FATAL) << "mbedtls_ctr_drbg_seed() failed - returned " << -ret;
-    }
+  // Initialize the entropy pool and the random source
+  mbedtls_entropy_init( &entropy );
+  mbedtls_ctr_drbg_init( &ctr_drbg );
+  // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
+  mbedtls_gcm_init(&gcm);
+  // The personalization string should be unique to your application in order to add some
+  // personalized starting randomness to your random sources.
+  std::string pers = "aes generate key for MC^2";
+  // CTR_DRBG initial seeding Seed and setup entropy source for future reseeds
+  int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
+  if( ret != 0 )
+  {
+    //printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_ctr_drbg_seed() failed - returned " << -ret;
+  }
 
-    // Initialize the GCM context with our key and desired cipher
-    ret = mbedtls_gcm_setkey(&gcm,     // GCM context to be initialized
-            MBEDTLS_CIPHER_ID_AES,     // cipher to use (a 128-bit block cipher)
-            (unsigned char*) key,      // encryption key
-            CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
+  // Initialize the GCM context with our key and desired cipher
+  ret = mbedtls_gcm_setkey(&gcm,     // GCM context to be initialized
+      MBEDTLS_CIPHER_ID_AES,     // cipher to use (a 128-bit block cipher)
+      (unsigned char*) key,      // encryption key
+      CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
+  if( ret != 0 ) {
+    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
+  }
+
+  std::ifstream infile(fname);
+  std::ofstream myfile;
+  myfile.open(e_fname);
+
+  std::string line;
+  uint64_t index = 0;
+  uint64_t total = 0;
+
+  // Count total number of lines in file
+  while (std::getline(infile, line)) {
+    // Ignore empty lines
+    if (std::all_of(line.begin(), line.end(), isspace))
+      continue;
+    total++;
+  }
+  infile.close();
+
+  infile.open(fname);
+  while (std::getline(infile, line)) {
+    // Ignore empty lines
+    if (std::all_of(line.begin(), line.end(), isspace))
+      continue;
+
+    index++;
+    size_t length = strlen(line.c_str());
+
+    // We use `<index>,<total>` as additional authenticated data to prevent tampering across lines
+    std::stringstream ss;
+    ss << index << "," << total;
+    std::string ss_str = ss.str();
+
+    unsigned char* encrypted = (unsigned char*) malloc(length*sizeof(char));
+    ret = encrypt_symm(
+        &gcm,
+        &ctr_drbg,
+        (const unsigned char*)line.c_str(),
+        length,
+        (unsigned char*)ss_str.c_str(),
+        ss_str.length(),
+        encrypted,
+        iv,
+        tag
+        );
     if( ret != 0 ) {
-        //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-        LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
+      //printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
+      LOG(FATAL) << "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned " << -ret;
     }
-
-    std::ifstream infile(fname);
-    std::ofstream myfile;
-    myfile.open(e_fname);
-
-    std::string line;
-    uint64_t index = 0;
-    uint64_t total = 0;
-
-    // Count total number of lines in file
-    while (std::getline(infile, line)) {
-      // Ignore empty lines
-      if (std::all_of(line.begin(), line.end(), isspace))
-        continue;
-      total++;
-    }
-    infile.close();
-
-    infile.open(fname);
-    while (std::getline(infile, line)) {
-        // Ignore empty lines
-        if (std::all_of(line.begin(), line.end(), isspace))
-            continue;
-
-        index++;
-        size_t length = strlen(line.c_str());
-
-        // We use `<index>,<total>` as additional authenticated data to prevent tampering across lines
-        std::stringstream ss;
-        ss << index << "," << total;
-        std::string ss_str = ss.str();
-
-        unsigned char* encrypted = (unsigned char*) malloc(length*sizeof(char));
-        ret = encrypt_symm(
-                &gcm,
-                &ctr_drbg,
-                (const unsigned char*)line.c_str(),
-                length,
-                (unsigned char*)ss_str.c_str(),
-                ss_str.length(),
-                encrypted,
-                iv,
-                tag
-                );
-        if( ret != 0 ) {
-            //printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
-            LOG(FATAL) << "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned " << -ret;
-        }
-        std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
-        myfile
-            << index << ","
-            << total << ","
-            << dmlc::data::base64_encode(iv, CIPHER_IV_SIZE) << ","
-            << dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE) << ","
-            << dmlc::data::base64_encode(encrypted, length) << "\n";
-        free(encrypted);
-    }
-    infile.close();
-    myfile.close();
-    return 0;
+    std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
+    myfile
+      << index << ","
+      << total << ","
+      << dmlc::data::base64_encode(iv, CIPHER_IV_SIZE) << ","
+      << dmlc::data::base64_encode(tag, CIPHER_TAG_SIZE) << ","
+      << dmlc::data::base64_encode(encrypted, length) << "\n";
+    free(encrypted);
+  }
+  infile.close();
+  myfile.close();
+  return 0;
 }
 
 XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
-    mbedtls_gcm_context gcm;
+  mbedtls_gcm_context gcm;
 
-    // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
-    mbedtls_gcm_init(&gcm);
-    int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
-            MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
-            (const unsigned char*)key,      // encryption key
-            CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
-    if( ret != 0 ) {
-        //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
-        LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
+  // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
+  mbedtls_gcm_init(&gcm);
+  int ret = mbedtls_gcm_setkey(&gcm,      // GCM context to be initialized
+      MBEDTLS_CIPHER_ID_AES,          // cipher to use (a 128-bit block cipher)
+      (const unsigned char*)key,      // encryption key
+      CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
+  if( ret != 0 ) {
+    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
+    LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
+  }
+
+  std::ifstream infile(fname);
+  std::ofstream myfile;
+  myfile.open(d_fname);
+
+  std::string line;
+  while (std::getline(infile, line)) {
+    const char* data = line.c_str();
+    int index_pos = 0;
+    int total_pos = 0;
+    int iv_pos = 0;
+    int tag_pos = 0;
+    int len = line.length();
+
+    for (int i = 0; i < len; i++) {
+      if (data[i] == ',') {
+        index_pos = i;
+        break;
+      }
     }
-
-    std::ifstream infile(fname);
-    std::ofstream myfile;
-    myfile.open(d_fname);
-
-    std::string line;
-    while (std::getline(infile, line)) {
-        const char* data = line.c_str();
-        int index_pos = 0;
-        int total_pos = 0;
-        int iv_pos = 0;
-        int tag_pos = 0;
-        int len = line.length();
-
-        for (int i = 0; i < len; i++) {
-          if (data[i] == ',') {
-            index_pos = i;
-            break;
-          }
-        }
-        for (int i = index_pos + 1; i < len; i++) {
-          if (data[i] == ',') {
-            total_pos = i;
-            break;
-          }
-        }
-        for (int i = total_pos + 1; i < len; i++) {
-          if (data[i] == ',') {
-            iv_pos = i;
-            break;
-          }
-        }
-        for (int i = iv_pos + 1; i < len; i++) {
-          if (data[i] == ',') {
-            tag_pos = i;
-            break;
-          }
-        }
-        CHECK_LT(0, index_pos);
-        CHECK_LT(index_pos, total_pos);
-        CHECK_LT(total_pos, iv_pos);
-        CHECK_LT(iv_pos, tag_pos);
-
-        char *aad_str = (char*) malloc (total_pos + 1);
-        memcpy(aad_str, data, total_pos);
-        aad_str[total_pos] = 0;
-
-        size_t out_len;
-        char tag[CIPHER_TAG_SIZE];
-        char iv[CIPHER_IV_SIZE];
-
-        char* ct = (char *) malloc(line.size() * sizeof(char));
-
-        out_len = dmlc::data::base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
-        CHECK_EQ(out_len, CIPHER_IV_SIZE);
-        out_len = dmlc::data::base64_decode(data + iv_pos + 1, tag_pos - iv_pos, tag);
-        CHECK_EQ(out_len, CIPHER_TAG_SIZE);
-        out_len = dmlc::data::base64_decode(data + tag_pos + 1, line.size() - tag_pos, ct);
-
-        unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
-        int ret = decrypt_symm(
-                &gcm,
-                (const unsigned char*)ct,
-                out_len,
-                (unsigned char*)iv,
-                (unsigned char*)tag,
-                (unsigned char*)aad_str,
-                strlen(aad_str),
-                decrypted);
-        decrypted[out_len] = '\0';
-        free(ct);
-        if (ret != 0) {
-            LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
-        }
-        myfile << decrypted << "\n";
+    for (int i = index_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        total_pos = i;
+        break;
+      }
     }
-    infile.close();
-    myfile.close();
+    for (int i = total_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        iv_pos = i;
+        break;
+      }
+    }
+    for (int i = iv_pos + 1; i < len; i++) {
+      if (data[i] == ',') {
+        tag_pos = i;
+        break;
+      }
+    }
+    CHECK_LT(0, index_pos);
+    CHECK_LT(index_pos, total_pos);
+    CHECK_LT(total_pos, iv_pos);
+    CHECK_LT(iv_pos, tag_pos);
+
+    char *aad_str = (char*) malloc (total_pos + 1);
+    memcpy(aad_str, data, total_pos);
+    aad_str[total_pos] = 0;
+
+    size_t out_len;
+    char tag[CIPHER_TAG_SIZE];
+    char iv[CIPHER_IV_SIZE];
+
+    char* ct = (char *) malloc(line.size() * sizeof(char));
+
+    out_len = dmlc::data::base64_decode(data + total_pos + 1, iv_pos - total_pos, iv);
+    CHECK_EQ(out_len, CIPHER_IV_SIZE);
+    out_len = dmlc::data::base64_decode(data + iv_pos + 1, tag_pos - iv_pos, tag);
+    CHECK_EQ(out_len, CIPHER_TAG_SIZE);
+    out_len = dmlc::data::base64_decode(data + tag_pos + 1, line.size() - tag_pos, ct);
+
+    unsigned char* decrypted = (unsigned char*) malloc((out_len + 1) * sizeof(char));
+    int ret = decrypt_symm(
+        &gcm,
+        (const unsigned char*)ct,
+        out_len,
+        (unsigned char*)iv,
+        (unsigned char*)tag,
+        (unsigned char*)aad_str,
+        strlen(aad_str),
+        decrypted);
+    decrypted[out_len] = '\0';
+    free(ct);
+    if (ret != 0) {
+      LOG(FATAL) << "mbedtls_gcm_auth_decrypt failed with error " << -ret;
+    }
+    myfile << decrypted << "\n";
+  }
+  infile.close();
+  myfile.close();
 }

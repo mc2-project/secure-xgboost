@@ -1,5 +1,5 @@
 /*!
- * Copyright 2014 by Contributors
+ * Copyright 2014-2019 by Contributors
  * \file objective.h
  * \brief interface of objective function used by xgboost.
  * \author Tianqi Chen, Kailong Chen
@@ -8,30 +8,27 @@
 #define XGBOOST_OBJECTIVE_H_
 
 #include <dmlc/registry.h>
+#include <xgboost/base.h>
+#include <xgboost/data.h>
+#include <xgboost/model.h>
+#include <xgboost/generic_parameters.h>
+#include <xgboost/host_device_vector.h>
+
 #include <vector>
 #include <utility>
 #include <string>
 #include <functional>
-#include "./data.h"
-#include "./base.h"
-#include "common/host_device_vector.h"
-
 
 namespace xgboost {
 
 /*! \brief interface of objective function */
-class ObjFunction {
+class ObjFunction : public Configurable {
+ protected:
+  GenericParameter const* tparam_;
+
  public:
   /*! \brief virtual destructor */
-  virtual ~ObjFunction() = default;
-  /*!
-   * \brief set configuration from pair iterators.
-   * \param begin The beginning iterator.
-   * \param end The end iterator.
-   * \tparam PairIter iterator<std::pair<std::string, std::string> >
-   */
-  template<typename PairIter>
-  inline void Configure(PairIter begin, PairIter end);
+  ~ObjFunction() override = default;
   /*!
    * \brief Configure the objective with the specified parameters.
    * \param args arguments to the objective function.
@@ -77,17 +74,11 @@ class ObjFunction {
   }
   /*!
    * \brief Create an objective function according to name.
+   * \param tparam Generic parameters.
    * \param name Name of the objective.
    */
-  static ObjFunction* Create(const std::string& name);
+  static ObjFunction* Create(const std::string& name, GenericParameter const* tparam);
 };
-
-// implementing configure.
-template<typename PairIter>
-inline void ObjFunction::Configure(PairIter begin, PairIter end) {
-  std::vector<std::pair<std::string, std::string> > vec(begin, end);
-  this->Configure(vec);
-}
 
 /*!
  * \brief Registry entry for objective factory functions.
@@ -102,7 +93,7 @@ struct ObjFunctionReg
  *
  * \code
  * // example of registering a objective
- * XGBOOST_REGISTER_OBJECTIVE(LinearRegression, "reg:linear")
+ * XGBOOST_REGISTER_OBJECTIVE(LinearRegression, "reg:squarederror")
  * .describe("Linear regression objective")
  * .set_body([]() {
  *     return new RegLossObj(LossType::kLinearSquare);

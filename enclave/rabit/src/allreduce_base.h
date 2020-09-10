@@ -1,7 +1,6 @@
 /*!
  *  Copyright (c) 2014 by Contributors
  *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
- *
  * \file allreduce_base.h
  * \brief Basic implementation of AllReduce
  *   using TCP non-block socket and tree-shape reduction.
@@ -17,10 +16,16 @@
 #include <vector>
 #include <string>
 #include <algorithm>
-#include "../include/rabit/internal/utils.h"
-#include "../include/rabit/internal/engine.h"
-#include "./socket.h"
+#include "rabit/internal/utils.h"
+#include "rabit/internal/engine.h"
+#include "rabit/internal/socket.h"
 #include "./ssl_socket.h"
+
+#ifdef RABIT_CXXTESTDEFS_H
+#define private   public
+#define protected public
+#endif  // RABIT_CXXTESTDEFS_H
+
 
 namespace MPI {
 // MPI data type to be compatible with existing MPI interface
@@ -41,9 +46,9 @@ class AllreduceBase : public IEngine {
   AllreduceBase(void);
   virtual ~AllreduceBase(void) {}
   // initialize the manager
-  virtual void Init(int argc, char* argv[]);
+  virtual bool Init(int argc, char* argv[]);
   // shutdown the engine
-  virtual void Shutdown(void);
+  virtual bool Shutdown(void);
   // Init ssl context.
   virtual void InitSSL();
   /*!
@@ -59,6 +64,11 @@ class AllreduceBase : public IEngine {
    * \param msg message to be printed in the tracker
    */
   virtual void TrackerPrint(const std::string &msg);
+
+  /*! \brief get rank of previous node in ring topology*/
+  virtual int GetRingPrevRank(void) const {
+    return ring_prev->rank;
+  }
   /*! \brief get rank */
   virtual int GetRank(void) const {
     return rank;
@@ -76,6 +86,35 @@ class AllreduceBase : public IEngine {
   virtual std::string GetHost(void) const {
     return host_uri;
   }
+
+  /*!
+  * \brief internal Allgather function, each node have a segment of data in the ring of sendrecvbuf,
+  *  the data provided by current node k is [slice_begin, slice_end),
+  *  the next node's segment must start with slice_end
+  *  after the call of Allgather, sendrecvbuf_ contains all the contents including all segments
+  *  use a ring based algorithm
+  *
+  * \param sendrecvbuf_ buffer for both sending and receiving data, it is a ring conceptually
+  * \param total_size total size of data to be gathered
+  * \param slice_begin beginning of the current slice
+  * \param slice_end end of the current slice
+  * \param size_prev_slice size of the previous slice i.e. slice of node (rank - 1) % world_size
+  * \param _file caller file name used to generate unique cache key
+  * \param _line caller line number used to generate unique cache key
+  * \param _caller caller function name used to generate unique cache key
+  */
+  virtual void Allgather(void *sendrecvbuf_, size_t total_size,
+                             size_t slice_begin,
+                             size_t slice_end,
+                             size_t size_prev_slice,
+                             const char* _file = _FILE,
+                             const int _line = _LINE,
+                             const char* _caller = _CALLER) {
+    if (world_size == 1 || world_size == -1) return;
+    utils::Assert(TryAllgatherRing(sendrecvbuf_, total_size,
+                                   slice_begin, slice_end, size_prev_slice) == kSuccess,
+                  "AllgatherRing failed");
+  }
   /*!
    * \brief perform in-place allreduce, on sendrecvbuf
    *        this function is NOT thread-safe
@@ -87,13 +126,19 @@ class AllreduceBase : public IEngine {
    *                     will be called by the function before performing Allreduce, to intialize the data in sendrecvbuf_.
    *                     If the result of Allreduce can be recovered directly, then prepare_func will NOT be called
    * \param prepare_arg argument used to passed into the lazy preprocessing function
+   * \param _file caller file name used to generate unique cache key
+   * \param _line caller line number used to generate unique cache key
+   * \param _caller caller function name used to generate unique cache key
    */
   virtual void Allreduce(void *sendrecvbuf_,
                          size_t type_nbytes,
                          size_t count,
                          ReduceFunction reducer,
                          PreprocFunction prepare_fun = NULL,
-                         void *prepare_arg = NULL) {
+                         void *prepare_arg = NULL,
+                         const char* _file = _FILE,
+                         const int _line = _LINE,
+                         const char* _caller = _CALLER) {
     if (prepare_fun != NULL) prepare_fun(prepare_arg);
     if (world_size == 1 || world_size == -1) return;
     utils::Assert(TryAllreduce(sendrecvbuf_,
@@ -105,8 +150,12 @@ class AllreduceBase : public IEngine {
    * \param sendrecvbuf_ buffer for both sending and recving data
    * \param size the size of the data to be broadcasted
    * \param root the root worker id to broadcast the data
+   * \param _file caller file name used to generate unique cache key
+   * \param _line caller line number used to generate unique cache key
+   * \param _caller caller function name used to generate unique cache key
    */
-  virtual void Broadcast(void *sendrecvbuf_, size_t total_size, int root) {
+  virtual void Broadcast(void *sendrecvbuf_, size_t total_size, int root,
+    const char* _file = _FILE, const int _line = _LINE, const char* _caller = _CALLER) {
     if (world_size == 1 || world_size == -1) return;
     utils::Assert(TryBroadcast(sendrecvbuf_, total_size, root) == kSuccess,
                   "Broadcast failed");
@@ -374,7 +423,7 @@ class AllreduceBase : public IEngine {
    *   this function is also used when the engine start up
    * \param cmd possible command to sent to tracker
    */
-  void ReConnectLinks(const char *cmd = "start");
+  bool ReConnectLinks(const char *cmd = "start");
   /*!
    * \brief perform in-place allreduce, on sendrecvbuf, this function can fail, and will return the cause of failure
    *
@@ -484,7 +533,7 @@ class AllreduceBase : public IEngine {
   // version number of model
   int version_number;
   // whether the job is running in hadoop
-  int hadoop_mode;
+  bool hadoop_mode;
   //---- local data related to link ----
   // index of parent link, can be -1, meaning this is root of the tree
   int parent_index;
@@ -526,10 +575,16 @@ class AllreduceBase : public IEngine {
   int world_size;
   // connect retry time
   int connect_retry;
-  // backdoor listening peer connection
-  utils::SSLTcpSocket sock_listen;
-  // backdoor port
-  int port = 0;
+  // enable bootstrap cache 0 false 1 true
+  bool rabit_bootstrap_cache = false;
+  // enable detailed logging
+  bool rabit_debug = false;
+  // by default, if rabit worker not recover in half an hour exit
+  int timeout_sec = 1800;
+  // flag to enable rabit_timeout
+  bool rabit_timeout = false;
+  // Enable TCP node delay
+  bool rabit_enable_tcp_no_delay = false;
   // root_cert for ssl client
   std::string root_cert_path;
   // cert_chain for ssl server

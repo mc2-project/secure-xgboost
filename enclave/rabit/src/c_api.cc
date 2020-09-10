@@ -1,13 +1,11 @@
 // Copyright by Contributors
 // Modifications Copyright (c) 2020 by Secure XGBoost Contributors
 // implementations in ctypes
-#define _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_DEPRECATE
-
+#include <rabit/base.h>
 #include <cstring>
 #include <string>
-#include "../include/rabit/rabit.h"
-#include "../include/rabit/c_api.h"
+#include "rabit/rabit.h"
+#include "rabit/c_api.h"
 #include "enclave_context.h"
 
 namespace rabit {
@@ -15,7 +13,7 @@ namespace c_api {
 // helper use to avoid BitOR operator
 template<typename OP, typename DType>
 struct FHelper {
-  inline static void
+  static void
   Allreduce(DType *senrecvbuf_,
             size_t count,
             void (*prepare_fun)(void *arg),
@@ -27,7 +25,7 @@ struct FHelper {
 
 template<typename DType>
 struct FHelper<op::BitOR, DType> {
-  inline static void
+  static void
   Allreduce(DType *senrecvbuf_,
             size_t count,
             void (*prepare_fun)(void *arg),
@@ -37,11 +35,11 @@ struct FHelper<op::BitOR, DType> {
 };
 
 template<typename OP>
-inline void Allreduce_(void *sendrecvbuf_,
-                       size_t count,
-                       engine::mpi::DataType enum_dtype,
-                       void (*prepare_fun)(void *arg),
-                       void *prepare_arg) {
+void Allreduce_(void *sendrecvbuf_,
+                size_t count,
+                engine::mpi::DataType enum_dtype,
+                void (*prepare_fun)(void *arg),
+                void *prepare_arg) {
   using namespace engine::mpi;
   switch (enum_dtype) {
     case kChar:
@@ -87,12 +85,12 @@ inline void Allreduce_(void *sendrecvbuf_,
     default: utils::Error("unknown data_type");
   }
 }
-inline void Allreduce(void *sendrecvbuf,
-                      size_t count,
-                      engine::mpi::DataType enum_dtype,
-                      engine::mpi::OpType enum_op,
-                      void (*prepare_fun)(void *arg),
-                      void *prepare_arg) {
+void Allreduce(void *sendrecvbuf,
+               size_t count,
+               engine::mpi::DataType enum_dtype,
+               engine::mpi::OpType enum_op,
+               void (*prepare_fun)(void *arg),
+               void *prepare_arg) {
   using namespace engine::mpi;
   switch (enum_op) {
     case kMax:
@@ -122,8 +120,66 @@ inline void Allreduce(void *sendrecvbuf,
     default: utils::Error("unknown enum_op");
   }
 }
-
-
+void Allgather(void *sendrecvbuf_,
+               size_t total_size,
+               size_t beginIndex,
+               size_t size_node_slice,
+               size_t size_prev_slice,
+               int enum_dtype) {
+  using namespace engine::mpi;
+  size_t type_size = 0;
+  switch (enum_dtype) {
+  case kChar:
+    type_size = sizeof(char);
+    rabit::Allgather(static_cast<char*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kUChar:
+    type_size = sizeof(unsigned char);
+    rabit::Allgather(static_cast<unsigned char*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kInt:
+    type_size = sizeof(int);
+    rabit::Allgather(static_cast<int*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kUInt:
+    type_size = sizeof(unsigned);
+    rabit::Allgather(static_cast<unsigned*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kLong:
+    type_size = sizeof(int64_t);
+    rabit::Allgather(static_cast<int64_t*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kULong:
+    type_size = sizeof(uint64_t);
+    rabit::Allgather(static_cast<uint64_t*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kFloat:
+    type_size = sizeof(float);
+    rabit::Allgather(static_cast<float*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  case kDouble:
+    type_size = sizeof(double);
+    rabit::Allgather(static_cast<double*>(sendrecvbuf_), total_size * type_size,
+      beginIndex * type_size, (beginIndex + size_node_slice) * type_size,
+      size_prev_slice * type_size);
+    break;
+  default: utils::Error("unknown data_type");
+  }
+}
 
 // wrapper for serialization
 struct ReadWrapper : public Serializable {
@@ -164,37 +220,40 @@ struct WriteWrapper : public Serializable {
 }  // namespace c_api
 }  // namespace rabit
 
-void RabitInit(int argc, char *argv[]) {
+RABIT_DLL bool RabitInit(int argc, char *argv[]) {
   rabit::Init(argc, argv);
-
   // Master enclave shares its symmetric key, public/private keypair, and nonce to maintain consistency across the cluster
   EnclaveContext::getInstance().share_keys_and_nonce();
 }
 
-void RabitFinalize() {
-  rabit::Finalize();
+RABIT_DLL bool RabitFinalize() {
+  return rabit::Finalize();
 }
 
-int RabitGetRank() {
+RABIT_DLL int RabitGetRingPrevRank() {
+  return rabit::GetRingPrevRank();
+}
+
+RABIT_DLL int RabitGetRank() {
   return rabit::GetRank();
 }
 
-int RabitGetWorldSize() {
+RABIT_DLL int RabitGetWorldSize() {
   return rabit::GetWorldSize();
 }
 
-int RabitIsDistributed() {
+RABIT_DLL int RabitIsDistributed() {
   return rabit::IsDistributed();
 }
 
-void RabitTrackerPrint(const char *msg) {
+RABIT_DLL void RabitTrackerPrint(const char *msg) {
   std::string m(msg);
   rabit::TrackerPrint(m);
 }
 
-void RabitGetProcessorName(char *out_name,
-                           rbt_ulong *out_len,
-                           rbt_ulong max_len) {
+RABIT_DLL void RabitGetProcessorName(char *out_name,
+                                     rbt_ulong *out_len,
+                                     rbt_ulong max_len) {
   std::string s = rabit::GetProcessorName();
   if (s.length() > max_len) {
     s.resize(max_len - 1);
@@ -203,17 +262,25 @@ void RabitGetProcessorName(char *out_name,
   *out_len = static_cast<rbt_ulong>(s.length());
 }
 
-void RabitBroadcast(void *sendrecv_data,
-                    rbt_ulong size, int root) {
+RABIT_DLL void RabitBroadcast(void *sendrecv_data,
+                              rbt_ulong size, int root) {
   rabit::Broadcast(sendrecv_data, size, root);
 }
 
-void RabitAllreduce(void *sendrecvbuf,
-                    size_t count,
-                    int enum_dtype,
-                    int enum_op,
-                    void (*prepare_fun)(void *arg),
-                    void *prepare_arg) {
+RABIT_DLL void RabitAllgather(void *sendrecvbuf_, size_t total_size,
+                              size_t beginIndex, size_t size_node_slice,
+                              size_t size_prev_slice, int enum_dtype) {
+  rabit::c_api::Allgather(sendrecvbuf_,
+                          total_size,
+                          beginIndex,
+                          size_node_slice,
+                          size_prev_slice,
+                          static_cast<rabit::engine::mpi::DataType>(enum_dtype));
+}
+
+RABIT_DLL void RabitAllreduce(void *sendrecvbuf, size_t count, int enum_dtype,
+                              int enum_op, void (*prepare_fun)(void *arg),
+                              void *prepare_arg) {
   rabit::c_api::Allreduce
       (sendrecvbuf, count,
        static_cast<rabit::engine::mpi::DataType>(enum_dtype),
@@ -221,10 +288,10 @@ void RabitAllreduce(void *sendrecvbuf,
        prepare_fun, prepare_arg);
 }
 
-int RabitLoadCheckPoint(char **out_global_model,
-                        rbt_ulong *out_global_len,
-                        char **out_local_model,
-                        rbt_ulong *out_local_len) {
+RABIT_DLL int RabitLoadCheckPoint(char **out_global_model,
+                                  rbt_ulong *out_global_len,
+                                  char **out_local_model,
+                                  rbt_ulong *out_local_len) {
   // NOTE: this function is not thread-safe
   using rabit::BeginPtr;
   using namespace rabit::c_api; // NOLINT(*)
@@ -249,10 +316,8 @@ int RabitLoadCheckPoint(char **out_global_model,
   return version;
 }
 
-void RabitCheckPoint(const char *global_model,
-                     rbt_ulong global_len,
-                     const char *local_model,
-                     rbt_ulong local_len) {
+RABIT_DLL void RabitCheckPoint(const char *global_model, rbt_ulong global_len,
+                               const char *local_model, rbt_ulong local_len) {
   using namespace rabit::c_api; // NOLINT(*)
   WriteWrapper sg(global_model, global_len);
   WriteWrapper sl(local_model, local_len);
@@ -263,10 +328,10 @@ void RabitCheckPoint(const char *global_model,
   }
 }
 
-int RabitVersionNumber() {
+RABIT_DLL int RabitVersionNumber() {
   return rabit::VersionNumber();
 }
 
-int RabitLinkTag() {
+RABIT_DLL int RabitLinkTag() {
   return 0;
 }

@@ -36,14 +36,16 @@ class ThreadLocalStore {
  public:
   /*! \return get a thread local singleton */
   static T* Get() {
-#if DMLC_CXX11_THREAD_LOCAL
+#if DMLC_CXX11_THREAD_LOCAL && DMLC_MODERN_THREAD_LOCAL == 1
     static thread_local T inst;
     return &inst;
 #else
     static MX_THREAD_LOCAL T* ptr = nullptr;
     if (ptr == nullptr) {
       ptr = new T();
-      Singleton()->RegisterDelete(ptr);
+      // Syntactic work-around for the nvcc of the initial cuda v10.1 release,
+      // which fails to compile 'Singleton()->' below. Fixed in v10.1 update 1.
+      (*Singleton()).RegisterDelete(ptr);
     }
     return ptr;
 #endif
@@ -77,6 +79,52 @@ class ThreadLocalStore {
   /*!\brief internal data */
   std::vector<T*> data_;
 };
+
+#ifdef __ENCLAVE__
+template<typename T>
+class NonThreadLocalStore {
+	public:
+		/*! \return get a thread local singleton */
+		static T* Get() {
+			static T* ptr = nullptr;
+			if (ptr == nullptr) {
+				ptr = new T();
+				// Syntactic work-around for the nvcc of the initial cuda v10.1 release,
+				// which fails to compile 'Singleton()->' below. Fixed in v10.1 update 1.
+				(*Singleton()).RegisterDelete(ptr);
+			}
+			return ptr;
+		}
+
+	private:
+		/*! \brief constructor */
+		NonThreadLocalStore() {}
+		/*! \brief destructor */
+		~NonThreadLocalStore() {
+			for (size_t i = 0; i < data_.size(); ++i) {
+				delete data_[i];
+			}
+		}
+		/*! \return singleton of the store */
+		static NonThreadLocalStore<T> *Singleton() {
+			static NonThreadLocalStore<T> inst;
+			return &inst;
+		}
+		/*!
+		 * \brief register str for internal deletion
+		 * \param str the string pointer
+		 */
+		void RegisterDelete(T *str) {
+			std::unique_lock<std::mutex> lock(mutex_);
+			data_.push_back(str);
+			lock.unlock();
+		}
+		/*! \brief internal mutex */
+		std::mutex mutex_;
+		/*!\brief internal data */
+		std::vector<T*> data_;
+};
+#endif
 
 }  // namespace dmlc
 

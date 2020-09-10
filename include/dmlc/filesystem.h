@@ -134,9 +134,6 @@ class TemporaryDirectory {
    * \param path String representation of path
    */
   inline bool IsSymlink(const std::string& path) {
-#if true  // FIXME enable function
-    return false;
-#else
 #ifdef _WIN32
     DWORD attr = GetFileAttributesA(path.c_str());
     CHECK_NE(attr, INVALID_FILE_ATTRIBUTES)
@@ -148,7 +145,6 @@ class TemporaryDirectory {
       << "dmlc::TemporaryDirectory::IsSymlink(): Unable to read file attributes";
     return S_ISLNK(sb.st_mode);
 #endif  // _WIN32
-#endif  // 
   }
 
   /*!
