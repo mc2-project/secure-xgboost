@@ -102,7 +102,7 @@ XGB_DLL const char *XGBGetLastError(void);
 XGB_DLL int XGBRegisterLogCallback(void (*callback)(const char*));
 
 #if defined(__HOST__)
-XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity);
+XGB_DLL int XGBCreateEnclave(const char *enclave_image, char** usernames, size_t num_clients, int log_verbosity);
 #endif
 
 /*!

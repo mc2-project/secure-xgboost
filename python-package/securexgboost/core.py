@@ -2520,7 +2520,7 @@ def init_client(remote_addr=None, user_name=None,
     _CONF["nonce_ctr"] = 0 
 
 
-def init_server(enclave_image=None, log_verbosity=0):
+def init_server(enclave_image=None, usernames=[], log_verbosity=0):
     """
     Launch the enclave from an image. This API should be invoked only by the servers and not the clients.
 
@@ -2528,10 +2528,12 @@ def init_server(enclave_image=None, log_verbosity=0):
     ----------
     enclave_image: str
         Path to enclave binary
+    usernames: list
+        List of client usernames (strings) allowed to use the enclaves
     log_verbosity: int, optional
         Verbosity level for enclave (for enclaves in debug mode)
     """
-    _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), log_verbosity))
+    _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), from_pystr_to_cstr(usernames), len(usernames), log_verbosity))
 
 
 def attest(verify=True):

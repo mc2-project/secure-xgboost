@@ -9,6 +9,7 @@ class Enclave {
     private:
         // Private constructor to prevent instancing
         Enclave() {}
+        int num_clients;
 
     public:
         // Don't forget to declare these two. You want to make sure they
@@ -31,6 +32,14 @@ class Enclave {
 
         oe_enclave_t** getEnclaveRef() {
             return &(this->enclave_ref);
+        }
+
+        int set_num_clients(int num) {
+          num_clients = num;
+        }
+
+        int get_num_clients() {
+          return num_clients;
         }
 
 };

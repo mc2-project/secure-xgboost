@@ -45,7 +45,8 @@ int main(int argc, char** argv) {
 
   std::cout << "Creating enclave\n";
   int log_verbosity = 1;
-  safe_xgboost(XGBCreateEnclave(argv[1], log_verbosity));
+  char* usernames[1] = {"user1"};
+  safe_xgboost(XGBCreateEnclave(argv[1], usernames, 1, log_verbosity));
   
   oe_result_t result;
   int ret = 1;
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
   safe_xgboost(get_remote_report_with_pubkey_and_nonce(&pem_key, &key_size, &nonce, &nonce_size, &remote_report, &remote_report_size));
   // NOTE: Verification will fail in simulation mode
   // Comment out this line for testing the code in simulation mode
-  safe_xgboost(verify_remote_report_and_set_pubkey_and_nonce(pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size));
+  //safe_xgboost(verify_remote_report_and_set_pubkey_and_nonce(pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size));
 
   uint8_t* encrypted_data = (uint8_t*) malloc(1024*sizeof(uint8_t));
   size_t encrypted_data_size = 1024;

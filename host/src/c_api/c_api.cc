@@ -396,8 +396,11 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 
 // xgboost implementation
 //
-XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
+XGB_DLL int XGBCreateEnclave(const char *enclave_image, char** usernames, size_t num_clients, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
+    size_t username_lengths[num_clients];
+    get_str_lengths(usernames, num_clients, username_lengths);
+
     oe_result_t result;
 
     uint32_t flags = 0;
@@ -421,7 +424,8 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
       oe_terminate_enclave(Enclave::getInstance().getEnclave());
       return Enclave::getInstance().enclave_ret;
     }
-    safe_ecall(enclave_init(Enclave::getInstance().getEnclave(), log_verbosity));
+    Enclave::getInstance().set_num_clients(num_clients);
+    safe_ecall(enclave_init(Enclave::getInstance().getEnclave(), usernames, username_lengths, num_clients, log_verbosity));
   }
   return 0;
 }

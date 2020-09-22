@@ -107,6 +107,7 @@ int XGDMatrixCreateFromEncryptedFile(const char *fnames[],
                                      size_t* sig_lengths) {
     size_t fname_lengths[num_files];
     size_t username_lengths[num_files];
+    int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
     size_t signer_lengths[NUM_CLIENTS];
 
     get_str_lengths((char**)fnames, num_files, fname_lengths);
@@ -159,6 +160,7 @@ XGB_DLL int XGDMatrixNumRow(const DMatrixHandle handle,
                             char **signers,
                             uint8_t* signatures[],
                             size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -175,6 +177,7 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
                             char **signers,
                             uint8_t* signatures[],
                             size_t* sig_lengths) {                          
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -183,8 +186,11 @@ XGB_DLL int XGDMatrixNumCol(const DMatrixHandle handle,
 
 // xgboost implementation
 
-XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
+XGB_DLL int XGBCreateEnclave(const char *enclave_image, char** usernames, size_t num_clients, int log_verbosity) {
   if (!Enclave::getInstance().getEnclave()) {
+    size_t username_lengths[num_clients];
+    get_str_lengths(usernames, num_clients, username_lengths);
+
     oe_result_t result;
 
     uint32_t flags = 0;
@@ -208,7 +214,8 @@ XGB_DLL int XGBCreateEnclave(const char *enclave_image, int log_verbosity) {
       oe_terminate_enclave(Enclave::getInstance().getEnclave());
       return Enclave::getInstance().enclave_ret;
     }
-    safe_ecall(enclave_init(Enclave::getInstance().getEnclave(), log_verbosity));
+    Enclave::getInstance().set_num_clients(num_clients);
+    safe_ecall(enclave_init(Enclave::getInstance().getEnclave(), usernames, username_lengths, num_clients, log_verbosity));
   }
   return 0;
 }
@@ -224,6 +231,7 @@ XGB_DLL int XGBoosterCreate(const DMatrixHandle dmats[],
                     char **signers,
                     uint8_t* signatures[],
                     size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t handle_lengths[len];
   size_t signer_lengths[NUM_CLIENTS];
 
@@ -248,6 +256,7 @@ XGB_DLL int XGBoosterSetParam(BoosterHandle handle,
                               char **signers,
                               uint8_t* signatures[],
                               size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -265,6 +274,7 @@ XGB_DLL int XGBoosterUpdateOneIter(BoosterHandle handle,
                                    char **signers,
                                    uint8_t* signatures[],
                                    size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -309,6 +319,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
                              char **signers,
                              uint8_t* signatures[],
                              size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -316,6 +327,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 }
 
 XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t* signatures[], size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -323,6 +335,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t*
 }
 
 XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t* signatures[], size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -337,6 +350,7 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          char** signers,
                                          uint8_t* signatures[],
                                          size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -354,6 +368,7 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  char** signers,
                                  uint8_t* signatures[],
                                  size_t* sig_lengths) {
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -385,6 +400,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  char** signers,
                                  uint8_t* signatures[],
                                  size_t* sig_lengths){
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   size_t signer_lengths[NUM_CLIENTS];
   get_str_lengths(signers, NUM_CLIENTS, signer_lengths);
 
@@ -414,6 +430,7 @@ XGB_DLL int XGBoosterDumpModelWithFeatures(BoosterHandle handle,
   get_str_lengths((char**)fname, fnum, fname_lengths);
   get_str_lengths((char**)ftype, fnum, ftype_lengths);
 
+  int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
   safe_ecall(enclave_XGBoosterDumpModelWithFeatures(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, handle, (unsigned int) fnum, fname, fname_lengths, ftype, ftype_lengths, with_stats, nonce, nonce_size, nonce_ctr, len, (char***) out_models, out_sig, out_sig_length, signers, signer_lengths, signatures, sig_lengths, NUM_CLIENTS));
 }
 
@@ -435,6 +452,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              size_t* sig_lengths) {
     size_t fname_lengths[fnum];
     size_t ftype_lengths[fnum];
+    int NUM_CLIENTS = Enclave::getInstance().get_num_clients();
     size_t signer_lengths[NUM_CLIENTS];
 
     get_str_lengths((char**)fname, fnum, fname_lengths);

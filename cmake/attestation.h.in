@@ -6,7 +6,5 @@
 
 static const char MRSIGNER_PUBLIC_KEY[] = ${MRSIGNER_PUBLIC_KEY};
 static const char* CA_CERT = ${CA_CERT};
-static const int NUM_CLIENTS = ${NUM_CLIENTS};
-static const std::vector<std::string> CLIENT_NAMES = ${CLIENT_NAMES};
 
 #endif

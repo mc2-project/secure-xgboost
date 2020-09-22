@@ -107,7 +107,7 @@ xgb.init_client(user_name="user1",
 				sym_key_file="key.txt",
 				priv_key_file="config/user1.pem",
 				cert_file="config/user1.crt")
-xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed")
+xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed", usernames=["user1"])
 
 # Remote attestation to authenticate enclave
 # If running in simulation mode, pass in `verify=False` below
