@@ -2584,12 +2584,12 @@ def attest(verify=True):
             ctypes.byref(nonce), ctypes.byref(nonce_size),
             ctypes.byref(remote_report), ctypes.byref(remote_report_size)))
 
-        # Verify attestation report
+    # Verify attestation report
     if (verify):
         _check_call(_LIB.verify_remote_report_and_set_pubkey_and_nonce(
             pem_key, pem_key_size,
             nonce, nonce_size,
-            from_pystr_to_cstr(_CONF["client_names"]),
+            from_pystr_to_cstr(_CONF["client_names"]), len(_CONF["client_names"]),
             remote_report, remote_report_size))
 
     _CONF["enclave_pk"] = pem_key

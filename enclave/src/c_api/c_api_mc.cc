@@ -126,18 +126,20 @@ int get_remote_report_with_pubkey_and_nonce(
   std::vector<std::string> usernames_list = EnclaveContext::getInstance().get_clients();
   size_t total_len = 0;
   for (int i = 0; i < usernames_list.size(); i++) {
-    total_len += usernames_list[i].length + 1;
+    total_len += usernames_list[i].length() + 1;
   }
-  uint8_t report_data[CIPHER_PK_SIZE + CIPHER_IV_SIZE + total_len];
+  size_t report_data_size = CIPHER_PK_SIZE + CIPHER_IV_SIZE + total_len;
+  uint8_t report_data[report_data_size];
   memcpy(report_data, public_key, CIPHER_PK_SIZE);
   memcpy(report_data + CIPHER_PK_SIZE, enclave_nonce, CIPHER_IV_SIZE);
   uint8_t* ptr = report_data + CIPHER_PK_SIZE + CIPHER_IV_SIZE;
   for (int i = 0; i < usernames_list.size(); i++) {
-    size_t len = usernames_list[i].length + 1;
+    size_t len = usernames_list[i].length() + 1;
     memcpy(ptr, usernames_list[i].c_str(), len);
     ptr += len;
   }
-  if (generate_remote_report(report_data, CIPHER_PK_SIZE + CIPHER_IV_SIZE, &report, &report_size)) {
+
+  if (generate_remote_report(report_data, report_data_size, &report, &report_size)) {
     // Allocate memory on the host and copy the report over.
     *remote_report = (uint8_t*)oe_host_malloc(report_size);
     if (*remote_report == NULL) {
