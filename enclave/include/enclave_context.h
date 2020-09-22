@@ -89,6 +89,10 @@ class EnclaveContext {
       return num_clients;
     }
 
+    std::vector<std::string> get_clients() {
+      return client_names;
+    }
+
     uint8_t* get_public_key() {
       return m_public_key;
     }

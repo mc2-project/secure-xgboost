@@ -739,14 +739,26 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
     size_t key_size,
     uint8_t* nonce,
     size_t nonce_size,
+    char** usernames,
+    size_t num_users,
     uint8_t* remote_report,
     size_t remote_report_size) {
   // Attest the remote report and accompanying key.
-  size_t key_and_nonce_size = key_size + nonce_size;
-  uint8_t key_and_nonce[key_and_nonce_size];
-  memcpy(key_and_nonce, pem_key, CIPHER_PK_SIZE);
-  memcpy(key_and_nonce + CIPHER_PK_SIZE, nonce, CIPHER_IV_SIZE);
-  if (!attest_remote_report(remote_report, remote_report_size, key_and_nonce, key_and_nonce_size)) {
+  size_t total_len = 0;
+  for (int i = 0; i < num_users; i++) {
+    total_len += strlen(usernames[i] + 1);
+  }
+  size_t report_data_size = key_size + nonce_size + total_len;
+  uint8_t report_data[report_data_size];
+  memcpy(report_data, pem_key, CIPHER_PK_SIZE);
+  memcpy(report_data + CIPHER_PK_SIZE, nonce, CIPHER_IV_SIZE);
+  uint8_t* ptr = report_data + CIPHER_PK_SIZE + CIPHER_IV_SIZE;
+  for (int i = 0; i < num_users; i++) {
+    size_t len = strlen(usernames[i] + 1);
+    memcpy(ptr, usernames[i], len);
+    ptr += len;
+  }
+  if (!attest_remote_report(remote_report, remote_report_size, report_data, report_data_size)) {
     std::cout << "verify_report_and_set_pubkey_and_nonce failed." << std::endl;
     return -1;
   }

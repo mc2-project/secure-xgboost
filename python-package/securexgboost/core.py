@@ -2481,7 +2481,7 @@ class Booster(object):
 # Enclave init and attestation APIs
 ##########################################
 
-def init_client(remote_addr=None, user_name=None, 
+def init_client(remote_addr=None, user_name=None, client_list=[],
         sym_key_file=None, priv_key_file=None, cert_file=None):
     """
     Initialize the client. Set up the client's keys, and specify the IP address of the enclave server.
@@ -2491,7 +2491,9 @@ def init_client(remote_addr=None, user_name=None,
     remote_addr: str
         IP address of remote server running the enclave
     user_name : str
-        Current user's identity
+        Current user's username
+    client_list : list
+        List of usernames for all clients in the collaboration
     sym_key_file : str
         Path to file containing user's symmetric key used for encrypting data
     priv_key_file : str
@@ -2503,6 +2505,9 @@ def init_client(remote_addr=None, user_name=None,
 
     _CONF["remote_addr"] = remote_addr;
     _CONF["current_user"] = user_name
+    _clients = set(client_list)
+    _clients.add(user_name)
+    _CONF["client_names"] = list(_clients)
 
     if sym_key_file is not None:
         with open(sym_key_file, "rb") as keyfile:
@@ -2584,6 +2589,7 @@ def attest(verify=True):
         _check_call(_LIB.verify_remote_report_and_set_pubkey_and_nonce(
             pem_key, pem_key_size,
             nonce, nonce_size,
+            from_pystr_to_cstr(_CONF["client_names"]),
             remote_report, remote_report_size))
 
     _CONF["enclave_pk"] = pem_key
