@@ -40,7 +40,7 @@ This demo runs the enclave server on the same machine as the client for simplici
                    sym_key_file="demo/data/key_zeros.txt",
                    priv_key_file="config/user1.pem",
                    cert_file="config/user1.crt")
-   xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed", usernames=["user1"])
+   xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed", client_list=["user1"])
    # Remote Attestation
    xgb.attest()
 
