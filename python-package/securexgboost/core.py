@@ -2534,7 +2534,7 @@ def init_server(enclave_image=None, client_list=[], log_verbosity=0):
     enclave_image: str
         Path to enclave binary
     client_list: list
-        List of client usernames (strings) allowed to use the enclaves
+        List of usernames (strings) of clients in the collaboration allowed to use the enclaves
     log_verbosity: int, optional
         Verbosity level for enclave (for enclaves in debug mode)
     """
