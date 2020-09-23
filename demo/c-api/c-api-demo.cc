@@ -45,7 +45,8 @@ int main(int argc, char** argv) {
 
   std::cout << "Creating enclave\n";
   int log_verbosity = 1;
-  safe_xgboost(XGBCreateEnclave(argv[1], log_verbosity));
+  char* usernames[1] = {"user1"};
+  safe_xgboost(XGBCreateEnclave(argv[1], usernames, 1, log_verbosity));
   
   oe_result_t result;
   int ret = 1;

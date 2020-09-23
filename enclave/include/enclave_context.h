@@ -24,10 +24,9 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 
+#include <rabit/rabit.h>
 
 class EnclaveContext {
-  // FIXME Embed root CA for clients
-
   private:
     mbedtls_ctr_drbg_context m_ctr_drbg_context;
     mbedtls_entropy_context m_entropy_context;
@@ -49,10 +48,9 @@ class EnclaveContext {
     int booster_ctr;
     int dmatrix_ctr;
 
-    // FIXME use array of fixed length instead of vector
-    //std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
-    uint8_t client_key[CIPHER_KEY_SIZE];
-    bool client_key_is_set;
+    // list of usernames configured by the host at enclave launch
+    std::vector<std::string> client_names;
+    int num_clients;
 
     // map username to client_key
     std::unordered_map<std::string, std::vector<uint8_t>> client_keys;
@@ -65,9 +63,9 @@ class EnclaveContext {
       generate_nonce();
       m_nonce_ctr = 0;
       generate_symm_key();
-      client_key_is_set = false;
       booster_ctr = 0;
       dmatrix_ctr = 0;
+      num_clients = 0;
     }
 
   public:
@@ -80,6 +78,19 @@ class EnclaveContext {
     static EnclaveContext& getInstance() {
       static EnclaveContext instance;
       return instance;
+    }
+
+    void set_usernames(char** usernames, int len) {
+      client_names.assign(usernames, usernames + len);
+      num_clients = len;
+    }
+
+    int get_num_clients() {
+      return num_clients;
+    }
+
+    std::vector<std::string> get_clients() {
+      return client_names;
     }
 
     uint8_t* get_public_key() {
@@ -243,7 +254,7 @@ class EnclaveContext {
       int ret = 1;
 
       // FIXME: Currently we expect sigs to be in same order as users
-      for (auto _username: CLIENT_NAMES) {
+      for (auto _username: client_names) {
         char* username = (char*)_username.c_str();
 
         mbedtls_pk_init(&_pk_context);
@@ -254,7 +265,7 @@ class EnclaveContext {
           LOG(FATAL) << "verification failed - mbedtls_x509_crt_parse returned" << ret;
         }
         int i = -1;
-        for (int j = 0; j < NUM_CLIENTS; j++) {
+        for (int j = 0; j < num_clients; j++) {
           if (strcmp(signers[j], username) == 0) {
             i = j;
             break;
@@ -416,7 +427,7 @@ class EnclaveContext {
       std::string user_nam(nameptr, nameptr + name_len);
 
       // Verify client's identity
-      if (std::find(CLIENT_NAMES.begin(), CLIENT_NAMES.end(), user_nam) == CLIENT_NAMES.end()) {
+      if (std::find(client_names.begin(), client_names.end(), user_nam) == client_names.end()) {
         LOG(FATAL) << "No such authorized client";
       }
       client_keys[user_nam] = user_private_key;

@@ -14,8 +14,6 @@ cmake_policy(SET CMP0022 NEW)
 option(JVM_BINDINGS "Build JVM bindings" OFF)
 
 # Build options
-set(CLIENT_LIST user1 user2
-    CACHE STRING "List of usernames of clients in federation")
 set(SIGNER_PUB_FILE config/enclave_signer.pub
     CACHE STRING "Public key of enclave signing authority")
 set(SIGNER_KEY_FILE config/enclave_signer.pem
@@ -76,17 +74,7 @@ foreach(line IN LISTS CA_CERT_LINES)
     set(CA_CERT "${CA_CERT}\"${line}\\n\"\n")
 endforeach()
 
-# List of usernames of participating clients
-set(CLIENT_NAMES "")
-message("\nAuthorized client names:")
-foreach(name ${CLIENT_LIST})
-    message(${name})
-    set(CLIENT_NAMES "${CLIENT_NAMES} \"${name}\",")
-endforeach(name)
-set(CLIENT_NAMES "{${CLIENT_NAMES}}")
-list(LENGTH CLIENT_LIST NUM_CLIENTS)
-
-# Generate file to hardcode usernames and keys into enclave
+# Generate file to hardcode signer public key and root CA into enclave
 message(STATUS "cmake/attestation.h.in -> ${PROJECT_SOURCE_DIR}/include/enclave/attestation.h")
 configure_file("cmake/attestation.h.in" "${PROJECT_SOURCE_DIR}/include/enclave/attestation.h")
 

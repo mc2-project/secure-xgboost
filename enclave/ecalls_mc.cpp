@@ -7,10 +7,12 @@
 #include "xgboost_mc_t.h"
 #include "src/common/common.h"
 #include <enclave/attestation.h>
+#include "enclave_context.h"
 
 #include <string>
 
 void copy_sigs_to_enclave(uint8_t* dst[], uint8_t* src[], size_t lengths[]) {
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   for (int i = 0; i < NUM_CLIENTS; i++) {
     check_host_buffer(src[i], lengths[i]);
     dst[i] = (uint8_t*) malloc(lengths[i] * sizeof(uint8_t));
@@ -28,6 +30,7 @@ void copy_arr_to_enclave(char* dst[], size_t num, char* src[], size_t lengths[])
 }
 
 void free_sigs(uint8_t* sigs[]) {
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   for (int i = 0; i < NUM_CLIENTS; i++) {
     free(sigs[i]);
   }
@@ -39,7 +42,7 @@ void free_array(char* arr[], size_t len) {
   }
 }
 
-void enclave_init(int log_verbosity) {
+void enclave_init(char** usernames, size_t* username_lengths, size_t num_clients, int log_verbosity) {
   std::vector<std::pair<std::string, std::string> > args;
   args.emplace_back("verbosity", std::to_string(log_verbosity));
   xgboost::ConsoleLogger::Configure(args);
@@ -59,6 +62,13 @@ void enclave_init(int log_verbosity) {
   if (mount("/", "/", OE_HOST_FILE_SYSTEM, 0, NULL) != 0) {
     LOG(FATAL) << "Unable to mount host file system on the root directory";
   }
+
+  char* usernames_cpy[num_clients];
+  copy_arr_to_enclave(usernames_cpy, num_clients, usernames, username_lengths);
+
+  EnclaveContext::getInstance().set_usernames(usernames_cpy, num_clients);
+
+  free_array(usernames_cpy, num_clients);
 }
 
 int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle *out) {
@@ -68,6 +78,7 @@ int enclave_XGDMatrixCreateFromFile(const char *fname, int silent, DMatrixHandle
 
 int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_lengths[], char* usernames[], size_t username_lengths[], bst_ulong num_files, int silent, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, DMatrixHandle *out, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGDMatrixCreateFromEncryptedFile";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* fnames_cpy[num_files];
   char* usernames_cpy[num_files];
   char* signers_cpy[NUM_CLIENTS];
@@ -90,6 +101,7 @@ int enclave_XGDMatrixCreateFromEncryptedFile(const char *fnames[], size_t fname_
 int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[], bst_ulong len, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, BoosterHandle* out, uint8_t** out_sig, size_t* out_sig_length, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterCreate";
   // Validate buffers and copy to enclave memory
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   DMatrixHandle dmats[len];
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
@@ -108,6 +120,7 @@ int enclave_XGBoosterCreate(DMatrixHandle dmat_handles[], size_t handle_lengths[
 
 int enclave_XGBoosterSetParam(BoosterHandle handle, const char* name, const char* value, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterSetParam";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -123,6 +136,7 @@ int enclave_XGBoosterSetParam(BoosterHandle handle, const char* name, const char
 
 int enclave_XGBoosterUpdateOneIter(BoosterHandle handle, int iter, DMatrixHandle dtrain, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterUpdateOneIter";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -145,6 +159,7 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
   LOG(DEBUG) << "Ecall: XGBoosterEvalOneIter";
 
   // Validate buffers and copy to enclave memory
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* dmats[len];
   char* eval_names[len];
 
@@ -160,6 +175,7 @@ int enclave_XGBoosterEvalOneIter(BoosterHandle handle, int iter, DMatrixHandle d
 
 int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterLoadModel";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -175,6 +191,7 @@ int enclave_XGBoosterLoadModel(BoosterHandle handle, const char *fname, uint8_t*
 
 int enclave_XGBoosterSaveModel(BoosterHandle handle, const char *fname, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterSaveModel";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -217,6 +234,7 @@ int enclave_XGBoosterDumpModelEx(BoosterHandle handle,
                                  size_t sig_lengths[],
                                  size_t num_sigs) {
     LOG(DEBUG) << "Ecall: XGBoosterDumpModelEx";
+    int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
     char* signers_cpy[NUM_CLIENTS];
     uint8_t* sigs[NUM_CLIENTS];
 
@@ -287,6 +305,7 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     LOG(DEBUG) << "Ecall: XGBoosterDumpModelExWithFeatures";
 
     // Validate buffers and copy to enclave memory
+    int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
     char* fname_cpy[fnum];
     char* ftype_cpy[fnum];
     char* signers_cpy[NUM_CLIENTS];
@@ -308,6 +327,7 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
 
 int enclave_XGBoosterGetModelRaw(BoosterHandle handle, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, xgboost::bst_ulong *out_len, char **out_dptr, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterGetModelRaw";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -323,6 +343,7 @@ int enclave_XGBoosterGetModelRaw(BoosterHandle handle, uint8_t* nonce, size_t no
 
 int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, xgboost::bst_ulong len, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
     LOG(DEBUG) << "Ecall: XGBoosterLoadModelFromBuffer";
+    int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
     char* signers_cpy[NUM_CLIENTS];
     uint8_t* sigs[NUM_CLIENTS];
 
@@ -340,6 +361,7 @@ int enclave_XGBoosterLoadModelFromBuffer(BoosterHandle handle, const void* buf, 
 int enclave_XGBoosterPredict(BoosterHandle handle, DMatrixHandle dmat, int option_mask, unsigned ntree_limit, int training, uint8_t *nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *len, uint8_t **out_result, uint8_t** out_sig, size_t* out_sig_length, char **signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGBoosterPredict";
 
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -375,6 +397,7 @@ int enclave_XGDMatrixSetUIntInfo(DMatrixHandle handle, const char* field, const 
 
 int enclave_XGDMatrixNumRow(const DMatrixHandle handle, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *out, uint8_t** out_sig, size_t* out_sig_length, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGDMatrixNumRow";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 
@@ -390,6 +413,7 @@ int enclave_XGDMatrixNumRow(const DMatrixHandle handle, uint8_t* nonce, size_t n
 
 int enclave_XGDMatrixNumCol(const DMatrixHandle handle, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, bst_ulong *out, uint8_t** out_sig, size_t* out_sig_length, char** signers, size_t signer_lengths[], uint8_t* signatures[], size_t sig_lengths[], size_t num_sigs) {
   LOG(DEBUG) << "Ecall: XGDMatrixNumCol";
+  int NUM_CLIENTS = EnclaveContext::getInstance().get_num_clients();
   char* signers_cpy[NUM_CLIENTS];
   uint8_t* sigs[NUM_CLIENTS];
 

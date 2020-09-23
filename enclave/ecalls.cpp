@@ -7,6 +7,7 @@
 #include "xgboost_t.h"
 #include "src/common/common.h"
 #include <enclave/attestation.h>
+#include "enclave_context.h"
 
 #include <string>
 
@@ -25,7 +26,7 @@ void free_array(char* arr[], size_t len) {
   }
 }
 
-void enclave_init(int log_verbosity) {
+void enclave_init(char** usernames, size_t* username_lengths, size_t num_clients, int log_verbosity) {
   std::vector<std::pair<std::string, std::string> > args;
   args.emplace_back("verbosity", std::to_string(log_verbosity));
   xgboost::ConsoleLogger::Configure(args);
@@ -45,6 +46,12 @@ void enclave_init(int log_verbosity) {
   if (mount("/", "/", OE_HOST_FILE_SYSTEM, 0, NULL) != 0) {
     LOG(FATAL) << "Unable to mount host file system on the root directory";
   }
+  char* usernames_cpy[num_clients];
+  copy_arr_to_enclave(usernames_cpy, num_clients, usernames, username_lengths);
+
+  EnclaveContext::getInstance().set_usernames(usernames_cpy, num_clients);
+
+  free_array(usernames_cpy, num_clients);
 }
 
 int enclave_XGDMatrixCreateFromFile(const char *fname, char* username, int silent, DMatrixHandle *out) {

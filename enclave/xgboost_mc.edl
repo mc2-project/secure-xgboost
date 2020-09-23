@@ -3,6 +3,9 @@ enclave {
     include "rabit/c_api.h"
     trusted {
         public void enclave_init(
+                [in, count=num_users] char **usernames,
+                [in, count=num_users] size_t* username_lengths,
+                size_t num_users,
                 int log_verbosity);
 
         public int enclave_XGDMatrixCreateFromFile(

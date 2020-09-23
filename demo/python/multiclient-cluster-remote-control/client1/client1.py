@@ -11,7 +11,7 @@ HOME_DIR = DIR + "/../../../../"
 username = "user1"
 
 def run(channel_addr, sym_key_file, priv_key_file, cert_file):
-    xgb.init_client(user_name=username, sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
+    xgb.init_client(user_name=username, client_list=[username, "user2"], sym_key_file=sym_key_file, priv_key_file=priv_key_file, cert_file=cert_file, remote_addr=channel_addr)
 
     xgb.rabit.init()
 
