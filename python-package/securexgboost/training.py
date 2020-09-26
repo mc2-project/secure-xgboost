@@ -21,6 +21,7 @@ def _train_internal(params, dtrain,
                     obj=None, feval=None,
                     xgb_model=None, callbacks=None):
     """internal training function"""
+    print("Training...")
     callbacks = [] if callbacks is None else callbacks
     evals = list(evals)
     if isinstance(params, dict) \
