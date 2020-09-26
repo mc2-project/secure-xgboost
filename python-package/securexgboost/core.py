@@ -2539,6 +2539,7 @@ def init_server(enclave_image=None, client_list=[], log_verbosity=0):
         Verbosity level for enclave (for enclaves in debug mode)
     """
     _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), from_pystr_to_cstr(client_list), len(client_list), log_verbosity))
+    print("Launched enclave")
 
 
 def attest(verify=True):
@@ -3089,6 +3090,8 @@ def generate_client_key(keyfile):
     key = os.urandom(KEY_BYTES)
     with open(keyfile, "wb") as _keyfile:
         _keyfile.write(key)
+    
+    print("Generated key and outputted to {}".format(keyfile))
 
 def encrypt_file(input_file, output_file, key_file):
     """
