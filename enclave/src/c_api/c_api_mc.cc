@@ -1,4 +1,4 @@
-// Copyright (c) 2014 by Contributors
+/a Copyright (c) 2014 by Contributors
 // Modifications Copyright (c) 2020 by Secure XGBoost Contributors
 
 

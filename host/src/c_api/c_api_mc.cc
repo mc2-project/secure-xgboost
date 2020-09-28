@@ -746,7 +746,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
   // Attest the remote report and accompanying key.
   size_t total_len = 0;
   for (int i = 0; i < num_users; i++) {
-    total_len += strlen(usernames[i]) + 1;
+    total_len += usernames[i].length() + 1;
   }
   size_t report_data_size = key_size + nonce_size + total_len;
   uint8_t report_data[report_data_size];
