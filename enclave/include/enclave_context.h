@@ -86,6 +86,9 @@ class EnclaveContext {
 
       // Sort client names alphabetically
       std::sort(client_names.begin(), client_names.end());
+      for (auto name = client_names.begin(); name != client_names.end(); name++) {
+          std::cout << name << std::endl;
+      }
       num_clients = len;
     }
 
