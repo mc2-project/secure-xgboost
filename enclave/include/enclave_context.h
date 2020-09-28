@@ -26,12 +26,6 @@
 
 #include <rabit/rabit.h>
 
-bool abccomp(std::string a, std::string b){
-	//returns 1 if string a is alphabetically 
-	//less than string b
-	//quite similar to strcmp operation
-	return a < b;
-}
 
 class EnclaveContext {
   private:
@@ -91,7 +85,7 @@ class EnclaveContext {
       client_names.assign(usernames, usernames + len);
 
       // Sort client names alphabetically
-      std::sort(client_names.begin(), client_names.end(), abccomp);
+      std::sort(client_names.begin(), client_names.end());
       num_clients = len;
     }
 
