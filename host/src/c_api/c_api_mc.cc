@@ -706,18 +706,6 @@ bool attest_remote_report(
     goto exit;
   }
 
-
-  std::cout << "parsed report report data, i.e. expected hash: \n";
-  for (int i = 0; i < 32; i++) {
-      std::cout << int(*(parsed_report.report_data + i)) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "calculated sha256 hash\n";
-  for (int i = 0; i < 32; i++) {
-      std::cout << int(sha256[i]) << " ";
-  }
-  
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
     std::cout << "SHA256 mismatch." << std::endl;
     goto exit;
@@ -758,29 +746,19 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
   // Attest the remote report and accompanying key.
   size_t total_len = 0;
   for (int i = 0; i < num_users; i++) {
-    total_len += strlen(usernames[i]);
+    total_len += strlen(usernames[i]) + 1;
   }
 
   size_t report_data_size = key_size + nonce_size + total_len;
-  std::cout << "key size: " << key_size << std::endl;
-  std::cout << "nonce size: " << nonce_size << std::endl;
-  std::cout << "total_len, i.e. username total length: " << total_len << std::endl;
   uint8_t report_data[report_data_size];
   memcpy(report_data, pem_key, CIPHER_PK_SIZE);
   memcpy(report_data + CIPHER_PK_SIZE, nonce, CIPHER_IV_SIZE);
   uint8_t* ptr = report_data + CIPHER_PK_SIZE + CIPHER_IV_SIZE;
   for (int i = 0; i < num_users; i++) {
-    std::cout << "copying user: " << usernames[i] << std::endl;
-    size_t len = strlen(usernames[i]);
+    size_t len = strlen(usernames[i]) + 1;
     memcpy(ptr, usernames[i], len);
     ptr += len;
   }
-
-  std::cout << "report data size, i.e. data to hash during verification: " << report_data_size << std::endl;
-  for (int i = 0; i < report_data_size; i++) {
-      std::cout << int(report_data[i]) << " ";
-  }
-  std::cout << std::endl;
 
   if (!attest_remote_report(remote_report, remote_report_size, report_data, report_data_size)) {
     std::cout << "verify_report_and_set_pubkey_and_nonce failed." << std::endl;
@@ -910,7 +888,7 @@ XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_
 }
 
 XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, uint8_t** out_key) {
-
+  API_BEGIN();
   unsigned char* iv = (unsigned char*)encrypted_key;
   unsigned char* tag = iv + CIPHER_IV_SIZE;
   unsigned char* data = tag + CIPHER_TAG_SIZE;
@@ -926,10 +904,11 @@ XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, u
       0,
       output);
   *out_key = reinterpret_cast<uint8_t*>(output);
-  return 0;
+  API_END();
 }
 
 XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
+  API_BEGIN();
   mbedtls_gcm_context gcm;
 
 
@@ -988,7 +967,7 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
     }
     models[i] = (char*) decrypted;
   }
-  return 0;
+  API_END();
 }
 
 // Input, output, key

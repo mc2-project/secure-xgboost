@@ -25,7 +25,6 @@
 #include "mbedtls/error.h"
 
 #include <rabit/rabit.h>
-#include <iostream>
 
 
 class EnclaveContext {
@@ -87,9 +86,6 @@ class EnclaveContext {
 
       // Sort client names alphabetically
       std::sort(client_names.begin(), client_names.end());
-      for (size_t i = 0; i < client_names.size(); i++) {
-          std::cout << client_names[i] << std::endl;
-      }
       num_clients = len;
     }
 

@@ -1,4 +1,4 @@
-//a Copyright (c) 2014 by Contributors
+// Copyright (c) 2014 by Contributors
 // Modifications Copyright (c) 2020 by Secure XGBoost Contributors
 
 
@@ -51,19 +51,6 @@ bool generate_remote_report(
     return false;
   }
 
-
-  std::cout << "generating remote report\n";
-  std::cout << "data size: " << data_size << std::endl;
-  for (int i = 0; i < data_size; i++) {
-      std::cout << int(data[i]) << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "Computing hash when generating report\n";
-  for (int i = 0; i < 32; i++) {
-      std::cout << int(sha256[i]) << " ";
-  }
-  std::cout << std::endl;
   // To generate a remote report that can be attested remotely by an enclave
   // running  on a different platform, pass the
   // OE_REPORT_FLAGS_REMOTE_ATTESTATION option. This uses the trusted
@@ -139,7 +126,7 @@ int get_remote_report_with_pubkey_and_nonce(
   std::vector<std::string> usernames_list = EnclaveContext::getInstance().get_clients();
   size_t total_len = 0;
   for (int i = 0; i < usernames_list.size(); i++) {
-    total_len += usernames_list[i].length();
+    total_len += usernames_list[i].length() + 1;
   }
   size_t report_data_size = CIPHER_PK_SIZE + CIPHER_IV_SIZE + total_len;
   uint8_t report_data[report_data_size];
@@ -147,8 +134,7 @@ int get_remote_report_with_pubkey_and_nonce(
   memcpy(report_data + CIPHER_PK_SIZE, enclave_nonce, CIPHER_IV_SIZE);
   uint8_t* ptr = report_data + CIPHER_PK_SIZE + CIPHER_IV_SIZE;
   for (int i = 0; i < usernames_list.size(); i++) {
-    size_t len = usernames_list[i].length();
-    std::cout << "report generation copying user: " << usernames_list[i].c_str() << std::endl;
+    size_t len = usernames_list[i].length() + 1;
     memcpy(ptr, usernames_list[i].c_str(), len);
     ptr += len;
   }
