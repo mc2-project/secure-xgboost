@@ -61,7 +61,7 @@ bool generate_remote_report(
 
   std::cout << "Computing hash when generating report\n";
   for (int i = 0; i < 32; i++) {
-      std::cout << sha256[i] << " ";
+      std::cout << int(sha256[i]) << " ";
   }
   std::cout << std::endl;
   // To generate a remote report that can be attested remotely by an enclave

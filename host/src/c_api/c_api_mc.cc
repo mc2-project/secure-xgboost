@@ -707,7 +707,7 @@ bool attest_remote_report(
   }
 
 
-  std::cout << "parsed report report data: \n";
+  std::cout << "parsed report report data, i.e. expected hash: \n";
   for (int i = 0; i < 32; i++) {
       std::cout << int(*(parsed_report.report_data + i)) << " ";
   }
@@ -771,9 +771,9 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
     ptr += len;
   }
 
-  std::cout << "report data size: " << report_data_size << std::endl;
+  std::cout << "report data size, i.e. data to hash during verification: " << report_data_size << std::endl;
   for (int i = 0; i < report_data_size; i++) {
-      std::cout << report_data[i] << " ";
+      std::cout << int(report_data[i]) << " ";
   }
   std::cout << std::endl;
 
