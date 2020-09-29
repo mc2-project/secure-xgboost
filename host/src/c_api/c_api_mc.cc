@@ -760,12 +760,17 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
   for (int i = 0; i < num_users; i++) {
     total_len += strlen(usernames[i]);
   }
+
   size_t report_data_size = key_size + nonce_size + total_len;
+  std::cout << "key size: " << key_size << std::endl;
+  std::cout << "nonce size: " << nonce_size << std::endl;
+  std::cout << "total_len, i.e. username total length: " << total_len << std::endl;
   uint8_t report_data[report_data_size];
   memcpy(report_data, pem_key, CIPHER_PK_SIZE);
   memcpy(report_data + CIPHER_PK_SIZE, nonce, CIPHER_IV_SIZE);
   uint8_t* ptr = report_data + CIPHER_PK_SIZE + CIPHER_IV_SIZE;
   for (int i = 0; i < num_users; i++) {
+    std::cout << "copying user: " << usernames[i] << std::endl;
     size_t len = strlen(usernames[i]);
     memcpy(ptr, usernames[i], len);
     ptr += len;

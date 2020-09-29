@@ -148,6 +148,7 @@ int get_remote_report_with_pubkey_and_nonce(
   uint8_t* ptr = report_data + CIPHER_PK_SIZE + CIPHER_IV_SIZE;
   for (int i = 0; i < usernames_list.size(); i++) {
     size_t len = usernames_list[i].length();
+    std::cout << "report generation copying user: " << usernames_list[i].c_str() << std::endl;
     memcpy(ptr, usernames_list[i].c_str(), len);
     ptr += len;
   }
