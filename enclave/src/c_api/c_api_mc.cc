@@ -46,6 +46,11 @@ bool generate_remote_report(
   uint8_t* temp_buf = NULL;
 
   // Compute the sha256 hash of given data.
+  std::cout << "Computing hash when generating report\n";
+  for (int i = 0; i < 32; i++) {
+      std::cout << sha256[i] << " ";
+  }
+  std::cout << std::endl;
   if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(INFO) << "compute_sha256 failed";
     return false;

@@ -706,6 +706,18 @@ bool attest_remote_report(
     goto exit;
   }
 
+
+  std::cout << "parsed report report data: \n";
+  for (int i = 0; i < 32; i++) {
+      std::cout << parsed_report.report_data + i << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "calculated sha256 hash\n";
+  for (int i = 0; i < 32; i++) {
+      std::cout << sha256[i] << " ";
+  }
+  
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
     std::cout << "SHA256 mismatch." << std::endl;
     goto exit;
