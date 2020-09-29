@@ -46,16 +46,24 @@ bool generate_remote_report(
   uint8_t* temp_buf = NULL;
 
   // Compute the sha256 hash of given data.
-  std::cout << "Computing hash when generating report\n";
-  for (int i = 0; i < 32; i++) {
-      std::cout << sha256[i] << " ";
-  }
-  std::cout << std::endl;
   if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(INFO) << "compute_sha256 failed";
     return false;
   }
 
+
+  std::cout << "generating remote report\n";
+  std::cout << "data size: " << data_size << std::endl;
+  for (int i = 0; i < data_size; i++) {
+      std::cout << data[i] << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "Computing hash when generating report\n";
+  for (int i = 0; i < 32; i++) {
+      std::cout << sha256[i] << " ";
+  }
+  std::cout << std::endl;
   // To generate a remote report that can be attested remotely by an enclave
   // running  on a different platform, pass the
   // OE_REPORT_FLAGS_REMOTE_ATTESTATION option. This uses the trusted

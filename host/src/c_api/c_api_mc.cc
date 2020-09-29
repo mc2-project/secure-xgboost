@@ -771,6 +771,12 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
     ptr += len;
   }
 
+  std::cout << "report data size: " << report_data_size << std::endl;
+  for (int i = 0; i < report_data_size; i++) {
+      std::cout << report_data[i] << " ";
+  }
+  std::cout << std::endl;
+
   if (!attest_remote_report(remote_report, remote_report_size, report_data, report_data_size)) {
     std::cout << "verify_report_and_set_pubkey_and_nonce failed." << std::endl;
     return -1;
