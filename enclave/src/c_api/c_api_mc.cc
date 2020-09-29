@@ -55,7 +55,7 @@ bool generate_remote_report(
   std::cout << "generating remote report\n";
   std::cout << "data size: " << data_size << std::endl;
   for (int i = 0; i < data_size; i++) {
-      std::cout << data[i] << " ";
+      std::cout << int(data[i]) << " ";
   }
   std::cout << std::endl;
 
