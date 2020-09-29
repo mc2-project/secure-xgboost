@@ -1134,7 +1134,6 @@ XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_
       0,
       output);
   *preds = reinterpret_cast<float*>(output);
-  return 0;
   API_END()
 }
 
@@ -1155,7 +1154,6 @@ XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, u
       0,
       output);
   *out_key = reinterpret_cast<uint8_t*>(output);
-  return 0;
   API_END();
 }
 
@@ -1219,7 +1217,6 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
     }
     models[i] = (char*) decrypted;
   }
-  return 0;
   API_END();
 }
 
