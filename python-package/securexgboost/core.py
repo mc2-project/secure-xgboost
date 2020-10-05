@@ -2507,7 +2507,7 @@ def init_client(remote_addr=None, user_name=None, client_list=[],
     _CONF["current_user"] = user_name
     _clients = set(client_list)
     _clients.add(user_name)
-    _CONF["client_list"] = list(_clients)
+    _CONF["client_list"] = list(sorted(_clients))
 
     if sym_key_file is not None:
         with open(sym_key_file, "rb") as keyfile:

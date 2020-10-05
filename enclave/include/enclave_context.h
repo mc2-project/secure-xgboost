@@ -26,6 +26,7 @@
 
 #include <rabit/rabit.h>
 
+
 class EnclaveContext {
   private:
     mbedtls_ctr_drbg_context m_ctr_drbg_context;
@@ -82,6 +83,9 @@ class EnclaveContext {
 
     void set_usernames(char** usernames, int len) {
       client_names.assign(usernames, usernames + len);
+
+      // Sort client names alphabetically
+      std::sort(client_names.begin(), client_names.end());
       num_clients = len;
     }
 

@@ -748,6 +748,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
   for (int i = 0; i < num_users; i++) {
     total_len += strlen(usernames[i]) + 1;
   }
+
   size_t report_data_size = key_size + nonce_size + total_len;
   uint8_t report_data[report_data_size];
   memcpy(report_data, pem_key, CIPHER_PK_SIZE);
@@ -866,6 +867,7 @@ XGB_DLL int sign_data_with_keyfile(char *keyfile, uint8_t* data, size_t data_siz
 }
 
 XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_preds, bst_float** preds) {
+    API_BEGIN();
     size_t len = num_preds*sizeof(float);
     unsigned char* iv = (unsigned char*)encrypted_preds;
     unsigned char* tag = iv + CIPHER_IV_SIZE;
@@ -882,11 +884,11 @@ XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_
             0,
             output);
     *preds = reinterpret_cast<float*>(output);
-    return 0;
+    API_END();
 }
 
 XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, uint8_t** out_key) {
-
+  API_BEGIN();
   unsigned char* iv = (unsigned char*)encrypted_key;
   unsigned char* tag = iv + CIPHER_IV_SIZE;
   unsigned char* data = tag + CIPHER_TAG_SIZE;
@@ -902,10 +904,11 @@ XGB_DLL int decrypt_enclave_key(char* key, uint8_t* encrypted_key, size_t len, u
       0,
       output);
   *out_key = reinterpret_cast<uint8_t*>(output);
-  return 0;
+  API_END();
 }
 
 XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
+  API_BEGIN();
   mbedtls_gcm_context gcm;
 
 
@@ -964,7 +967,7 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
     }
     models[i] = (char*) decrypted;
   }
-  return 0;
+  API_END();
 }
 
 // Input, output, key
