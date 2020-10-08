@@ -608,6 +608,8 @@ class DMatrix(object):
         self.feature_names = feature_names
         self.feature_types = feature_types
 
+        print("Loaded data")
+
     # def _init_from_csr(self, csr):
     #     """
     #     Initialize data from a CSR matrix.
@@ -2539,6 +2541,7 @@ def init_server(enclave_image=None, client_list=[], log_verbosity=0):
         Verbosity level for enclave (for enclaves in debug mode)
     """
     _check_call(_LIB.XGBCreateEnclave(c_str(enclave_image), from_pystr_to_cstr(client_list), len(client_list), log_verbosity))
+    print("Launched enclave")
 
 
 def attest(verify=True):
@@ -2599,6 +2602,8 @@ def attest(verify=True):
 
     _add_client_key()
     _get_enclave_symm_key()
+
+    print("Remote attestation succeeded")
 
 
 def _add_client_key():

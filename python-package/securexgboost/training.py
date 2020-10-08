@@ -122,6 +122,7 @@ def _train_internal(params, dtrain,
     # else:
     #     bst.best_iteration = nboost - 1
     # bst.best_ntree_limit = (bst.best_iteration + 1) * num_parallel_tree
+    print("Trained model")
     return bst
 
 # TODO(rishabh): Support original training function. Currently replaced with a simpler implementation below.
