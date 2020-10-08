@@ -6,7 +6,7 @@ DIR = os.path.dirname(os.path.realpath(__file__))
 HOME_DIR = DIR + "/../../../"
 
 print("Init user and enclave parameters")
-xgb.init_client(config="config")
+xgb.init_client(config="config.ini")
 xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed", client_list=["user1"], log_verbosity=0)
 
 # Remote Attestation

@@ -1,6 +1,0 @@
-[default]
-user_name = user1
-sym_key_file =  ../../data/key_zeros.txt
-priv_key_file = ../../../config/user1.pem
-cert_file = ../../../config/user1.crt
-
