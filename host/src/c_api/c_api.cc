@@ -933,7 +933,7 @@ bool attest_remote_report(
   // Verify the remote report to ensure its authenticity.
   result = oe_verify_report(NULL, remote_report, remote_report_size, &parsed_report);
   if (result != OE_OK) {
-    XGBAPISetLastError("Remote attestation failed. Remote report verification failed.")
+    XGBAPISetLastError("Remote attestation failed. Remote report verification failed.");
     goto exit;
   }
 
@@ -945,7 +945,7 @@ bool attest_remote_report(
         sizeof(MRSIGNER_PUBLIC_KEY),
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
-    XGBAPISetLastError("Remote attestation failed. MRSIGNER value not equal.")
+    XGBAPISetLastError("Remote attestation failed. MRSIGNER value not equal.");
     goto exit;
   }
 
@@ -954,24 +954,24 @@ bool attest_remote_report(
   // check the enclave's product id and security version
   // see enc.conf for values specified when signing the enclave.
   if (parsed_report.identity.product_id[0] != 1) {
-    XGBAPISetLastError("Remote attestation failed. Enclave product ID check failed.")
+    XGBAPISetLastError("Remote attestation failed. Enclave product ID check failed.");
     goto exit;
   }
 
   if (parsed_report.identity.security_version < 1) {
-    XGBAPISetLastError("Remote attestation failed. Enclave security version check failed.")
+    XGBAPISetLastError("Remote attestation failed. Enclave security version check failed.");
     goto exit;
   }
 
   // 3) Validate the report data
   //    The report_data has the hash value of the report data
   if (compute_sha256(data, data_size, sha256) != 0) {
-    XGBAPISetLastError("Remote attestation failed. Report data hash validation failed.")
+    XGBAPISetLastError("Remote attestation failed. Report data hash validation failed.");
     goto exit;
   }
 
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
-    XGBAPISetLastError("Remote attestation failed. SHA256 mismatch.")
+    XGBAPISetLastError("Remote attestation failed. SHA256 mismatch.");
     goto exit;
   }
   ret = true;
