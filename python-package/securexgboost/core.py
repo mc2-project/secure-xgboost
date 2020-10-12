@@ -484,6 +484,10 @@ class DMatrix(object):
         for user, path in data_dict.items():
             usernames.append(user)
             data.append(path)
+        # Sort by username
+        print(usernames, data)
+        usernames, data = (list(x) for x in zip(*sorted(zip(usernames, data), key=lambda pair: pair[0])))
+        print(usernames, data)
 
         # force into void_p, mac need to pass things in as void_p
         # if data is None:
