@@ -2524,7 +2524,6 @@ def init_config(config):
         _CONF["client_list"] = list(sorted(client_set))
 
         sym_key_file = conf['default']['sym_key_file']
-        print(os.getcwd())
         if sym_key_file is not None:
             with open(sym_key_file, "rb") as keyfile:
                 _CONF["current_user_sym_key"] = keyfile.read()
@@ -2541,7 +2540,6 @@ def init_config(config):
                 _CONF["current_user_cert"] = cert_file.read()
 
         _CONF["nonce_ctr"] = 0
-        print(_CONF)
     except KeyError as e:
         print("Please add the required fields to your config file")
         raise e
