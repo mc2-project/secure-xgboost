@@ -143,11 +143,11 @@ class TestDMatrix(unittest.TestCase):
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
         dm = xgb.DMatrix({username: temp_enc_name}, feature_names=features)
-        bst.predict(dm)[0]
+        bst.predict(dm, decrypt=True)[0]
 
         # different feature name must raises error
         dm = xgb.DMatrix({username: temp_enc_name}, feature_names=list('abcde'))
-        self.assertRaises(ValueError, bst.predict, dm)
+        self.assertRaises(ValueError, bst.predict, dm, decrypt=True)
 
     def test_get_info(self):
         dtrain = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})

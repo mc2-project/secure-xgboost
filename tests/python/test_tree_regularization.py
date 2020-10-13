@@ -35,7 +35,7 @@ class TestTreeRegularization(unittest.TestCase):
         }
 
         model = xgb.train(params, train_data, 1)
-        preds = model.predict(train_data)[0]
+        preds = model.predict(train_data, decrypt=True)[0]
         print(preds[0])
 
         # Default prediction (with no trees) is 0.5
@@ -55,7 +55,7 @@ class TestTreeRegularization(unittest.TestCase):
         }
 
         model = xgb.train(params, train_data, 1)
-        preds = model.predict(train_data)[0]
+        preds = model.predict(train_data, decrypt=True)[0]
         print(preds)
 
         # Default prediction (with no trees) is 0.5
@@ -75,7 +75,7 @@ class TestTreeRegularization(unittest.TestCase):
         }
 
         model = xgb.train(params, train_data, 1)
-        preds = model.predict(train_data)[0]
+        preds = model.predict(train_data, decrypt=True)[0]
         print(preds)
 
         # Default prediction (with no trees) is 0.5

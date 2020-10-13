@@ -67,8 +67,8 @@ class TestSHAP(unittest.TestCase):
             bst = xgb.train(params, dtrain, num_boost_round=num_rounds)
 
             # predict
-            preds = bst.predict(dtest)[0]
-            contribs = bst.predict(dtest, pred_contribs=True)[0]
+            preds = bst.predict(dtest, decrypt=True)[0]
+            contribs = bst.predict(dtest, pred_contribs=True, decrypt=True)[0]
 
             # result should be (number of features + BIAS) * number of rows
             assert contribs.shape == (dtest.num_row(), dtest.num_col() + 1)
@@ -97,7 +97,7 @@ class TestSHAP(unittest.TestCase):
         dump_svmlight_file(X[0:1, :], np.zeros(1), temp_name) 
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
 
-        out = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True)[0]
+        out = bst.predict(xgb.DMatrix({username: temp_enc_name}), pred_contribs=True, decrypt=True)[0]
         #TODO(rishabh): enable pred_contribs
         """
         assert out[0, 0] == 0.375

@@ -59,7 +59,8 @@ def is_correctly_constrained(learner):
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
         monotonically_increasing_dset = xgb.DMatrix({username: temp_enc_name}, feature_names=['f0', 'f1'])
         monotonically_increasing_y = learner.predict(
-            monotonically_increasing_dset
+            monotonically_increasing_dset,
+            decrypt=True
         )[0]
 
         monotonically_decreasing_x = np.column_stack((fixed_x, variable_x))
@@ -67,7 +68,8 @@ def is_correctly_constrained(learner):
         xgb.encrypt_file(temp_name, temp_enc_name, sym_key_file)
         monotonically_decreasing_dset = xgb.DMatrix({username: temp_enc_name})
         monotonically_decreasing_y = learner.predict(
-            monotonically_decreasing_dset
+            monotonically_decreasing_dset,
+            decrypt=True
         )[0]
 
         if not (

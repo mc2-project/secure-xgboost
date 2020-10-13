@@ -15,6 +15,7 @@ import os
 import re
 import sys
 import warnings
+import configparser
 
 import grpc
 from .rpc import remote_pb2
@@ -483,6 +484,8 @@ class DMatrix(object):
         for user, path in data_dict.items():
             usernames.append(user)
             data.append(path)
+        # Sort by username
+        usernames, data = (list(x) for x in zip(*sorted(zip(usernames, data), key=lambda pair: pair[0])))
 
         # force into void_p, mac need to pass things in as void_p
         # if data is None:
@@ -1571,7 +1574,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True, training=False, decrypt=True):
+                validate_features=True, training=False, decrypt=False):
         """
         Predict with data.
 
@@ -2483,13 +2486,78 @@ class Booster(object):
 # Enclave init and attestation APIs
 ##########################################
 
-def init_client(remote_addr=None, user_name=None, client_list=[],
+def init_config(config):
+    """
+    Initialize the client. Set up the client's keys, and specify the IP address of the enclave server.
+
+    Parameters
+    ----------
+    config: file
+        Configuration file containing the following parameters:
+        remote_addr: IP address of remote server running the enclave
+        user_name : Current user's username
+        client_list : List of usernames for all clients in the collaboration
+        sym_key_file : Path to file containing user's symmetric key used for encrypting data
+        priv_key_file : Path to file containing user's private key used for signing data
+        cert_file : Path to file containing user's public key certificate
+    """
+    conf = configparser.ConfigParser()
+    conf.read(config)
+    if len(conf) == 0:
+        raise ValueError("Failed to open config file")
+
+    # TODO(rishabh): Verify parameters
+
+    try:
+        if conf.has_option('default','remote_addr'):
+            _CONF["remote_addr"] = conf['default']['remote_addr']
+        else:
+            _CONF["remote_addr"] = None
+
+        user_name = conf['default']['user_name']
+        _CONF["current_user"] = user_name
+
+        if conf.has_option('default','client_list'):
+            client_list = conf['default']['client_list'].split(',')
+        else:
+            client_list = []
+        for i, s in enumerate(client_list):
+            client_list[i] = s.strip()
+        client_set = set(client_list)
+        client_set.add(user_name)
+        _CONF["client_list"] = list(sorted(client_set))
+
+        sym_key_file = conf['default']['sym_key_file']
+        if sym_key_file is not None:
+            with open(sym_key_file, "rb") as keyfile:
+                _CONF["current_user_sym_key"] = keyfile.read()
+                # TODO(rishabh): Save buffer instead of file
+                # with open(priv_key_file, "r") as keyfile:
+                #     priv_key = keyfile.read()
+
+        priv_key_file = conf['default']['priv_key_file']
+        _CONF["current_user_priv_key"] = priv_key_file
+
+        cert_file = conf['default']['cert_file']
+        if cert_file is not None:
+            with open(cert_file, "r") as cert_file:
+                _CONF["current_user_cert"] = cert_file.read()
+
+        _CONF["nonce_ctr"] = 0
+    except KeyError as e:
+        print("Please add the required fields to your config file")
+        raise e
+
+
+def init_client(config=None, remote_addr=None, user_name=None, client_list=[],
         sym_key_file=None, priv_key_file=None, cert_file=None):
     """
     Initialize the client. Set up the client's keys, and specify the IP address of the enclave server.
 
     Parameters
     ----------
+    config: file
+        Configuration file containing the client parameters. If this is provided, the other arguments are ignored.
     remote_addr: str
         IP address of remote server running the enclave
     user_name : str
@@ -2503,7 +2571,9 @@ def init_client(remote_addr=None, user_name=None, client_list=[],
     cert_file : str
         Path to file containing user's public key certificate
     """
-    # TODO(rishabh): Verify parameters
+    if config is not None:
+        init_config(config)
+        return
 
     _CONF["remote_addr"] = remote_addr;
     _CONF["current_user"] = user_name

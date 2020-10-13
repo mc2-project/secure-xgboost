@@ -57,7 +57,7 @@ class TestInteractionConstraints(unittest.TestCase):
 
             tmat = xgb.DMatrix({username: temp_enc_name})
 
-            return bst.predict(tmat)[0]
+            return bst.predict(tmat, decrypt=True)[0]
 
         preds = [f(x) for x in [1, 2, 3]]
         # Check incrementing x3 has the same effect on all observations

@@ -48,12 +48,12 @@ def assert_regression_result(results, tol):
 
         reg_alpha = res["param"]["alpha"]
         reg_lambda = res["param"]["lambda"]
-        pred = res["bst"].predict(xgb.DMatrix({username: temp_enc_name}))
+        pred = res["bst"].predict(xgb.DMatrix({username: temp_enc_name}), decrypt=True)
         weights = xgb_get_weights(res["bst"])[1:]
         enet = ElasticNet(alpha=reg_alpha + reg_lambda,
                           l1_ratio=reg_alpha / (reg_alpha + reg_lambda))
         enet.fit(X, y)
-        enet_pred = enet.predict(X)
+        enet_pred = enet.predict(X, decrypt=True)
         assert np.isclose(weights, enet.coef_, rtol=tol,
                           atol=tol).all(), (weights, enet.coef_)
         assert np.isclose(enet_pred, pred, rtol=tol, atol=tol).all(), (
