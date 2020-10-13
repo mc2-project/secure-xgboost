@@ -964,7 +964,7 @@ XGB_DLL int encrypt_file(char* fname, char* e_fname, char* k_fname) {
     API_END();
 }
 
-void encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
+XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_entropy_context entropy;
     mbedtls_gcm_context gcm;
