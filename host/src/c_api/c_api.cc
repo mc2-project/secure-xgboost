@@ -934,7 +934,6 @@ bool attest_remote_report(
   result = oe_verify_report(NULL, remote_report, remote_report_size, &parsed_report);
   if (result != OE_OK) {
     LOG(FATAL) << "Remote attestation failed. Remote report verification failed.";
-    goto exit;
   }
 
   // 2) validate the enclave identity's signed_id is the hash of the public
@@ -946,7 +945,6 @@ bool attest_remote_report(
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
     LOG(FATAL) << "Remote attestation failed. MRSIGNER value not equal."; 
-    goto exit;
   }
 
   //FIXME add verification for mrenclave
@@ -955,28 +953,22 @@ bool attest_remote_report(
   // see enc.conf for values specified when signing the enclave.
   if (parsed_report.identity.product_id[0] != 1) {
     LOG(FATAL) << "Remote attestation failed. Enclave product ID check failed.";
-    goto exit;
   }
 
   if (parsed_report.identity.security_version < 1) {
     LOG(FATAL) << "Remote attestation failed. Enclave security version check failed.";
-    goto exit;
   }
 
   // 3) Validate the report data
   //    The report_data has the hash value of the report data
   if (compute_sha256(data, data_size, sha256) != 0) {
     LOG(FATAL) << "Remote attestation failed. Report data hash validation failed.";
-    goto exit;
   }
 
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
     LOG(FATAL) << "Remote attestation failed. SHA256 mismatch.";
-    goto exit;
   }
-  ret = true;
-exit:
-  return ret;
+  return true;
 }
 
 XGB_DLL int verify_remote_report_and_set_pubkey(
@@ -1214,15 +1206,17 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
 
 // Input, output, key
 XGB_DLL int encrypt_file(char* fname, char* e_fname, char* k_fname) {
+  API_BEGIN();
   char key[CIPHER_KEY_SIZE];
   std::ifstream keyfile;
   keyfile.open(k_fname);
   keyfile.read(key, CIPHER_KEY_SIZE);
   keyfile.close();
-  return encrypt_file_with_keybuf(fname, e_fname, key);
+  encrypt_file_with_keybuf(fname, e_fname, key);
+  API_END();
 }
 
-XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
+void encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
   mbedtls_ctr_drbg_context ctr_drbg;
   mbedtls_entropy_context entropy;
   mbedtls_gcm_context gcm;
@@ -1242,7 +1236,6 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
   int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy, (unsigned char *)pers.c_str(), pers.length() );
   if( ret != 0 )
   {
-    //printf( "mbedtls_ctr_drbg_seed() failed - returned -0x%04x\n", -ret );
     LOG(FATAL) << "mbedtls_ctr_drbg_seed() failed - returned " << -ret;
   }
 
@@ -1252,7 +1245,6 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
       (unsigned char*) key,      // encryption key
       CIPHER_KEY_SIZE * 8);      // key bits (must be 128, 192, or 256)
   if( ret != 0 ) {
-    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
     LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
   }
 
@@ -1300,7 +1292,6 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
         tag
         );
     if( ret != 0 ) {
-      //printf( "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned -0x%04x\n", -ret );
       LOG(FATAL) << "mbedtls_gcm_crypt_and_tag failed to encrypt the data - returned " << -ret;
     }
     std::string encoded = dmlc::data::base64_encode(iv, CIPHER_IV_SIZE);
@@ -1314,10 +1305,10 @@ XGB_DLL int encrypt_file_with_keybuf(char* fname, char* e_fname, char* key) {
   }
   infile.close();
   myfile.close();
-  return 0;
 }
 
 XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
+  API_BEGIN();
   mbedtls_gcm_context gcm;
 
   // Initialize GCM context (just makes references valid) - makes the context ready for mbedtls_gcm_setkey()
@@ -1408,4 +1399,5 @@ XGB_DLL int decrypt_file_with_keybuf(char* fname, char* d_fname, char* key) {
   }
   infile.close();
   myfile.close();
+  API_END();
 }
