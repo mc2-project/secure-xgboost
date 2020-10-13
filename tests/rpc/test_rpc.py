@@ -54,7 +54,7 @@ class TestRPC(unittest.TestCase):
         num_rounds = 2
         booster = xgb.train(params, dtrain, num_rounds)
 
-        predictions, num_preds = booster.predict(dtest, decrypt=False)
+        predictions, num_preds = booster.predict(dtest)
 
         preds = booster.decrypt_predictions(predictions, num_preds)
         ten_preds = preds[:10]

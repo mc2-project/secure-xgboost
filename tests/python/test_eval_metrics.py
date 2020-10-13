@@ -96,8 +96,8 @@ class TestEvalMetrics(unittest.TestCase):
         gbdt_01 = xgb.train(self.xgb_params_01, dtrain, num_boost_round=10)
         gbdt_02 = xgb.train(self.xgb_params_02, dtrain, num_boost_round=10)
         gbdt_03 = xgb.train(self.xgb_params_03, dtrain, num_boost_round=10)
-        assert all(gbdt_01.predict(dvalid)[0] == gbdt_02.predict(dvalid)[0])
-        assert all(gbdt_01.predict(dvalid)[0] == gbdt_03.predict(dvalid)[0])
+        assert all(gbdt_01.predict(dvalid, decrypt=True)[0] == gbdt_02.predict(dvalid, decrypt=True)[0])
+        assert all(gbdt_01.predict(dvalid, decrypt=True)[0] == gbdt_03.predict(dvalid, decrypt=True)[0])
 
         #TODO(rishabh): implement early_stopping_rounds
         """

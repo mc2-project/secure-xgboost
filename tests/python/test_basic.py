@@ -57,7 +57,7 @@ class TestBasic(unittest.TestCase):
         num_round = 2
         bst = xgb.train(param, dtrain, num_round, watchlist)
 
-        preds = bst.predict(dtrain)[0]
+        preds = bst.predict(dtrain, decrypt=True)[0]
         # TODO(rishabh): support for get_label()
         """
         labels = dtrain.get_label()
@@ -117,7 +117,7 @@ class TestBasic(unittest.TestCase):
         num_round = 2
         bst = xgb.train(param, dtrain, num_round, watchlist)
         # this is prediction
-        preds = bst.predict(dtest)[0]
+        preds = bst.predict(dtest, decrypt=True)[0]
 
         #TODO(rishabh): support for get_label(), save_binary()
         """

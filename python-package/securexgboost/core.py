@@ -1572,7 +1572,7 @@ class Booster(object):
 
     def predict(self, data, output_margin=False, ntree_limit=0, pred_leaf=False,
                 pred_contribs=False, approx_contribs=False, pred_interactions=False,
-                validate_features=True, training=False, decrypt=True):
+                validate_features=True, training=False, decrypt=False):
         """
         Predict with data.
 

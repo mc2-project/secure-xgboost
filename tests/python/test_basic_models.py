@@ -30,7 +30,7 @@ class TestModels(unittest.TestCase):
         num_round = 4
         bst = xgb.train(param, dtrain, num_round, watchlist)
         assert isinstance(bst, xgb.core.Booster)
-        preds = bst.predict(dtest)[0]
+        preds = bst.predict(dtest, decrypt=True)[0]
         #TODO(rishabh): implement get_label()
         """
         labels = dtest.get_label()
@@ -49,7 +49,7 @@ class TestModels(unittest.TestCase):
         num_round = 2
         bst = xgb.train(param, dtrain, num_round, watchlist)
         # this is prediction
-        preds = bst.predict(dtest, ntree_limit=num_round)[0]
+        preds = bst.predict(dtest, ntree_limit=num_round, decrypt=True)[0]
         #TODO(rishabh): implement get_label()
         """
         labels = dtest.get_label()
@@ -209,7 +209,7 @@ class TestModels(unittest.TestCase):
         # Re-construct dtrain here to avoid modification
         margined = xgb.DMatrix({username: dpath + 'agaricus.txt.train.enc'})
         bst = xgb.train({'tree_method': 'hist'}, margined, 1)
-        predt_0 = bst.predict(margined, output_margin=True)
+        predt_0 = bst.predict(margined, output_margin=True, decrypt=True)
         #TODO(rishabh): implement set_base_margin()
         """
         margined.set_base_margin(predt_0)
@@ -332,12 +332,12 @@ class TestModels(unittest.TestCase):
         dm2 = xgb.DMatrix({username: temp_enc_name}, feature_names=("a", "b", "c"))
 
         bst = xgb.train([], dm1)
-        bst.predict(dm1)  # success
+        bst.predict(dm1, decrypt=True)  # success
         self.assertRaises(ValueError, bst.predict, dm2)
-        bst.predict(dm1)  # success
+        bst.predict(dm1, decrypt=True)  # success
 
         bst = xgb.train([], dm2)
-        bst.predict(dm2)  # success
+        bst.predict(dm2, decrypt=True)  # success
         self.assertRaises(ValueError, bst.predict, dm1)
-        bst.predict(dm2)  # success
+        bst.predict(dm2, decrypt=True)  # success
 
