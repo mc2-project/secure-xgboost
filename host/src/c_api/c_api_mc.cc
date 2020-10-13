@@ -669,7 +669,7 @@ bool attest_remote_report(
   // Verify the remote report to ensure its authenticity.
   result = oe_verify_report(NULL, remote_report, remote_report_size, &parsed_report);
   if (result != OE_OK) {
-    XGBAPISetLastError("Remote attestation failed. Remote report verification failed.");
+    LOG(FATAL) << "Remote attestation failed. Remote report verification failed.";
     goto exit;
   }
 
@@ -681,7 +681,7 @@ bool attest_remote_report(
         sizeof(MRSIGNER_PUBLIC_KEY),
         parsed_report.identity.signer_id,
         sizeof(parsed_report.identity.signer_id))) {
-    XGBAPISetLastError("Remote attestation failed. MRSIGNER value not equal.");
+    LOG(FATAL) << "Remote attestation failed. MRSIGNER value not equal."; 
     goto exit;
   }
 
@@ -690,24 +690,24 @@ bool attest_remote_report(
   // check the enclave's product id and security version
   // see enc.conf for values specified when signing the enclave.
   if (parsed_report.identity.product_id[0] != 1) {
-    XGBAPISetLastError("Remote attestation failed. Enclave product ID check failed.");
+    LOG(FATAL) << "Remote attestation failed. Enclave product ID check failed.";
     goto exit;
   }
 
   if (parsed_report.identity.security_version < 1) {
-    XGBAPISetLastError("Remote attestation failed. Enclave security version check failed.");
+    LOG(FATAL) << "Remote attestation failed. Enclave security version check failed.";
     goto exit;
   }
 
   // 3) Validate the report data
   //    The report_data has the hash value of the report data
   if (compute_sha256(data, data_size, sha256) != 0) {
-    XGBAPISetLastError("Remote attestation failed. Report data hash validation failed.");
+    LOG(FATAL) << "Remote attestation failed. Report data hash validation failed.";
     goto exit;
   }
 
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
-    XGBAPISetLastError("Remote attestation failed. SHA256 mismatch.");
+    LOG(FATAL) << "Remote attestation failed. SHA256 mismatch.";
     goto exit;
   }
   ret = true;
@@ -720,17 +720,13 @@ XGB_DLL int verify_remote_report_and_set_pubkey(
     size_t pem_key_size,
     uint8_t* remote_report,
     size_t remote_report_size) {
+  API_BEGIN();
   // Attest the remote report and accompanying key.
   size_t data_size = pem_key_size;
   uint8_t data[pem_key_size];
   memcpy(data, pem_key, pem_key_size);
-  if (!attest_remote_report(remote_report, remote_report_size, data, data_size)) {
-    std::cout << "verify_report_and_set_pubkey failed." << std::endl;
-    return -1;
-  } else {
-    std::cout << "verify_report_and_set_pubkey succeeded." << std::endl;
-    return 0;
-  }
+  attest_remote_report(remote_report, remote_report_size, data, data_size);
+  API_END();
 }
 
 XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
@@ -742,6 +738,7 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
     size_t num_users,
     uint8_t* remote_report,
     size_t remote_report_size) {
+  API_BEGIN();
   // Attest the remote report and accompanying key.
   size_t total_len = 0;
   for (int i = 0; i < num_users; i++) {
@@ -758,13 +755,8 @@ XGB_DLL int verify_remote_report_and_set_pubkey_and_nonce(
     memcpy(ptr, usernames[i], len);
     ptr += len;
   }
-
-  if (!attest_remote_report(remote_report, remote_report_size, report_data, report_data_size)) {
-    std::cout << "verify_report_and_set_pubkey_and_nonce failed." << std::endl;
-    return -1;
-  }
-  std::cout << "verify_report_and_set_pubkey_and_nonce succeeded." << std::endl;
-  return 0;
+  attest_remote_report(remote_report, remote_report_size, report_data, report_data_size);
+  API_END();
 }
 
 XGB_DLL int add_client_key_with_certificate(char * cert,int cert_len, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
@@ -776,6 +768,7 @@ XGB_DLL int get_enclave_symm_key(char *username, uint8_t** out, size_t* out_size
 }
 
 XGB_DLL int verify_signature(uint8_t* pem_key, size_t key_size, uint8_t* data, size_t data_len, uint8_t* signature, size_t sig_len) {
+  API_BEGIN();
   int res = -1;
   mbedtls_pk_context m_pk_context;
   mbedtls_pk_init(&m_pk_context);
@@ -783,18 +776,18 @@ XGB_DLL int verify_signature(uint8_t* pem_key, size_t key_size, uint8_t* data, s
   // Read the given public key.
   res = mbedtls_pk_parse_public_key(&m_pk_context, pem_key, key_size);
   if (res != 0) {
-    std::cout << "mbedtls_pk_parse_public_key failed.\n";
     mbedtls_pk_free(&m_pk_context);
-    return res;
+    LOG(FATAL) << "mbedtls_pk_parse_public_key failed.";
   }
 
-  res = verifySignature(m_pk_context, data, data_len, signature, sig_len);
+  verifySignature(m_pk_context, data, data_len, signature, sig_len);
   mbedtls_pk_free( &m_pk_context );
-  return res;
+  API_END();
 }
 
 
 XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_t key_size, uint8_t* encrypted_data, size_t* encrypted_data_size) {
+  API_BEGIN();
   bool result = false;
   mbedtls_pk_context key;
   int res = -1;
@@ -819,9 +812,8 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
   res = mbedtls_pk_parse_public_key(&key, pem_key, key_size);
 
   if (res != 0) {
-    std::cout << "mbedtls_pk_parse_public_key failed.\n";
     mbedtls_pk_free(&key);
-    return res;
+    LOG(FATAL) << "mbedtls_pk_parse_public_key failed.";
   }
 
   rsa_context = mbedtls_pk_rsa(key);
@@ -839,9 +831,8 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
       (const unsigned char*) data,
       (unsigned char*) encrypted_data);
   if (res != 0) {
-    std::cout << "mbedtls_rsa_pkcs1_encrypt failed\n";
     mbedtls_pk_free(&key);
-    return res;
+    LOG(FATAL) << "mbedtls_rsa_pkcs1_encrypt failed.";
   }
 
   *encrypted_data_size = mbedtls_pk_rsa(key)->len;
@@ -849,20 +840,21 @@ XGB_DLL int encrypt_data_with_pk(char* data, size_t len, uint8_t* pem_key, size_
   mbedtls_pk_free( &m_pk_context );
   mbedtls_ctr_drbg_free( &m_ctr_drbg_context );
   mbedtls_entropy_free( &m_entropy_context );
-  return 0;
+  API_END();
 }
 
 XGB_DLL int sign_data_with_keyfile(char *keyfile, uint8_t* data, size_t data_size, uint8_t* signature, size_t* sig_len) {
+  API_BEGIN();
   mbedtls_pk_context pk;
   mbedtls_pk_init( &pk );
 
   int ret;
   if((ret = mbedtls_pk_parse_keyfile( &pk, keyfile, "")) != 0) {
-    LOG(FATAL) <<"signing failed -- mbedtls_pk_parse_public_keyfile returned" << ret;
+    LOG(FATAL) << "signing failed -- mbedtls_pk_parse_public_keyfile returned " << ret;
   }
 
   ret = sign_data(pk, data, data_size, signature, sig_len);
-  return ret;
+  API_END();
 }
 
 XGB_DLL int decrypt_predictions(char* key, uint8_t* encrypted_preds, size_t num_preds, bst_float** preds) {
@@ -917,7 +909,6 @@ XGB_DLL int decrypt_dump(char* key, char** models, xgboost::bst_ulong length) {
           (const unsigned char*) key,     // encryption key
           CIPHER_KEY_SIZE * 8);           // key bits (must be 128, 192, or 256)
   if (ret != 0) {
-    //printf( "mbedtls_gcm_setkey failed to set the key for AES cipher - returned -0x%04x\n", -ret );
     LOG(FATAL) << "mbedtls_gcm_setkey failed to set the key for AES cipher - returned " << -ret;
   }
 

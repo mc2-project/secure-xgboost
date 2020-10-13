@@ -230,6 +230,7 @@ class Command(object):
             exception = None
             if -1 in statuses:
                 exceptions = [result.status.exception for result in results]
+                error = True
                 i = statuses.index(-1)
                 exception = exceptions[i]
 
