@@ -396,6 +396,8 @@ class Command(object):
                 raise NotImplementedError
 
     def result(self, username):
+        if self._error:
+            raise Exception(self._error)
         self._retrieved.append(username)
         ret = self._ret
         if self.is_complete():
@@ -430,22 +432,19 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         self.condition.acquire() 
         try:
             self.command.submit(func, params, username)
+            if self.command.is_ready():
+                self.command.invoke()
+                ret = self.command.result(username)
+                self.condition.notifyAll()
+            else:
+                self.condition.wait()
+                ret = self.command.result(username)
+            self.condition.release()
+            return ret
         except:
             self.condition.notifyAll()
+            self.condition.release()
             raise Exception(self.command._error)
-
-        if self.command.is_ready():
-            self.command.invoke()
-            ret = self.command.result(username)
-            self.condition.notifyAll()
-        else:
-            self.condition.wait()
-            ret = self.command.result(username)
-        self.condition.release()
-
-        if self.command._error:
-            raise Exception(self.command._error)
-        return ret
 
     def _serialize(self, func, params):
         self.condition.acquire() 
