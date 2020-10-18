@@ -53,6 +53,7 @@ class Command(object):
         self._signatures = []
         self._sig_lengths = []
         self._retrieved = []
+        self._error = None
 
     def submit(self, func, params, username):
         if self._func is None:
@@ -61,10 +62,12 @@ class Command(object):
             self._seq_num = params.seq_num
         elif self._func != func:
             self.reset()
-            raise Exception("Mismatched commands. Please resubmit the command, and ensure each party submits the same command.")
+            self._error = "Mismatched commands. Please resubmit the command, and ensure each party submits the same command."
+            raise Exception(self._error)
         elif self._seq_num != params.seq_num:
             self.reset()
-            raise Exception("Mismatched command sequence number. Please reset all clients and the server.")
+            self._error = "Mismatched command sequence number. Please reset all clients and the server."
+            raise Exception(self._error)
 
         # If a party re-submits the same command, then update its parameters
         if username in self._usernames:
@@ -425,7 +428,12 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         username = params.username
 
         self.condition.acquire() 
-        self.command.submit(func, params, username)
+        try:
+            self.command.submit(func, params, username)
+        except:
+            self.condition.notifyAll()
+            raise Exception(self.command._error)
+
         if self.command.is_ready():
             self.command.invoke()
             ret = self.command.result(username)
@@ -434,6 +442,9 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
             self.condition.wait()
             ret = self.command.result(username)
         self.condition.release()
+
+        if self.command._error:
+            raise Exception(self.command._error)
         return ret
 
     def _serialize(self, func, params):
