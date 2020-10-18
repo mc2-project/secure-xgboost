@@ -58,14 +58,23 @@ class Command(object):
         if self._func is None:
             self._func = func
             self._params = params
-        else:
-            assert self._func == func
+            self._seq_num = params.seq_num
+        elif self._func != func:
+            self.reset()
+            raise Exception("Mismatched commands. Please resubmit the command, and ensure each party submits the same command.")
+        elif self._seq_num != params.seq_num:
+            self.reset()
+            raise Exception("Mismatched command sequence number. Please reset all clients and the server.")
 
-        # FIXME: check that all clients have the same sequence number
-        self._seq_num = params.seq_num
-        self._usernames.append(username)
-        self._signatures.append(params.signature)
-        self._sig_lengths.append(params.sig_len)
+        # If a party re-submits the same command, then update its parameters
+        if username in self._usernames:
+            index = self._usernames.index(username)
+            self._signatures[index] = params.signature
+            self._sig_lengths[index] = params.sig_len
+        else:
+            self._usernames.append(username)
+            self._signatures.append(params.signature)
+            self._sig_lengths.append(params.sig_len)
 
     def is_ready(self):
         for user in _USERS:
