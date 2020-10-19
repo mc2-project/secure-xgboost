@@ -1254,7 +1254,7 @@ class Booster(object):
             self.load_model(model_file)
 
     def __del__(self):
-        if self.handle is not None:
+        if hasattr(self, "handle") and self.handle is not None:
             # FIXME free booster after use using RPC
             # _check_call(_LIB.XGBoosterFree(self.handle))
             self.handle = None

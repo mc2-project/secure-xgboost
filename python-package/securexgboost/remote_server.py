@@ -53,7 +53,7 @@ class Command(object):
         self._signatures = []
         self._sig_lengths = []
         self._retrieved = []
-        self._error = None
+        self._is_error = False
 
     def submit(self, func, params, username):
         if self._func is None:
@@ -61,13 +61,11 @@ class Command(object):
             self._params = params
             self._seq_num = params.seq_num
         elif self._func != func:
-            self.reset()
+            self._is_error = True
             self._error = "Mismatched commands. Please resubmit the command, and ensure each party submits the same command."
-            raise Exception(self._error)
         elif self._seq_num != params.seq_num:
-            self.reset()
+            self._is_error = True
             self._error = "Mismatched command sequence number. Please reset all clients and the server."
-            raise Exception(self._error)
 
         # If a party re-submits the same command, then update its parameters
         if username in self._usernames:
@@ -85,7 +83,16 @@ class Command(object):
                 return False
         return True
 
-    def invoke(self):
+    def handle_error(self, username):
+        self._retrieved.append(username)
+        if self.is_complete():
+            self.reset()
+        raise Exception(self._error)
+
+    def invoke(self, username):
+        if self._is_error:
+            self.handle_error(username)
+
         if not globals()["is_orchestrator"]:
             # Returns <return_value>, signature, sig_len
             self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
@@ -396,8 +403,8 @@ class Command(object):
                 raise NotImplementedError
 
     def result(self, username):
-        if self._error:
-            raise Exception(self._error)
+        if self._is_error:
+            self.handle_error(username)
         self._retrieved.append(username)
         ret = self._ret
         if self.is_complete():
@@ -433,7 +440,7 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         try:
             self.command.submit(func, params, username)
             if self.command.is_ready():
-                self.command.invoke()
+                self.command.invoke(username)
                 ret = self.command.result(username)
                 self.condition.notifyAll()
             else:
@@ -441,10 +448,10 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
                 ret = self.command.result(username)
             self.condition.release()
             return ret
-        except:
+        except Exception as e:
             self.condition.notifyAll()
             self.condition.release()
-            raise Exception(self.command._error)
+            raise e
 
     def _serialize(self, func, params):
         self.condition.acquire() 
