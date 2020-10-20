@@ -34,7 +34,7 @@ def init(args=None):
         # FIXME: add signature to rabit init
         with grpc.insecure_channel(channel_addr) as channel:
             stub = remote_pb2_grpc.RemoteStub(channel)
-            response = stub.rpc_RabitInit(remote_pb2.RabitParams(username=current_user)) 
+            response = stub.rpc_RabitInit(remote_pb2.RabitParams(params=remote_pb2.Status(status=1), username=current_user)) 
     else:
         if args is None:
             args = []
@@ -52,7 +52,7 @@ def finalize():
         # FIXME: add signature to rabit finalize
         with grpc.insecure_channel(channel_addr) as channel:
             stub = remote_pb2_grpc.RemoteStub(channel)
-            response = stub.rpc_RabitFinalize(remote_pb2.RabitParams(username=current_user)) 
+            response = stub.rpc_RabitFinalize(remote_pb2.RabitParams(params=remote_pb2.Status(status=1), username=current_user)) 
     else:
         _LIB.RabitFinalize()
 

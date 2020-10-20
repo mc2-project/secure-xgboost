@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0cremote.proto\x12\x06remote\x1a\rndarray.proto\"k\n\tStatusMsg\x12\x1e\n\x06status\x18\x01 \x01(\x0b\x32\x0e.remote.Status\x12-\n\tsignature\x18\x02 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x03 \x01(\r\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\xf9\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x14\n\x0cpem_key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\x12\x1e\n\x06status\x18\x05 \x01(\x0b\x32\x0e.remote.Status\x12)\n\x05nonce\x18\x06 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x12\n\nnonce_size\x18\x07 \x01(\r\"b\n\x0eSequenceNumber\x12)\n\x05nonce\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x12\n\nnonce_size\x18\x02 \x01(\r\x12\x11\n\tnonce_ctr\x18\x03 \x01(\r\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"V\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\"\x8b\x02\n\x13\x44MatrixAttrsRequest\x12#\n\x05\x61ttrs\x18\x01 \x01(\x0b\x32\x14.remote.DMatrixAttrs\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"?\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x10\n\x08username\x18\x03 \x01(\t\"\x8b\x02\n\x13\x42oosterAttrsRequest\x12#\n\x05\x61ttrs\x18\x01 \x01(\x0b\x32\x14.remote.BoosterAttrs\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"T\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\x12\x10\n\x08username\x18\x04 \x01(\t\"\x93\x02\n\x13\x42oosterParamRequest\x12+\n\rbooster_param\x18\x01 \x01(\x0b\x32\x14.remote.BoosterParam\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"i\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\"\xa9\x02\n\x1a\x42oosterUpdateParamsRequest\x12:\n\x15\x62ooster_update_params\x18\x01 \x01(\x0b\x32\x1b.remote.BoosterUpdateParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\xa8\x01\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\x1b\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x0c.remote.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\x12\x10\n\x08username\x18\x04 \x01(\t\x12-\n\tsignature\x18\x05 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x06 \x01(\r\"\x8d\x01\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08training\x18\x05 \x01(\r\x12\x10\n\x08username\x18\x06 \x01(\t\"\x96\x02\n\x14PredictParamsRequest\x12-\n\x0epredict_params\x18\x01 \x01(\x0b\x32\x15.remote.PredictParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"M\n\x0fSaveModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\"\x9d\x02\n\x16SaveModelParamsRequest\x12\x32\n\x11save_model_params\x18\x01 \x01(\x0b\x32\x17.remote.SaveModelParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"M\n\x0fLoadModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\x12\x10\n\x08username\x18\x03 \x01(\t\"\x9d\x02\n\x16LoadModelParamsRequest\x12\x32\n\x11load_model_params\x18\x01 \x01(\x0b\x32\x17.remote.LoadModelParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"r\n\x0f\x44umpModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66map\x18\x02 \x01(\t\x12\x12\n\nwith_stats\x18\x03 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x04 \x01(\t\x12\x10\n\x08username\x18\x05 \x01(\t\"\x9d\x02\n\x16\x44umpModelParamsRequest\x12\x32\n\x11\x64ump_model_params\x18\x01 \x01(\x0b\x32\x17.remote.DumpModelParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\x9c\x01\n\x1b\x44umpModelWithFeaturesParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66len\x18\x02 \x01(\r\x12\r\n\x05\x66name\x18\x03 \x03(\t\x12\r\n\x05\x66type\x18\x04 \x03(\t\x12\x12\n\nwith_stats\x18\x05 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x06 \x01(\t\x12\x10\n\x08username\x18\x07 \x01(\t\"\xc3\x02\n\"DumpModelWithFeaturesParamsRequest\x12L\n\x1f\x64ump_model_with_features_params\x18\x01 \x01(\x0b\x32#.remote.DumpModelWithFeaturesParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\":\n\x0eModelRawParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\"\x9a\x02\n\x15ModelRawParamsRequest\x12\x30\n\x10model_raw_params\x18\x01 \x01(\x0b\x32\x16.remote.ModelRawParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\x84\x01\n\x04\x44ump\x12\x0c\n\x04sarr\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"\x86\x01\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x1e\n\x06status\x18\x05 \x01(\x0b\x32\x0e.remote.Status\"\xfc\x01\n\rNumColRequest\x12\x1a\n\x04name\x18\x01 \x01(\x0b\x32\x0c.remote.Name\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\xfc\x01\n\rNumRowRequest\x12\x1a\n\x04name\x18\x01 \x01(\x0b\x32\x0c.remote.Name\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"x\n\x07Integer\x12\r\n\x05value\x18\x01 \x01(\r\x12\x1e\n\x06status\x18\x02 \x01(\x0b\x32\x0e.remote.Status\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\"c\n\nEnclaveKey\x12\'\n\x03key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0c\n\x04size\x18\x02 \x01(\r\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\"\xb3\x01\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x03(\r\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\x12.\n\nsignatures\x18\x04 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08sig_lens\x18\x05 \x03(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r\"\xde\x01\n\x0bRabitParams\x12\x10\n\x08username\x18\x01 \x01(\t\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x0f\n\x07signers\x18\x05 \x03(\t\x12.\n\nsignatures\x18\x06 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x07 \x03(\r2\xc9\n\n\x06Remote\x12O\n+rpc_get_remote_report_with_pubkey_and_nonce\x12\x0e.remote.Status\x1a\x0e.remote.Report\"\x00\x12?\n\x12rpc_add_client_key\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12P\n#rpc_add_client_key_with_certificate\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12>\n\x18rpc_get_enclave_symm_key\x12\x0c.remote.Name\x1a\x12.remote.EnclaveKey\"\x00\x12S\n$rpc_XGDMatrixCreateFromEncryptedFile\x12\x1b.remote.DMatrixAttrsRequest\x1a\x0c.remote.Name\"\x00\x12\x42\n\x13rpc_XGBoosterCreate\x12\x1b.remote.BoosterAttrsRequest\x1a\x0c.remote.Name\"\x00\x12I\n\x15rpc_XGBoosterSetParam\x12\x1b.remote.BoosterParamRequest\x1a\x11.remote.StatusMsg\"\x00\x12U\n\x1arpc_XGBoosterUpdateOneIter\x12\".remote.BoosterUpdateParamsRequest\x1a\x11.remote.StatusMsg\"\x00\x12K\n\x14rpc_XGBoosterPredict\x12\x1c.remote.PredictParamsRequest\x1a\x13.remote.Predictions\"\x00\x12M\n\x16rpc_XGBoosterSaveModel\x12\x1e.remote.SaveModelParamsRequest\x1a\x11.remote.StatusMsg\"\x00\x12M\n\x16rpc_XGBoosterLoadModel\x12\x1e.remote.LoadModelParamsRequest\x1a\x11.remote.StatusMsg\"\x00\x12J\n\x18rpc_XGBoosterDumpModelEx\x12\x1e.remote.DumpModelParamsRequest\x1a\x0c.remote.Dump\"\x00\x12\x62\n$rpc_XGBoosterDumpModelExWithFeatures\x12*.remote.DumpModelWithFeaturesParamsRequest\x1a\x0c.remote.Dump\"\x00\x12I\n\x18rpc_XGBoosterGetModelRaw\x12\x1d.remote.ModelRawParamsRequest\x1a\x0c.remote.Dump\"\x00\x12?\n\x13rpc_XGDMatrixNumCol\x12\x15.remote.NumColRequest\x1a\x0f.remote.Integer\"\x00\x12?\n\x13rpc_XGDMatrixNumRow\x12\x15.remote.NumRowRequest\x1a\x0f.remote.Integer\"\x00\x12\x39\n\rrpc_RabitInit\x12\x13.remote.RabitParams\x1a\x11.remote.StatusMsg\"\x00\x12=\n\x11rpc_RabitFinalize\x12\x13.remote.RabitParams\x1a\x11.remote.StatusMsg\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x0cremote.proto\x12\x06remote\x1a\rndarray.proto\"k\n\tStatusMsg\x12\x1e\n\x06status\x18\x01 \x01(\x0b\x32\x0e.remote.Status\x12-\n\tsignature\x18\x02 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x03 \x01(\r\"+\n\x06Status\x12\x0e\n\x06status\x18\x01 \x01(\x05\x12\x11\n\texception\x18\x02 \x01(\t\"\xf9\x01\n\x06Report\x12+\n\x07pem_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x14\n\x0cpem_key_size\x18\x02 \x01(\r\x12\x31\n\rremote_report\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x1a\n\x12remote_report_size\x18\x04 \x01(\r\x12\x1e\n\x06status\x18\x05 \x01(\x0b\x32\x0e.remote.Status\x12)\n\x05nonce\x18\x06 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x12\n\nnonce_size\x18\x07 \x01(\r\"b\n\x0eSequenceNumber\x12)\n\x05nonce\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x12\n\nnonce_size\x18\x02 \x01(\r\x12\x11\n\tnonce_ctr\x18\x03 \x01(\r\"\xa6\x01\n\x0c\x44\x61taMetadata\x12/\n\x0b\x65nc_sym_key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08key_size\x18\x02 \x01(\r\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x13\n\x0b\x63\x65rtificate\x18\x05 \x01(\t\"D\n\x0c\x44MatrixAttrs\x12\x11\n\tfilenames\x18\x01 \x03(\t\x12\x11\n\tusernames\x18\x02 \x03(\t\x12\x0e\n\x06silent\x18\x03 \x01(\r\"\x8c\x02\n\x13\x44MatrixAttrsRequest\x12$\n\x06params\x18\x01 \x01(\x0b\x32\x14.remote.DMatrixAttrs\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"-\n\x0c\x42oosterAttrs\x12\r\n\x05\x63\x61\x63he\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\"\x8c\x02\n\x13\x42oosterAttrsRequest\x12$\n\x06params\x18\x01 \x01(\x0b\x32\x14.remote.BoosterAttrs\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"B\n\x0c\x42oosterParam\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0b\n\x03key\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"\x8c\x02\n\x13\x42oosterParamRequest\x12$\n\x06params\x18\x01 \x01(\x0b\x32\x14.remote.BoosterParam\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"W\n\x13\x42oosterUpdateParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x15\n\rdtrain_handle\x18\x02 \x01(\t\x12\x11\n\titeration\x18\x03 \x01(\r\"\x9a\x02\n\x1a\x42oosterUpdateParamsRequest\x12+\n\x06params\x18\x01 \x01(\x0b\x32\x1b.remote.BoosterUpdateParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\x96\x01\n\x14\x42oosterEvalSetParams\x12\x0e\n\x06handle\x18\x01 \x01(\t\x12\x1b\n\x05\x65vals\x18\x02 \x03(\x0b\x32\x0c.remote.Pair\x12\x11\n\titeration\x18\x03 \x01(\r\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"{\n\rPredictParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x16\n\x0e\x64matrix_handle\x18\x02 \x01(\t\x12\x13\n\x0boption_mask\x18\x03 \x01(\r\x12\x13\n\x0bntree_limit\x18\x04 \x01(\r\x12\x10\n\x08training\x18\x05 \x01(\r\"\x8e\x02\n\x14PredictParamsRequest\x12%\n\x06params\x18\x01 \x01(\x0b\x32\x15.remote.PredictParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\";\n\x0fSaveModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\"\x92\x02\n\x16SaveModelParamsRequest\x12\'\n\x06params\x18\x01 \x01(\x0b\x32\x17.remote.SaveModelParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\";\n\x0fLoadModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x10\n\x08\x66ilename\x18\x02 \x01(\t\"\x92\x02\n\x16LoadModelParamsRequest\x12\'\n\x06params\x18\x01 \x01(\x0b\x32\x17.remote.LoadModelParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"`\n\x0f\x44umpModelParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66map\x18\x02 \x01(\t\x12\x12\n\nwith_stats\x18\x03 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x04 \x01(\t\"\x92\x02\n\x16\x44umpModelParamsRequest\x12\'\n\x06params\x18\x01 \x01(\x0b\x32\x17.remote.DumpModelParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\x8a\x01\n\x1b\x44umpModelWithFeaturesParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\x12\x0c\n\x04\x66len\x18\x02 \x01(\r\x12\r\n\x05\x66name\x18\x03 \x03(\t\x12\r\n\x05\x66type\x18\x04 \x03(\t\x12\x12\n\nwith_stats\x18\x05 \x01(\r\x12\x13\n\x0b\x64ump_format\x18\x06 \x01(\t\"\xaa\x02\n\"DumpModelWithFeaturesParamsRequest\x12\x33\n\x06params\x18\x01 \x01(\x0b\x32#.remote.DumpModelWithFeaturesParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"(\n\x0eModelRawParams\x12\x16\n\x0e\x62ooster_handle\x18\x01 \x01(\t\"\x90\x02\n\x15ModelRawParamsRequest\x12&\n\x06params\x18\x01 \x01(\x0b\x32\x16.remote.ModelRawParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\x84\x01\n\x04\x44ump\x12\x0c\n\x04sarr\x18\x01 \x03(\t\x12\x0e\n\x06length\x18\x02 \x01(\x04\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\"\x1c\n\x04Pair\x12\t\n\x01x\x18\x01 \x01(\t\x12\t\n\x01y\x18\x02 \x01(\t\"!\n\x11NameRequestParams\x12\x0c\n\x04name\x18\x01 \x01(\t\"\x86\x01\n\x04Name\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x1e\n\x06status\x18\x05 \x01(\x0b\x32\x0e.remote.Status\"\x8b\x02\n\rNumColRequest\x12)\n\x06params\x18\x01 \x01(\x0b\x32\x19.remote.NameRequestParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"\x8b\x02\n\rNumRowRequest\x12)\n\x06params\x18\x01 \x01(\x0b\x32\x19.remote.NameRequestParams\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12\x10\n\x08username\x18\x03 \x01(\t\x12-\n\tsignature\x18\x04 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x05 \x01(\r\x12\x0f\n\x07signers\x18\x06 \x03(\t\x12.\n\nsignatures\x18\x07 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x08 \x03(\r\"x\n\x07Integer\x12\r\n\x05value\x18\x01 \x01(\r\x12\x1e\n\x06status\x18\x02 \x01(\x0b\x32\x0e.remote.Status\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\"c\n\nEnclaveKey\x12\'\n\x03key\x18\x01 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0c\n\x04size\x18\x02 \x01(\r\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\"\xb3\x01\n\x0bPredictions\x12/\n\x0bpredictions\x18\x01 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x11\n\tnum_preds\x18\x02 \x03(\r\x12\x1e\n\x06status\x18\x03 \x01(\x0b\x32\x0e.remote.Status\x12.\n\nsignatures\x18\x04 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x10\n\x08sig_lens\x18\x05 \x03(\r\"$\n\rClusterParams\x12\x13\n\x0bnum_workers\x18\x01 \x01(\r\"\xde\x01\n\x0bRabitParams\x12\x10\n\x08username\x18\x01 \x01(\t\x12\'\n\x07seq_num\x18\x02 \x01(\x0b\x32\x16.remote.SequenceNumber\x12-\n\tsignature\x18\x03 \x01(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x0f\n\x07sig_len\x18\x04 \x01(\r\x12\x0f\n\x07signers\x18\x05 \x03(\t\x12.\n\nsignatures\x18\x06 \x03(\x0b\x32\x1a.numproto.protobuf.NDArray\x12\x13\n\x0bsig_lengths\x18\x07 \x03(\r2\xc9\n\n\x06Remote\x12O\n+rpc_get_remote_report_with_pubkey_and_nonce\x12\x0e.remote.Status\x1a\x0e.remote.Report\"\x00\x12?\n\x12rpc_add_client_key\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12P\n#rpc_add_client_key_with_certificate\x12\x14.remote.DataMetadata\x1a\x11.remote.StatusMsg\"\x00\x12>\n\x18rpc_get_enclave_symm_key\x12\x0c.remote.Name\x1a\x12.remote.EnclaveKey\"\x00\x12S\n$rpc_XGDMatrixCreateFromEncryptedFile\x12\x1b.remote.DMatrixAttrsRequest\x1a\x0c.remote.Name\"\x00\x12\x42\n\x13rpc_XGBoosterCreate\x12\x1b.remote.BoosterAttrsRequest\x1a\x0c.remote.Name\"\x00\x12I\n\x15rpc_XGBoosterSetParam\x12\x1b.remote.BoosterParamRequest\x1a\x11.remote.StatusMsg\"\x00\x12U\n\x1arpc_XGBoosterUpdateOneIter\x12\".remote.BoosterUpdateParamsRequest\x1a\x11.remote.StatusMsg\"\x00\x12K\n\x14rpc_XGBoosterPredict\x12\x1c.remote.PredictParamsRequest\x1a\x13.remote.Predictions\"\x00\x12M\n\x16rpc_XGBoosterSaveModel\x12\x1e.remote.SaveModelParamsRequest\x1a\x11.remote.StatusMsg\"\x00\x12M\n\x16rpc_XGBoosterLoadModel\x12\x1e.remote.LoadModelParamsRequest\x1a\x11.remote.StatusMsg\"\x00\x12J\n\x18rpc_XGBoosterDumpModelEx\x12\x1e.remote.DumpModelParamsRequest\x1a\x0c.remote.Dump\"\x00\x12\x62\n$rpc_XGBoosterDumpModelExWithFeatures\x12*.remote.DumpModelWithFeaturesParamsRequest\x1a\x0c.remote.Dump\"\x00\x12I\n\x18rpc_XGBoosterGetModelRaw\x12\x1d.remote.ModelRawParamsRequest\x1a\x0c.remote.Dump\"\x00\x12?\n\x13rpc_XGDMatrixNumCol\x12\x15.remote.NumColRequest\x1a\x0f.remote.Integer\"\x00\x12?\n\x13rpc_XGDMatrixNumRow\x12\x15.remote.NumRowRequest\x1a\x0f.remote.Integer\"\x00\x12\x39\n\rrpc_RabitInit\x12\x13.remote.RabitParams\x1a\x11.remote.StatusMsg\"\x00\x12=\n\x11rpc_RabitFinalize\x12\x13.remote.RabitParams\x1a\x11.remote.StatusMsg\"\x00\x62\x06proto3'
   ,
   dependencies=[ndarray__pb2.DESCRIPTOR,])
 
@@ -321,13 +321,6 @@ _DMATRIXATTRS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.DMatrixAttrs.username', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -341,7 +334,7 @@ _DMATRIXATTRS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=714,
-  serialized_end=800,
+  serialized_end=782,
 )
 
 
@@ -354,7 +347,7 @@ _DMATRIXATTRSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='attrs', full_name='remote.DMatrixAttrsRequest.attrs', index=0,
+      name='params', full_name='remote.DMatrixAttrsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -421,8 +414,8 @@ _DMATRIXATTRSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=803,
-  serialized_end=1070,
+  serialized_start=785,
+  serialized_end=1053,
 )
 
 
@@ -448,13 +441,6 @@ _BOOSTERATTRS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.BoosterAttrs.username', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -467,8 +453,8 @@ _BOOSTERATTRS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1072,
-  serialized_end=1135,
+  serialized_start=1055,
+  serialized_end=1100,
 )
 
 
@@ -481,7 +467,7 @@ _BOOSTERATTRSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='attrs', full_name='remote.BoosterAttrsRequest.attrs', index=0,
+      name='params', full_name='remote.BoosterAttrsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -548,8 +534,8 @@ _BOOSTERATTRSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1138,
-  serialized_end=1405,
+  serialized_start=1103,
+  serialized_end=1371,
 )
 
 
@@ -582,13 +568,6 @@ _BOOSTERPARAM = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.BoosterParam.username', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -601,8 +580,8 @@ _BOOSTERPARAM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1407,
-  serialized_end=1491,
+  serialized_start=1373,
+  serialized_end=1439,
 )
 
 
@@ -615,7 +594,7 @@ _BOOSTERPARAMREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='booster_param', full_name='remote.BoosterParamRequest.booster_param', index=0,
+      name='params', full_name='remote.BoosterParamRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -682,8 +661,8 @@ _BOOSTERPARAMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1494,
-  serialized_end=1769,
+  serialized_start=1442,
+  serialized_end=1710,
 )
 
 
@@ -716,13 +695,6 @@ _BOOSTERUPDATEPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.BoosterUpdateParams.username', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -735,8 +707,8 @@ _BOOSTERUPDATEPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1771,
-  serialized_end=1876,
+  serialized_start=1712,
+  serialized_end=1799,
 )
 
 
@@ -749,7 +721,7 @@ _BOOSTERUPDATEPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='booster_update_params', full_name='remote.BoosterUpdateParamsRequest.booster_update_params', index=0,
+      name='params', full_name='remote.BoosterUpdateParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -816,8 +788,8 @@ _BOOSTERUPDATEPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1879,
-  serialized_end=2176,
+  serialized_start=1802,
+  serialized_end=2084,
 )
 
 
@@ -851,22 +823,15 @@ _BOOSTEREVALSETPARAMS = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='username', full_name='remote.BoosterEvalSetParams.username', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='signature', full_name='remote.BoosterEvalSetParams.signature', index=4,
-      number=5, type=11, cpp_type=10, label=1,
+      name='signature', full_name='remote.BoosterEvalSetParams.signature', index=3,
+      number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='sig_len', full_name='remote.BoosterEvalSetParams.sig_len', index=5,
-      number=6, type=13, cpp_type=3, label=1,
+      name='sig_len', full_name='remote.BoosterEvalSetParams.sig_len', index=4,
+      number=5, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -883,8 +848,8 @@ _BOOSTEREVALSETPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2179,
-  serialized_end=2347,
+  serialized_start=2087,
+  serialized_end=2237,
 )
 
 
@@ -931,13 +896,6 @@ _PREDICTPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.PredictParams.username', index=5,
-      number=6, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -950,8 +908,8 @@ _PREDICTPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2350,
-  serialized_end=2491,
+  serialized_start=2239,
+  serialized_end=2362,
 )
 
 
@@ -964,7 +922,7 @@ _PREDICTPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='predict_params', full_name='remote.PredictParamsRequest.predict_params', index=0,
+      name='params', full_name='remote.PredictParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1031,8 +989,8 @@ _PREDICTPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2494,
-  serialized_end=2772,
+  serialized_start=2365,
+  serialized_end=2635,
 )
 
 
@@ -1058,13 +1016,6 @@ _SAVEMODELPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.SaveModelParams.username', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1077,8 +1028,8 @@ _SAVEMODELPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2774,
-  serialized_end=2851,
+  serialized_start=2637,
+  serialized_end=2696,
 )
 
 
@@ -1091,7 +1042,7 @@ _SAVEMODELPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='save_model_params', full_name='remote.SaveModelParamsRequest.save_model_params', index=0,
+      name='params', full_name='remote.SaveModelParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1158,8 +1109,8 @@ _SAVEMODELPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2854,
-  serialized_end=3139,
+  serialized_start=2699,
+  serialized_end=2973,
 )
 
 
@@ -1185,13 +1136,6 @@ _LOADMODELPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.LoadModelParams.username', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1204,8 +1148,8 @@ _LOADMODELPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3141,
-  serialized_end=3218,
+  serialized_start=2975,
+  serialized_end=3034,
 )
 
 
@@ -1218,7 +1162,7 @@ _LOADMODELPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='load_model_params', full_name='remote.LoadModelParamsRequest.load_model_params', index=0,
+      name='params', full_name='remote.LoadModelParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1285,8 +1229,8 @@ _LOADMODELPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3221,
-  serialized_end=3506,
+  serialized_start=3037,
+  serialized_end=3311,
 )
 
 
@@ -1326,13 +1270,6 @@ _DUMPMODELPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.DumpModelParams.username', index=4,
-      number=5, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1345,8 +1282,8 @@ _DUMPMODELPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3508,
-  serialized_end=3622,
+  serialized_start=3313,
+  serialized_end=3409,
 )
 
 
@@ -1359,7 +1296,7 @@ _DUMPMODELPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='dump_model_params', full_name='remote.DumpModelParamsRequest.dump_model_params', index=0,
+      name='params', full_name='remote.DumpModelParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1426,8 +1363,8 @@ _DUMPMODELPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3625,
-  serialized_end=3910,
+  serialized_start=3412,
+  serialized_end=3686,
 )
 
 
@@ -1481,13 +1418,6 @@ _DUMPMODELWITHFEATURESPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.DumpModelWithFeaturesParams.username', index=6,
-      number=7, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1500,8 +1430,8 @@ _DUMPMODELWITHFEATURESPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3913,
-  serialized_end=4069,
+  serialized_start=3689,
+  serialized_end=3827,
 )
 
 
@@ -1514,7 +1444,7 @@ _DUMPMODELWITHFEATURESPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='dump_model_with_features_params', full_name='remote.DumpModelWithFeaturesParamsRequest.dump_model_with_features_params', index=0,
+      name='params', full_name='remote.DumpModelWithFeaturesParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1581,8 +1511,8 @@ _DUMPMODELWITHFEATURESPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4072,
-  serialized_end=4395,
+  serialized_start=3830,
+  serialized_end=4128,
 )
 
 
@@ -1601,13 +1531,6 @@ _MODELRAWPARAMS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='username', full_name='remote.ModelRawParams.username', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1620,8 +1543,8 @@ _MODELRAWPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4397,
-  serialized_end=4455,
+  serialized_start=4130,
+  serialized_end=4170,
 )
 
 
@@ -1634,7 +1557,7 @@ _MODELRAWPARAMSREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='model_raw_params', full_name='remote.ModelRawParamsRequest.model_raw_params', index=0,
+      name='params', full_name='remote.ModelRawParamsRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1701,8 +1624,8 @@ _MODELRAWPARAMSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4458,
-  serialized_end=4740,
+  serialized_start=4173,
+  serialized_end=4445,
 )
 
 
@@ -1761,8 +1684,8 @@ _DUMP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4743,
-  serialized_end=4875,
+  serialized_start=4448,
+  serialized_end=4580,
 )
 
 
@@ -1800,8 +1723,40 @@ _PAIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4877,
-  serialized_end=4905,
+  serialized_start=4582,
+  serialized_end=4610,
+)
+
+
+_NAMEREQUESTPARAMS = _descriptor.Descriptor(
+  name='NameRequestParams',
+  full_name='remote.NameRequestParams',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='name', full_name='remote.NameRequestParams.name', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=4612,
+  serialized_end=4645,
 )
 
 
@@ -1860,8 +1815,8 @@ _NAME = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4908,
-  serialized_end=5042,
+  serialized_start=4648,
+  serialized_end=4782,
 )
 
 
@@ -1874,7 +1829,7 @@ _NUMCOLREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='remote.NumColRequest.name', index=0,
+      name='params', full_name='remote.NumColRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1941,8 +1896,8 @@ _NUMCOLREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5045,
-  serialized_end=5297,
+  serialized_start=4785,
+  serialized_end=5052,
 )
 
 
@@ -1955,7 +1910,7 @@ _NUMROWREQUEST = _descriptor.Descriptor(
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='remote.NumRowRequest.name', index=0,
+      name='params', full_name='remote.NumRowRequest.params', index=0,
       number=1, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -2022,8 +1977,8 @@ _NUMROWREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5300,
-  serialized_end=5552,
+  serialized_start=5055,
+  serialized_end=5322,
 )
 
 
@@ -2075,8 +2030,8 @@ _INTEGER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5554,
-  serialized_end=5674,
+  serialized_start=5324,
+  serialized_end=5444,
 )
 
 
@@ -2121,8 +2076,8 @@ _ENCLAVEKEY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5676,
-  serialized_end=5775,
+  serialized_start=5446,
+  serialized_end=5545,
 )
 
 
@@ -2181,8 +2136,8 @@ _PREDICTIONS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5778,
-  serialized_end=5957,
+  serialized_start=5548,
+  serialized_end=5727,
 )
 
 
@@ -2213,8 +2168,8 @@ _CLUSTERPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5959,
-  serialized_end=5995,
+  serialized_start=5729,
+  serialized_end=5765,
 )
 
 
@@ -2287,8 +2242,8 @@ _RABITPARAMS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=5998,
-  serialized_end=6220,
+  serialized_start=5768,
+  serialized_end=5990,
 )
 
 _STATUSMSG.fields_by_name['status'].message_type = _STATUS
@@ -2300,45 +2255,45 @@ _REPORT.fields_by_name['nonce'].message_type = ndarray__pb2._NDARRAY
 _SEQUENCENUMBER.fields_by_name['nonce'].message_type = ndarray__pb2._NDARRAY
 _DATAMETADATA.fields_by_name['enc_sym_key'].message_type = ndarray__pb2._NDARRAY
 _DATAMETADATA.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
-_DMATRIXATTRSREQUEST.fields_by_name['attrs'].message_type = _DMATRIXATTRS
+_DMATRIXATTRSREQUEST.fields_by_name['params'].message_type = _DMATRIXATTRS
 _DMATRIXATTRSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _DMATRIXATTRSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _DMATRIXATTRSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_BOOSTERATTRSREQUEST.fields_by_name['attrs'].message_type = _BOOSTERATTRS
+_BOOSTERATTRSREQUEST.fields_by_name['params'].message_type = _BOOSTERATTRS
 _BOOSTERATTRSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _BOOSTERATTRSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _BOOSTERATTRSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_BOOSTERPARAMREQUEST.fields_by_name['booster_param'].message_type = _BOOSTERPARAM
+_BOOSTERPARAMREQUEST.fields_by_name['params'].message_type = _BOOSTERPARAM
 _BOOSTERPARAMREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _BOOSTERPARAMREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _BOOSTERPARAMREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_BOOSTERUPDATEPARAMSREQUEST.fields_by_name['booster_update_params'].message_type = _BOOSTERUPDATEPARAMS
+_BOOSTERUPDATEPARAMSREQUEST.fields_by_name['params'].message_type = _BOOSTERUPDATEPARAMS
 _BOOSTERUPDATEPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _BOOSTERUPDATEPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _BOOSTERUPDATEPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
 _BOOSTEREVALSETPARAMS.fields_by_name['evals'].message_type = _PAIR
 _BOOSTEREVALSETPARAMS.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
-_PREDICTPARAMSREQUEST.fields_by_name['predict_params'].message_type = _PREDICTPARAMS
+_PREDICTPARAMSREQUEST.fields_by_name['params'].message_type = _PREDICTPARAMS
 _PREDICTPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _PREDICTPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _PREDICTPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_SAVEMODELPARAMSREQUEST.fields_by_name['save_model_params'].message_type = _SAVEMODELPARAMS
+_SAVEMODELPARAMSREQUEST.fields_by_name['params'].message_type = _SAVEMODELPARAMS
 _SAVEMODELPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _SAVEMODELPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _SAVEMODELPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_LOADMODELPARAMSREQUEST.fields_by_name['load_model_params'].message_type = _LOADMODELPARAMS
+_LOADMODELPARAMSREQUEST.fields_by_name['params'].message_type = _LOADMODELPARAMS
 _LOADMODELPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _LOADMODELPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _LOADMODELPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_DUMPMODELPARAMSREQUEST.fields_by_name['dump_model_params'].message_type = _DUMPMODELPARAMS
+_DUMPMODELPARAMSREQUEST.fields_by_name['params'].message_type = _DUMPMODELPARAMS
 _DUMPMODELPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _DUMPMODELPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _DUMPMODELPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_DUMPMODELWITHFEATURESPARAMSREQUEST.fields_by_name['dump_model_with_features_params'].message_type = _DUMPMODELWITHFEATURESPARAMS
+_DUMPMODELWITHFEATURESPARAMSREQUEST.fields_by_name['params'].message_type = _DUMPMODELWITHFEATURESPARAMS
 _DUMPMODELWITHFEATURESPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _DUMPMODELWITHFEATURESPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _DUMPMODELWITHFEATURESPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_MODELRAWPARAMSREQUEST.fields_by_name['model_raw_params'].message_type = _MODELRAWPARAMS
+_MODELRAWPARAMSREQUEST.fields_by_name['params'].message_type = _MODELRAWPARAMS
 _MODELRAWPARAMSREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _MODELRAWPARAMSREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _MODELRAWPARAMSREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
@@ -2346,11 +2301,11 @@ _DUMP.fields_by_name['status'].message_type = _STATUS
 _DUMP.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _NAME.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _NAME.fields_by_name['status'].message_type = _STATUS
-_NUMCOLREQUEST.fields_by_name['name'].message_type = _NAME
+_NUMCOLREQUEST.fields_by_name['params'].message_type = _NAMEREQUESTPARAMS
 _NUMCOLREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _NUMCOLREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _NUMCOLREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
-_NUMROWREQUEST.fields_by_name['name'].message_type = _NAME
+_NUMROWREQUEST.fields_by_name['params'].message_type = _NAMEREQUESTPARAMS
 _NUMROWREQUEST.fields_by_name['seq_num'].message_type = _SEQUENCENUMBER
 _NUMROWREQUEST.fields_by_name['signature'].message_type = ndarray__pb2._NDARRAY
 _NUMROWREQUEST.fields_by_name['signatures'].message_type = ndarray__pb2._NDARRAY
@@ -2392,6 +2347,7 @@ DESCRIPTOR.message_types_by_name['ModelRawParams'] = _MODELRAWPARAMS
 DESCRIPTOR.message_types_by_name['ModelRawParamsRequest'] = _MODELRAWPARAMSREQUEST
 DESCRIPTOR.message_types_by_name['Dump'] = _DUMP
 DESCRIPTOR.message_types_by_name['Pair'] = _PAIR
+DESCRIPTOR.message_types_by_name['NameRequestParams'] = _NAMEREQUESTPARAMS
 DESCRIPTOR.message_types_by_name['Name'] = _NAME
 DESCRIPTOR.message_types_by_name['NumColRequest'] = _NUMCOLREQUEST
 DESCRIPTOR.message_types_by_name['NumRowRequest'] = _NUMROWREQUEST
@@ -2598,6 +2554,13 @@ Pair = _reflection.GeneratedProtocolMessageType('Pair', (_message.Message,), {
   })
 _sym_db.RegisterMessage(Pair)
 
+NameRequestParams = _reflection.GeneratedProtocolMessageType('NameRequestParams', (_message.Message,), {
+  'DESCRIPTOR' : _NAMEREQUESTPARAMS,
+  '__module__' : 'remote_pb2'
+  # @@protoc_insertion_point(class_scope:remote.NameRequestParams)
+  })
+_sym_db.RegisterMessage(NameRequestParams)
+
 Name = _reflection.GeneratedProtocolMessageType('Name', (_message.Message,), {
   'DESCRIPTOR' : _NAME,
   '__module__' : 'remote_pb2'
@@ -2663,8 +2626,8 @@ _REMOTE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=6223,
-  serialized_end=7576,
+  serialized_start=5993,
+  serialized_end=7346,
   methods=[
   _descriptor.MethodDescriptor(
     name='rpc_get_remote_report_with_pubkey_and_nonce',
