@@ -467,12 +467,13 @@ message ClusterParams {
 }
 
 message RabitParams {
-    string username = 1;
-    SequenceNumber seq_num = 2;
-    numproto.protobuf.NDArray signature = 3;
-    uint32 sig_len = 4;
+    Status params = 1; // Dummy parameter for compatibility
+    string username = 2;
+    SequenceNumber seq_num = 3;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
 
-    repeated string signers = 5;
-    repeated numproto.protobuf.NDArray signatures = 6;
-    repeated uint32 sig_lengths = 7;
+    repeated string signers = 6;
+    repeated numproto.protobuf.NDArray signatures = 7;
+    repeated uint32 sig_lengths = 8;
 }
