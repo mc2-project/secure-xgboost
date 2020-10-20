@@ -46,7 +46,8 @@ class Command(object):
 
     def reset(self):
         self._func = None
-        self._params = None
+        self._request = None
+        self._args = None
         self._ret = None
         self._seq_num = None
         self._usernames = []
@@ -55,27 +56,31 @@ class Command(object):
         self._retrieved = []
         self._is_error = False
 
-    def submit(self, func, params, username):
+    def submit(self, func, request, username):
         if self._func is None:
             self._func = func
-            self._params = params
-            self._seq_num = params.seq_num
+            self._request = request
+            self._seq_num = request.seq_num
+            self._args = request.params
         elif self._func != func:
             self._is_error = True
             self._error = "Mismatched commands. Please resubmit the command, and ensure each party submits the same command."
-        elif self._seq_num != params.seq_num:
+        elif self._seq_num != request.seq_num:
             self._is_error = True
             self._error = "Mismatched command sequence number. Please reset all clients and the server."
+        elif self._args != request.params:
+            self._is_error = True
+            self._error = "Mismatched command arguments. Please resubmit the command, and ensure each party submits the same arguments to the command."
 
         # If a party re-submits the same command, then update its parameters
         if username in self._usernames:
             index = self._usernames.index(username)
-            self._signatures[index] = params.signature
-            self._sig_lengths[index] = params.sig_len
+            self._signatures[index] = request.signature
+            self._sig_lengths[index] = request.sig_len
         else:
             self._usernames.append(username)
-            self._signatures.append(params.signature)
-            self._sig_lengths.append(params.sig_len)
+            self._signatures.append(request.signature)
+            self._sig_lengths.append(request.sig_len)
 
     def is_ready(self):
         for user in _USERS:
@@ -95,7 +100,7 @@ class Command(object):
 
         if not globals()["is_orchestrator"]:
             # Returns <return_value>, signature, sig_len
-            self._ret = self._func(self._params, self._usernames, self._signatures, self._sig_lengths)
+            self._ret = self._func(self._request, self._usernames, self._signatures, self._sig_lengths)
         else: # We're the RPC orchestrator
             node_ips = globals()["nodes"]
             seq_num = self._seq_num
@@ -129,108 +134,96 @@ class Command(object):
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGDMatrixCreateFromEncryptedFile:
-                    dmatrix_attrs = self._params.attrs
                     response_future = stub.rpc_XGDMatrixCreateFromEncryptedFile.future(remote_pb2.DMatrixAttrsRequest(
-                        attrs=dmatrix_attrs,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths,
                         ))
                 elif self._func == remote_api.XGBoosterSetParam:
-                    booster_param = self._params.booster_param
                     response_future = stub.rpc_XGBoosterSetParam.future(remote_pb2.BoosterParamRequest(
-                        booster_param=booster_param,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterCreate:
-                    attrs = self._params.attrs
                     response_future = stub.rpc_XGBoosterCreate.future(remote_pb2.BoosterAttrsRequest(
-                        attrs=attrs,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterUpdateOneIter:
-                    booster_update_params = self._params.booster_update_params
                     response_future = stub.rpc_XGBoosterUpdateOneIter.future(remote_pb2.BoosterUpdateParamsRequest(
-                        booster_update_params = booster_update_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterSaveModel:
-                    save_model_params = self._params.save_model_params
                     response_future = stub.rpc_XGBoosterSaveModel.future(remote_pb2.SaveModelParamsRequest(
-                        save_model_params = save_model_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterLoadModel:
-                    load_model_params = self._params.load_model_params
                     response_future = stub.rpc_XGBoosterLoadModel.future(remote_pb2.LoadModelParamsRequest(
-                        load_model_params=load_model_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterDumpModelEx:
-                    dump_model_params = self._params.dump_model_params 
                     response_future = stub.rpc_XGBoosterDumpModelEx.future(remote_pb2.DumpModelParamsRequest(
-                        dump_model_params=dump_model_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterDumpModelExWithFeatures:
-                    dump_model_with_features_params = self._params.dump_model_with_features_params
                     response_future = stub.rpc_XGBoosterDumpModelExWithFeatures.future(remote_pb2.DumpModelWithFeaturesParamsRequest(
-                        dump_model_with_features_params=dump_model_with_features_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterGetModelRaw:
-                    model_raw_params = self._params.model_raw_params
                     response_future = stub.rpc_XGBoosterGetModelRaw.future(remote_pb2.ModelRawParamsRequest(
-                        model_raw_params=model_raw_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGDMatrixNumRow:
-                    name = self._params.name
                     response_future = stub.rpc_XGDMatrixNumRow.future(remote_pb2.NumRowRequest(
-                        name=name,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGDMatrixNumCol:
-                    name = self._params.name
                     response_future = stub.rpc_XGDMatrixNumCol.future(remote_pb2.NumColRequest(
-                        name=name,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,
                         sig_lengths=sig_lengths
                         ))
                 elif self._func == remote_api.XGBoosterPredict:
-                    predict_params = self._params.predict_params
                     response_future = stub.rpc_XGBoosterPredict.future(remote_pb2.PredictParamsRequest(
-                        predict_params=predict_params,
+                        params=self._request.params,
                         seq_num=seq_num,
                         signers=signers,
                         signatures=signatures,

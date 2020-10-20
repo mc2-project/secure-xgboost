@@ -156,12 +156,11 @@ message DMatrixAttrs {
     repeated string filenames = 1;
     repeated string usernames = 2;
     uint32 silent = 3;
-    string username = 4; // [deprecated] moved to DMatrixAttrsRequest
 }
 
 // Wrapper around DMatrixAttrs to include sequence number
 message DMatrixAttrsRequest {
-    DMatrixAttrs attrs = 1;
+    DMatrixAttrs params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -177,12 +176,11 @@ message DMatrixAttrsRequest {
 message BoosterAttrs {
     repeated string cache = 1;
     uint64 length = 2;
-    string username = 3; // [deprecated] moved to BoosterAttrsRequest
 }
 
 // Wrapper around BoosterAttrs to include sequence number
 message BoosterAttrsRequest {
-    BoosterAttrs attrs = 1;
+    BoosterAttrs params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -199,12 +197,11 @@ message BoosterParam {
     string booster_handle = 1;
     string key = 2;
     string value = 3;
-    string username = 4; // [deprecated] moved to BoosterParamRequest
 }
 
 // Wrapper around BoosterParam to include sequence number
 message BoosterParamRequest {
-    BoosterParam booster_param = 1;
+    BoosterParam params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -221,11 +218,10 @@ message BoosterUpdateParams {
     string booster_handle = 1;
     string dtrain_handle = 2;
     uint32 iteration = 3;
-    string username = 4; // [deprecated] moved to BoosterUpdateParamsRequest
 }
 
 message BoosterUpdateParamsRequest {
-    BoosterUpdateParams booster_update_params = 1;
+    BoosterUpdateParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -242,9 +238,8 @@ message BoosterEvalSetParams {
     string handle = 1;
     repeated Pair evals = 2;
     uint32 iteration = 3;
-    string username = 4;
-    numproto.protobuf.NDArray signature = 5;
-    uint32 sig_len = 6;
+    numproto.protobuf.NDArray signature = 4;
+    uint32 sig_len = 5;
 }
 
 // Params for prediction
@@ -254,12 +249,11 @@ message PredictParams {
     uint32 option_mask  = 3;
     uint32 ntree_limit = 4;
     uint32 training = 5;
-    string username = 6; // [deprecated] moved to PredictParamsRequest
 }
 
 // Wrapper around PredictParams to include sequence number
 message PredictParamsRequest {
-    PredictParams predict_params = 1;
+    PredictParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -275,12 +269,11 @@ message PredictParamsRequest {
 message SaveModelParams {
     string booster_handle = 1;
     string filename = 2;
-    string username = 3; // [deprecated]  moved to SaveModelParamsRequest
 }
 
 // Wrapper around SaveModelParams to include sequence number
 message SaveModelParamsRequest {
-    SaveModelParams save_model_params = 1;
+    SaveModelParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -296,12 +289,11 @@ message SaveModelParamsRequest {
 message LoadModelParams {
     string booster_handle = 1;
     string filename = 2;
-    string username = 3;
 }
 
 // Wrapper around LoadModelParams to include sequence number
 message LoadModelParamsRequest {
-    LoadModelParams load_model_params = 1;
+    LoadModelParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -319,12 +311,11 @@ message DumpModelParams {
     string fmap = 2;
     uint32 with_stats = 3;
     string dump_format = 4;
-    string username = 5;
 }
 
 // Wrapper around DumpModelParams to include sequence number
 message DumpModelParamsRequest {
-    DumpModelParams dump_model_params = 1;
+    DumpModelParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -344,11 +335,10 @@ message DumpModelWithFeaturesParams {
     repeated string ftype = 4;
     uint32 with_stats = 5;
     string dump_format = 6;
-    string username = 7;
 }
 
 message DumpModelWithFeaturesParamsRequest {
-    DumpModelWithFeaturesParams dump_model_with_features_params = 1;
+    DumpModelWithFeaturesParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -363,11 +353,10 @@ message DumpModelWithFeaturesParamsRequest {
 // Params for dump model
 message ModelRawParams {
     string booster_handle = 1;
-    string username = 2;
 }
 
 message ModelRawParamsRequest {
-    ModelRawParams model_raw_params = 1;
+    ModelRawParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -394,9 +383,11 @@ message Pair {
     string y = 2;
 }
 
-// Object handle
-// FIXME: username not required for all names
-// FIXME: status only required for returned values
+message NameRequestParams {
+    // Name that the server assigned the handle
+    string name = 1;
+}
+
 message Name {
     // Name that the server assigned the handle
     string name = 1;
@@ -408,7 +399,7 @@ message Name {
 }
 
 message NumColRequest {
-    Name name = 1;
+    NameRequestParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;
@@ -421,7 +412,7 @@ message NumColRequest {
 }
 
 message NumRowRequest {
-    Name name = 1;
+    NameRequestParams params = 1;
     SequenceNumber seq_num = 2;
     string username = 3;
     numproto.protobuf.NDArray signature = 4;

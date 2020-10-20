@@ -538,7 +538,7 @@ class DMatrix(object):
                             usernames=usernames,
                             silent=silent)
                         seq_num = get_seq_num_proto() 
-                        response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrsRequest(attrs=dmatrix_attrs,
+                        response = _check_remote_call(stub.rpc_XGDMatrixCreateFromEncryptedFile(remote_pb2.DMatrixAttrsRequest(params=dmatrix_attrs,
                                                                                                                                 seq_num=seq_num,
                                                                                                                                 username=_CONF["current_user"],
                                                                                                                                 signature=sig,
@@ -990,9 +990,9 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                name_proto = remote_pb2.Name(name=self.handle.value)
+                name_proto = remote_pb2.NameRequestParams(name=self.handle.value)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.NumRowRequest(name=name_proto, seq_num=seq_num, username=_CONF["current_user"],
+                response = _check_remote_call(stub.rpc_XGDMatrixNumRow(remote_pb2.NumRowRequest(params=name_proto, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
                 out_sig = proto_to_pointer(response.signature)
                 out_sig_length = c_bst_ulong(response.sig_len)
@@ -1035,9 +1035,9 @@ class DMatrix(object):
         if channel_addr:
             with grpc.insecure_channel(channel_addr) as channel:
                 stub = remote_pb2_grpc.RemoteStub(channel)
-                name_proto = remote_pb2.Name(name=self.handle.value)
+                name_proto = remote_pb2.NameRequestParams(name=self.handle.value)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(name=name_proto, seq_num=seq_num, username=_CONF["current_user"],
+                response = _check_remote_call(stub.rpc_XGDMatrixNumCol(remote_pb2.NumColRequest(params=name_proto, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                 signature=sig, sig_len=sig_len)))
                 out_sig = proto_to_pointer(response.signature)
                 out_sig_length = c_bst_ulong(response.sig_len)
@@ -1222,7 +1222,7 @@ class Booster(object):
                     cache=cache_handles,
                     length=len(cache))
                 seq_num = get_seq_num_proto()
-                response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrsRequest(attrs=booster_attrs, seq_num=seq_num, username=_CONF["current_user"],
+                response = _check_remote_call(stub.rpc_XGBoosterCreate(remote_pb2.BoosterAttrsRequest(params=booster_attrs, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                       signature=sig, sig_len=sig_len)))
             self.handle = c_str(response.name)
             out_sig = proto_to_pointer(response.signature)
@@ -1406,7 +1406,7 @@ class Booster(object):
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     booster_param = remote_pb2.BoosterParam(booster_handle=self.handle.value, key=key, value=str(val)) 
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParamRequest(booster_param=booster_param, seq_num=seq_num, username=_CONF["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterSetParam(remote_pb2.BoosterParamRequest(params=booster_param, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                             signature=sig, sig_len=sig_len)))
                     out_sig = proto_to_pointer(response.signature)
                     out_sig_length = c_bst_ulong(response.sig_len)
@@ -1454,7 +1454,7 @@ class Booster(object):
                                                                            dtrain_handle=dtrain.handle.value,
                                                                            iteration=iteration)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParamsRequest(booster_update_params=booster_update_params, seq_num=seq_num, username=_CONF["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterUpdateOneIter(remote_pb2.BoosterUpdateParamsRequest(params=booster_update_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                         signature=sig, sig_len=sig_len)))
                     out_sig = proto_to_pointer(response.signature)
                     out_sig_length = c_bst_ulong(response.sig_len)
@@ -1690,7 +1690,7 @@ class Booster(object):
                     training=training,
                     username=username)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(predict_params=predict_params, seq_num=seq_num, username=_CONF["current_user"],
+                response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(params=predict_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                         signature=sig, sig_len=sig_len)))
                 # List of list of predictions
                 enc_preds_serialized_list = response.predictions
@@ -1867,7 +1867,7 @@ class Booster(object):
                         filename=fname,
                         username=username)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(save_model_params=save_model_params, seq_num=seq_num, username=_CONF["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(params=save_model_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                 signature=sig, sig_len=sig_len)))
                     out_sig = proto_to_pointer(response.signature)
                     out_sig_length = c_bst_ulong(response.sig_len)
@@ -1917,7 +1917,7 @@ class Booster(object):
                 stub = remote_pb2_grpc.RemoteStub(channel)
                 model_raw_params = remote_pb2.ModelRawParams(booster_handle=self.handle.value)
                 seq_num = get_seq_num_proto() 
-                response = _check_remote_call(stub.rpc_XGBoosterGetModelRawParams(model_raw_params=model_raw_params, seq_num=seq_num, username=username,
+                response = _check_remote_call(stub.rpc_XGBoosterGetModelRawParams(params=model_raw_params, seq_num=seq_num, username=username,
                                                                                   signature=sig, sig_len=sig_len))
                 cptr = from_pystr_to_cstr(list(response.sarr))
                 length = c_bst_ulong(response.length)
@@ -1981,7 +1981,7 @@ class Booster(object):
                         filename=fname,
                         username=username)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParamsRequest(load_model_params=load_model_params,
+                    response = _check_remote_call(stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParamsRequest(params=load_model_params,
                                                                                                                 seq_num=seq_num,
                                                                                                                 username=_CONF["current_user"],
                                                                                                                 signature=sig,
@@ -2097,7 +2097,7 @@ class Booster(object):
                         dump_format=dump_format)
                     seq_num = get_seq_num_proto()
                     response = _check_remote_call(stub.rpc_XGBoosterDumpModelExWithFeatures(remote_pb2.DumpModelWithFeaturesParamsRequest(
-                        dump_model_with_features_params=dump_model_with_features_params, seq_num=seq_num, username=_CONF["current_user"],
+                        params=dump_model_with_features_params, seq_num=seq_num, username=_CONF["current_user"],
                         signature=sig, sig_len=sig_len)))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
@@ -2147,7 +2147,7 @@ class Booster(object):
                         with_stats=with_stats,
                         dump_format=dump_format)
                     seq_num = get_seq_num_proto() 
-                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParamsRequest(dump_model_params=dump_model_params, seq_num=seq_num, username=_CONF["current_user"],
+                    response = _check_remote_call(stub.rpc_XGBoosterDumpModelEx(remote_pb2.DumpModelParamsRequest(params=dump_model_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                   signature=sig, sig_len=sig_len)))
                     sarr = from_pystr_to_cstr(list(response.sarr))
                     length = c_bst_ulong(response.length)
@@ -2815,11 +2815,11 @@ class RemoteAPI:
 
 
     def XGBoosterPredict(request, signers, signatures, sig_lengths):
-        booster_handle = request.predict_params.booster_handle
-        dmatrix_handle = request.predict_params.dmatrix_handle
-        option_mask = request.predict_params.option_mask
-        ntree_limit = request.predict_params.ntree_limit
-        training = request.predict_params.training
+        booster_handle = request.params.booster_handle
+        dmatrix_handle = request.params.dmatrix_handle
+        option_mask = request.params.option_mask
+        ntree_limit = request.params.ntree_limit
+        training = request.params.training
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2848,9 +2848,9 @@ class RemoteAPI:
         return preds, length.value, out_sig, out_sig_len.value
         
     def XGBoosterUpdateOneIter(request, signers, signatures, sig_lengths):
-        booster_handle = request.booster_update_params.booster_handle
-        dtrain_handle = request.booster_update_params.dtrain_handle
-        iteration = request.booster_update_params.iteration
+        booster_handle = request.params.booster_handle
+        dtrain_handle = request.params.dtrain_handle
+        iteration = request.params.iteration
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2873,8 +2873,8 @@ class RemoteAPI:
         return out_sig, out_sig_len.value
 
     def XGBoosterCreate(request, signers, signatures, sig_lengths):
-        cache = list(request.attrs.cache)
-        length = request.attrs.length
+        cache = list(request.params.cache)
+        length = request.params.length
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2899,9 +2899,9 @@ class RemoteAPI:
 
 
     def XGBoosterSetParam(request, signers, signatures, sig_lengths):
-        booster_handle = request.booster_param.booster_handle
-        key = request.booster_param.key
-        value = request.booster_param.value
+        booster_handle = request.params.booster_handle
+        key = request.params.key
+        value = request.params.value
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2924,9 +2924,9 @@ class RemoteAPI:
         return out_sig, out_sig_len.value
 
     def XGDMatrixCreateFromEncryptedFile(request, signers, signatures, sig_lengths):
-        filenames = list(request.attrs.filenames)
-        usernames = list(request.attrs.usernames)
-        silent = request.attrs.silent
+        filenames = list(request.params.filenames)
+        usernames = list(request.params.usernames)
+        silent = request.params.silent
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2953,9 +2953,9 @@ class RemoteAPI:
 
 
     def XGBoosterSaveModel(request, signers, signatures, sig_lengths):
-        booster_handle = request.save_model_params.booster_handle
-        filename = request.save_model_params.filename
-        username = request.save_model_params.username
+        booster_handle = request.params.booster_handle
+        filename = request.params.filename
+        username = request.params.username
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -2977,8 +2977,8 @@ class RemoteAPI:
         return out_sig, out_sig_len.value
 
     def XGBoosterLoadModel(request, signers, signatures, sig_lengths):
-        booster_handle = request.load_model_params.booster_handle
-        filename = request.load_model_params.filename
+        booster_handle = request.params.booster_handle
+        filename = request.params.filename
         username = request.username
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
@@ -3002,10 +3002,10 @@ class RemoteAPI:
 
     # TODO test this
     def XGBoosterDumpModelEx(request, signers, signatures, sig_lengths):
-        booster_handle = request.dump_model_params.booster_handle
-        fmap = request.dump_model_params.fmap
-        with_stats = request.dump_model_params.with_stats
-        dump_format = request.dump_model_params.dump_format
+        booster_handle = request.params.booster_handle
+        fmap = request.params.fmap
+        with_stats = request.params.with_stats
+        dump_format = request.params.dump_format
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -3033,12 +3033,12 @@ class RemoteAPI:
         return length.value, from_cstr_to_pystr(sarr, length), out_sig, out_sig_len.value
 
     def XGBoosterDumpModelExWithFeatures(request, signers, signatures, sig_lengths):
-        booster_handle = request.dump_model_with_features_params.booster_handle
-        flen = request.dump_model_with_features_params.flen
-        fname = request.dump_model_with_features_params.fname
-        ftype = request.dump_model_with_features_params.ftype
-        with_stats = request.dump_model_with_features_params.with_stats
-        dump_format = request.dump_model_with_features_params.dump_format
+        booster_handle = request.params.booster_handle
+        flen = request.params.flen
+        fname = request.params.fname
+        ftype = request.params.ftype
+        with_stats = request.params.with_stats
+        dump_format = request.params.dump_format
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -3069,7 +3069,7 @@ class RemoteAPI:
 
     # TODO test this
     def XGBoosterGetModelRaw(request, signers, signatures, sig_lengths):
-        booster_handle = request.model_raw_params.booster_handle
+        booster_handle = request.params.booster_handle
         username = request.username
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
@@ -3095,7 +3095,7 @@ class RemoteAPI:
         return length.value, from_cstr_to_pystr(sarr, length), out_sig, out_sig_len.value
 
     def XGDMatrixNumCol(request, signers, signatures, sig_lengths):
-        dmatrix_handle = request.name.name
+        dmatrix_handle = request.params.name
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
@@ -3118,7 +3118,7 @@ class RemoteAPI:
         return ret.value, out_sig, out_sig_len.value
 
     def XGDMatrixNumRow(request, signers, signatures, sig_lengths):
-        dmatrix_handle = request.name.name
+        dmatrix_handle = request.params.name
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr        
