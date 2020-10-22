@@ -483,7 +483,7 @@ class DMatrix(object):
 
         for user, path in data_dict.items():
             usernames.append(user)
-            data.append(path)
+            data.append("/home/mc2/risecamp/mc2/tutorial/central/" + path)
         # Sort by username
         usernames, data = (list(x) for x in zip(*sorted(zip(usernames, data), key=lambda pair: pair[0])))
 
