@@ -1687,8 +1687,7 @@ class Booster(object):
                     dmatrix_handle=data.handle.value,
                     option_mask=option_mask,
                     ntree_limit=ntree_limit,
-                    training=training,
-                    username=username)
+                    training=training)
                 seq_num = get_seq_num_proto() 
                 response = _check_remote_call(stub.rpc_XGBoosterPredict(remote_pb2.PredictParamsRequest(params=predict_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                         signature=sig, sig_len=sig_len)))
@@ -1864,8 +1863,7 @@ class Booster(object):
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     save_model_params = remote_pb2.SaveModelParams(
                         booster_handle=self.handle.value,
-                        filename=fname,
-                        username=username)
+                        filename=fname)
                     seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterSaveModel(remote_pb2.SaveModelParamsRequest(params=save_model_params, seq_num=seq_num, username=_CONF["current_user"],
                                                                                                                 signature=sig, sig_len=sig_len)))
@@ -1978,8 +1976,7 @@ class Booster(object):
                     stub = remote_pb2_grpc.RemoteStub(channel)
                     load_model_params = remote_pb2.LoadModelParams(
                         booster_handle=self.handle.value,
-                        filename=fname,
-                        username=username)
+                        filename=fname)
                     seq_num = get_seq_num_proto() 
                     response = _check_remote_call(stub.rpc_XGBoosterLoadModel(remote_pb2.LoadModelParamsRequest(params=load_model_params,
                                                                                                                 seq_num=seq_num,
@@ -2955,7 +2952,6 @@ class RemoteAPI:
     def XGBoosterSaveModel(request, signers, signatures, sig_lengths):
         booster_handle = request.params.booster_handle
         filename = request.params.filename
-        username = request.params.username
         nonce = proto_to_pointer(request.seq_num.nonce)
         nonce_size = request.seq_num.nonce_size
         nonce_ctr = request.seq_num.nonce_ctr
