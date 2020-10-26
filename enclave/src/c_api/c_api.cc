@@ -89,6 +89,8 @@ int get_remote_report_with_pubkey_and_nonce(
     size_t* key_size,
     uint8_t** nonce,
     size_t* nonce_size,
+    char*** client_list,
+    size_t* client_list_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
 
@@ -98,6 +100,7 @@ int get_remote_report_with_pubkey_and_nonce(
   int ret = 1;
   uint8_t* public_key = EnclaveContext::getInstance().get_public_key();
   uint8_t* enclave_nonce = EnclaveContext::getInstance().get_nonce();
+  std::vector<std::string> usernames_list = EnclaveContext::getInstance().get_clients();
 
 #ifdef __ENCLAVE_SIMULATION__
   key_buf = (uint8_t*)oe_host_malloc(CIPHER_PK_SIZE);
@@ -119,6 +122,20 @@ int get_remote_report_with_pubkey_and_nonce(
 
   *nonce = nonce_buf;
   *nonce_size = CIPHER_IV_SIZE;
+
+  char** name_list_buf = (char**) oe_host_malloc(usernames_list.size());
+  for (int i = 0; i < usernames_list.size(); i++) {
+    std::string name = usernames_list[i];
+    char* name_buf = (char*) oe_host_malloc(name.length() + 1);
+    if (name_buf == NULL) {
+      ret = OE_OUT_OF_MEMORY;
+      return ret;
+    }
+    memcpy(name_buf, name.c_str(), name.length() + 1);
+    name_list_buf[i] = name_buf;
+  }
+  *client_list = name_list_buf;
+  *client_list_size = usernames_list.size();
 
   ret = 0;
 

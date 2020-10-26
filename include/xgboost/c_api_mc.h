@@ -1012,6 +1012,8 @@ XGB_DLL int get_remote_report_with_pubkey_and_nonce(
     size_t* key_size,
     uint8_t** nonce,
     size_t* nonce_size,
+    char*** client_list,
+    size_t* client_list_size,
     uint8_t** remote_report,
     size_t* remote_report_size);
 

@@ -2628,6 +2628,8 @@ def attest(verify=True):
     pem_key_size = ctypes.c_size_t()
     nonce = ctypes.POINTER(ctypes.c_uint8)()
     nonce_size = ctypes.c_size_t()
+    client_list = ctypes.POINTER(ctypes.c_char_p)()
+    client_list_size = ctypes.c_size_t()
     remote_report = ctypes.POINTER(ctypes.c_uint8)()
     remote_report_size = ctypes.c_size_t()
 
@@ -2642,6 +2644,8 @@ def attest(verify=True):
         pem_key_size = ctypes.c_size_t(response.pem_key_size)
         nonce = proto_to_ndarray(response.nonce).ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
         nonce_size = ctypes.c_size_t(response.nonce_size)
+        client_list = from_pystr_to_cstr(list(response.client_list))
+        client_list_size = ctypes.c_size_t(response.client_list_size)
         remote_report = proto_to_ndarray(response.remote_report).ctypes.data_as(ctypes.POINTER(ctypes.c_uint8))
         remote_report_size = ctypes.c_size_t(response.remote_report_size)
 
@@ -2649,6 +2653,7 @@ def attest(verify=True):
         _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(
             ctypes.byref(pem_key), ctypes.byref(pem_key_size),
             ctypes.byref(nonce), ctypes.byref(nonce_size),
+            ctypes.byref(client_list), ctypes.byref(client_list_size),
             ctypes.byref(remote_report), ctypes.byref(remote_report_size)))
 
     # Verify attestation report
@@ -2658,6 +2663,11 @@ def attest(verify=True):
             nonce, nonce_size,
             from_pystr_to_cstr(_CONF["client_list"]), len(_CONF["client_list"]),
             remote_report, remote_report_size))
+    # Verify client names match
+    else:
+        enclave_client_list = sorted(from_cstr_to_pystr(client_list, client_list_size))
+        if enclave_client_list != _CONF["client_list"]:
+            raise XGBoostError("Client list doesn't match")
 
     _CONF["enclave_pk"] = pem_key
     _CONF["enclave_pk_size"] = pem_key_size
@@ -2778,17 +2788,23 @@ class RemoteAPI:
         remote_report_size = ctypes.c_size_t()
         nonce = ctypes.POINTER(ctypes.c_uint)()
         nonce_size = ctypes.c_size_t()
+        client_list = ctypes.POINTER(ctypes.c_char_p)()
+        client_list_size = ctypes.c_size_t()
         _check_call(_LIB.get_remote_report_with_pubkey_and_nonce(
             ctypes.byref(pem_key),
             ctypes.byref(key_size),
             ctypes.byref(nonce),
             ctypes.byref(nonce_size),
+            ctypes.byref(client_list),
+            ctypes.byref(client_list_size),
             ctypes.byref(remote_report),
             ctypes.byref(remote_report_size)))
 
         key_size = key_size.value
         nonce_size = nonce_size.value
         remote_report_size = remote_report_size.value
+        client_list = from_cstr_to_pystr(client_list, client_list_size)
+        client_list_size = client_list_size.value
 
         pem_key = ctypes2numpy(pem_key, key_size, np.uint32)
         pem_key = ndarray_to_proto(pem_key)
@@ -2797,7 +2813,7 @@ class RemoteAPI:
         remote_report = ctypes2numpy(remote_report, remote_report_size, np.uint32)
         remote_report = ndarray_to_proto(remote_report)
 
-        return pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size
+        return pem_key, key_size, nonce, nonce_size, client_list, client_list_size, remote_report, remote_report_size
 
 
     def add_client_key_with_certificate(request):

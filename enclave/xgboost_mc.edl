@@ -314,6 +314,8 @@ enclave {
                 [out] size_t *key_size,
                 [out] uint8_t **nonce,
                 [out] size_t *nonce_size,
+                [out] char ***client_list,
+                [out] size_t *client_list_size,
                 [out] uint8_t **remote_report,
                 [out] size_t  *remote_report_size);
 

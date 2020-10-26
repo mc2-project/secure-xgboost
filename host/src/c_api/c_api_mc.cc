@@ -550,9 +550,11 @@ XGB_DLL int get_remote_report_with_pubkey_and_nonce(
     size_t* key_size,
     uint8_t** nonce,
     size_t* nonce_size,
+    char*** client_list,
+    size_t* client_list_size,
     uint8_t** remote_report,
     size_t* remote_report_size) {
-  safe_ecall(enclave_get_remote_report_with_pubkey_and_nonce(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size));
+  safe_ecall(enclave_get_remote_report_with_pubkey_and_nonce(Enclave::getInstance().getEnclave(), &Enclave::getInstance().enclave_ret, pem_key, key_size, nonce, nonce_size, client_list, client_list_size, remote_report, remote_report_size));
 }
 
 bool verify_mrsigner(

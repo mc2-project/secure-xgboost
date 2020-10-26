@@ -109,14 +109,20 @@ message Report {
   // Size of remote report
   uint32 remote_report_size = 4;
 
+  // List of client names
+  repeated string client_list = 5;
+
+  // Size of client list
+  uint32 client_list_size = 6;
+
   // Status of call
-  Status status = 5;
+  Status status = 7;
 
   // Session nonce
-  numproto.protobuf.NDArray nonce = 6;
+  numproto.protobuf.NDArray nonce = 8;
 
   // Size of nonce
-  uint32 nonce_size = 7;
+  uint32 nonce_size = 9;
 
 }
 
