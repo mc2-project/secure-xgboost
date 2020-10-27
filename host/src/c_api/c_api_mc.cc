@@ -698,7 +698,7 @@ bool attest_remote_report(
   // 3) Validate the report data
   //    The report_data has the hash value of the report data
   if (compute_sha256(data, data_size, sha256) != 0) {
-    LOG(FATAL) << "Remote attestation failed. Report data hash validation failed.";
+    LOG(FATAL) << "Remote attestation failed. Report data hash validation failed. There is likely a client list mismatch.";
   }
 
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
