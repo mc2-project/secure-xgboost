@@ -2611,7 +2611,7 @@ def init_server(enclave_image=None, client_list=[], log_verbosity=0):
     print("Launched enclave")
 
 
-def attest(verify=True):
+def attest(verify=False):
     # TODO(rishabh): user-defined mrsigner/mrenclave for verification
     # TODO(rishabh): Handle verification failures
     """
