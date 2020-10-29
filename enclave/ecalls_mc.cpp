@@ -452,10 +452,12 @@ int enclave_get_remote_report_with_pubkey_and_nonce(
         size_t* key_size,
         uint8_t** nonce,
         size_t* nonce_size,
+        char*** client_list,
+        size_t* client_list_size,
         uint8_t** remote_report,
         size_t* remote_report_size) {
   LOG(DEBUG) << "Ecall: enclave_get_remote_report_with_pubkey_and_nonce";
-  return get_remote_report_with_pubkey_and_nonce(pem_key, key_size, nonce, nonce_size, remote_report, remote_report_size);
+  return get_remote_report_with_pubkey_and_nonce(pem_key, key_size, nonce, nonce_size, client_list, client_list_size, remote_report, remote_report_size);
 }
 
 int enclave_add_client_key_with_certificate(
