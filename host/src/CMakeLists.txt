@@ -38,11 +38,15 @@ endif (PLUGIN_DENSE_PARSER)
 if (CONSENSUS)
     add_custom_command(OUTPUT xgboost_mc_u.h xgboost_mc_u.c xgboost_mc_args.h 
         DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl
-        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl)
+        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost_mc.edl
+        --search-path ${OE_INCLUDEDIR} --search-path
+        ${OE_INCLUDEDIR}/openenclave/edl/sgx)
 else()
     add_custom_command(OUTPUT xgboost_u.h xgboost_u.c xgboost_args.h 
         DEPENDS ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl
-        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl)
+        COMMAND openenclave::oeedger8r --untrusted ${CMAKE_SOURCE_DIR}/enclave/xgboost.edl
+        --search-path ${OE_INCLUDEDIR} --search-path
+        ${OE_INCLUDEDIR}/openenclave/edl/sgx)
 endif()
 
 
@@ -56,7 +60,7 @@ else ()
 endif ()
   # add_library(objxgboost STATIC ${CPU_SOURCES} ${PLUGINS_SOURCES})
   # add_library(objxgboost SHARED ${CPU_SOURCES} ${PLUGINS_SOURCES})
-  target_link_libraries(objxgboost openenclave::oehostapp ${LINKED_LIBRARIES_PRIVATE})
+  target_link_libraries(objxgboost openenclave::oehost ${LINKED_LIBRARIES_PRIVATE})
 
 target_include_directories(objxgboost
   PRIVATE
@@ -120,4 +124,4 @@ endif (USE_OPENMP)
 msvc_use_static_runtime()
 
 #-- End object library
-# target_link_libraries(objxgboost openenclave::oehostapp)
+# target_link_libraries(objxgboost openenclave::oehost)

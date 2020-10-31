@@ -1,6 +1,10 @@
 enclave {
+    from "openenclave/edl/syscall.edl" import *;
+    from "platform.edl" import *;
+
     include "xgboost/c_api.h"
     include "rabit/c_api.h"
+
     trusted {
         public void enclave_init(
                 [in, count=num_users] char **usernames,
