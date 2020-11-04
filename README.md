@@ -19,6 +19,7 @@ This project is currently under development as part of the broader [**MC<sup>2</
 * [Installation](#installation)
 * [Usage](#usage)
 * [Documentation](#documentation)
+* [Additional Resources](#additional-resources)
 * [Getting Involved](#getting-involved)
 
 ## Background
@@ -133,6 +134,12 @@ predictions, num_preds = booster.predict(dtest)
 
 ## Documentation
 For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
+
+## Additional Resources
+* [CCS PPMLP Paper](https://arxiv.org/pdf/2010.02524.pdf)
+* [Blog Post](https://towardsdatascience.com/secure-collaborative-xgboost-on-encrypted-data-ac7bc0ec7741)
+* RISE Camp 2020 [Tutorial](https://github.com/mc2-project/risecamp/tree/risecamp2020) and [Walkthrough](https://youtu.be/-kK-YCjqABs?t=312)
+* [Docker image for development](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9)
 
 ## Getting Involved
 * mc2-dev@googlegroups.com: For questions and general discussion
