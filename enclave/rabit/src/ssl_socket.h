@@ -11,7 +11,6 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/error.h"
-#include "mbedtls/debug.h"
 
 #include <memory>
 #include <string>
@@ -28,8 +27,6 @@ static void print_err(int error_code) {
   mbedtls_strerror(error_code, err_buf, LEN);
   LOG(FATAL) << err_buf;
 }
-
-#define DEBUG_LEVEL 0
 
 static void my_debug( void *ctx, int level,
     const char *file, int line,

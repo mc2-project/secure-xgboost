@@ -112,6 +112,14 @@ endif(LVI_MITIGATION)
 
 set_default_configuration_release()
 
+set(OE_MIN_VERSION 0.12.0)
+if (LVI_MITIGATION)
+    # Configure the cmake to use customized compilation toolchain.
+    # This package has to be added before `project()`.
+    find_package(OpenEnclave-LVI-Mitigation ${OE_MIN_VERSION} CONFIG REQUIRED)
+endif()
+find_package(OpenEnclave ${OE_MIN_VERSION} CONFIG REQUIRED)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/host)
 add_subdirectory(${PROJECT_SOURCE_DIR}/enclave)
 
