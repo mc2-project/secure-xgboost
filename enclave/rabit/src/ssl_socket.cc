@@ -51,7 +51,6 @@ bool SSLTcpSocket::ConfigureClientSSL() {
   mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 
   mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
-  mbedtls_debug_set_threshold(DEBUG_LEVEL);
 
   // set up SSL context
   if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
@@ -115,7 +114,6 @@ bool SSLTcpSocket::ConfigureServerSSL() {
   mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
 
   mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
-  mbedtls_debug_set_threshold(DEBUG_LEVEL);
 
   if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
     print_err(ret);
