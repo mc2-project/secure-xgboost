@@ -141,7 +141,7 @@ For additional tutorials and more details on build parameters and usage, please 
 * [CCS PPMLP Paper](https://arxiv.org/pdf/2010.02524.pdf)
 * [Blog Post](https://towardsdatascience.com/secure-collaborative-xgboost-on-encrypted-data-ac7bc0ec7741)
 * RISE Camp 2020 [Tutorial](https://github.com/mc2-project/risecamp/tree/risecamp2020) and [Walkthrough](https://youtu.be/-kK-YCjqABs?t=312)
-* [Docker image for development](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9)
+* [Docker image for development](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.12)
 
 ## Getting Involved
 * mc2-dev@googlegroups.com: For questions and general discussion

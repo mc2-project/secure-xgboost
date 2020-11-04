@@ -8,6 +8,8 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 2. Next install the Secure XGBoost dependencies
 3. Then build Secure XGBoost from source. 
 
+Alternatively, if you want to run Secure XGBoost in simulation mode locally, you can use the `provided Docker image <https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.12>`.
+
 .. Please refer to the :doc:`Troubleshooting <./troubleshoot.rst>` section first if you have any problem
 Please refer to the :ref:`troubleshoot` section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
