@@ -52,10 +52,7 @@ print("\nModel Predictions: ")
 predictions, num_preds = booster.predict(dtest, decrypt=False)
 
 # Decrypt predictions
-pre = booster.decrypt_predictions(predictions, num_preds)
-
-for i in range(10):
-    print(pre[i])
+print(booster.decrypt_predictions(predictions, num_preds))
 
 # Get fscores of model
 print("\nModel Feature Importance: ")
