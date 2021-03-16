@@ -55,6 +55,9 @@ def run(channel_addr, sym_key_file, priv_key_file, cert_file):
 
     booster.save_model(HOME_DIR + "demo/python/remote-control/client/modelfile.model")
 
+    booster = xgb.Booster()
+    booster.load_model(HOME_DIR + "demo/python/remote-control/client/modelfile.model")
+
     # Get encrypted predictions
     print("\nModel Predictions: ")
     predictions, num_preds = booster.predict(dtest, decrypt=False)
