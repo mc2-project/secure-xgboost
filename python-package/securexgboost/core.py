@@ -3007,7 +3007,7 @@ class RemoteAPI:
             ctypes.c_uint32(nonce_ctr),
             ctypes.byref(out_sig),
             ctypes.byref(out_sig_len),
-            signers,
+            from_pystr_to_cstr(signers),
             c_signatures,
             c_sig_lengths))
         return out_sig, out_sig_len.value
