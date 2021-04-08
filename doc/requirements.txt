@@ -10,3 +10,4 @@ numproto
 sklearn
 grpcio
 grpcio-tools
+requests
