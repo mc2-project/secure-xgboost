@@ -26,6 +26,8 @@ for libfile in libpath['find_lib_path']():
     except ValueError:
         continue
 
+print("Updating protos")
+subprocess.run(["python3", "-m", "grpc_tools.protoc", "-I", "securexgboost/rpc/protos", "--python_out=securexgboost/rpc", "--grpc_python_out=securexgboost/rpc", "securexgboost/rpc/protos/remote.proto", "securexgboost/rpc/protos/ndarray.proto"])
 
 print("Install libxgboost from: %s" % LIB_PATH)
 # Please use setup_pip.py for generating and deploying pip installation
@@ -58,5 +60,3 @@ setup(name='securexgboost',
       python_requires='>=3.4',
       url='https://github.com/dmlc/xgboost')
 
-print("Updating protos")
-subprocess.run(["python3", "-m", "grpc_tools.protoc", "-I", "securexgboost/rpc/protos", "--python_out=securexgboost/rpc", "--grpc_python_out=securexgboost/rpc", "securexgboost/rpc/protos/remote.proto", "securexgboost/rpc/protos/ndarray.proto"])
