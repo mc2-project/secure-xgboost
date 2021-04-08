@@ -53,7 +53,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install numpy pandas sklearn numproto grpcio grpcio-tools requests
-          pip install furo mock numpydoc recommonmark sphinx==3.0.3 sphinx-argparse sphinx-copybutton sphinxcontrib-spelling
+          pip install -r doc/requirements.txt
 
       - name: Install Secure XGBoost Python package
         run: |
