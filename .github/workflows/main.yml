@@ -3,8 +3,8 @@ name: Continous Integration
 # Run this workflow every time a new commit pushed to your repository
 on:
   push:
-    branches: 
-      - master
+    # branches: 
+    #   - master
   pull_request:
     branches:
       - master
