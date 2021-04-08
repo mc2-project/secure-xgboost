@@ -44,7 +44,6 @@ jobs:
       - name: Build C++
         run: | 
           # Build C++ source
-          cd main
           cd src
           mkdir build
           cd build
@@ -65,7 +64,7 @@ jobs:
 
       - name: Build docs
         run: |
-          cd main/docs
+          cd docs
           make html
 
       - name: Commit documentation changes
