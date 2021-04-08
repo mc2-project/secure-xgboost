@@ -1,0 +1,380 @@
+<!doctype html>
+<html class="no-js">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="author" title="About these documents" href="about.html" /><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Get Started with Secure XGBoost" href="get_started.html" /><link rel="prev" title="About Secure XGBoost" href="about.html" />
+
+    <meta name="generator" content="sphinx-3.0.3, furo 2021.03.20.beta31"/>
+        <title>Installation Guide - Secure XGBoost documentation</title>
+      <link rel="stylesheet" href="_static/styles/furo.css?digest=978e1795dfe158b585dda6a8417f6411828bf3ed">
+    <link rel="stylesheet" href="_static/pygments.css">
+    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="_static/pygments_dark.css">
+    
+
+
+<style>
+  :root {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00B0FF;
+  --color-brand-content: #00B0FF;
+  --color-admonition-background: orange;
+  
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+  }
+
+  /* For allowing end-user-specific overrides */
+  .override-light {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00B0FF;
+  --color-brand-content: #00B0FF;
+  --color-admonition-background: orange;
+  
+  }
+  .override-dark {
+    --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+  }
+</style><link rel="stylesheet" type="text/css" href="_static/custom.css" />
+    <link rel="stylesheet" href="_static/styles/furo-extensions.css?digest=d391b54134226e4196576da3bdb6dddb7e05ba2b"></head>
+  <body dir="">
+    
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke-width="1.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z"/>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="10" y1="12" x2="20" y2="12" />
+      <line x1="6" y1="18" x2="20" y2="18" />
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="feather feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="feather feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Secure XGBoost  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">Secure XGBoost  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html">
+  <input class="sidebar-search" placeholder=Search name="q">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About Secure XGBoost</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started.html">Get Started with Secure XGBoost</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label for="toctree-checkbox-1"><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/jupyter.html">Secure XGBoost in Jupyter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/outsourced.html">Outsourced Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/distributed.html">Distributed Secure XGBoost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/multiclient-distributed.html">Multiclient Outsourced Distributed Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorials/risecamp2020.html">Multiclient Jupyter Tutorial</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="parameter.html">Secure XGBoost Parameters</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="python/index.html">Python package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label for="toctree-checkbox-2"><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="python/python_intro.html">Python Package Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="python/python_api.html">Python API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshoot.html">Troubleshooting</a></li>
+</ul>
+
+</div>
+</div>
+      </div>
+      
+    </div>
+  </aside>
+  <main class="main">
+    <div class="content">
+      <article role="main">
+        <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        </label>
+        <div class="section" id="installation-guide">
+<h1>Installation Guide<a class="headerlink" href="#installation-guide" title="Permalink to this headline">¶</a></h1>
+<p>This page gives instructions on how to build and install Secure XGBoost from scratch. Secure XGBoost has been tested only on Ubuntu 18.04, but it should also work with Ubuntu 16.04. It consists of three steps:</p>
+<ol class="arabic simple">
+<li><p>First install the Open Enclave SDK</p></li>
+<li><p>Next install the Secure XGBoost dependencies</p></li>
+<li><p>Then build Secure XGBoost from source.</p></li>
+</ol>
+<p>Alternatively, if you want to run Secure XGBoost in simulation mode locally, you can use the <a class="reference external" href="https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.12">provided Docker image</a>. If you do so, we suggest cloning Secure XGBoost locally and mounting it to the container’s <code class="docutils literal notranslate"><span class="pre">/root/secure-xgboost/</span></code> directory <a class="reference external" href="https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container">using the -v flag</a>.</p>
+<p>Please refer to the <a class="reference internal" href="troubleshoot.html#troubleshoot"><span class="std std-ref">Troubleshooting</span></a> section first if you have any problem
+during installation. If the instructions do not work for you, please feel free
+to open an issue on <a class="reference external" href="https://github.com/mc2-project/secure-xgboost/issues">GitHub</a>.</p>
+<p><strong>Contents</strong></p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#installing-the-open-enclave-sdk">Installing the Open Enclave SDK</a></p></li>
+<li><p><a class="reference internal" href="#installing-secure-xgboost-dependencies">Installing Secure XGBoost Dependencies</a></p></li>
+<li><p><a class="reference internal" href="#building-secure-xgboost">Building Secure XGBoost</a></p>
+<ul>
+<li><p><a class="reference internal" href="#building-the-targets">Building the Targets</a></p></li>
+<li><p><a class="reference internal" href="#python-package-installation">Python Package Installation</a></p></li>
+</ul>
+</li>
+</ul>
+<div class="section" id="installing-the-open-enclave-sdk">
+<h2>Installing the Open Enclave SDK<a class="headerlink" href="#installing-the-open-enclave-sdk" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Install the Open Enclave SDK (v0.12.0) and the Intel SGX DCAP driver.
+If building on an SGX-enabled machine, follow the instructions <a class="reference external" href="https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md">here</a>.</p>
+<p><strong>Note</strong>: In step 3 of the instructions, make sure that you install Open Enclave version 0.12.0 by specifying the version</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt -y install clang-7 libssl-dev gdb libprotobuf10 libsgx-enclave-common libsgx-enclave-common-dev libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave<span class="o">=</span><span class="m">0</span>.12.0
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You may also build the SDK in “simulation mode” on a machine without SGX support (e.g., for local development and testing). To build in simulation mode, follow the instructions <a class="reference external" href="https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Simulation.md">here</a> instead. Notably, these instructions require that you skip the driver installation step.</p>
+</div>
+</li>
+<li><p>Configure environment variables for Open Enclave SDK for Linux:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /opt/openenclave/share/openenclave/openenclaverc
+</pre></div>
+</div>
+<p>Consider adding this line to your <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code> to make the environment variables persist across sessions.</p>
+</li>
+<li><p>Starting from version 0.8.2, the Open Enclave SDK supports mitigation against the <a class="reference external" href="https://software.intel.com/security-software-guidance/software-guidance/load-value-injection">LVI vulnerability</a> that affects SGX enclaves.</p>
+<p>To enable LVI mitigation, you need to additionally install LVI mitigated versions of the Open Enclave libraries. Follow the instructions for Linux prerequisites described <a class="reference external" href="https://github.com/openenclave/openenclave/tree/0.8.2/samples/helloworld#build-and-run-with-lvi-mitigation">here</a>.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="installing-secure-xgboost-dependencies">
+<h2>Installing Secure XGBoost Dependencies<a class="headerlink" href="#installing-secure-xgboost-dependencies" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Install <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">&gt;=</span> <span class="pre">v3.11</span></code>. E.g., the following commands install <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">v3.15.6</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
+sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix<span class="o">=</span>/usr/local
+</pre></div>
+</div>
+</li>
+<li><p>Install the remaining dependencies.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo apt-get install -y libmbedtls-dev python3-pip
+pip3 install numpy pandas sklearn numproto grpcio grpcio-tools requests
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="building-secure-xgboost">
+<h2>Building Secure XGBoost<a class="headerlink" href="#building-secure-xgboost" title="Permalink to this headline">¶</a></h2>
+<p>Our goal is to build the shared library, along with the enclave:</p>
+<ul class="simple">
+<li><p>On Linux the target library is <code class="docutils literal notranslate"><span class="pre">libxgboost.so</span></code></p></li>
+<li><p>The target enclave is <code class="docutils literal notranslate"><span class="pre">xgboost_enclave.signed</span></code></p></li>
+</ul>
+<p>The minimal building requirement is</p>
+<ul class="simple">
+<li><p>A recent C++ compiler supporting C++11 (g++-4.8 or higher)</p></li>
+<li><p>CMake 3.11 or higher</p></li>
+</ul>
+<div class="section" id="building-the-targets">
+<h3>Building the Targets<a class="headerlink" href="#building-the-targets" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Clone the repository recursively</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone --recursive https://github.com/mc2-project/secure-xgboost.git
+</pre></div>
+</div>
+</li>
+<li><p><strong>Configure the build parameters listed in</strong> <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CLIENT_LIST</span></code>: This is a list of usernames of all parties in the collaboration.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SIGNER_PUB_FILE</span></code>: Path to the file containing the enclave developer’s public key. This is used during remote attestation to authenticate the enclaves.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SIGNER_KEY_FILE</span></code>: Path to the file containing the enclave developer’s private key. This is used to sign the enclave while building it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CA_CERT_FILE</span></code>: Path to the file containing the root certificate. Th enclaves use this certificate to authenticate the clients.</p></li>
+</ul>
+<p>In addition, the following parameters are used by Open Enclave to configure the enclave build.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">OE_DEBUG</span></code>: Set this parameter to 0 to build the enclave in release mode, or 1 to build in debug mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OE_NUM_HEAP_PAGES</span></code>: The amount of heap memory (in pages) committed to the enclave; this is the maximum amount of heap memory available to your enclave application.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OE_NUM_STACK_PAGES</span></code>: The amount of stack memory (in pages) committed to the enclave.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OE_NUM_TCS</span></code>: The number of enclave thread control structures; this is the maximum number of concurrent threads that can execute within the enclave.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OE_PRODUCT_ID</span></code>: Enclave product ID.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OE_SECURITY_VERSION</span></code>: Enclave security version number.</p></li>
+</ul>
+<p>More details on these parameters can be found <a class="reference external" href="https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/buildandsign.md#signing-the-enclave">here</a>.</p>
+<p>We also provide some additional configuration options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LOGGING</span></code>: Set this parameter to <code class="docutils literal notranslate"><span class="pre">ON</span></code> to enable logging within the enclave. This parameter requires <code class="docutils literal notranslate"><span class="pre">OE_DEBUG</span></code> to be set to 1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SIMULATE</span></code>: Set this parameter to <code class="docutils literal notranslate"><span class="pre">ON</span></code> to build the enclave in simulation mode (for local development and testing, in case your machine does not support hardware enclaves). This parameter requires <code class="docutils literal notranslate"><span class="pre">OE_DEBUG</span></code> to be set to 1.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OBLIVIOUS</span></code>: Set this parameter to <code class="docutils literal notranslate"><span class="pre">ON</span></code> to perform model training and inference using data-oblivious algorithms (to mitigate access-pattern based side-channel attacks).</p></li>
+</ul>
+<p>Finally, we also provide options to build the library with LVI mitigation.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">LVI_MITIGATION</span></code>: Set this to <code class="docutils literal notranslate"><span class="pre">ON</span></code> to enable LVI mitigation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LVI_MITIGATION_BINDIR</span></code>: Set this variable to point to the location where you installed the LVI mitigated Open Enclave libraries.</p></li>
+</ul>
+</li>
+<li><p><strong>Build the Secure XGBoost targets</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> secure-xgboost
+mkdir -p build
+
+<span class="nb">pushd</span> build
+cmake ..
+make -j4
+<span class="nb">popd</span>
+</pre></div>
+</div>
+<p>Note that you can pass the configuration parameters as arguments to <code class="docutils literal notranslate"><span class="pre">cmake</span></code> without modifying <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code>. For example, to build with LVI mitigation, if you installed the LVI mitigated libraries at the location <code class="docutils literal notranslate"><span class="pre">/opt/openenclave/lvi_mitigation_bin</span></code>, then you can run <code class="docutils literal notranslate"><span class="pre">cmake</span></code> as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake -DLVI_MITIGATION<span class="o">=</span>ON -DLVI_MITIGATION_BINDIR<span class="o">=</span>/opt/openenclave/lvi_mitigation_bin ..
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="python-package-installation">
+<h3>Python Package Installation<a class="headerlink" href="#python-package-installation" title="Permalink to this headline">¶</a></h3>
+<p>The Python package is located at <code class="docutils literal notranslate"><span class="pre">python-package/</span></code>.</p>
+<ol class="arabic">
+<li><p>Install system-wide, which requires root permission:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> python-package<span class="p">;</span> sudo python3 setup.py install
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Re-compiling Secure XGBoost</p>
+<p>If you recompiled Secure XGBoost, then you need to reinstall it again to make the new library take effect.</p>
+</div>
+</div>
+</div>
+</div>
+
+      </article>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="get_started.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Get Started with Secure XGBoost</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="about.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">About Secure XGBoost</div>
+                
+              </div>
+            </a>
+        </div>
+
+        <div class="related-information">
+              Copyright &#169; 2020, Secure XGBoost developers
+            |
+            Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+              and
+              <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
+            |
+            <a class="muted-link" href="_sources/build.rst.txt"
+               rel="nofollow">
+              Show Source
+            </a>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Installation Guide</a><ul>
+<li><a class="reference internal" href="#installing-the-open-enclave-sdk">Installing the Open Enclave SDK</a></li>
+<li><a class="reference internal" href="#installing-secure-xgboost-dependencies">Installing Secure XGBoost Dependencies</a></li>
+<li><a class="reference internal" href="#building-secure-xgboost">Building Secure XGBoost</a><ul>
+<li><a class="reference internal" href="#building-the-targets">Building the Targets</a></li>
+<li><a class="reference internal" href="#python-package-installation">Python Package Installation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </main>
+</div>
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="_static/scripts/main.js?digest=e931d09b2a40c1bb82b542effe772014573baf67"></script></body>
+</html>

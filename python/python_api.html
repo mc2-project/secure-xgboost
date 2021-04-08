@@ -1,0 +1,768 @@
+<!doctype html>
+<html class="no-js">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="author" title="About these documents" href="../about.html" /><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Troubleshooting" href="../troubleshoot.html" /><link rel="prev" title="Python Package Introduction" href="python_intro.html" />
+
+    <meta name="generator" content="sphinx-3.0.3, furo 2021.03.20.beta31"/>
+        <title>Python API Reference - Secure XGBoost documentation</title>
+      <link rel="stylesheet" href="../_static/styles/furo.css?digest=978e1795dfe158b585dda6a8417f6411828bf3ed">
+    <link rel="stylesheet" href="../_static/pygments.css">
+    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="../_static/pygments_dark.css">
+    
+
+
+<style>
+  :root {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00B0FF;
+  --color-brand-content: #00B0FF;
+  --color-admonition-background: orange;
+  
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+  }
+
+  /* For allowing end-user-specific overrides */
+  .override-light {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00B0FF;
+  --color-brand-content: #00B0FF;
+  --color-admonition-background: orange;
+  
+  }
+  .override-dark {
+    --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+  }
+</style><link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="stylesheet" href="../_static/styles/furo-extensions.css?digest=d391b54134226e4196576da3bdb6dddb7e05ba2b"></head>
+  <body dir="">
+    
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke-width="1.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z"/>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="10" y1="12" x2="20" y2="12" />
+      <line x1="6" y1="18" x2="20" y2="18" />
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="feather feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="feather feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Secure XGBoost  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  
+  <span class="sidebar-brand-text">Secure XGBoost  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html">
+  <input class="sidebar-search" placeholder=Search name="q">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About Secure XGBoost</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started.html">Get Started with Secure XGBoost</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label for="toctree-checkbox-1"><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/jupyter.html">Secure XGBoost in Jupyter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/outsourced.html">Outsourced Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/distributed.html">Distributed Secure XGBoost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/multiclient-distributed.html">Multiclient Outsourced Distributed Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/risecamp2020.html">Multiclient Jupyter Tutorial</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../parameter.html">Secure XGBoost Parameters</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Python package</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label for="toctree-checkbox-2"><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="python_intro.html">Python Package Introduction</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Python API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshoot.html">Troubleshooting</a></li>
+</ul>
+
+</div>
+</div>
+      </div>
+      
+    </div>
+  </aside>
+  <main class="main">
+    <div class="content">
+      <article role="main">
+        <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        </label>
+        <div class="section" id="python-api-reference">
+<h1>Python API Reference<a class="headerlink" href="#python-api-reference" title="Permalink to this headline">¶</a></h1>
+<p>This page gives the Python API reference of Secure XGBoost, please also refer to the Python Package Introduction for more information.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#initialization-api" id="id1">Initialization API</a></p></li>
+<li><p><a class="reference internal" href="#crypto-api" id="id2">Crypto API</a></p></li>
+<li><p><a class="reference internal" href="#module-securexgboost.core" id="id3">Core Data Structure</a></p></li>
+<li><p><a class="reference internal" href="#module-securexgboost.training" id="id4">Learning API</a></p></li>
+<li><p><a class="reference internal" href="#remote-server-api" id="id5">Remote Server API</a></p></li>
+</ul>
+</div>
+<div class="section" id="initialization-api">
+<h2>Initialization API<a class="headerlink" href="#initialization-api" title="Permalink to this headline">¶</a></h2>
+<p>Functions used to initialize clients and servers in Secure XGBoost.</p>
+<dl class="py function">
+<dt id="securexgboost.init_client">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">init_client</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">remote_addr</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user_name</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">client_list</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">sym_key_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">priv_key_file</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cert_file</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.init_client" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize the client. Set up the client’s keys, and specify the IP address of the enclave server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config</strong> (<em>file</em>) – Configuration file containing the client parameters. If this is provided, the other arguments are ignored.</p></li>
+<li><p><strong>remote_addr</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – IP address of remote server running the enclave</p></li>
+<li><p><strong>user_name</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Current user’s username</p></li>
+<li><p><strong>client_list</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – List of usernames for all clients in the collaboration</p></li>
+<li><p><strong>sym_key_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path to file containing user’s symmetric key used for encrypting data</p></li>
+<li><p><strong>priv_key_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path to file containing user’s private key used for signing data</p></li>
+<li><p><strong>cert_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path to file containing user’s public key certificate</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt id="securexgboost.init_server">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">init_server</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">enclave_image</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">client_list</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">log_verbosity</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.init_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launch the enclave from an image. This API should be invoked only by the servers and not the clients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>enclave_image</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path to enclave binary</p></li>
+<li><p><strong>client_list</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – List of usernames (strings) of clients in the collaboration allowed to use the enclaves</p></li>
+<li><p><strong>log_verbosity</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>, </em><em>optional</em>) – Verbosity level for enclave (for enclaves in debug mode)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt id="securexgboost.attest">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">attest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">verify</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.attest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verify remote attestation report of enclave and get its public key.
+The report and public key are saved as instance attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>verify</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – <p>If true, the client verifies the enclave report</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">verify</span></code> should be set to <code class="docutils literal notranslate"><span class="pre">False</span></code> only for development and testing in simulation mode</p>
+</div>
+</p>
+</dd>
+</dl>
+</dd></dl>
+</div>
+<div class="section" id="crypto-api">
+<h2>Crypto API<a class="headerlink" href="#crypto-api" title="Permalink to this headline">¶</a></h2>
+<p>Functions for clients to encrypt files</p>
+<dl class="py function">
+<dt id="securexgboost.generate_client_key">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">generate_client_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keyfile</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.generate_client_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a new key and save it to <code class="docutils literal notranslate"><span class="pre">keyfile</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>keyfile</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – path to which key will be saved</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py function">
+<dt id="securexgboost.encrypt_file">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">encrypt_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_file</span></em>, <em class="sig-param"><span class="n">output_file</span></em>, <em class="sig-param"><span class="n">key_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.encrypt_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encrypt a file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – path to file to be encrypted</p></li>
+<li><p><strong>output_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – path to which encrypted file will be saved</p></li>
+<li><p><strong>key_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – path to key used to encrypt file</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</div>
+<div class="section" id="module-securexgboost.core">
+<span id="core-data-structure"></span><h2>Core Data Structure<a class="headerlink" href="#module-securexgboost.core" title="Permalink to this headline">¶</a></h2>
+<p>Core XGBoost Library.</p>
+<dl class="py class">
+<dt id="securexgboost.DMatrix">
+<em class="property">class </em><code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">DMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data_dict</span></em>, <em class="sig-param"><span class="n">encrypted</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">silent</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">feature_names</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">feature_types</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.DMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Data Matrix used in Secure XGBoost.</p>
+<p>DMatrix is a internal data structure that used by XGBoost
+which is optimized for both memory efficiency and training speed.</p>
+<p>You can load a DMatrix from one ore more encrypted files at the enclave server, where
+each file is encrypted with a particular user’s symmetric key.
+Each DMatrix in Secure XGBoost is thus associated with one or more data owners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_dict</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a><em>, </em><em>{str: str}</em>) – The keys are usernames. The values are absolute paths to the training data of the corresponding user in the cloud.</p></li>
+<li><p><strong>encrypted</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether data is encrypted</p></li>
+<li><p><strong>silent</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to print messages during construction</p></li>
+<li><p><strong>feature_names</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>, </em><em>optional</em>) – Set names for features.</p></li>
+<li><p><strong>feature_types</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a><em>, </em><em>optional</em>) – Set types for features.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="securexgboost.DMatrix.feature_names">
+<em class="property">property </em><code class="sig-name descname">feature_names</code><a class="headerlink" href="#securexgboost.DMatrix.feature_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get feature names (column labels).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>feature_names</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)">list</a> or <a class="reference external" href="https://docs.python.org/3.6/library/constants.html#None" title="(in Python v3.6)">None</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.DMatrix.feature_types">
+<em class="property">property </em><code class="sig-name descname">feature_types</code><a class="headerlink" href="#securexgboost.DMatrix.feature_types" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get feature types (column types).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>feature_types</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)">list</a> or <a class="reference external" href="https://docs.python.org/3.6/library/constants.html#None" title="(in Python v3.6)">None</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.DMatrix.num_col">
+<code class="sig-name descname">num_col</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.DMatrix.num_col" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of columns (features) in the DMatrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>number of columns</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.DMatrix.num_row">
+<code class="sig-name descname">num_row</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.DMatrix.num_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of rows in the DMatrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>number of rows</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+</dd></dl>
+<dl class="py class">
+<dt id="securexgboost.Booster">
+<em class="property">class </em><code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">Booster</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cache</span><span class="o">=</span><span class="default_value">()</span></em>, <em class="sig-param"><span class="n">model_file</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.6/library/functions.html#object" title="(in Python v3.6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A Booster of Secure XGBoost.</p>
+<p>Booster is the model of Secure XGBoost, that contains low level routines for
+training, prediction and evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – Parameters for boosters.</p></li>
+<li><p><strong>cache</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – List of cache items.</p></li>
+<li><p><strong>model_file</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Path to the model file.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.copy">
+<code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy the booster object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>booster</strong> – a copied booster model</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><cite>Booster</cite></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.decrypt_dump">
+<code class="sig-name descname">decrypt_dump</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sarr</span></em>, <em class="sig-param"><span class="n">length</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.decrypt_dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrypt the models obtained from get_dump()</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sarr</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Encrypted string representation of the model obtained from get_dump()</p></li>
+<li><p><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – length of sarr</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.decrypt_predictions">
+<code class="sig-name descname">decrypt_predictions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">encrypted_preds</span></em>, <em class="sig-param"><span class="n">num_preds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.decrypt_predictions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrypt encrypted predictions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<em>byte array</em>) – key used to encrypt client files</p></li>
+<li><p><strong>encrypted_preds</strong> (<em>c_char_p</em>) – encrypted predictions</p></li>
+<li><p><strong>num_preds</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – number of predictions</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>preds</strong> – plaintext predictions</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>numpy array</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.dump_model">
+<code class="sig-name descname">dump_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fout</span></em>, <em class="sig-param"><span class="n">fmap</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">with_stats</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">dump_format</span><span class="o">=</span><span class="default_value">'text'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.dump_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dump model into a text or JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fout</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Output file name.</p></li>
+<li><p><strong>fmap</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the file containing feature map names.</p></li>
+<li><p><strong>with_stats</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Controls whether the split statistics are output.</p></li>
+<li><p><strong>dump_format</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – Format of model dump file. Can be ‘text’ or ‘json’.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.get_dump">
+<code class="sig-name descname">get_dump</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fmap</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">with_stats</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">dump_format</span><span class="o">=</span><span class="default_value">'text'</span></em>, <em class="sig-param"><span class="n">decrypt</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.get_dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the (encrypted) model dump as a list of strings.
+The model is encrypted with the user’s symmetric key.
+If <cite>decrypt</cite> is True, then the dump is decrypted by the client.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fmap</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – Name of the file containing feature map names.</p></li>
+<li><p><strong>with_stats</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>optional</em>) – Controls whether the split statistics are output.</p></li>
+<li><p><strong>dump_format</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>optional</em>) – Format of model dump. Can be ‘text’ or ‘json’.</p></li>
+<li><p><strong>decrypt</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – When this is True, the model dump received from the enclave is decrypted using the user’s symmetric key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>res</strong> – A string representation of the model dump</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.get_fscore">
+<code class="sig-name descname">get_fscore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fmap</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.get_fscore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get feature importance of each feature.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Feature importance is defined only for tree boosters</p>
+</div>
+<p>Feature importance is only defined when the decision tree model is chosen as base
+learner (<cite>booster=gbtree</cite>). It is not defined for other base learner types, such
+as linear learners (<cite>booster=gblinear</cite>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Zero-importance features will not be included</p>
+</div>
+<p>Keep in mind that this function does not include zero-importance feature, i.e.
+those features that have not been used in any split conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fmap</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> (</em><em>optional</em><em>)</em>) – The name of feature map file</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.get_score">
+<code class="sig-name descname">get_score</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fmap</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">importance_type</span><span class="o">=</span><span class="default_value">'weight'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.get_score" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get feature importance of each feature.
+Importance type can be defined as:</p>
+<ul class="simple">
+<li><p>‘weight’: the number of times a feature is used to split the data across all trees.</p></li>
+<li><p>‘gain’: the average gain across all splits the feature is used in.</p></li>
+<li><p>‘cover’: the average coverage across all splits the feature is used in.</p></li>
+<li><p>‘total_gain’: the total gain across all splits the feature is used in.</p></li>
+<li><p>‘total_cover’: the total coverage across all splits the feature is used in.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Feature importance is defined only for tree boosters</p>
+<p>Feature importance is only defined when the decision tree model is chosen as base
+learner (<cite>booster=gbtree</cite>). It is not defined for other base learner types, such
+as linear learners (<cite>booster=gblinear</cite>).</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fmap</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> (</em><em>optional</em><em>)</em>) – The name of feature map file.</p></li>
+<li><p><strong>importance_type</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em>, </em><em>default 'weight'</em>) – One of the importance types defined above.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.get_split_value_histogram">
+<code class="sig-name descname">get_split_value_histogram</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">feature</span></em>, <em class="sig-param"><span class="n">fmap</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">bins</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">as_pandas</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.get_split_value_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get split value histogram of a feature</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – The name of the feature.</p></li>
+<li><p><strong>fmap</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> (</em><em>optional</em><em>)</em>) – The name of feature map file.</p></li>
+<li><p><strong>bin</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a><em>, </em><em>default None</em>) – The maximum number of bins.
+Number of bins equals number of unique split values n_unique,
+if bins == None or bins &gt; n_unique.</p></li>
+<li><p><strong>as_pandas</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a><em>, </em><em>default True</em>) – Return pd.DataFrame when pandas is installed.
+If False or pandas is not installed, return numpy ndarray.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>a histogram of used splitting values for the specified feature</em></p></li>
+<li><p><em>either as numpy array or pandas DataFrame.</em></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.load_model">
+<code class="sig-name descname">load_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the model from a file.</p>
+<p>The model is loaded from an XGBoost internal binary format which is
+universal among the various XGBoost interfaces. Auxiliary attributes of
+the Python Booster object (such as feature_names) will not be loaded.
+To preserve all attributes, pickle the Booster object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fname</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> or </em><em>a memory buffer</em>) – Input file name or memory buffer(see also save_raw)</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.predict">
+<code class="sig-name descname">predict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">output_margin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ntree_limit</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">pred_leaf</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pred_contribs</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">approx_contribs</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pred_interactions</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">validate_features</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">training</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">decrypt</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Predict with data.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function is not thread safe.</p>
+<p>For each booster object, predict can only be called from one thread.
+If you want to run prediction using multiple thread, call <code class="docutils literal notranslate"><span class="pre">bst.copy()</span></code> to make copies
+of model object and then call <code class="docutils literal notranslate"><span class="pre">predict()</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">predict()</span></code> with DART booster</p>
+<p>If the booster object is DART type, <code class="docutils literal notranslate"><span class="pre">predict()</span></code> will perform dropouts, i.e. only
+some of the trees will be evaluated. This will produce incorrect results if <code class="docutils literal notranslate"><span class="pre">data</span></code> is
+not the training data. To obtain correct results on test sets, set <code class="docutils literal notranslate"><span class="pre">ntree_limit</span></code> to
+a nonzero value, e.g.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">preds</span> <span class="o">=</span> <span class="n">bst</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">dtest</span><span class="p">,</span> <span class="n">ntree_limit</span><span class="o">=</span><span class="n">num_round</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="#securexgboost.DMatrix" title="securexgboost.DMatrix"><em>DMatrix</em></a>) – The dmatrix storing the input.</p></li>
+<li><p><strong>output_margin</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Whether to output the raw untransformed margin value.</p></li>
+<li><p><strong>ntree_limit</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Limit number of trees in the prediction; defaults to 0 (use all trees).</p></li>
+<li><p><strong>pred_leaf</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – When this option is on, the output will be a matrix of (nsample, ntrees)
+with each record indicating the predicted leaf index of each sample in each tree.
+Note that the leaf index of a tree is unique per tree, so you may find leaf 1
+in both tree 1 and tree 0.</p></li>
+<li><p><strong>pred_contribs</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – When this is True the output will be a matrix of size (nsample, nfeats + 1)
+with each record indicating the feature contributions (SHAP values) for that
+prediction. The sum of all feature contributions is equal to the raw untransformed
+margin value of the prediction. Note the final column is the bias term.</p></li>
+<li><p><strong>approx_contribs</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Approximate the contributions of each feature</p></li>
+<li><p><strong>pred_interactions</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – When this is True the output will be a matrix of size (nsample, nfeats + 1, nfeats + 1)
+indicating the SHAP interaction values for each pair of features. The sum of each
+row (or column) of the interaction values equals the corresponding SHAP value (from
+pred_contribs), and the sum of the entire matrix equals the raw untransformed margin
+value of the prediction. Note the last row and column correspond to the bias term.</p></li>
+<li><p><strong>training</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – Whether the prediction value is used for training.  This can effect
+<cite>dart</cite> booster, which performs dropouts during training iterations.</p></li>
+<li><p><strong>note:</strong> (<em>.</em>) – Using <code class="docutils literal notranslate"><span class="pre">predict()</span></code> with DART booster: If the booster object is DART type, <code class="docutils literal notranslate"><span class="pre">predict()</span></code> will not perform
+dropouts, i.e. all the trees will be evaluated.  If you want to
+obtain result with dropouts, provide <cite>training=True</cite>.</p></li>
+<li><p><strong>validate_features</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – When this is True, validate that the Booster’s and data’s feature_names are identical.
+Otherwise, it is assumed that the feature_names are the same.</p></li>
+<li><p><strong>decrypt</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#bool" title="(in Python v3.6)"><em>bool</em></a>) – When this is True, the predictions received from the enclave are decrypted using the user’s symmetric key</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>prediction</strong> (<em>list</em>) – List of predictions. Each element in the list is a set of predictions from a different node in the cloud.</p></li>
+<li><p><strong>num_preds</strong> (<em>list</em>) – Number of predictions in each element in <cite>prediction</cite></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.save_model">
+<code class="sig-name descname">save_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.save_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the model to an encrypted file at the server.
+The file is encrypted with the user’s symmetric key.</p>
+<p>The model is saved in an XGBoost internal binary format which is
+universal among the various XGBoost interfaces. Auxiliary attributes of
+the Python Booster object (such as feature_names) will not be saved.
+To preserve all attributes, pickle the Booster object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fname</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a>) – Absolute path to save the model to</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.save_raw">
+<code class="sig-name descname">save_raw</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.save_raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the model to a in memory buffer representation.
+The model is encrypted with the user’s symmetric key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>a in memory buffer representation of the model</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.set_param">
+<code class="sig-name descname">set_param</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">value</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.set_param" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set parameters into the Booster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>dict/list/str</em>) – list of key,value pairs, dict of key to value or simply str key</p></li>
+<li><p><strong>value</strong> (<em>optional</em>) – value of the specified parameter, when params is str key</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.trees_to_dataframe">
+<code class="sig-name descname">trees_to_dataframe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fmap</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.trees_to_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a boosted tree model text dump into a pandas DataFrame structure.</p>
+<p>This feature is only defined when the decision tree model is chosen as base
+learner (<cite>booster in {gbtree, dart}</cite>). It is not defined for other base learner
+types, such as linear learners (<cite>booster=gblinear</cite>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>fmap</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#str" title="(in Python v3.6)"><em>str</em></a><em> (</em><em>optional</em><em>)</em>) – The name of feature map file.</p>
+</dd>
+</dl>
+</dd></dl>
+<dl class="py method">
+<dt id="securexgboost.Booster.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dtrain</span></em>, <em class="sig-param"><span class="n">iteration</span></em>, <em class="sig-param"><span class="n">fobj</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.Booster.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update for one iteration, with objective function calculated
+internally.  This function should not be called directly by users.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dtrain</strong> (<a class="reference internal" href="#securexgboost.DMatrix" title="securexgboost.DMatrix"><em>DMatrix</em></a>) – Training data.</p></li>
+<li><p><strong>iteration</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Current iteration number.</p></li>
+<li><p><strong>fobj</strong> (<em>function</em>) – Customized objective function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</dd></dl>
+</div>
+<div class="section" id="module-securexgboost.training">
+<span id="learning-api"></span><h2>Learning API<a class="headerlink" href="#module-securexgboost.training" title="Permalink to this headline">¶</a></h2>
+<p>Training Library containing training routines.</p>
+<dl class="py function">
+<dt id="securexgboost.train">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">train</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">dtrain</span></em>, <em class="sig-param"><span class="n">num_boost_round</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">evals</span><span class="o">=</span><span class="default_value">()</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.train" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train a booster with given parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#dict" title="(in Python v3.6)"><em>dict</em></a>) – Booster params.</p></li>
+<li><p><strong>dtrain</strong> (<a class="reference internal" href="#securexgboost.DMatrix" title="securexgboost.DMatrix"><em>DMatrix</em></a>) – Data to be trained.</p></li>
+<li><p><strong>num_boost_round</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – Number of boosting iterations.</p></li>
+<li><p><strong>evals</strong> (<em>list of pairs</em><em> (</em><a class="reference internal" href="#securexgboost.DMatrix" title="securexgboost.DMatrix"><em>DMatrix</em></a><em>, </em><em>string</em><em>)</em>) – List of items to be evaluated during training, this allows user to watch
+performance on the validation set.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>Booster</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>a trained booster model</p>
+</dd>
+</dl>
+</dd></dl>
+</div>
+<div class="section" id="remote-server-api">
+<h2>Remote Server API<a class="headerlink" href="#remote-server-api" title="Permalink to this headline">¶</a></h2>
+<p>Functions to enable remote control of computation.</p>
+<dl class="py function">
+<dt id="securexgboost.serve">
+<code class="sig-prename descclassname">securexgboost.</code><code class="sig-name descname">serve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">all_users</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">nodes</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">nodes_port</span><span class="o">=</span><span class="default_value">50051</span></em>, <em class="sig-param"><span class="n">num_workers</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">50051</span></em><span class="sig-paren">)</span><a class="headerlink" href="#securexgboost.serve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launch the RPC server.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_users</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – list of usernames participating in the joint computation</p></li>
+<li><p><strong>nodes</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/stdtypes.html#list" title="(in Python v3.6)"><em>list</em></a>) – list of IP addresses of nodes in the cluster. Passing in this argument means that this RPC server is the RPC orchestrator</p></li>
+<li><p><strong>nodes_port</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – port of each RPC server in cluster</p></li>
+<li><p><strong>num_workers</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – number of threads to use</p></li>
+<li><p><strong>port</strong> (<a class="reference external" href="https://docs.python.org/3.6/library/functions.html#int" title="(in Python v3.6)"><em>int</em></a>) – port on which to start this RPC server</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+</div>
+</div>
+
+      </article>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../troubleshoot.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Troubleshooting</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="python_intro.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Python Package Introduction</div>
+                
+              </div>
+            </a>
+        </div>
+
+        <div class="related-information">
+              Copyright &#169; 2020, Secure XGBoost developers
+            |
+            Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+              and
+              <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
+            |
+            <a class="muted-link" href="../_sources/python/python_api.rst.txt"
+               rel="nofollow">
+              Show Source
+            </a>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Python API Reference</a><ul>
+<li><a class="reference internal" href="#initialization-api">Initialization API</a></li>
+<li><a class="reference internal" href="#crypto-api">Crypto API</a></li>
+<li><a class="reference internal" href="#module-securexgboost.core">Core Data Structure</a></li>
+<li><a class="reference internal" href="#module-securexgboost.training">Learning API</a></li>
+<li><a class="reference internal" href="#remote-server-api">Remote Server API</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </main>
+</div>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../_static/scripts/main.js?digest=e931d09b2a40c1bb82b542effe772014573baf67"></script></body>
+</html>

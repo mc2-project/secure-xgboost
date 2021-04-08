@@ -1,0 +1,357 @@
+<!doctype html>
+<html class="no-js">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="author" title="About these documents" href="../about.html" /><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Multiclient Jupyter Tutorial" href="risecamp2020.html" /><link rel="prev" title="Distributed Secure XGBoost" href="distributed.html" />
+
+    <meta name="generator" content="sphinx-3.0.3, furo 2021.03.20.beta31"/>
+        <title>Multiclient Outsourced Distributed Computation - Secure XGBoost documentation</title>
+      <link rel="stylesheet" href="../_static/styles/furo.css?digest=978e1795dfe158b585dda6a8417f6411828bf3ed">
+    <link rel="stylesheet" href="../_static/pygments.css">
+    <link media="(prefers-color-scheme: dark)" rel="stylesheet" href="../_static/pygments_dark.css">
+    
+
+
+<style>
+  :root {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00B0FF;
+  --color-brand-content: #00B0FF;
+  --color-admonition-background: orange;
+  
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+  }
+
+  /* For allowing end-user-specific overrides */
+  .override-light {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00B0FF;
+  --color-brand-content: #00B0FF;
+  --color-admonition-background: orange;
+  
+  }
+  .override-dark {
+    --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+  }
+</style><link rel="stylesheet" type="text/css" href="../_static/custom.css" />
+    <link rel="stylesheet" href="../_static/styles/furo-extensions.css?digest=d391b54134226e4196576da3bdb6dddb7e05ba2b"></head>
+  <body dir="">
+    
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke-width="1.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z"/>
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="10" y1="12" x2="20" y2="12" />
+      <line x1="6" y1="18" x2="20" y2="18" />
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="feather feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="feather feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Secure XGBoost  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  
+  <span class="sidebar-brand-text">Secure XGBoost  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html">
+  <input class="sidebar-search" placeholder=Search name="q">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About Secure XGBoost</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../get_started.html">Get Started with Secure XGBoost</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Tutorials</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label for="toctree-checkbox-1"><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="jupyter.html">Secure XGBoost in Jupyter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="outsourced.html">Outsourced Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="distributed.html">Distributed Secure XGBoost</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Multiclient Outsourced Distributed Computation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="risecamp2020.html">Multiclient Jupyter Tutorial</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../parameter.html">Secure XGBoost Parameters</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../python/index.html">Python package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label for="toctree-checkbox-2"><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../python/python_intro.html">Python Package Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python/python_api.html">Python API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshoot.html">Troubleshooting</a></li>
+</ul>
+
+</div>
+</div>
+      </div>
+      
+    </div>
+  </aside>
+  <main class="main">
+    <div class="content">
+      <article role="main">
+        <label class="toc-overlay-icon toc-content-icon" for="__toc">
+          <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+        </label>
+        <div class="section" id="multiclient-outsourced-distributed-computation">
+<span id="multiclient-distributed-label"></span><h1>Multiclient Outsourced Distributed Computation<a class="headerlink" href="#multiclient-outsourced-distributed-computation" title="Permalink to this headline">¶</a></h1>
+<p>Secure XGBoost is tailored toward an outsourced computation model – one in which multiple clients with sensitive data want to outsource joint computation on their sensitive data to the untrusted cloud. This tutorial provides an example of such a scenario.</p>
+<p>In the multiclient setting, Secure XGBoost contains a mechanism for consensus. It requires that all parties agree to invoke a certain API before running that function. For example, if Party A wants to train a model on Party A and Party B’s data, Secure XGBoost requires that both Party A and Party B submit a train command before proceeding to train the model. In a similar fashion, if Party A wants to load its data, Party B must also agree and allow Party A to do so.</p>
+<p>In this example, there are five entities: two clients, who each own sensitive data; an RPC orchestrator; and two untrusted servers, each running an enclave, who communicate to perform distributed computation. Each party holds distinct data that they want to aggregate. The demo consists of the following steps:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>The orchestrator starts an RPC server and creates an enclave at each node (untrusted server) in the cluster.</p></li>
+<li><p>The orchestrator starts an RPC server to listen for client requests.</p></li>
+<li><p>Each client encrypts its data and sends it to the untrusted servers.</p></li>
+<li><p>Each client attests the enclaves to ensure that the proper code has been loaded inside every enclave.</p></li>
+<li><p>To ensure that all parties are ready to commence computation, the orchestrator waits for both parties to make the same request before proceeding. Once both parties have submitted a command, the orchestrator relays the command to the enclave cluster.</p></li>
+<li><p>Clients make requests to load data, train a model, and serve encrypted predictions.</p></li>
+<li><p>Each client decrypts its received predictions.</p></li>
+</ol>
+</div></blockquote>
+<p>The relevant code is located at <code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control</span></code>.</p>
+<div class="section" id="cluster-setup">
+<h2>Cluster Setup<a class="headerlink" href="#cluster-setup" title="Permalink to this headline">¶</a></h2>
+<p>First, set up machines that will act as the untrusted servers. We’ll need to start an RPC process on each server to listen for client calls.</p>
+<ol class="arabic">
+<li><p>On the orchestrator machine, modify <code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/hosts.config</span></code> to contain the IP addresses of the nodes in your cluster. For example, if the nodes in your cluster have IP addresses of <code class="docutils literal notranslate"><span class="pre">13.95.157.223</span></code> and <code class="docutils literal notranslate"><span class="pre">40.68.135.193</span></code>, your <code class="docutils literal notranslate"><span class="pre">hosts.config</span></code> should look like the following.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>13.95.157.223:22
+40.68.135.193:22
+</pre></div>
+</div>
+</li>
+<li><p>For distributed computation, Secure XGBoost assumes that the orchestrator has SSH access to all nodes in the cluster. You can grant access by pasting the orchestrator’s SSH public key (likely found at <code class="docutils literal notranslate"><span class="pre">~/.ssh/id_rsa.pub</span></code>) into each node’s <code class="docutils literal notranslate"><span class="pre">~/.ssh/authorized_keys</span></code> file. If the orchestrator machine does not yet have a SSH keypair, create it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ssh-keygen -t rsa -b <span class="m">4096</span>
+</pre></div>
+</div>
+</li>
+<li><p>Start the RPC servers on all machines.</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers &lt;num_workers_in_cluster&gt; --worker-memory 4g python3 server/enclave_serve.py
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+</ol>
+</div>
+<div class="section" id="orchestrator-setup">
+<h2>Orchestrator Setup<a class="headerlink" href="#orchestrator-setup" title="Permalink to this headline">¶</a></h2>
+<p>Next, set up the RPC orchestrator.</p>
+<ol class="arabic">
+<li><p>Modify the <code class="docutils literal notranslate"><span class="pre">nodes</span></code> argument in the <code class="docutils literal notranslate"><span class="pre">xgb.serve()</span></code> function in the <code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/start_orchestrator.py</span></code> script to reflect the IP address of the nodes in the cluster. The <code class="docutils literal notranslate"><span class="pre">port</span></code> argument tells the RPC orchestrator which port to listen for client commands on. Note that <code class="docutils literal notranslate"><span class="pre">start_orchestrator.py</span></code> contains code that will automatically parse <code class="docutils literal notranslate"><span class="pre">hosts.config</span></code> for the node IPs, so you may not have to do this step.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>xgb.serve<span class="o">(</span><span class="nv">all_users</span><span class="o">=[</span><span class="s2">"user1"</span>, <span class="s2">"user2"</span><span class="o">]</span>, <span class="nv">nodes</span><span class="o">=[</span><span class="s2">"&lt;SERVER_IP_1&gt;"</span>, <span class="s2">"&lt;SERVER_IP_2"</span><span class="o">]</span>, <span class="nv">port</span><span class="o">=</span><span class="m">50052</span><span class="o">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Run the script to start the orchestrator.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 demo/python/multiclient-cluster-remote-control/orchestrator/start_orchestrator.py
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="client-1-setup">
+<h2>Client 1 Setup<a class="headerlink" href="#client-1-setup" title="Permalink to this headline">¶</a></h2>
+<p><strong>Before doing this setup, ensure that you’ve already set up the cluster and the orchestrator.</strong></p>
+<p>This setup will involve encrypting data on client 1, transferring the data to the server, and telling the orchestrator that client 1 is ready.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cd</span></code> into the <code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/client1</span></code> directory to begin setup.</p>
+<ol class="arabic">
+<li><p><strong>Encrypt data locally.</strong></p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">encrypt.py</span></code> script to generate a key and encrypt sample data (<code class="docutils literal notranslate"><span class="pre">demo/data/1_2agaricus.txt.train</span></code> and <code class="docutils literal notranslate"><span class="pre">demo/data/agaricus.txt.test</span></code>). It will output three files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/client1/key1.txt</span></code> : the key used to encrypt the data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/data/c1_train.enc</span></code> : an encrypted version of client 1’s training data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/data/c1_test.enc</span></code>  : an encrypted version of client 1’s test data</p></li>
+</ul>
+<p>Run the following to encrypt.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 encrypt.py
+</pre></div>
+</div>
+</li>
+<li><p><strong>Send encrypted data to the server</strong></p>
+<p>We assume that there will be a mechanism to transfer the encrypted data to the server. For the purposes of this demo, the user can try, for example, <code class="docutils literal notranslate"><span class="pre">scp</span></code> to simulate this transfer.</p>
+</li>
+<li><p><strong>Make client calls</strong></p>
+<p>On the client, send commands to the orchestrator by running <code class="docutils literal notranslate"><span class="pre">client1.py</span></code>. The <code class="docutils literal notranslate"><span class="pre">client1.py</span></code> script takes in 5 arguments: the IP address of the orchestrator, the path to the generated key, the path to the user’s private key, the path to the user’s certificate, and the port on which the orchestartor is running. We’ve included a sample private key and certificate for this example.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 client1.py --ip-addr &lt;orchestrator-ip&gt; --symmkey key1.txt --privkey ../../../data/userkeys/private_user_1.pem --cert ../../../data/usercrts/user1.crt --port <span class="m">50052</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">client.py</span></code> takes in 5 arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--ip-addr</span></code> : IP address of the orchestrator</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--symmkey</span></code> : path to the client’s symmetric key</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--privkey</span></code> : path to the client’s private key</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--cert</span></code> : path to the client’s certificate</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--port</span></code> : port on which the orchestrator is listening</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ol>
+<p>For convenience, we added a script <code class="docutils literal notranslate"><span class="pre">run.sh</span></code> in this directory that runs this command. It takes in one argument: the orchestrator IP.</p>
+<p><strong>Note that the server will not load data, train a model, or serve predictions just yet – the consensus mechanism forces the orchestrator to wait for client 2 to submit commands before relaying commands to the cluster.</strong></p>
+</div>
+<div class="section" id="client-2-setup">
+<h2>Client 2 Setup<a class="headerlink" href="#client-2-setup" title="Permalink to this headline">¶</a></h2>
+<p>This setup will involve encrypting data on client 2, transferring the data to the server, and telling the orchestrator that client 2 is ready.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cd</span></code> into the <code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/client2</span></code> directory to begin setup.</p>
+<ol class="arabic">
+<li><p><strong>Encrypt data locally.</strong></p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">encrypt.py</span></code> script to generate a key and encrypt sample data (<code class="docutils literal notranslate"><span class="pre">demo/data/2_2agaricus.txt.train</span></code> and <code class="docutils literal notranslate"><span class="pre">demo/data/agaricus.txt.test</span></code>). It will output three files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/client2/key2.txt</span></code> : the key used to encrypt the data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/data/c2_train.enc</span></code> : an encrypted version of client 2’s training data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demo/python/multiclient-cluster-remote-control/data/c2_test.enc</span></code>  : an encrypted version of client 2’s test data</p></li>
+</ul>
+<p>Run the following to encrypt.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 encrypt.py
+</pre></div>
+</div>
+</li>
+<li><p><strong>Send encrypted data to the server</strong></p>
+<p>We assume that there will be a mechanism to transfer the encrypted data to the server. For the purposes of this demo, the user can try, for example, <code class="docutils literal notranslate"><span class="pre">scp</span></code> to simulate this transfer.</p>
+</li>
+<li><p><strong>Make client calls</strong></p>
+<p>On client 2, send commands to the server by running <code class="docutils literal notranslate"><span class="pre">client2.py</span></code>. Like <code class="docutils literal notranslate"><span class="pre">client1.py</span></code>, <code class="docutils literal notranslate"><span class="pre">client2.py</span></code> takes in 5 arguments: the IP address of the server, the path to the generated key, the path to the user’s private key, the path to the user’s certificate, and the port on which the orchestrator is running. We’ve included a sample private key and certificate for this example.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 client2.py --ip-addr &lt;server-ip&gt; --symmkey key2.txt --privkey ../../../data/userkeys/private_user_2.pem --cert ../../../data/usercrts/user2.crt --port <span class="m">50052</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>For convenience, we added a script <code class="docutils literal notranslate"><span class="pre">run.sh</span></code> in this directory that runs this command. It takes in one argument: the orchestrator IP.</p>
+<p>Once you have submitted commands from client 2, the orchestrator will relay commands to the cluster. The enclave cluster will load the two parties’ data, train a model over both parties’ data, and serve encrypted predictions back to each party.</p>
+</div>
+</div>
+
+      </article>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="risecamp2020.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Multiclient Jupyter Tutorial</div>
+              </div>
+              <svg><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="distributed.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Distributed Secure XGBoost</div>
+                
+              </div>
+            </a>
+        </div>
+
+        <div class="related-information">
+              Copyright &#169; 2020, Secure XGBoost developers
+            |
+            Built with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+              and
+              <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+              <a href="https://github.com/pradyunsg/furo">Furo theme</a>.
+            |
+            <a class="muted-link" href="../_sources/tutorials/multiclient-distributed.rst.txt"
+               rel="nofollow">
+              Show Source
+            </a>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Multiclient Outsourced Distributed Computation</a><ul>
+<li><a class="reference internal" href="#cluster-setup">Cluster Setup</a></li>
+<li><a class="reference internal" href="#orchestrator-setup">Orchestrator Setup</a></li>
+<li><a class="reference internal" href="#client-1-setup">Client 1 Setup</a></li>
+<li><a class="reference internal" href="#client-2-setup">Client 2 Setup</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </main>
+</div>
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../_static/scripts/main.js?digest=e931d09b2a40c1bb82b542effe772014573baf67"></script></body>
+</html>
