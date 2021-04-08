@@ -71,7 +71,7 @@ Installing Secure XGBoost Dependencies
    .. code-block:: bash
 
       sudo apt-get install -y libmbedtls-dev python3-pip
-      pip3 install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes   
+      pip3 install numpy pandas sklearn numproto grpcio grpcio-tools requests
 
 
 ***********************

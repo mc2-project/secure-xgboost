@@ -61,7 +61,7 @@ The following instructions will create an environment from scratch. Alternativel
     sudo bash cmake-3.15.6-Linux-x86_64.sh --skip-license --prefix=/usr/local
 
     sudo apt-get install -y libmbedtls-dev python3-pip
-    pip3 install numpy pandas sklearn numproto grpcio grpcio-tools   
+    pip3 install numpy pandas sklearn numproto grpcio grpcio-tools requests
     ```
 
 4. Clone Secure XGBoost.
