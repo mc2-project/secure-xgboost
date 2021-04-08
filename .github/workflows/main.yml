@@ -53,7 +53,6 @@ jobs:
       - name: Build C++
         run: | 
           # Build C++ source
-          cd src
           mkdir build
           cd build
           cmake ..
@@ -72,10 +71,10 @@ jobs:
 
       - name: Build docs
         run: |
-          cd docs
+          cd doc
           make html
 
       - name: Run spellcheck
         run : |
-            cd docs
+            cd doc
             sphinx-build -b spelling . _build
