@@ -10,7 +10,9 @@ on:
       - master
 
 jobs:
-  build:
+
+  docs:
+    name: Build and check documentation
     runs-on: ubuntu-18.04
     steps: 
       - name: Checkout code
