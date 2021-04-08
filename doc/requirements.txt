@@ -13,6 +13,7 @@ grpcio
 grpcio-tools
 requests
 furo
+recommonmark
 sphinx-argparse
 sphinx-copybutton
 sphinxcontrib-spelling
