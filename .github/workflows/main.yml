@@ -1,3 +1,5 @@
+
+
 name: Continous Integration
 
 # Run this workflow every time a new commit pushed to your repository
@@ -13,12 +15,7 @@ on:
   workflow_dispatch:
 
 jobs:
-<<<<<<< HEAD:.github/workflows/main.yml
   build:
-=======
-
-  docs:
->>>>>>> 59f44187e431bb83fa6f72c31ec92e229d683bd8:.github/workflows/docs.yml
     name: Build and check documentation
     runs-on: ubuntu-18.04
     steps: 
