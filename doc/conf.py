@@ -12,15 +12,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 from subprocess import call
-from sh.contrib import git
-import urllib.request
-from urllib.error import HTTPError
+#  from sh.contrib import git
+#  import urllib.request
+#  from urllib.error import HTTPError
 from recommonmark.parser import CommonMarkParser
 import sys
 import re
 import os, subprocess
 import shlex
-import guzzle_sphinx_theme
+#  import guzzle_sphinx_theme
 
 #  git_branch = os.getenv('SPHINX_GIT_BRANCH', default=None)
 #  if git_branch is None:
