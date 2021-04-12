@@ -1,5 +1,3 @@
-
-
 name: Continous Integration
 
 # Run this workflow every time a new commit pushed to your repository
@@ -51,31 +49,31 @@ jobs:
           # Mbed TLS
           sudo apt-get install -y libmbedtls-dev
 
-      # - name: Build C++
-      #   run: | 
-      #     # Build C++ source
-      #     mkdir build
-      #     cd build
-      #     cmake ..
-      #     make -j4
-      # 
-      # - name: Install Python dependencies
-      #   run: |
-      #     pip install numpy pandas sklearn numproto grpcio grpcio-tools requests
-      #     pip install -r doc/requirements.txt
-      # 
-      # - name: Install Secure XGBoost Python package
-      #   run: |
-      #     # Install the Python package
-      #     cd python-package
-      #     python setup.py install
-      # 
-      # - name: Build docs
-      #   run: |
-      #     cd doc
-      #     make html
-      # 
-      # - name: Run spellcheck
-      #   run : |
-      #       cd doc
-      #       sphinx-build -b spelling . _build
+      - name: Build C++
+        run: | 
+          # Build C++ source
+          mkdir build
+          cd build
+          cmake ..
+          make -j4
+      
+      - name: Install Python dependencies
+        run: |
+          pip install numpy pandas sklearn numproto grpcio grpcio-tools requests
+          pip install -r doc/requirements.txt
+      
+      - name: Install Secure XGBoost Python package
+        run: |
+          # Install the Python package
+          cd python-package
+          python setup.py install
+      
+      - name: Build docs
+        run: |
+          cd doc
+          make html
+      
+      - name: Run spellcheck
+        run : |
+            cd doc
+            sphinx-build -b spelling . _build
