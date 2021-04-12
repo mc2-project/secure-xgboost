@@ -73,7 +73,7 @@ jobs:
           cd doc
           make html
       
-      - name: Run spellcheck
-        run : |
-            cd doc
-            sphinx-build -b spelling . _build
+      # - name: Run spellcheck
+      #   run : |
+      #       cd doc
+      #       sphinx-build -b spelling . _build
