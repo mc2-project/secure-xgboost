@@ -12,15 +12,15 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 from subprocess import call
-from sh.contrib import git
-import urllib.request
-from urllib.error import HTTPError
+#  from sh.contrib import git
+#  import urllib.request
+#  from urllib.error import HTTPError
 from recommonmark.parser import CommonMarkParser
 import sys
 import re
 import os, subprocess
 import shlex
-import guzzle_sphinx_theme
+#  import guzzle_sphinx_theme
 
 #  git_branch = os.getenv('SPHINX_GIT_BRANCH', default=None)
 #  if git_branch is None:
@@ -59,13 +59,13 @@ for mod_name in MOCK_MODULES:
 project = u'Secure XGBoost'
 author = u'%s developers' % project
 copyright = u'2020, %s' % author
-github_doc_root = 'https://github.com/mc2-project/secure-xgboost/tree/hackathon/doc'
+github_doc_root = 'https://github.com/mc2-project/secure-xgboost/tree/master/doc'
 
 os.environ['XGBOOST_BUILD_DOC'] = '1'
 # Version information.
 import securexgboost
-version = securexgboost.__version__
-release = securexgboost.__version__
+#  version = securexgboost.__version__
+#  release = securexgboost.__version__
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones
@@ -152,24 +152,23 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-# -- Options for HTML output ----------------------------------------------
+# -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme_path = guzzle_sphinx_theme.html_theme_path()
-html_theme = 'guzzle_sphinx_theme'
+#
+html_theme = "furo"
 
-# Register the theme as an extension to generate a sitemap.xml
-extensions.append("guzzle_sphinx_theme")
-
-# Guzzle theme options (see theme.conf for more information)
+# Theme options are theme-specific and customize the look and feel of a theme
+# further.  For a list of options available for each theme, see the
+# documentation.
+#
 html_theme_options = {
-    # Set the name of the project to appear in the sidebar
-    "project_nav_name": "Secure XGBoost"
-}
-
-html_sidebars = {
-  '**': ['logo-text.html', 'globaltoc.html', 'searchbox.html']
+    "light_css_variables": {
+        "color-brand-primary": "#00B0FF",
+        "color-brand-content": "#00B0FF",
+        "color-admonition-background": "#F0F0F0",
+        },
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

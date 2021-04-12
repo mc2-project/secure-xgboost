@@ -70,7 +70,7 @@ The following instructions will create an environment from scratch. Alternativel
     git clone https://github.com/mc2-project/secure-xgboost.git
     ```
 
-5. Before building, you may choose to configure the [build parameters](https://secure-xgboost.readthedocs.io/en/latest/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
+5. Before building, you may choose to configure the [build parameters](https://mc2-project.github.io/secure-xgboost/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
 
 6. Build Secure XGBoost and install the Python package.
 
@@ -94,7 +94,7 @@ To use Secure XGBoost, replace the XGBoost import.
 import securexgboost as xgb
 ```
 
-For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible. While the below block demonstrates usage on a single machine, Secure XGBoost is meant for the client-server model of computation. More information can be found [here](https://secure-xgboost.readthedocs.io/en/latest/about.html#system-architecture).
+For ease of use, the Secure XGBoost API mirrors that of XGBoost as much as possible. While the below block demonstrates usage on a single machine, Secure XGBoost is meant for the client-server model of computation. More information can be found [here](https://mc2-project.github.io/secure-xgboost/about.html#system-architecture).
 
 **Note**: If running Secure XGBoost in simulation mode, pass in `verify=False` to the `attest()` function.
 
@@ -135,7 +135,7 @@ predictions, num_preds = booster.predict(dtest)
 ```
 
 ## Documentation
-For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://secure-xgboost.readthedocs.io/en/latest/).
+For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://mc2-project.github.io/secure-xgboost/).
 
 ## Additional Resources
 * [CCS PPMLP Paper](https://arxiv.org/pdf/2010.02524.pdf)

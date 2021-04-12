@@ -2,10 +2,6 @@ Python API Reference
 ====================
 This page gives the Python API reference of Secure XGBoost, please also refer to the Python Package Introduction for more information.
 
-.. contents::
-  :backlinks: none
-  :local:
-
 Initialization API
 ------------------
 Functions used to initialize clients and servers in Secure XGBoost.

@@ -10,19 +10,19 @@ In the multiclient setting, Secure XGBoost contains a mechanism for consensus. I
 
 In this example, there are five entities: two clients, who each own sensitive data; an RPC orchestrator; and two untrusted servers, each running an enclave, who communicate to perform distributed computation. Each party holds distinct data that they want to aggregate. The demo consists of the following steps: 
 
-   1. The orchestrator starts an RPC server and creates an enclave at each node (untrusted server) in the cluster. 
+  1. The orchestrator starts an RPC server and creates an enclave at each node (untrusted server) in the cluster. 
 
-   2. The orchestrator starts an RPC server to listen for client requests.
+  2. The orchestrator starts an RPC server to listen for client requests.
 
-   3. Each client encrypts its data and sends it to the untrusted servers. 
+  3. Each client encrypts its data and sends it to the untrusted servers. 
 
-   4. Each client attests the enclaves to ensure that the proper code has been loaded inside every enclave.
+  4. Each client attests the enclaves to ensure that the proper code has been loaded inside every enclave.
+        
+  5. To ensure that all parties are ready to commence computation, the orchestrator waits for both parties to make the same request before proceeding. Once both parties have submitted a command, the orchestrator relays the command to the enclave cluster.
+
+  6. Clients make requests to load data, train a model, and serve encrypted predictions.
          
-   5. To ensure that all parties are ready to commence computation, the orchestrator waits for both parties to make the same request before proceeding. Once both parties have submitted a command, the orchestrator relays the command to the enclave cluster.
-
-   6. Clients make requests to load data, train a model, and serve encrypted predictions.
-         
-   7. Each client decrypts its received predictions.
+  7. Each client decrypts its received predictions.
 
 The relevant code is located at ``demo/python/multiclient-cluster-remote-control``.
 
@@ -48,9 +48,9 @@ First, set up machines that will act as the untrusted servers. We'll need to sta
 
 3. Start the RPC servers on all machines. 
 
-      .. code-block:: bash
+   .. code-block:: bash
 
-         secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_workers_in_cluster> --worker-memory 4g python3 server/enclave_serve.py
+      secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers <num_workers_in_cluster> --worker-memory 4g python3 server/enclave_serve.py
 
 
 ******************
@@ -81,7 +81,7 @@ This setup will involve encrypting data on client 1, transferring the data to th
 
 ``cd`` into the ``demo/python/multiclient-cluster-remote-control/client1`` directory to begin setup.
 
-1. **Encrypt data locally.**
+#. **Encrypt data locally.**
 
    Use the ``encrypt.py`` script to generate a key and encrypt sample data (``demo/data/1_2agaricus.txt.train`` and ``demo/data/agaricus.txt.test``). It will output three files: 
 
@@ -98,12 +98,12 @@ This setup will involve encrypting data on client 1, transferring the data to th
       python3 encrypt.py
 
 
-2. **Send encrypted data to the server**
+#. **Send encrypted data to the server**
 
    We assume that there will be a mechanism to transfer the encrypted data to the server. For the purposes of this demo, the user can try, for example, ``scp`` to simulate this transfer. 
 
 
-3. **Make client calls**
+#. **Make client calls**
 
    On the client, send commands to the orchestrator by running ``client1.py``. The ``client1.py`` script takes in 5 arguments: the IP address of the orchestrator, the path to the generated key, the path to the user's private key, the path to the user's certificate, and the port on which the orchestartor is running. We've included a sample private key and certificate for this example.
 
@@ -113,11 +113,11 @@ This setup will involve encrypting data on client 1, transferring the data to th
 
    ``client.py`` takes in 5 arguments:
 
-      * ``--ip-addr`` : IP address of the orchestrator
-      * ``--symmkey`` : path to the client's symmetric key
-      * ``--privkey`` : path to the client's private key
-      * ``--cert`` : path to the client's certificate
-      * ``--port`` : port on which the orchestrator is listening
+   * ``--ip-addr`` : IP address of the orchestrator
+   * ``--symmkey`` : path to the client's symmetric key
+   * ``--privkey`` : path to the client's private key
+   * ``--cert`` : path to the client's certificate
+   * ``--port`` : port on which the orchestrator is listening
 
 For convenience, we added a script ``run.sh`` in this directory that runs this command. It takes in one argument: the orchestrator IP. 
 
