@@ -61,11 +61,9 @@ This setup will involve encrypting data on the client, transferring the data to 
 
    Use the ``encrypt.py`` script to generate a key and encrypt the sample data (``demo/data/agaricus.txt.train`` and ``demo/data/agaricus.txt.test``). It will output three files: 
 
-      * ``demo/python/remote-control/client/key.txt`` : the key used to encrypt the data
-
-      * ``demo/python/remote-control/data/train.enc`` : an encrypted version of the training data
-
-      * ``demo/python/remote-control/data/test.enc``  : an encrypted version of the test data
+   * ``demo/python/remote-control/client/key.txt`` : the key used to encrypt the data
+   * ``demo/python/remote-control/data/train.enc`` : an encrypted version of the training data
+   * ``demo/python/remote-control/data/test.enc``  : an encrypted version of the test data
 
    Run the following to encrypt.
 
@@ -91,11 +89,11 @@ This setup will involve encrypting data on the client, transferring the data to 
 
    ``client.py`` takes in 5 arguments:
 
-      * ``--ip-addr`` : IP address of the orchestrator
-      * ``--symmkey`` : path to the client's symmetric key
-      * ``--privkey`` : path to the client's private key
-      * ``--cert`` : path to the client's certificate
-      * ``--port`` : port on which the orchestrator is listening
+   * ``--ip-addr`` : IP address of the orchestrator
+   * ``--symmkey`` : path to the client's symmetric key
+   * ``--privkey`` : path to the client's private key
+   * ``--cert`` : path to the client's certificate
+   * ``--port`` : port on which the orchestrator is listening
 
    For convenience, we added a script ``run.sh`` in this directory that runs this command. It takes in one argument: the orchestrator IP. 
 

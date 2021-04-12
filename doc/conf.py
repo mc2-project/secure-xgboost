@@ -167,7 +167,7 @@ html_theme_options = {
     "light_css_variables": {
         "color-brand-primary": "#00B0FF",
         "color-brand-content": "#00B0FF",
-        "color-admonition-background": "orange",
+        "color-admonition-background": "#F0F0F0",
         },
 }
 

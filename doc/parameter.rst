@@ -7,10 +7,6 @@ Before running Secure XGBoost, we must set three types of parameters: general pa
 - **Booster parameters** depend on which booster you have chosen
 - **Learning task parameters** decide on the learning scenario. For example, regression tasks may use different parameters with ranking tasks.
 
-.. contents::
-  :backlinks: none
-  :local:
-
 ******************
 General Parameters
 ******************
