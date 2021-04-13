@@ -16,7 +16,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          submodules: true
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Set up Python 3.6
         uses: actions/setup-python@v2
