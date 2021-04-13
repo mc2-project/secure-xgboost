@@ -76,6 +76,9 @@ jobs:
           repository: mc2-project/secure-xgboost
           ref: gh-pages
           path: gh-pages
+          fetch-depth: 0
+
+      - name: Commit documentation changes
         run: |
           cp -r doc/_build/html/* gh-pages/
           cd gh-pages
@@ -84,22 +87,10 @@ jobs:
           git config --global user.name "GitHub Action"
           git add .
           git commit -m "${GITHUB_ACTOR}'s changes in ${GITHUB_SHA} triggered this build" -a || true
-          git push
 
-
-      # - name: Commit documentation changes
-      #   run: |
-      #     cp -r doc/_build/html/* gh-pages/
-      #     cd gh-pages
-      #     touch .nojekyll
-      #     git config --global user.email "action@github.com"
-      #     git config --global user.name "GitHub Action"
-      #     git add .
-      #     git commit -m "${GITHUB_ACTOR}'s changes in ${GITHUB_SHA} triggered this build" -a || true
-
-      # - name: Push changes
-      #   uses: ad-m/github-push-action@master
-      #   with:
-      #     branch: gh-pages
-      #     directory: gh-pages
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: gh-pages
+          directory: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
