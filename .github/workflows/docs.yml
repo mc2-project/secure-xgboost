@@ -81,6 +81,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add .
           git commit -m "${GITHUB_ACTOR}'s changes in ${GITHUB_SHA} triggered this build" -a || true
+          git config --local --unset-all "http.https://github.com/.extraheader"
 
       - name: Push changes
         uses: ad-m/github-push-action@master
