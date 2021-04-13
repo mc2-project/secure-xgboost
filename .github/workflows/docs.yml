@@ -15,9 +15,8 @@ jobs:
     steps: 
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-          fetch-depth: 0
+        # with:
+        #   github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.6
         uses: actions/setup-python@v2
@@ -77,14 +76,15 @@ jobs:
           cp -r doc/_build/html/* gh-pages/
           cd gh-pages
           touch .nojekyll
-          # git config --local user.email "action@github.com"
-          # git config --local user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git add .
           git commit -m "${GITHUB_ACTOR}'s changes in ${GITHUB_SHA} triggered this build" -a || true
+          git push origin gh-pages
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          branch: gh-pages
-          directory: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Push changes
+      #   uses: ad-m/github-push-action@master
+      #   with:
+      #     branch: gh-pages
+      #     directory: gh-pages
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
