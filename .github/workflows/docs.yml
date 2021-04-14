@@ -91,7 +91,7 @@ jobs:
       - name: Push changes
         uses: ad-m/github-push-action@master
         with:
-          repoistory: mc2-project/secure-xgboost
+          repository: mc2-project/secure-xgboost
           branch: gh-pages
           directory: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
