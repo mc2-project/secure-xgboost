@@ -68,9 +68,18 @@ jobs:
           cd doc
           make html
 
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v2
+        with:
+          repository: mc2-project/secure-xgboost
+          ref: gh-pages
+          path: gh-pages
+          persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+          fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
       - name: Commit documentation changes
         run: |
-          git clone https://github.com/mc2-project/secure-xgboost.git --branch gh-pages --single-branch gh-pages
+          # git clone https://github.com/mc2-project/secure-xgboost.git --branch gh-pages --single-branch gh-pages
           cp -r doc/_build/html/* gh-pages/
           cd gh-pages
           touch .nojekyll
