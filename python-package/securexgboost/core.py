@@ -2478,7 +2478,7 @@ class Booster(object):
         return nph
 
 ##########################################
-# Enclave init and attestation APIs
+# Enclave init and  APIs
 ##########################################
 
 def init_config(config):
@@ -3286,7 +3286,6 @@ def verify_enclave_signature(data, size, sig, sig_len, increment_nonce=True):
 
     pem_key = _CONF["enclave_pk"]
     pem_key_len = _CONF["enclave_pk_size"]
-
     # Verify signature
     _check_call(_LIB.verify_signature(pem_key, pem_key_len, arr, size, sig, sig_len))
 
