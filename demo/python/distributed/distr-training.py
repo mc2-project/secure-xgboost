@@ -12,12 +12,6 @@ print("Creating enclave")
 xgb.init_client(user_name=username, sym_key_file=SYM_KEY_FILE, priv_key_file=PRIVATE_KEY_FILE, cert_file=CERT_FILE)
 xgb.init_server(enclave_image=HOME_DIR + "build/enclave/xgboost_enclave.signed", client_list=[username])
 
-# Remote Attestation
-print("Remote attestation")
-# Note: Simulation mode does not support attestation
-# pass in `verify=False` to attest()
-xgb.attest()
-
 rabit_args = {
         "DMLC_NUM_WORKER": os.environ.get("DMLC_NUM_WORKER"),
         "DMLC_NUM_SERVER": os.environ.get("DMLC_NUM_SERVER"),
@@ -30,6 +24,12 @@ rabit_args = {
 rargs = [str.encode(str(k) + "=" + str(v)) for k, v in rabit_args.items()]
 
 xgb.rabit.init(rargs)
+
+# Remote Attestation
+print("Remote attestation")
+# Note: Simulation mode does not support attestation
+# pass in `verify=False` to attest()
+xgb.attest()
 
 print("Creating training matrix from encrypted file")
 dtrain = xgb.DMatrix({username: HOME_DIR + "demo/data/agaricus.txt.train.enc"})
