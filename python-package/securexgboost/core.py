@@ -2478,7 +2478,7 @@ class Booster(object):
         return nph
 
 ##########################################
-# Enclave init and  APIs
+# Enclave init and attestation APIs
 ##########################################
 
 def init_config(config):
