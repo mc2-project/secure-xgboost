@@ -18,7 +18,7 @@
   --color-code-foreground: black;
   --color-brand-primary: #00B0FF;
   --color-brand-content: #00B0FF;
-  --color-admonition-background: orange;
+  --color-admonition-background: #F0F0F0;
   
   }
   @media (prefers-color-scheme: dark) {
@@ -35,7 +35,7 @@
   --color-code-foreground: black;
   --color-brand-primary: #00B0FF;
   --color-brand-content: #00B0FF;
-  --color-admonition-background: orange;
+  --color-admonition-background: #F0F0F0;
   
   }
   .override-dark {
@@ -186,13 +186,11 @@
 <ol class="arabic">
 <li><p><strong>Encrypt data locally.</strong></p>
 <p>Use the <code class="docutils literal notranslate"><span class="pre">encrypt.py</span></code> script to generate a key and encrypt the sample data (<code class="docutils literal notranslate"><span class="pre">demo/data/agaricus.txt.train</span></code> and <code class="docutils literal notranslate"><span class="pre">demo/data/agaricus.txt.test</span></code>). It will output three files:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">demo/python/remote-control/client/key.txt</span></code> : the key used to encrypt the data</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">demo/python/remote-control/data/train.enc</span></code> : an encrypted version of the training data</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">demo/python/remote-control/data/test.enc</span></code>  : an encrypted version of the test data</p></li>
 </ul>
-</div></blockquote>
 <p>Run the following to encrypt.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 encrypt.py
 </pre></div>
@@ -208,15 +206,13 @@
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">client.py</span></code> takes in 5 arguments:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--ip-addr</span></code> : IP address of the orchestrator</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--symmkey</span></code> : path to the client’s symmetric key</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--privkey</span></code> : path to the client’s private key</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--cert</span></code> : path to the client’s certificate</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--port</span></code> : port on which the orchestrator is listening</p></li>
 </ul>
-</div></blockquote>
 <p>For convenience, we added a script <code class="docutils literal notranslate"><span class="pre">run.sh</span></code> in this directory that runs this command. It takes in one argument: the orchestrator IP.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./run.sh &lt;orchestrator-ip&gt;
 </pre></div>

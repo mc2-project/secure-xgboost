@@ -18,7 +18,7 @@
   --color-code-foreground: black;
   --color-brand-primary: #00B0FF;
   --color-brand-content: #00B0FF;
-  --color-admonition-background: orange;
+  --color-admonition-background: #F0F0F0;
   
   }
   @media (prefers-color-scheme: dark) {
@@ -35,7 +35,7 @@
   --color-code-foreground: black;
   --color-brand-primary: #00B0FF;
   --color-brand-content: #00B0FF;
-  --color-admonition-background: orange;
+  --color-admonition-background: #F0F0F0;
   
   }
   .override-dark {
@@ -165,14 +165,12 @@
 </pre></div>
 </div>
 <p>The command takes in the following arguments:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--cluster</span></code> : how the cluster is set up. In Secure XGBoost we leverage SSH for intra-cluster communication.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--host-file</span></code> : the path to the file containing the IP addresses / ports of all nodes in the cluster.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--num-workers</span></code>  : the number of nodes in the cluster</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--worker-memory</span></code> : the amount of memory to allocate to the job on each machine.</p></li>
 </ul>
-</div></blockquote>
 <p>Ensure that each node in the cluster has authorized the SSH public key of the machine running the tracker, as the tracker in Distributed Secure XGBoost leverages SSH public keys to set up the topology.</p>
 <p>Note that this tutorial can also be run locally by simulating the cluster on one machine. To do this, type in the following command.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster <span class="nb">local</span> --num-workers &lt;num_nodes_in_cluster&gt; --worker-memory 1g python3 distr-training.py

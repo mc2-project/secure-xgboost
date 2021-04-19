@@ -18,7 +18,7 @@
   --color-code-foreground: black;
   --color-brand-primary: #00B0FF;
   --color-brand-content: #00B0FF;
-  --color-admonition-background: orange;
+  --color-admonition-background: #F0F0F0;
   
   }
   @media (prefers-color-scheme: dark) {
@@ -35,7 +35,7 @@
   --color-code-foreground: black;
   --color-brand-primary: #00B0FF;
   --color-brand-content: #00B0FF;
-  --color-admonition-background: orange;
+  --color-admonition-background: #F0F0F0;
   
   }
   .override-dark {
@@ -180,11 +180,9 @@
 </div>
 </li>
 <li><p>Start the RPC servers on all machines.</p>
-<blockquote>
-<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers &lt;num_workers_in_cluster&gt; --worker-memory 4g python3 server/enclave_serve.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>secure-xgboost/host/dmlc-core/tracker/dmlc-submit --cluster ssh --host-file hosts.config --num-workers &lt;num_workers_in_cluster&gt; --worker-memory 4g python3 server/enclave_serve.py
 </pre></div>
 </div>
-</div></blockquote>
 </li>
 </ol>
 </div>
@@ -231,15 +229,13 @@
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">client.py</span></code> takes in 5 arguments:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">--ip-addr</span></code> : IP address of the orchestrator</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--symmkey</span></code> : path to the client’s symmetric key</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--privkey</span></code> : path to the client’s private key</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--cert</span></code> : path to the client’s certificate</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--port</span></code> : port on which the orchestrator is listening</p></li>
 </ul>
-</div></blockquote>
 </li>
 </ol>
 <p>For convenience, we added a script <code class="docutils literal notranslate"><span class="pre">run.sh</span></code> in this directory that runs this command. It takes in one argument: the orchestrator IP.</p>

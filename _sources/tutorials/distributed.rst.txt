@@ -26,13 +26,13 @@ This tutorial demonstrates how to run Distributed Secure XGBoost but is for deve
 
    The command takes in the following arguments:
 
-         * ``--cluster`` : how the cluster is set up. In Secure XGBoost we leverage SSH for intra-cluster communication. 
+   * ``--cluster`` : how the cluster is set up. In Secure XGBoost we leverage SSH for intra-cluster communication. 
 
-         * ``--host-file`` : the path to the file containing the IP addresses / ports of all nodes in the cluster. 
+   * ``--host-file`` : the path to the file containing the IP addresses / ports of all nodes in the cluster. 
 
-         * ``--num-workers``  : the number of nodes in the cluster
+   * ``--num-workers``  : the number of nodes in the cluster
 
-         * ``--worker-memory`` : the amount of memory to allocate to the job on each machine.
+   * ``--worker-memory`` : the amount of memory to allocate to the job on each machine.
 
 
    Ensure that each node in the cluster has authorized the SSH public key of the machine running the tracker, as the tracker in Distributed Secure XGBoost leverages SSH public keys to set up the topology.
