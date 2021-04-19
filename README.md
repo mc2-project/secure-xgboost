@@ -117,8 +117,8 @@ xgb.init_server(enclave_image="build/enclave/xgboost_enclave.signed", client_lis
 xgb.attest(verify=True)
 
 # Load the encrypted data and associate it with your user
-dtrain = xgb.DMatrix({"user1": "demo/data/train.enc"})
-dtest = xgb.DMatrix({"user1": "demo/data/test.enc"})
+dtrain = xgb.DMatrix({"user1": "/path/to/secure-xgboost/demo/data/train.enc"})
+dtest = xgb.DMatrix({"user1": "/path/to/secure-xgboost/demo/data/test.enc"})
 
 params = {
 	"objective": "binary:logistic",
