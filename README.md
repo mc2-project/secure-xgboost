@@ -4,6 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/secure-xgboost/badge/?version=latest)](https://secure-xgboost.readthedocs.io/en/latest/?badge=latest)
 ![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 Secure XGBoost is a library that leverages secure enclaves and data-oblivious algorithms to enable the **collaborative training of and inference using [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. 
 
