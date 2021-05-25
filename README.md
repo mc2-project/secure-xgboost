@@ -16,32 +16,17 @@ This project is currently under development as part of the broader [**MC<sup>2</
 **NOTE:** The Secure XGBoost library is a research prototype, and has not yet received independent code review. 
 
 ## Table of Contents
-* [Background](#background)
 * [Installation](#installation)
 * [Usage](#usage)
 * [Documentation](#documentation)
 * [Additional Resources](#additional-resources)
 * [Getting Involved](#getting-involved)
-
-## Background
-### Secure Enclaves
-Secure enclaves are a recent advance in computer processor technology that enables the creation of a secure region of memory (called an enclave) on an otherwise untrusted machine. Any data or software placed within the enclave is isolated from the rest of the system. No other process on the same processor – not even privileged software such as the OS or the hypervisor – can access that memory. Examples of secure enclave technology include Intel SGX, ARM TrustZone, and AMD Memory Encryption.
-
-Moreover, enclaves typically support a feature called remote attestation. This feature enables clients to cryptographically verify that an enclave in the cloud is running trusted, unmodified code.
-
-Secure XGBoost builds upon the Open Enclave SDK – an open source SDK that provides a single unified abstraction across different enclave technologies. The use of Open Enclave enables our library to be compatible with many different enclave backends, such as Intel SGX and OP-TEE.
-
-### Data-Oblivious Algorithms
-On top of enclaves, Secure XGBoost adds a second layer of security that additionally protects the data and computation against a large class of attacks on enclaves.
-
-Researchers have shown that attackers may be able to learn sensitive information about the data within SGX enclaves by leveraging auxiliary sources of leakage (or “side-channels”), even though they can’t directly observe the data. Memory access patterns are an example of such a side-channel.
-
-In Secure XGBoost, we design and implement data-oblivious algorithms for model training and inference. At a high level, our algorithms produce an identical sequence of memory accesses, regardless of the input data. As a result, the memory access patterns reveal no information about the underlying data to the attacker.
-
-Unfortunately, the extra security comes at the cost of performance. If such attacks fall outside the users’ threat model, they can disable this extra protection.
+* [Contact](#contact-us)
 
 ## Installation
-The following instructions will create an environment from scratch. Alternatively, you can use the provided [Docker image](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9) if you want to run everything in simulation mode locally. If you use Docker, you'll need to clone Secure XGBoost locally and mount it to the container's `/root/secure-xgboost/` directory [using the `-v` flag](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container) when starting the container.
+The following instructions will create an environment from scratch. Note that Secure XGBoost has only been tested on Ubuntu 18.04, so **we recommend that you install everything on Ubuntu 18.04**.
+
+Alternatively, you can use the provided [Docker image](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9) if you want to run everything in simulation mode locally. If you use Docker, you'll need to clone Secure XGBoost locally and mount it to the container's `/root/secure-xgboost/` directory [using the `-v` flag](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container) when starting the container.
 
 1. Install the Open Enclave SDK (0.12.0) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3 of the instructions, install Open Enclave version 0.12.0 by specifying the version:
 
@@ -136,7 +121,7 @@ predictions, num_preds = booster.predict(dtest)
 ```
 
 ## Documentation
-For additional tutorials and more details on build parameters and usage, please refer to the [documentation](https://mc2-project.github.io/secure-xgboost/).
+For more background on enclaves and data-obliviousness, additional tutorials, and more details on build parameters and usage, please refer to the [documentation](https://mc2-project.github.io/secure-xgboost/).
 
 ## Additional Resources
 * [CCS PPMLP Paper](https://arxiv.org/pdf/2010.02524.pdf)
@@ -148,3 +133,6 @@ For additional tutorials and more details on build parameters and usage, please 
 * mc2-dev@googlegroups.com: For questions and general discussion
 * [GitHub Issues](https://github.com/mc2-project/secure-xgboost/issues): For bug reports and feature requests.
 * [Pull Requests](https://github.com/mc2-project/secure-xgboost/pulls): For code contributions.
+
+## Contact Us
+For more specific questions, please feel free to contact Chester <chester@eecs.berkeley.edu> and/or Rishabh <rishabhp@eecs.berkeley.edu>.
