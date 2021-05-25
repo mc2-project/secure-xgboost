@@ -21,7 +21,6 @@ This project is currently under development as part of the broader [**MC<sup>2</
 * [Documentation](#documentation)
 * [Additional Resources](#additional-resources)
 * [Getting Involved](#getting-involved)
-* [Contact](#contact-us)
 
 ## Installation
 The following instructions will create an environment from scratch. Note that Secure XGBoost has only been tested on Ubuntu 18.04, so **we recommend that you install everything on Ubuntu 18.04**.
@@ -133,6 +132,3 @@ For more background on enclaves and data-obliviousness, additional tutorials, an
 * mc2-dev@googlegroups.com: For questions and general discussion
 * [GitHub Issues](https://github.com/mc2-project/secure-xgboost/issues): For bug reports and feature requests.
 * [Pull Requests](https://github.com/mc2-project/secure-xgboost/pulls): For code contributions.
-
-## Contact Us
-For more specific questions, please feel free to contact Chester <chester@eecs.berkeley.edu> and/or Rishabh <rishabhp@eecs.berkeley.edu>.
