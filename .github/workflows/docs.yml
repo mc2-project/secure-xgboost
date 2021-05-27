@@ -5,6 +5,10 @@ on:
     branches:    
       - master
 
+  pull_request:
+      branches:
+        - master
+
 jobs:
   build:
     runs-on: ubuntu-18.04
@@ -48,7 +52,6 @@ jobs:
           cd build
           cmake ..
           make -j4
-          cd ../..
 
       - name: Install Python dependencies
         run: |
