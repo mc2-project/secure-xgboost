@@ -69,7 +69,7 @@ jobs:
       - name: Commit documentation changes
         run: |
           git clone https://github.com/mc2-project/secure-xgboost.git --branch gh-pages --single-branch gh-pages
-          cp -r doc/build/html/* gh-pages/
+          cp -r doc/_build/html/* gh-pages/
           cd gh-pages
           touch .nojekyll
           git config --local user.email "action@github.com"
