@@ -50,7 +50,7 @@ jobs:
           cd build
           cmake ..
           make -j4
-          cd ../..
+          cd ..
 
       - name: Install Python dependencies
         run: |
