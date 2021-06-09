@@ -4,6 +4,7 @@
 ![Documentation Status](https://github.com/mc2-project/secure-xgboost/actions/workflows/docs.yml/badge.svg)
 ![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[<img src="https://img.shields.io/badge/slack-contact%20us-blueviolet?logo=slack">](https://join.slack.com/t/mc2-project/shared_invite/zt-rt3kxyy8-GS4KA0A351Ysv~GKwy8NEQ)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 Secure XGBoost is a library that leverages secure enclaves and data-oblivious algorithms to enable the **collaborative training of and inference using [XGBoost](https://github.com/dmlc/xgboost) models on encrypted data**. 
@@ -130,5 +131,6 @@ For more background on enclaves and data-obliviousness, additional tutorials, an
 
 ## Getting Involved
 * mc2-dev@googlegroups.com: For questions and general discussion
+* [Slack](https://join.slack.com/t/mc2-project/shared_invite/zt-rt3kxyy8-GS4KA0A351Ysv~GKwy8NEQ): A more informal setting for discussion
 * [GitHub Issues](https://github.com/mc2-project/secure-xgboost/issues): For bug reports and feature requests.
 * [Pull Requests](https://github.com/mc2-project/secure-xgboost/pulls): For code contributions.
