@@ -704,7 +704,7 @@ bool attest_remote_report(
   }
 
   if (memcmp(parsed_report.report_data, sha256, sizeof(sha256)) != 0) {
-    LOG(FATAL) << "Remote attestation failed. SHA256 mismatch.";
+    LOG(FATAL) << "Remote attestation failed. SHA256 mismatch. There is likely a client list mismatch.";
   }
   return true;
 }

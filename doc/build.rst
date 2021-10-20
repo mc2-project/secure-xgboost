@@ -8,6 +8,8 @@ This page gives instructions on how to build and install Secure XGBoost from scr
 2. Next install the Secure XGBoost dependencies
 3. Then build Secure XGBoost from source. 
 
+Alternatively, if you want to run Secure XGBoost in simulation mode locally, you can use the `provided Docker image <https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.12>`_. If you do so, we suggest cloning Secure XGBoost locally and mounting it to the container's ``/root/secure-xgboost/`` directory `using the -v flag <https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container>`_. 
+
 .. Please refer to the :doc:`Troubleshooting <./troubleshoot.rst>` section first if you have any problem
 Please refer to the :ref:`troubleshoot` section first if you have any problem
 during installation. If the instructions do not work for you, please feel free
@@ -28,14 +30,14 @@ to open an issue on `GitHub <https://github.com/mc2-project/secure-xgboost/issue
 Installing the Open Enclave SDK
 *******************************
 
-1. Install the Open Enclave SDK (v0.9.0) and the Intel SGX DCAP driver.  
+1. Install the Open Enclave SDK (v0.17.1) and the Intel SGX DCAP driver.  
    If building on an SGX-enabled machine, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md>`_. 
    
-   **Note**: In step 3 of the instructions, make sure that you install Open Enclave version 0.9.0 by specifying the version
+   **Note**: In step 3 of the instructions, make sure that you install Open Enclave version 0.17.1 by specifying the version.
 
    .. code-block:: bash
 
-      sudo apt -y install clang-7 libssl-dev gdb libprotobuf10 libsgx-enclave-common libsgx-enclave-common-dev libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.9.0
+      sudo apt -y install clang-7 libssl-dev gdb libprotobuf10 libsgx-enclave-common libsgx-enclave-common-dev libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.17.1
 
    .. note:: You may also build the SDK in "simulation mode" on a machine without SGX support (e.g., for local development and testing). To build in simulation mode, follow the instructions `here <https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Simulation.md>`_ instead. Notably, these instructions require that you skip the driver installation step.
 
@@ -69,7 +71,7 @@ Installing Secure XGBoost Dependencies
    .. code-block:: bash
 
       sudo apt-get install -y libmbedtls-dev python3-pip
-      pip3 install numpy pandas sklearn numproto grpcio grpcio-tools kubernetes   
+      pip3 install numpy pandas sklearn numproto grpcio grpcio-tools requests
 
 
 ***********************

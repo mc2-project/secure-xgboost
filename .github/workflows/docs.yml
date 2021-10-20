@@ -1,0 +1,84 @@
+name: docs
+
+on:
+  push:
+    branches:    
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps: 
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+
+      - name: Upgrade Pip
+        run: python -m pip install --upgrade pip setuptools wheel
+   
+      - name: Install apt package dependencies
+        run: |
+          # Install OpenEnclave 0.12.0
+          echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+          wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
+          echo "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main" | sudo tee /etc/apt/sources.list.d/llvm-toolchain-bionic-7.list
+          wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          echo "deb [arch=amd64] https://packages.microsoft.com/ubuntu/18.04/prod bionic main" | sudo tee /etc/apt/sources.list.d/msprod.list
+          wget -qO - https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+
+          sudo apt update
+          sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.12.0 enchant
+
+          # CMake
+          wget https://github.com/Kitware/CMake/releases/download/v3.15.6/cmake-3.15.6-Linux-x86_64.sh
+
+          # Mbed TLS
+          sudo apt-get install -y libmbedtls-dev
+
+      - name: Build C++
+        run: | 
+          # Build C++ source
+          mkdir build
+          cd build
+          cmake ..
+          make -j4
+
+      - name: Install Python dependencies
+        run: |
+          pip install numpy pandas sklearn numproto grpcio grpcio-tools requests
+          pip install -r doc/requirements.txt
+
+      - name: Install Secure XGBoost Python package
+        run: |
+          # Install the Python package
+          cd python-package
+          python setup.py install
+
+      - name: Build docs
+        run: |
+          cd doc
+          make html
+
+      - name: Commit documentation changes
+        run: |
+          git clone https://github.com/mc2-project/secure-xgboost.git --branch gh-pages --single-branch gh-pages
+          cp -r doc/_build/html/* gh-pages/
+          cd gh-pages
+          touch .nojekyll
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "${GITHUB_ACTOR}'s changes in ${GITHUB_SHA} triggered this build" -a || true
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: gh-pages
+          directory: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}

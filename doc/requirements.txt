@@ -6,7 +6,14 @@ sh>=1.12.14
 matplotlib>=2.1
 graphviz
 numpy
+numpydoc
 numproto
 sklearn
 grpcio
 grpcio-tools
+requests
+furo
+recommonmark
+sphinx-argparse
+sphinx-copybutton
+sphinxcontrib-spelling

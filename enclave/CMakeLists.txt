@@ -32,14 +32,6 @@ int main() {
 }
 " XGBOOST_BUILTIN_PREFETCH_PRESENT)
 
-set(OE_MIN_VERSION 0.8.2)
-if (LVI_MITIGATION)
-  # Configure the cmake to use customized compilation toolchain.
-  # This package has to be added before `project()`.
-  find_package(OpenEnclave-LVI-Mitigation ${OE_MIN_VERSION} CONFIG REQUIRED)
-endif()
-find_package(OpenEnclave ${OE_MIN_VERSION} CONFIG REQUIRED)
-
 # Check endianness
 include(TestBigEndian)
 test_big_endian(BIG_ENDIAN)
@@ -56,14 +48,18 @@ if (CONSENSUS)
     list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/c_api/c_api.cc)
     add_custom_command(OUTPUT xgboost_mc_t.h xgboost_mc_t.c xgboost_mc_args.h 
         DEPENDS ${PROJECT_SOURCE_DIR}/xgboost_mc.edl
-        COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost_mc.edl)
+        COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost_mc.edl
+        --search-path ${OE_INCLUDEDIR} --search-path
+        ${OE_INCLUDEDIR}/openenclave/edl/sgx)
 
     add_executable(xgboost_enclave ${PROJECT_SOURCE_DIR}/ecalls_mc.cpp ${CPU_SOURCES} ${RABIT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_mc_t.c)
 else()
     list(REMOVE_ITEM CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/c_api/c_api_mc.cc)
     add_custom_command(OUTPUT xgboost_t.h xgboost_t.c xgboost_args.h 
         DEPENDS ${PROJECT_SOURCE_DIR}/xgboost.edl
-        COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost.edl)
+        COMMAND openenclave::oeedger8r --trusted ${PROJECT_SOURCE_DIR}/xgboost.edl
+        --search-path ${OE_INCLUDEDIR} --search-path
+        ${OE_INCLUDEDIR}/openenclave/edl/sgx)
 
     add_executable(xgboost_enclave ${PROJECT_SOURCE_DIR}/ecalls.cpp ${CPU_SOURCES} ${RABIT_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/xgboost_t.c)
 endif()
@@ -120,9 +116,9 @@ if (LVI_MITIGATION)
     # Helper to enable compiler options for LVI mitigation.
     apply_lvi_mitigation(xgboost_enclave)
     # Link against LVI-mitigated libraries.
-    target_link_libraries(xgboost_enclave openenclave::oeenclave-lvi-cfg openenclave::oelibcxx-lvi-cfg openenclave::oehostfs-lvi-cfg openenclave::oehostsock-lvi-cfg openenclave::oehostresolver-lvi-cfg)
+    target_link_libraries(xgboost_enclave openenclave::oeenclave-lvi-cfg openenclave::oecrypto${OE_CRYPTO_LIB}-lvi-cfg openenclave::oelibcxx-lvi-cfg openenclave::oehostfs-lvi-cfg openenclave::oehostsock-lvi-cfg openenclave::oehostresolver-lvi-cfg)
 else()
-    target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
+    target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oecrypto${OE_CRYPTO_LIB} openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
 endif()
 
 # Sign enclave

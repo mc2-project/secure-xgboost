@@ -17,15 +17,16 @@ if [ ${TASK} == "python_test" ]; then
     conda activate python3
     python --version
 
+    # Install python dependencies
+    python -m pip install graphviz pytest pytest-cov codecov
+    python -m pip install datatable
+    python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools 
+
     # Install the python package
     cd python-package
     python3 setup.py install
     cd ..
 
-    # Install python dependencies
-    python -m pip install graphviz pytest pytest-cov codecov
-    python -m pip install datatable
-    python -m pip install numpy pandas sklearn numproto grpcio grpcio-tools 
 
     # Start python tests
     python -m pytest -v --fulltrace -s tests/python/ --cov=python-package/securexgboost || exit -1
