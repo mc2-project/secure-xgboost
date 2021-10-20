@@ -2811,10 +2811,8 @@ class RemoteAPI:
         client_list = from_cstr_to_pystr(client_list, client_list_size)
         client_list_size = client_list_size.value
 
-        print(key_size)
 
         pem_key = ctypes2numpy(pem_key, key_size, np.uint32)
-        print(pem_key)
         pem_key = ndarray_to_proto(pem_key)
         nonce = ctypes2numpy(nonce, nonce_size, np.uint32)
         nonce = ndarray_to_proto(nonce)
