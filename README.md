@@ -28,10 +28,10 @@ The following instructions will create an environment from scratch. Note that Se
 
 Alternatively, you can use the provided [Docker image](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9) if you want to run everything in simulation mode locally. If you use Docker, you'll need to clone Secure XGBoost locally and mount it to the container's `/root/secure-xgboost/` directory [using the `-v` flag](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container) when starting the container.
 
-1. Install the Open Enclave SDK (0.12.0) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3 of the instructions, install Open Enclave version 0.12.0 by specifying the version:
+1. Install the Open Enclave SDK (0.17.1) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3 of the instructions, install Open Enclave version 0.17.1 by specifying the version:
 
     ```sh
-    sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.12.0
+    sudo apt -y install clang-7 libssl-dev gdb libsgx-enclave-common libsgx-enclave-common-dev libprotobuf10 libsgx-dcap-ql libsgx-dcap-ql-dev az-dcap-client open-enclave=0.17.1
     ```
 
 2. Configure the required environment variables.
@@ -127,7 +127,6 @@ For more background on enclaves and data-obliviousness, additional tutorials, an
 * [CCS PPMLP Paper](https://arxiv.org/pdf/2010.02524.pdf)
 * [Blog Post](https://towardsdatascience.com/secure-collaborative-xgboost-on-encrypted-data-ac7bc0ec7741)
 * RISE Camp 2020 [Tutorial](https://github.com/mc2-project/risecamp/tree/risecamp2020) and [Walkthrough](https://youtu.be/-kK-YCjqABs?t=312)
-* [Docker image for development](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.12)
 
 ## Getting Involved
 * mc2-dev@googlegroups.com: For questions and general discussion
