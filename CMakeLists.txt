@@ -38,7 +38,7 @@ set(OE_SECURITY_VERSION 1
 option(LOGGING
     "Enable enclave logger" OFF)
 option(SIMULATE
-    "Build enclave in simulation mode" ON)
+    "Build enclave in simulation mode" OFF)
 option(OBLIVIOUS
     "Enable oblivious training and inference" OFF)
 option(USE_AVX2 
