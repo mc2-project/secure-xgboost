@@ -456,7 +456,6 @@ class RemoteServicer(remote_pb2_grpc.RemoteServicer):
         try:
             if not globals()["is_orchestrator"]:
                 pem_key, key_size, nonce, nonce_size, client_list, client_list_size, remote_report, remote_report_size = self._serialize(remote_api.get_remote_report_with_pubkey_and_nonce, request)
-                print(type(pem_key))
                 return remote_pb2.Report(pem_key=pem_key, pem_key_size=key_size,
                     nonce=nonce, nonce_size=nonce_size,
                     client_list=client_list, client_list_size=client_list_size,
