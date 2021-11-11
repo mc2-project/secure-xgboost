@@ -1,0 +1,8 @@
+numpy==1.19.0
+scikit-learn
+pandas
+numproto
+grpcio
+grpcio-tools
+protobuf<=3.13.0
+requests

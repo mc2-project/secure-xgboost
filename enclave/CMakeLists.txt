@@ -116,9 +116,9 @@ if (LVI_MITIGATION)
     # Helper to enable compiler options for LVI mitigation.
     apply_lvi_mitigation(xgboost_enclave)
     # Link against LVI-mitigated libraries.
-    target_link_libraries(xgboost_enclave openenclave::oeenclave-lvi-cfg openenclave::oelibcxx-lvi-cfg openenclave::oehostfs-lvi-cfg openenclave::oehostsock-lvi-cfg openenclave::oehostresolver-lvi-cfg)
+    target_link_libraries(xgboost_enclave openenclave::oeenclave-lvi-cfg openenclave::oecrypto${OE_CRYPTO_LIB}-lvi-cfg openenclave::oelibcxx-lvi-cfg openenclave::oehostfs-lvi-cfg openenclave::oehostsock-lvi-cfg openenclave::oehostresolver-lvi-cfg)
 else()
-    target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
+    target_link_libraries(xgboost_enclave openenclave::oeenclave openenclave::oecrypto${OE_CRYPTO_LIB} openenclave::oelibcxx openenclave::oehostfs openenclave::oehostsock openenclave::oehostresolver)
 endif()
 
 # Sign enclave
