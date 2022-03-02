@@ -212,8 +212,7 @@ int enclave_XGBoosterDumpModel(BoosterHandle handle,
                        size_t nonce_size,
                        uint32_t nonce_ctr,
                        xgboost::bst_ulong* len,
-                       char*** out_models,
-                       unsigned char* user_sym_key) {
+                       char*** out_models) {
   LOG(DEBUG) << "Ecall: XGBoosterDumpModel";
   return XGBoosterDumpModel(handle, fmap, with_stats, nonce, nonce_size, nonce_ctr, len, (const char***) out_models);
 }
