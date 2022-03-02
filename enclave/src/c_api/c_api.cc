@@ -776,7 +776,8 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  int with_stats,
                                  const char *format,
                                  xgboost::bst_ulong* len,
-                                 const char*** out_models) {
+                                 const char*** out_models,
+                                 unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
     FeatureMap featmap;
@@ -786,7 +787,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
       dmlc::istream is(fs.get());
       featmap.LoadText(is);
     }
-    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models, user_sym_key);
     API_END();
 }
 
@@ -828,14 +829,15 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              int with_stats,
                                              const char *format,
                                              xgboost::bst_ulong* len,
-                                             const char*** out_models) {
+                                             const char*** out_models,
+                                             unsigned char* user_sym_key) {
   API_BEGIN();
   CHECK_HANDLE();
   FeatureMap featmap;
   for (int i = 0; i < fnum; ++i) {
     featmap.PushBack(i, fname[i], ftype[i]);
   }
-  XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+  XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models, user_sym_key);
   API_END();
 }
 

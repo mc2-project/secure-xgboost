@@ -155,10 +155,11 @@ int enclave_XGBoosterDumpModelEx(BoosterHandle handle,
                                  int with_stats,
                                  const char* format,
                                  xgboost::bst_ulong* len,
-                                 char*** out_models) {
+                                 char*** out_models,
+                                 unsigned char* user_sym_key) {
     LOG(DEBUG) << "Ecall: XGBoosterDumpModelEx";
 
-    int ret = XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models);
+    int ret = XGBoosterDumpModelEx(handle, fmap, with_stats, format, len, (const char***) out_models, user_sym_key);
 
     return ret;
 }
@@ -197,7 +198,8 @@ int enclave_XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              int with_stats,
                                              const char *format,
                                              xgboost::bst_ulong* len,
-                                             char*** out_models) {
+                                             char*** out_models,
+                                             unsigned char* user_sym_key) {
     LOG(DEBUG) << "Ecall: XGBoosterDumpModelExWithFeatures";
 
     // Validate buffers and copy to enclave memory

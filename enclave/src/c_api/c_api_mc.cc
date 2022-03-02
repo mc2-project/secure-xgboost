@@ -1005,7 +1005,8 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
                                  size_t *out_sig_length,
                                  char **signers,
                                  uint8_t** signatures,
-                                 size_t* sig_lengths) {
+                                 size_t* sig_lengths,
+                                 unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
     std::ostringstream oss;
@@ -1019,7 +1020,7 @@ XGB_DLL int XGBoosterDumpModelEx(BoosterHandle handle,
         dmlc::istream is(fs.get());
         featmap.LoadText(is);
     }
-    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models, user_sym_key);
 
     // sign the output
     std::ostringstream sss;
@@ -1091,7 +1092,8 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
                                              size_t *out_sig_length,
                                              char **signers,
                                              uint8_t** signatures,
-                                             size_t* sig_lengths) {
+                                             size_t* sig_lengths,
+                                             unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
 
@@ -1107,7 +1109,7 @@ XGB_DLL int XGBoosterDumpModelExWithFeatures(BoosterHandle handle,
     for (int i = 0; i < fnum; ++i) {
         featmap.PushBack(i, fname[i], ftype[i]);
     }
-    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models);
+    XGBoostDumpModelImpl(handle, featmap, with_stats, format, len, out_models, user_sym_key);
 
     // sign the output
     std::ostringstream sss;
