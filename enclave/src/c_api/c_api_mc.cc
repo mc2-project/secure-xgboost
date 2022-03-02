@@ -720,7 +720,7 @@ XGB_DLL int XGBoosterPredict(BoosterHandle handle,
 }
 
 // TODO(rishabh): Server can replace file contents
-XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t** signatures, size_t* sig_lengths) {
+XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char** signers, uint8_t** signatures, size_t* sig_lengths, unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
 
@@ -749,10 +749,9 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t*
       unsigned char* tag = iv + CIPHER_IV_SIZE;
       unsigned char* data = tag + CIPHER_TAG_SIZE;
       unsigned char* output = (unsigned char*) malloc (buf_len);
-      unsigned char* key = EnclaveContext::getInstance().get_symm_key();
 
       decrypt_symm(
-          key,
+          user_sym_key,
           data,
           buf_len,
           iv,
@@ -775,7 +774,7 @@ XGB_DLL int XGBoosterLoadModel(BoosterHandle handle, const char* fname, uint8_t*
     API_END();
 }
 
-XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, uint8_t** signatures, size_t* sig_lengths) {
+XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t* nonce, size_t nonce_size, uint32_t nonce_ctr, uint8_t** out_sig, size_t* out_sig_length, char **signers, uint8_t** signatures, size_t* sig_lengths, unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
 
@@ -801,10 +800,9 @@ XGB_DLL int XGBoosterSaveModel(BoosterHandle handle, const char* fname, uint8_t*
       unsigned char* iv = buf;
       unsigned char* tag = buf + CIPHER_IV_SIZE;
       unsigned char* output = tag + CIPHER_TAG_SIZE;
-      unsigned char* key = EnclaveContext::getInstance().get_symm_key();
 
       encrypt_symm(
-          key,
+          user_sym_key,
           (const unsigned char*)dmlc::BeginPtr(raw_str),
           raw_str.length(),
           NULL,
@@ -836,7 +834,8 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
                                          size_t *out_sig_length,
                                          char **signers,
                                          uint8_t** signatures,
-                                         size_t* sig_lengths) {
+                                         size_t* sig_lengths,
+                                         unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
 
@@ -853,10 +852,9 @@ XGB_DLL int XGBoosterLoadModelFromBuffer(BoosterHandle handle,
     unsigned char* tag = iv + CIPHER_IV_SIZE;
     unsigned char* data = tag + CIPHER_TAG_SIZE;
     unsigned char* output = (unsigned char*) malloc (len);
-    unsigned char* key = EnclaveContext::getInstance().get_symm_key();
 
     decrypt_symm(
-            key,
+            user_sym_key,
             data,
             len,
             iv,
@@ -882,7 +880,8 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
                                  size_t *out_sig_length,
                                  char** signers,
                                  uint8_t** signatures,
-                                 size_t* sig_lengths) {
+                                 size_t* sig_lengths,
+                                 unsigned char* user_sym_key) {
     API_BEGIN();
     CHECK_HANDLE();
 
@@ -904,10 +903,9 @@ XGB_DLL int XGBoosterGetModelRaw(BoosterHandle handle,
     unsigned char* iv = buf;
     unsigned char* tag = buf + CIPHER_IV_SIZE;
     unsigned char* output = tag + CIPHER_TAG_SIZE;
-    unsigned char* key = EnclaveContext::getInstance().get_symm_key();
 
     encrypt_symm(
-            key,
+            user_sym_key,
             (const unsigned char*)dmlc::BeginPtr(raw_str),
             raw_str.length(),
             NULL,
@@ -936,7 +934,8 @@ inline void XGBoostDumpModelImpl(
     int with_stats,
     const char *format,
     xgboost::bst_ulong* len,
-    const char*** out_models) {
+    const char*** out_models,
+    unsigned char* user_sym_key) {
   auto* bst = static_cast<Booster*>(EnclaveContext::getInstance().get_booster(handle));
   std::vector<std::string>& str_vecs = bst->GetThreadLocal().ret_vec_str;
   str_vecs = bst->DumpModel(fmap, with_stats != 0, format);
@@ -947,16 +946,14 @@ inline void XGBoostDumpModelImpl(
   unsigned char* encrypted;
   unsigned char iv[CIPHER_IV_SIZE];
   unsigned char tag[CIPHER_TAG_SIZE];
-  unsigned char* key;
 
-  key = EnclaveContext::getInstance().get_symm_key();
   for (size_t i = 0; i < str_vecs.size(); ++i) {
     length = str_vecs[i].length();
     encrypted = (unsigned char*) malloc(length * sizeof(char));
 
     /* Encrypt */
     encrypt_symm(
-        key,
+        user_sym_key,
         (const unsigned char*) dmlc::BeginPtr(str_vecs[i]),
         str_vecs[i].length(),
         NULL,
