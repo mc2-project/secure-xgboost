@@ -481,7 +481,7 @@ class LearnerConfiguration : public Learner {
         if (is_parameter(kv.first)) {
           auto parameter = get<Object const>(kv.second);
           std::transform(parameter.begin(), parameter.end(), std::back_inserter(keys),
-                         [](std::pair<std::string const&, Json const&> const& kv) {
+                         [](std::pair<std::string const&, Json const&> const kv) {
                            return kv.first;
                          });
         } else if (IsA<Object>(kv.second)) {
