@@ -56,7 +56,7 @@ The following instructions will create an environment from scratch. Note that Se
     git clone https://github.com/mc2-project/secure-xgboost.git
     ```
 
-5. Before building, you may choose to configure the [build parameters](https://mc2-project.github.io/secure-xgboost/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
+5. Before building, you may choose to configure the [build parameters](https://mc2-project.github.io/secure-xgboost/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `OE_DEBUG` parameter to `1` and the `SIMULATE` parameter to `ON`. 
 
 6. Build Secure XGBoost and install the Python package.
 
@@ -98,7 +98,7 @@ You can use the provided [Docker image](https://hub.docker.com/repository/docker
     sudo apt -y install open-enclave
     ```
 
-5. Before building, you may choose to configure the [build parameters](https://mc2-project.github.io/secure-xgboost/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
+5. Before building, you may choose to configure the [build parameters](https://mc2-project.github.io/secure-xgboost/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `OE_DEBUG` parameter to `1` and the `SIMULATE` parameter to `ON`. 
 
 6. Build Secure XGBoost and install the Python package.
 
@@ -113,7 +113,6 @@ You can use the provided [Docker image](https://hub.docker.com/repository/docker
     cd ../python-package
     sudo python3 setup.py install
     ```
-    
 
 
 ## Usage
