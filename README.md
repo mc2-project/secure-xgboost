@@ -18,6 +18,7 @@ This project is currently under development as part of the broader [**MC<sup>2</
 
 ## Table of Contents
 * [Installation](#installation)
+* [Docker build for local development](#docker-build-for-local-development)
 * [Usage](#usage)
 * [Documentation](#documentation)
 * [Additional Resources](#additional-resources)
@@ -25,8 +26,6 @@ This project is currently under development as part of the broader [**MC<sup>2</
 
 ## Installation
 The following instructions will create an environment from scratch. Note that Secure XGBoost has only been tested on Ubuntu 18.04, so **we recommend that you install everything on Ubuntu 18.04**.
-
-Alternatively, you can use the provided [Docker image](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9) if you want to run everything in simulation mode locally. If you use Docker, you'll need to clone Secure XGBoost locally and mount it to the container's `/root/secure-xgboost/` directory [using the `-v` flag](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container) when starting the container.
 
 1. Install the Open Enclave SDK (0.17.1) and the Intel SGX DCAP driver by following [these instructions](https://github.com/openenclave/openenclave/blob/master/docs/GettingStartedDocs/install_oe_sdk-Ubuntu_18.04.md). In Step 3 of the instructions, install Open Enclave version 0.17.1 by specifying the version:
 
@@ -72,6 +71,50 @@ Alternatively, you can use the provided [Docker image](https://hub.docker.com/re
     cd ../python-package
     sudo python3 setup.py install
     ```
+
+## Docker build for local development
+You can use the provided [Docker image](https://hub.docker.com/repository/docker/mc2project/ubuntu-oe0.9) if you want to run everything in simulation mode locally. 
+
+1. Clone Secure XGBoost.
+
+    ```sh
+    git clone https://github.com/mc2-project/secure-xgboost.git
+    ``` 
+
+2. Pull the Docker image.
+    ```sh
+    docker pull mc2project/ubuntu-oe0.9:v1
+    ```
+
+3. Run the Docker image with the cloned directory mounted to the container's `/root/secure-xgboost/` directory [using the `-v` flag](https://stackoverflow.com/questions/23439126/how-to-mount-a-host-directory-in-a-docker-container) when starting the container.
+
+    ```sh
+    docker run -it -v <path/to/secure-xgboost>:/root/secure-xgboost mc2project/ubuntu-oe0.9:v1 /bin/bash
+    ```
+
+4. Install Open Enclave within the image.
+    ```sh
+    sudo apt update
+    sudo apt -y install open-enclave
+    ```
+
+5. Before building, you may choose to configure the [build parameters](https://mc2-project.github.io/secure-xgboost/build.html#building-the-targets) in `CMakeLists.txt`, e.g., whether to perform training and inference obliviously. In particular, if running Secure XGBoost on a machine without enclave support, you'll have to set the `SIMULATE` parameter to `ON`. 
+
+6. Build Secure XGBoost and install the Python package.
+
+    ```sh
+    cd secure-xgboost
+    mkdir build
+
+    cd build
+    cmake ..
+    make -j4
+
+    cd ../python-package
+    sudo python3 setup.py install
+    ```
+    
+
 
 ## Usage
 To use Secure XGBoost, replace the XGBoost import.
