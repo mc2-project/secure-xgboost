@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright 2020 by Secure XGBoost Contributors
+ * Modifications Copyright 2020-22 by Secure XGBoost Contributors
  */
 #include "quantile.h"
 

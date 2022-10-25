@@ -1,6 +1,6 @@
 /*!
  * Copyright 2017-2019 by Contributors
- * Modifications Copyright 2020 by Secure XGBoost Contributors
+ * Modifications Copyright 2020-22 by Secure XGBoost Contributors
  * \file hist_util.h
  */
 #ifdef __ENCLAVE_OBLIVIOUS__

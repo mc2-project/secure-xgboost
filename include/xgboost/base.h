@@ -1,6 +1,6 @@
 /*!
  * Copyright (c) 2015 by Contributors
- * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ * Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
  * \file base.h
  * \brief defines configuration macros of xgboost.
  */

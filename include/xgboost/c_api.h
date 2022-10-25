@@ -1,6 +1,6 @@
 /*!
  * Copyright (c) 2015~2020 by Contributors
- * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ * Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
  * \file c_api.h
  * \author Tianqi Chen
  * \brief C API of XGBoost, used for interfacing to other languages.

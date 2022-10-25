@@ -1,6 +1,6 @@
 /*!
  * Copyright 2014-2020 by Contributors
- * Modifications Copyright 2020 by Secure XGBoost Contributors
+ * Modifications Copyright 2020-22 by Secure XGBoost Contributors
  * \file learner.cc
  * \brief Implementation of learning algorithm.
  * \author Tianqi Chen

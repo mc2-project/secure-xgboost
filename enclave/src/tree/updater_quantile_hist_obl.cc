@@ -1,6 +1,6 @@
 /*!
  * Copyright 2017-2018 by Contributors
- * Modifications Copyright 2020 by Secure XGBoost Contributors
+ * Modifications Copyright 2020-22 by Secure XGBoost Contributors
  * \file updater_quantile_hist.cc
  * \brief use quantized feature values to construct a tree
  * \author Philip Cho, Tianqi Checn

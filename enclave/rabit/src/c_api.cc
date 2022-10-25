@@ -1,5 +1,5 @@
 // Copyright by Contributors
-// Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+// Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
 // implementations in ctypes
 #include <rabit/base.h>
 #include <cstring>

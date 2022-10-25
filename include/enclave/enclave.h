@@ -1,5 +1,5 @@
 /*
- * Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ * Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
  */
 #ifndef ENCLAVE_H
 #define ENCLAVE_H

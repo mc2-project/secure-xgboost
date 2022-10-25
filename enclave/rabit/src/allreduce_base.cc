@@ -1,6 +1,6 @@
 /*!
  *  Copyright (c) 2014 by Contributors
- *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ *  Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
  * \file allreduce_base.cc
  * \brief Basic implementation of AllReduce
  *

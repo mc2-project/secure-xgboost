@@ -1,6 +1,6 @@
 /*!
  * Copyright 2014-2019 by Contributors
- * Modifications Copyright 2020 by Secure XGBoost Contributors
+ * Modifications Copyright 2020-22 by Secure XGBoost Contributors
  * \file tree_model.h
  * \brief model structure for tree
  * \author Tianqi Chen

@@ -1,5 +1,5 @@
 // Copyright (c) 2014 by Contributors
-// Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+// Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
 
 
 #include <xgboost/data.h>

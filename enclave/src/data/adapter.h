@@ -1,6 +1,6 @@
 /*!
  *  Copyright (c) 2019~2020 by Contributors
- *  Modifications Copyright (c) 2020 by Secure XGBoost Contributors
+ *  Modifications Copyright (c) 2020-22 by Secure XGBoost Contributors
  * \file adapter.h
  */
 #ifndef XGBOOST_DATA_ADAPTER_H_
